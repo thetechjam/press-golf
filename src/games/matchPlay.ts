@@ -145,14 +145,14 @@ export function computeMatchPlay(round: Round): GameResult {
   const standings: GameStanding[] = [
     {
       label: a.label,
-      detail: seg.margin > 0 ? `${seg.margin} UP` : seg.margin < 0 ? `${seg.margin} DN` : 'A.S.',
+      detail: seg.margin > 0 ? `${seg.margin} UP` : seg.margin < 0 ? `${-seg.margin} DN` : 'A.S.',
       value: seg.margin,
       rank: seg.margin >= 0 ? 1 : 2,
       isLeader: seg.margin > 0,
     },
     {
       label: b.label,
-      detail: seg.margin < 0 ? `${-seg.margin} UP` : seg.margin > 0 ? `${-seg.margin} DN` : 'A.S.',
+      detail: seg.margin < 0 ? `${-seg.margin} UP` : seg.margin > 0 ? `${seg.margin} DN` : 'A.S.',
       value: -seg.margin,
       rank: seg.margin <= 0 ? 1 : 2,
       isLeader: seg.margin < 0,
