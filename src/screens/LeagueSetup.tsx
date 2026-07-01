@@ -112,32 +112,36 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
         <span />
       </header>
 
-      <label className="field">
-        <span>Course (optional)</span>
-        <input value={course} onChange={(e) => setCourse(e.target.value)} placeholder="Thursday Night League" />
-      </label>
-
       {courses.length > 0 && (
-        <div className="course-faves">
-          <span className="faves-label">Saved courses</span>
-          <div className="fave-chips">
+        <section className="card course-picker">
+          <h2>Load a saved course</h2>
+          <div className="saved-course-list">
             {courses.map((c) => (
-              <span key={c.id} className="fave-chip">
-                <button className="fave-load" onClick={() => loadCourse(c)}>
-                  {c.name}
+              <div key={c.id} className="saved-course-row">
+                <button className="saved-course-load" onClick={() => loadCourse(c)}>
+                  <span className="saved-course-name">{c.name}</span>
+                  <span className="saved-course-meta">
+                    {c.holes.length} holes · par {c.holes.reduce((s, h) => s + h.par, 0)}
+                    {c.holes.some((h) => h.strokeIndex) ? ' · SI set' : ''}
+                  </span>
                 </button>
                 <button
-                  className="fave-del"
+                  className="saved-course-del"
                   onClick={() => removeCourse(c.id)}
                   aria-label={`Delete saved course ${c.name}`}
                 >
                   ×
                 </button>
-              </span>
+              </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
+
+      <label className="field">
+        <span>Course (optional)</span>
+        <input value={course} onChange={(e) => setCourse(e.target.value)} placeholder="Thursday Night League" />
+      </label>
 
       {teams.map((t, ti) => (
         <section key={ti} className="card">
