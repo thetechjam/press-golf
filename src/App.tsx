@@ -59,6 +59,7 @@ export default function App() {
       {view === 'results' && round && (
         <Results
           round={round}
+          onChange={update}
           onHome={() => setView('home')}
           onBackToPlay={() => setView('play')}
         />

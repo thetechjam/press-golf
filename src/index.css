@@ -639,6 +639,90 @@ select:focus {
   padding: 12px;
 }
 
+/* ---------- Settlement ---------- */
+.settlement {
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+}
+.link-btn {
+  color: var(--green-600);
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.stakes-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 10px;
+}
+.stake-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.stake-label {
+  font-weight: 600;
+}
+.stake-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stake-input .dollar {
+  color: var(--muted);
+}
+.stake-input input {
+  width: 64px;
+  min-height: 40px;
+  padding: 8px;
+  text-align: right;
+}
+.stake-input .per {
+  font-size: 0.78rem;
+  color: var(--muted);
+  min-width: 64px;
+}
+.net-list {
+  margin-bottom: 10px;
+}
+.net-amount {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.net-amount.up {
+  color: var(--under);
+}
+.net-amount.down {
+  color: var(--over);
+}
+.payments {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.payment {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.95rem;
+}
+.pay-amount {
+  margin-left: auto;
+  font-weight: 800;
+  color: var(--green-700);
+  font-variant-numeric: tabular-nums;
+}
+.all-even {
+  text-align: center;
+  font-weight: 600;
+  color: var(--muted);
+}
+
 /* ---------- Results ---------- */
 .results-meta {
   text-align: center;

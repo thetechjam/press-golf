@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import type { Round } from '../types';
 import { Leaderboard } from '../components/Leaderboard';
+import { Settlement } from '../components/Settlement';
 import { activeResults } from '../games';
+import { computeSettlement, formatMoney } from '../games/settlement';
 
 interface Props {
   round: Round;
+  onChange: (round: Round) => void;
   onHome: () => void;
   onBackToPlay: () => void;
 }
@@ -22,11 +25,25 @@ function buildSummary(round: Round): string {
     }
     lines.push('');
   }
+
+  const settlement = computeSettlement(round);
+  if (settlement.active) {
+    lines.push('💰 Settlement');
+    if (settlement.transactions.length === 0) {
+      lines.push("  Everyone's even");
+    } else {
+      for (const t of settlement.transactions) {
+        lines.push(`  ${t.from} pays ${t.to} ${formatMoney(t.amount)}`);
+      }
+    }
+    lines.push('');
+  }
+
   lines.push('via Press');
   return lines.join('\n');
 }
 
-export function Results({ round, onHome, onBackToPlay }: Props) {
+export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
   const [copied, setCopied] = useState(false);
   const results = activeResults(round);
 
@@ -67,6 +84,8 @@ export function Results({ round, onHome, onBackToPlay }: Props) {
           {round.date} · {round.players.length} players · {round.holes.length} holes
         </div>
       </div>
+
+      <Settlement round={round} onChange={onChange} />
 
       <section className="boards">
         {results.map((r) => (

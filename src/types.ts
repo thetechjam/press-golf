@@ -38,12 +38,16 @@ export interface WolfHole {
   choice: WolfChoice;
 }
 
+/** Dollar stake per game. Unit varies by game (per skin, per point, etc.). */
+export type Stakes = Partial<Record<GameType, number>>;
+
 export interface GameOptions {
   /** Apply handicaps where a game supports net scoring. */
   useNet: boolean;
   stablefordMode: 'standard' | 'modified';
   loneWolfMultiplier: number;
   blindWolfMultiplier: number;
+  stakes: Stakes;
 }
 
 export interface Round {
@@ -85,4 +89,5 @@ export const DEFAULT_OPTIONS: GameOptions = {
   stablefordMode: 'standard',
   loneWolfMultiplier: 2,
   blindWolfMultiplier: 3,
+  stakes: {},
 };
