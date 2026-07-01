@@ -1,5 +1,21 @@
 import type { Round, Hole, GameResult, GameStanding } from '../types';
-import { matchSegment } from './matchPlay';
+import { matchSegmentSides, type Side } from './matchPlay';
+
+/** Resolves the two Nassau sides from options (defaults to 1v1, first two players). */
+export function nassauTeams(round: Round): { a: Side; b: Side } {
+  const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? '?';
+  const cfg = round.options.nassau;
+  if (cfg?.mode === '2v2' && cfg.teamA.length === 2 && cfg.teamB.length === 2) {
+    return {
+      a: { ids: cfg.teamA, label: cfg.teamA.map(nameOf).join(' & ') },
+      b: { ids: cfg.teamB, label: cfg.teamB.map(nameOf).join(' & ') },
+    };
+  }
+  const ids = round.players.map((p) => p.id);
+  const aId = cfg?.teamA?.[0] ?? ids[0];
+  const bId = cfg?.teamB?.[0] ?? ids[1];
+  return { a: { ids: [aId], label: nameOf(aId) }, b: { ids: [bId], label: nameOf(bId) } };
+}
 
 /** Holes belonging to the same nine as the given hole. */
 export function nineHolesFor(round: Round, holeNumber: number): Hole[] {
@@ -58,30 +74,29 @@ export function computeNassau(round: Round): GameResult {
     };
   }
 
-  const [p1, p2] = round.players;
+  const { a, b } = nassauTeams(round);
   const segments = nassauSegments(round);
-  let p1Wins = 0;
-  let p2Wins = 0;
+  let aWins = 0;
+  let bWins = 0;
 
   const standings: GameStanding[] = segments.map((seg, i) => {
-    const res = matchSegment(round, seg.holes, p1, p2);
-    if (res.winnerId === p1.id) p1Wins += 1;
-    else if (res.winnerId === p2.id) p2Wins += 1;
+    const res = matchSegmentSides(round, seg.holes, a, b);
+    if (res.winner === 'A') aWins += 1;
+    else if (res.winner === 'B') bWins += 1;
     return { label: seg.label, detail: res.status, value: i, rank: i + 1, isLeader: false };
   });
 
   let status: string;
-  if (p1Wins === 0 && p2Wins === 0) status = 'All bets open';
-  else if (p1Wins > p2Wins) status = `${p1.name} leads ${p1Wins}–${p2Wins}`;
-  else if (p2Wins > p1Wins) status = `${p2.name} leads ${p2Wins}–${p1Wins}`;
-  else status = `Tied ${p1Wins}–${p2Wins}`;
+  if (aWins === 0 && bWins === 0) status = 'All bets open';
+  else if (aWins > bWins) status = `${a.label} leads ${aWins}–${bWins}`;
+  else if (bWins > aWins) status = `${b.label} leads ${bWins}–${aWins}`;
+  else status = `Tied ${aWins}–${bWins}`;
 
   return {
     gameType: 'nassau',
-    title: 'Nassau',
+    title: round.options.nassau?.mode === '2v2' ? 'Nassau (2v2)' : 'Nassau',
     status,
     standings,
-    note:
-      round.players.length > 2 ? 'Match is between the first two players' : undefined,
+    note: `${a.label} vs ${b.label}`,
   };
 }

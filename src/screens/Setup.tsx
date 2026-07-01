@@ -28,6 +28,10 @@ export function Setup({ onCancel, onStart }: Props) {
   const [error, setError] = useState('');
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   const [savedNote, setSavedNote] = useState('');
+  const [nassauMode, setNassauMode] = useState<'1v1' | '2v2'>('1v1');
+  const [sideA, setSideA] = useState('');
+  const [sideB, setSideB] = useState('');
+  const [teamAssign, setTeamAssign] = useState<Record<string, 'A' | 'B' | '-'>>({});
 
   const loadCourse = (c: SavedCourse) => {
     setCourse(c.name);
@@ -105,6 +109,18 @@ export function Setup({ onCancel, onStart }: Props) {
   const showNet = games.some((g) => GAMES.find((m) => m.id === g)?.usesNet);
   const showStableford = games.includes('stableford');
   const showWolf = games.includes('wolf');
+  const showNassau = games.includes('nassau');
+  const canTeams = namedPlayers.length >= 4;
+
+  const nameOrPlaceholder = (p: Player, i: number) => p.name.trim() || `Player ${i + 1}`;
+  // Effective 1v1 sides default to the first two named players.
+  const effA = namedPlayers.find((p) => p.id === sideA)?.id ?? namedPlayers[0]?.id ?? '';
+  const effB = namedPlayers.find((p) => p.id === sideB)?.id ?? namedPlayers[1]?.id ?? '';
+  // 2v2 assignment defaults to first two = A, next two = B.
+  const assignOf = (id: string, i: number): 'A' | 'B' | '-' =>
+    teamAssign[id] ?? (i < 2 ? 'A' : i < 4 ? 'B' : '-');
+  const setAssign = (id: string, v: 'A' | 'B' | '-') =>
+    setTeamAssign((t) => ({ ...t, [id]: v }));
 
   const start = () => {
     if (namedPlayers.length < 1) return setError('Add at least one player.');
@@ -122,6 +138,21 @@ export function Setup({ onCancel, onStart }: Props) {
       handicap: showNet ? p.handicap : undefined,
     }));
 
+    let nassau: Round['options']['nassau'];
+    if (games.includes('nassau')) {
+      if (nassauMode === '2v2') {
+        const teamA = cleanPlayers.filter((p, i) => assignOf(p.id, i) === 'A').map((p) => p.id);
+        const teamB = cleanPlayers.filter((p, i) => assignOf(p.id, i) === 'B').map((p) => p.id);
+        if (teamA.length !== 2 || teamB.length !== 2)
+          return setError('Assign exactly 2 players to each Nassau team.');
+        nassau = { mode: '2v2', teamA, teamB };
+      } else {
+        if (!effA || !effB || effA === effB)
+          return setError('Pick two different players for the Nassau match.');
+        nassau = { mode: '1v1', teamA: [effA], teamB: [effB] };
+      }
+    }
+
     const round: Round = {
       id: uid(),
       course: course.trim() || undefined,
@@ -131,7 +162,7 @@ export function Setup({ onCancel, onStart }: Props) {
       players: cleanPlayers,
       holes,
       games,
-      options,
+      options: { ...options, nassau },
       scores: {},
       wolf: {},
       presses: [],
@@ -314,6 +345,74 @@ export function Setup({ onCancel, onStart }: Props) {
           ))}
         </div>
       </section>
+
+      {showNassau && (
+        <section className="card">
+          <h2>Nassau teams</h2>
+          <div className="seg">
+            <button
+              className={`seg-btn${nassauMode === '1v1' ? ' active' : ''}`}
+              onClick={() => setNassauMode('1v1')}
+            >
+              1 v 1
+            </button>
+            <button
+              className={`seg-btn${nassauMode === '2v2' ? ' active' : ''}`}
+              onClick={() => canTeams && setNassauMode('2v2')}
+              disabled={!canTeams}
+            >
+              2 v 2
+            </button>
+          </div>
+
+          {nassauMode === '1v1' ? (
+            <div className="nassau-1v1">
+              <label className="field">
+                <span>Side A</span>
+                <select value={effA} onChange={(e) => setSideA(e.target.value)}>
+                  {namedPlayers.map((p, i) => (
+                    <option key={p.id} value={p.id}>
+                      {nameOrPlaceholder(p, i)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <span className="vs">vs</span>
+              <label className="field">
+                <span>Side B</span>
+                <select value={effB} onChange={(e) => setSideB(e.target.value)}>
+                  {namedPlayers.map((p, i) => (
+                    <option key={p.id} value={p.id}>
+                      {nameOrPlaceholder(p, i)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          ) : (
+            <div className="team-assign">
+              <p className="hint-inline">Assign exactly 2 players to each team.</p>
+              {namedPlayers.map((p, i) => (
+                <div key={p.id} className="assign-row">
+                  <span className="assign-name">{nameOrPlaceholder(p, i)}</span>
+                  <div className="seg small">
+                    {(['A', 'B', '-'] as const).map((v) => (
+                      <button
+                        key={v}
+                        className={`seg-btn${assignOf(p.id, i) === v ? ' active' : ''}`}
+                        onClick={() => setAssign(p.id, v)}
+                      >
+                        {v === '-' ? 'Out' : `Team ${v}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {!canTeams && <p className="hint-inline">Add 4 players to enable 2 v 2.</p>}
+        </section>
+      )}
 
       {(showNet || showStableford || showWolf) && (
         <section className="card">

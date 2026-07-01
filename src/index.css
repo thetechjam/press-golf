@@ -381,6 +381,51 @@ select:focus {
   display: flex;
   gap: 12px;
 }
+
+.seg-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.seg.small {
+  gap: 6px;
+  margin-bottom: 0;
+}
+.seg.small .seg-btn {
+  padding: 8px 6px;
+  font-size: 0.8rem;
+  min-height: 40px;
+}
+.nassau-1v1 {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.nassau-1v1 .field {
+  flex: 1;
+}
+.nassau-1v1 .vs {
+  color: var(--muted);
+  font-weight: 700;
+  padding-bottom: 14px;
+}
+.team-assign {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.assign-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.assign-name {
+  flex: 1;
+  font-weight: 600;
+}
+.assign-row .seg {
+  flex: 0 0 auto;
+  width: 190px;
+}
 .field.small {
   flex: 1;
   flex-direction: row;

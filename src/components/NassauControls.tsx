@@ -1,6 +1,6 @@
 import type { Round, Hole } from '../types';
-import { matchSegment } from '../games/matchPlay';
-import { nineHolesFor, endOfNine } from '../games/nassau';
+import { matchSegmentSides } from '../games/matchPlay';
+import { nineHolesFor, endOfNine, nassauTeams } from '../games/nassau';
 
 interface Props {
   round: Round;
@@ -11,11 +11,11 @@ interface Props {
 export function NassauControls({ round, hole, onChange }: Props) {
   if (round.players.length < 2) return null;
 
-  const [p1, p2] = round.players;
+  const { a, b } = nassauTeams(round);
   const nine = nineHolesFor(round, hole.number);
   const hasBackNine = round.holes.some((h) => h.number > 9);
   const nineLabel = !hasBackNine ? 'Match' : hole.number <= 9 ? 'Front' : 'Back';
-  const seg = matchSegment(round, nine, p1, p2);
+  const seg = matchSegmentSides(round, nine, a, b);
   const end = endOfNine(round, hole.number);
   // A press starts even on the remaining holes of this nine, i.e. the next hole.
   const start = hole.number + 1;

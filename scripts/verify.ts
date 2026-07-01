@@ -222,5 +222,44 @@ console.log('Settlement — Nassau press:');
   check('Bo −$10', s.totals.b === -10, s.totals.b);
 }
 
+// --- Settlement: 2v2 Nassau, best ball, Team A (a & c) sweeps ---
+console.log('Settlement — 2v2 Nassau best ball:');
+{
+  const r = baseRound({
+    players: [
+      { id: 'a', name: 'Al' },
+      { id: 'b', name: 'Bo' },
+      { id: 'c', name: 'Cy' },
+      { id: 'd', name: 'Di' },
+    ],
+    holes: [
+      { number: 1, par: 4 },
+      { number: 2, par: 4 },
+    ],
+    games: ['nassau'],
+    options: {
+      ...opts,
+      stakes: { nassau: 10 },
+      nassau: { mode: '2v2', teamA: ['a', 'c'], teamB: ['b', 'd'] },
+    },
+    scores: {
+      1: { a: 4, c: 6, b: 5, d: 5 }, // A best 4 vs B best 5 → A
+      2: { a: 3, c: 7, b: 4, d: 6 }, // A best 3 vs B best 4 → A
+    },
+  });
+  const s = computeSettlement(r);
+  check('zero-sum', Math.abs(Object.values(s.totals).reduce((x, y) => x + y, 0)) < 1e-9, s.totals);
+  check(
+    'Team A (Al, Cy) each +$10',
+    s.totals.a === 10 && s.totals.c === 10,
+    { a: s.totals.a, c: s.totals.c }
+  );
+  check(
+    'Team B (Bo, Di) each −$10',
+    s.totals.b === -10 && s.totals.d === -10,
+    { b: s.totals.b, d: s.totals.d }
+  );
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail > 0) process.exit(1);

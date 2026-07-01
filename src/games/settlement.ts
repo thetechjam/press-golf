@@ -2,8 +2,8 @@ import type { Round, GameType } from '../types';
 import { computeSkins } from './skins';
 import { computeStableford } from './stableford';
 import { computeWolf } from './wolf';
-import { matchSegment } from './matchPlay';
-import { nassauSegments } from './nassau';
+import { matchSegment, matchSegmentSides } from './matchPlay';
+import { nassauSegments, nassauTeams } from './nassau';
 import { totalStrokesReceived } from './handicap';
 
 export interface Transaction {
@@ -115,10 +115,10 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
     if (round.players.length < 2) return net;
     const [p1, p2] = round.players;
     const seg = matchSegment(round, round.holes, p1, p2);
-    if (seg.winnerId === p1.id) {
+    if (seg.winner === 'A') {
       net[p1.id] = stake;
       net[p2.id] = -stake;
-    } else if (seg.winnerId === p2.id) {
+    } else if (seg.winner === 'B') {
       net[p2.id] = stake;
       net[p1.id] = -stake;
     }
@@ -127,15 +127,18 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
 
   if (gameType === 'nassau') {
     if (round.players.length < 2) return net;
-    const [p1, p2] = round.players;
-    let p1net = 0;
+    // Each bet is worth `stake` per player: winning side collects, losing side pays.
+    const { a, b } = nassauTeams(round);
     for (const seg of nassauSegments(round)) {
-      const r = matchSegment(round, seg.holes, p1, p2);
-      if (r.winnerId === p1.id) p1net += stake;
-      else if (r.winnerId === p2.id) p1net -= stake;
+      const r = matchSegmentSides(round, seg.holes, a, b);
+      if (r.winner === 'A') {
+        a.ids.forEach((id) => (net[id] += stake));
+        b.ids.forEach((id) => (net[id] -= stake));
+      } else if (r.winner === 'B') {
+        b.ids.forEach((id) => (net[id] += stake));
+        a.ids.forEach((id) => (net[id] -= stake));
+      }
     }
-    net[p1.id] = p1net;
-    net[p2.id] = -p1net;
     return net;
   }
 

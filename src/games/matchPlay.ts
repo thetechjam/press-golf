@@ -1,84 +1,107 @@
 import type { Round, Hole, Player, GameResult, GameStanding } from '../types';
 import { holeScore } from './handicap';
 
+/** A side in a match: one player (1v1) or a team (2v2, best ball). */
+export interface Side {
+  ids: string[];
+  label: string;
+}
+
 export interface SegmentResult {
-  /** Holes won by p1 minus holes won by p2. */
+  /** Holes won by side A minus holes won by side B. */
   margin: number;
   holesPlayed: number;
   totalHoles: number;
   decided: boolean;
-  /** Winner's player id, or null while undecided / halved. */
-  winnerId: string | null;
+  /** Winning side, or null while undecided / halved. */
+  winner: 'A' | 'B' | null;
   status: string;
 }
 
-/** Plays out a match between two players over a set of holes. */
+/** Best (lowest) score for a side on a hole; null if no member has a score. */
+function sideBest(round: Round, ids: string[], hole: Hole, useNet: boolean): number | null {
+  const scores = ids
+    .map((id) => holeScore(round, id, hole, useNet))
+    .filter((s): s is number => s != null);
+  return scores.length ? Math.min(...scores) : null;
+}
+
+/** Plays out a match between two sides over a set of holes (best ball for teams). */
+export function matchSegmentSides(
+  round: Round,
+  holes: Hole[],
+  a: Side,
+  b: Side
+): SegmentResult {
+  let margin = 0; // + = side A up
+  let played = 0;
+  const useNet = round.options.useNet;
+
+  for (const h of holes) {
+    const sa = sideBest(round, a.ids, h, useNet);
+    const sb = sideBest(round, b.ids, h, useNet);
+    if (sa == null || sb == null) continue;
+    played += 1;
+    if (sa < sb) margin += 1;
+    else if (sb < sa) margin -= 1;
+
+    const remaining = holes.length - played;
+    if (Math.abs(margin) > remaining) {
+      const winner: 'A' | 'B' = margin > 0 ? 'A' : 'B';
+      const label = margin > 0 ? a.label : b.label;
+      const up = Math.abs(margin);
+      const status =
+        remaining > 0 ? `${label} won ${up}&${remaining}` : `${label} won ${up} UP`;
+      return { margin, holesPlayed: played, totalHoles: holes.length, decided: true, winner, status };
+    }
+  }
+
+  let status: string;
+  let winner: 'A' | 'B' | null = null;
+  if (played === 0) {
+    status = 'Not started';
+  } else if (margin === 0) {
+    status = played === holes.length ? 'Halved' : 'All square';
+  } else {
+    const label = margin > 0 ? a.label : b.label;
+    const up = Math.abs(margin);
+    const remaining = holes.length - played;
+    if (played === holes.length) {
+      status = `${label} won ${up} UP`;
+      winner = margin > 0 ? 'A' : 'B';
+    } else {
+      status = `${label} ${up} UP · ${remaining} to play`;
+    }
+  }
+
+  return { margin, holesPlayed: played, totalHoles: holes.length, decided: false, winner, status };
+}
+
+/** 1v1 convenience wrapper. */
 export function matchSegment(
   round: Round,
   holes: Hole[],
   p1: Player,
   p2: Player
 ): SegmentResult {
-  let margin = 0;
-  let played = 0;
-  let decided = false;
-  let winnerId: string | null = null;
-  const useNet = round.options.useNet;
-
-  for (const h of holes) {
-    const s1 = holeScore(round, p1.id, h, useNet);
-    const s2 = holeScore(round, p2.id, h, useNet);
-    if (s1 == null || s2 == null) continue;
-    played += 1;
-    if (s1 < s2) margin += 1;
-    else if (s2 < s1) margin -= 1;
-
-    const remaining = holes.length - played;
-    if (Math.abs(margin) > remaining) {
-      decided = true;
-      winnerId = margin > 0 ? p1.id : p2.id;
-      // Closeout notation: "{up}&{remaining}", or "{up} UP" if it went the distance.
-      const up = Math.abs(margin);
-      const winner = margin > 0 ? p1 : p2;
-      const status =
-        remaining > 0 ? `${winner.name} won ${up}&${remaining}` : `${winner.name} won ${up} UP`;
-      return { margin, holesPlayed: played, totalHoles: holes.length, decided, winnerId, status };
-    }
-  }
-
-  let status: string;
-  if (played === 0) {
-    status = 'Not started';
-  } else if (margin === 0) {
-    status = played === holes.length ? 'Halved' : 'All square';
-  } else {
-    const leader = margin > 0 ? p1 : p2;
-    const up = Math.abs(margin);
-    const remaining = holes.length - played;
-    status =
-      played === holes.length
-        ? `${leader.name} won ${up} UP`
-        : `${leader.name} ${up} UP · ${remaining} to play`;
-    if (played === holes.length) winnerId = leader.id;
-  }
-
-  return { margin, holesPlayed: played, totalHoles: holes.length, decided, winnerId, status };
-}
-
-function twoPlayerGuard(round: Round, gameType: 'matchPlay' | 'nassau'): GameResult | null {
-  if (round.players.length >= 2) return null;
-  return {
-    gameType,
-    title: gameType === 'nassau' ? 'Nassau' : 'Match Play',
-    status: 'Needs 2 players',
-    standings: [],
-    note: 'Add a second player to start this match.',
-  };
+  return matchSegmentSides(
+    round,
+    holes,
+    { ids: [p1.id], label: p1.name },
+    { ids: [p2.id], label: p2.name }
+  );
 }
 
 export function computeMatchPlay(round: Round): GameResult {
-  const guard = twoPlayerGuard(round, 'matchPlay');
-  if (guard) return guard;
+  if (round.players.length < 2) {
+    return {
+      gameType: 'matchPlay',
+      title: 'Match Play',
+      status: 'Needs 2 players',
+      standings: [],
+      note: 'Add a second player to start this match.',
+    };
+  }
 
   const [p1, p2] = round.players;
   const seg = matchSegment(round, round.holes, p1, p2);
@@ -107,7 +130,6 @@ export function computeMatchPlay(round: Round): GameResult {
     title: round.options.useNet ? 'Match Play (Net)' : 'Match Play',
     status: seg.status,
     standings,
-    note:
-      round.players.length > 2 ? 'Match is between the first two players' : undefined,
+    note: round.players.length > 2 ? 'Match is between the first two players' : undefined,
   };
 }
