@@ -2,11 +2,12 @@ import { useState } from 'react';
 import type { Round } from './types';
 import { Home } from './screens/Home';
 import { Setup } from './screens/Setup';
+import { LeagueSetup } from './screens/LeagueSetup';
 import { Play } from './screens/Play';
 import { Results } from './screens/Results';
 import { saveRound } from './storage';
 
-type View = 'home' | 'setup' | 'play' | 'results';
+type View = 'home' | 'setup' | 'leagueSetup' | 'play' | 'results';
 
 export default function App() {
   const [view, setView] = useState<View>('home');
@@ -31,6 +32,10 @@ export default function App() {
             setRound(null);
             setView('setup');
           }}
+          onNewLeague={() => {
+            setRound(null);
+            setView('leagueSetup');
+          }}
           onResume={(r) => {
             setRound(r);
             setView('play');
@@ -44,6 +49,16 @@ export default function App() {
 
       {view === 'setup' && (
         <Setup
+          onCancel={() => setView('home')}
+          onStart={(r) => {
+            update(r);
+            setView('play');
+          }}
+        />
+      )}
+
+      {view === 'leagueSetup' && (
+        <LeagueSetup
           onCancel={() => setView('home')}
           onStart={(r) => {
             update(r);

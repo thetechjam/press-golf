@@ -54,6 +54,19 @@ export interface TeamSetup {
   teamB: string[]; // player ids
 }
 
+/** A league team: an A player and a B player. */
+export interface LeagueTeam {
+  name?: string;
+  aId: string; // A player id
+  bId: string; // B player id
+}
+
+/** League night format: A-vs-A, B-vs-B, and a combined team match, scored on points. */
+export interface LeagueSetup {
+  teams: [LeagueTeam, LeagueTeam];
+  pointsPerMatch: number;
+}
+
 export interface GameOptions {
   /** Apply handicaps where a game supports net scoring. */
   useNet: boolean;
@@ -64,6 +77,8 @@ export interface GameOptions {
   /** Nassau / Match Play teams (default to 1v1 between the first two players). */
   nassau?: TeamSetup;
   matchPlay?: TeamSetup;
+  /** Present when this is a league-night round. */
+  league?: LeagueSetup;
 }
 
 export interface Round {

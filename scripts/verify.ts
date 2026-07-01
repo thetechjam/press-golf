@@ -5,6 +5,7 @@ import { computeMatchPlay } from '../src/games/matchPlay';
 import { computeWolf } from '../src/games/wolf';
 
 import { computeSettlement } from '../src/games/settlement';
+import { computeLeague } from '../src/games/league';
 
 const opts: GameOptions = {
   useNet: false,
@@ -290,6 +291,42 @@ console.log('Settlement — 2v2 Match Play:');
   check('zero-sum', Math.abs(Object.values(s.totals).reduce((x, y) => x + y, 0)) < 1e-9, s.totals);
   check('Team A each +$20', s.totals.a === 20 && s.totals.c === 20, { a: s.totals.a, c: s.totals.c });
   check('Team B each −$20', s.totals.b === -20 && s.totals.d === -20, { b: s.totals.b, d: s.totals.d });
+}
+
+// --- League night: A win, B halved, team win; points 2.5 – 0.5 ---
+console.log('League — A/B/team matches + points:');
+{
+  const holes = Array.from({ length: 9 }, (_, i) => ({ number: i + 1, par: 4, strokeIndex: i + 1 }));
+  const scores: Round['scores'] = {};
+  for (let n = 1; n <= 9; n++) scores[n] = { al: 4, bo: 5, cy: 5, di: 5 };
+  const r = baseRound({
+    players: [
+      { id: 'al', name: 'Al', handicap: 5 },
+      { id: 'bo', name: 'Bo', handicap: 10 },
+      { id: 'cy', name: 'Cy', handicap: 5 },
+      { id: 'di', name: 'Di', handicap: 10 },
+    ],
+    holes,
+    games: [],
+    options: {
+      ...opts,
+      league: { pointsPerMatch: 1, teams: [{ aId: 'al', bId: 'bo' }, { aId: 'cy', bId: 'di' }] },
+    },
+    scores,
+  });
+  const L = computeLeague(r);
+  const a = L.matches.find((m) => m.key === 'A')!;
+  const b = L.matches.find((m) => m.key === 'B')!;
+  const tm = L.matches.find((m) => m.key === 'team')!;
+  check('A match won by team 0', a.winner === 'A' && a.over, a);
+  check('B match halved (final)', b.winner === null && b.over, { winner: b.winner, over: b.over });
+  check('Team match won by team 0', tm.winner === 'A' && tm.over, tm);
+  check(
+    'points 2.5 – 0.5',
+    L.teams[0].points === 2.5 && L.teams[1].points === 0.5,
+    L.teams.map((t) => t.points)
+  );
+  check('complete', L.complete === true, L.complete);
 }
 
 console.log(`\n${pass} passed, ${fail} failed`);

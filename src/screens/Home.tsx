@@ -5,11 +5,12 @@ import { InstallPrompt } from '../components/InstallPrompt';
 
 interface Props {
   onNew: () => void;
+  onNewLeague: () => void;
   onResume: (round: Round) => void;
   onViewResults: (round: Round) => void;
 }
 
-export function Home({ onNew, onResume, onViewResults }: Props) {
+export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
   const [rounds, setRounds] = useState<Round[]>(listRounds());
 
   const remove = (id: string) => {
@@ -26,6 +27,10 @@ export function Home({ onNew, onResume, onViewResults }: Props) {
 
       <button className="btn-primary big" onClick={onNew}>
         Start New Round
+      </button>
+
+      <button className="btn-secondary big" onClick={onNewLeague}>
+        🏆 Golf League
       </button>
 
       <InstallPrompt />

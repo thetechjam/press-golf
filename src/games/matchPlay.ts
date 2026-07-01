@@ -26,20 +26,23 @@ function sideBest(round: Round, ids: string[], hole: Hole, useNet: boolean): num
   return scores.length ? Math.min(...scores) : null;
 }
 
-/** Plays out a match between two sides over a set of holes (best ball for teams). */
-export function matchSegmentSides(
-  round: Round,
+/**
+ * Core match-play evaluator: walks the holes comparing two per-hole score
+ * accessors (lower wins the hole) and produces status + winner with closeout.
+ */
+export function runMatch(
   holes: Hole[],
-  a: Side,
-  b: Side
+  aScore: (h: Hole) => number | null,
+  bScore: (h: Hole) => number | null,
+  labelA: string,
+  labelB: string
 ): SegmentResult {
   let margin = 0; // + = side A up
   let played = 0;
-  const useNet = round.options.useNet;
 
   for (const h of holes) {
-    const sa = sideBest(round, a.ids, h, useNet);
-    const sb = sideBest(round, b.ids, h, useNet);
+    const sa = aScore(h);
+    const sb = bScore(h);
     if (sa == null || sb == null) continue;
     played += 1;
     if (sa < sb) margin += 1;
@@ -48,7 +51,7 @@ export function matchSegmentSides(
     const remaining = holes.length - played;
     if (Math.abs(margin) > remaining) {
       const winner: 'A' | 'B' = margin > 0 ? 'A' : 'B';
-      const label = margin > 0 ? a.label : b.label;
+      const label = margin > 0 ? labelA : labelB;
       const up = Math.abs(margin);
       const status =
         remaining > 0 ? `${label} won ${up}&${remaining}` : `${label} won ${up} UP`;
@@ -63,7 +66,7 @@ export function matchSegmentSides(
   } else if (margin === 0) {
     status = played === holes.length ? 'Halved' : 'All square';
   } else {
-    const label = margin > 0 ? a.label : b.label;
+    const label = margin > 0 ? labelA : labelB;
     const up = Math.abs(margin);
     const remaining = holes.length - played;
     if (played === holes.length) {
@@ -75,6 +78,23 @@ export function matchSegmentSides(
   }
 
   return { margin, holesPlayed: played, totalHoles: holes.length, decided: false, winner, status };
+}
+
+/** Plays out a match between two sides over a set of holes (best ball for teams). */
+export function matchSegmentSides(
+  round: Round,
+  holes: Hole[],
+  a: Side,
+  b: Side
+): SegmentResult {
+  const useNet = round.options.useNet;
+  return runMatch(
+    holes,
+    (h) => sideBest(round, a.ids, h, useNet),
+    (h) => sideBest(round, b.ids, h, useNet),
+    a.label,
+    b.label
+  );
 }
 
 /** 1v1 convenience wrapper. */

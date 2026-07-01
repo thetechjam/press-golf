@@ -100,6 +100,43 @@ button {
   min-height: var(--tap);
 }
 
+.btn-secondary {
+  background: var(--card);
+  color: var(--green-700);
+  border: 1.5px solid var(--green-600);
+  border-radius: var(--radius);
+  font-weight: 700;
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+.btn-secondary.big {
+  font-size: 1.1rem;
+  padding: 16px;
+  min-height: var(--tap);
+}
+@media (prefers-color-scheme: dark) {
+  .btn-secondary {
+    color: var(--fairway);
+  }
+}
+
+.ab-badge {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  background: var(--green-600);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.8rem;
+  display: grid;
+  place-items: center;
+}
+
 /* ---------- Home ---------- */
 .hero {
   text-align: center;
@@ -773,6 +810,46 @@ select:focus {
 .warn-actions .btn-primary {
   flex: 1;
   padding: 12px;
+}
+
+/* ---------- League ---------- */
+.league-board {
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+}
+.league-matches {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.lmatch {
+  padding: 8px 6px;
+  border-radius: 10px;
+  background: var(--bg);
+}
+.lmatch-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.lmatch-label {
+  font-weight: 700;
+}
+.lmatch-up {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.lmatch-status {
+  font-size: 0.9rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.lmatch-status.final {
+  color: var(--green-600);
+  font-weight: 700;
 }
 
 /* ---------- Settlement ---------- */

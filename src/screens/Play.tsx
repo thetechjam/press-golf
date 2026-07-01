@@ -5,6 +5,7 @@ import { Leaderboard } from '../components/Leaderboard';
 import { WolfControls } from '../components/WolfControls';
 import { NassauControls } from '../components/NassauControls';
 import { Scorecard } from '../components/Scorecard';
+import { LeagueBoard } from '../components/LeagueBoard';
 import { activeResults } from '../games';
 import { wolfForHole } from '../games/wolf';
 import { strokeIndexMap, strokesReceivedOnHole } from '../games/handicap';
@@ -207,9 +208,11 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       )}
 
       <section className="boards">
-        {results.map((r) => (
-          <Leaderboard key={r.gameType} result={r} />
-        ))}
+        {round.options.league ? (
+          <LeagueBoard round={round} />
+        ) : (
+          results.map((r) => <Leaderboard key={r.gameType} result={r} />)
+        )}
       </section>
 
       <div className="play-foot">
