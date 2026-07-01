@@ -18,14 +18,18 @@ interface Props {
 export function Play({ round, onChange, onFinish, onExit }: Props) {
   const [idx, setIdx] = useState(0);
   const [mode, setMode] = useState<'hole' | 'card'>('hole');
+  const [warn, setWarn] = useState<'next' | 'finish' | null>(null);
   const touchX = useRef<number | null>(null);
   const hole = round.holes[idx];
   const last = idx === round.holes.length - 1;
 
-  const go = (next: number) =>
+  const go = (next: number) => {
+    setWarn(null);
     setIdx(Math.max(0, Math.min(round.holes.length - 1, next)));
+  };
 
   const setScore = (playerId: string, value: number | null) => {
+    setWarn(null);
     const holeScores = { ...(round.scores[hole.number] ?? {}), [playerId]: value };
     onChange({ ...round, scores: { ...round.scores, [hole.number]: holeScores } });
   };
@@ -37,6 +41,24 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       ...round,
       wolf: { ...round.wolf, [hole.number]: { wolfPlayerId, choice } },
     });
+  };
+
+  // Players with no score on the current hole.
+  const missing = round.players
+    .filter((p) => round.scores[hole.number]?.[p.id] == null)
+    .map((p) => p.name);
+
+  // Holes anywhere in the round with at least one blank score.
+  const incompleteHoles = round.holes.filter((h) =>
+    round.players.some((p) => round.scores[h.number]?.[p.id] == null)
+  ).length;
+
+  const tryNext = () => (missing.length ? setWarn('next') : go(idx + 1));
+  const tryFinish = () => (incompleteHoles > 0 ? setWarn('finish') : onFinish());
+  const confirmProceed = () => {
+    if (warn === 'next') go(idx + 1);
+    else onFinish();
+    setWarn(null);
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -60,7 +82,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           ‹ Rounds
         </button>
         <h1>{round.course || 'Round'}</h1>
-        <button className="btn-ghost" onClick={onFinish}>
+        <button className="btn-ghost" onClick={tryFinish}>
           Finish
         </button>
       </header>
@@ -148,12 +170,31 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       </section>
 
       <div className="play-foot">
+        {warn && (
+          <div className="warn-banner" role="alert">
+            <p>
+              {warn === 'next'
+                ? `No score yet for ${missing.join(', ')}. Move to the next hole anyway?`
+                : `${incompleteHoles} ${
+                    incompleteHoles === 1 ? 'hole is' : 'holes are'
+                  } missing scores. Finish the round anyway?`}
+            </p>
+            <div className="warn-actions">
+              <button className="warn-keep" onClick={() => setWarn(null)}>
+                Keep scoring
+              </button>
+              <button className="btn-primary" onClick={confirmProceed}>
+                {warn === 'next' ? 'Skip anyway' : 'Finish anyway'}
+              </button>
+            </div>
+          </div>
+        )}
         {last ? (
-          <button className="btn-primary big" onClick={onFinish}>
+          <button className="btn-primary big" onClick={tryFinish}>
             Finish Round →
           </button>
         ) : (
-          <button className="btn-primary big" onClick={() => go(idx + 1)}>
+          <button className="btn-primary big" onClick={tryNext}>
             Next Hole →
           </button>
         )}

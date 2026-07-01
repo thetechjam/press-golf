@@ -589,6 +589,36 @@ select:focus {
 .play-foot {
   margin-top: 4px;
 }
+.warn-banner {
+  background: color-mix(in srgb, var(--gold) 18%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.warn-banner p {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+.warn-actions {
+  display: flex;
+  gap: 8px;
+}
+.warn-keep {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+.warn-actions .btn-primary {
+  flex: 1;
+  padding: 12px;
+}
 
 /* ---------- Results ---------- */
 .results-meta {
