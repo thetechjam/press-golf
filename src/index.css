@@ -264,38 +264,59 @@ select:focus {
   outline: 2px solid var(--fairway);
 }
 
-.course-faves {
+.course-picker {
+  border-color: color-mix(in srgb, var(--fairway) 40%, var(--line));
+}
+.saved-course-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
-.faves-label {
-  font-size: 0.82rem;
-  color: var(--muted);
-}
-.fave-chips {
+.saved-course-row {
   display: flex;
-  flex-wrap: wrap;
+  align-items: stretch;
   gap: 8px;
 }
-.fave-chip {
-  display: inline-flex;
-  align-items: stretch;
+.saved-course-load {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  padding: 12px 14px;
+  min-height: var(--tap);
   border: 1px solid var(--line);
-  border-radius: 999px;
-  overflow: hidden;
-  background: var(--card);
+  border-radius: 12px;
+  background: var(--bg);
+  transition: transform 0.08s ease;
 }
-.fave-load {
-  padding: 8px 12px;
-  font-weight: 600;
+.saved-course-load:active {
+  transform: scale(0.99);
+  background: color-mix(in srgb, var(--fairway) 12%, var(--card));
+}
+.saved-course-name {
+  font-weight: 700;
   color: var(--green-700);
-  cursor: pointer;
 }
-.fave-del {
-  padding: 0 12px;
+@media (prefers-color-scheme: dark) {
+  .saved-course-name {
+    color: var(--fairway);
+  }
+}
+.saved-course-meta {
+  font-size: 0.78rem;
   color: var(--muted);
-  border-left: 1px solid var(--line);
+}
+.saved-course-del {
+  width: 44px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--muted);
+  font-size: 1.3rem;
+  line-height: 1;
   cursor: pointer;
 }
 

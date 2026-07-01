@@ -206,6 +206,32 @@ export function Setup({ onCancel, onStart }: Props) {
         <span />
       </header>
 
+      {courses.length > 0 && (
+        <section className="card course-picker">
+          <h2>Load a saved course</h2>
+          <div className="saved-course-list">
+            {courses.map((c) => (
+              <div key={c.id} className="saved-course-row">
+                <button className="saved-course-load" onClick={() => loadCourse(c)}>
+                  <span className="saved-course-name">{c.name}</span>
+                  <span className="saved-course-meta">
+                    {c.holes.length} holes · par {c.holes.reduce((s, h) => s + h.par, 0)}
+                    {c.holes.some((h) => h.strokeIndex) ? ' · SI set' : ''}
+                  </span>
+                </button>
+                <button
+                  className="saved-course-del"
+                  onClick={() => removeCourse(c.id)}
+                  aria-label={`Delete saved course ${c.name}`}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       <label className="field">
         <span>Course (optional)</span>
         <input
@@ -214,28 +240,6 @@ export function Setup({ onCancel, onStart }: Props) {
           placeholder="Pebble Beach"
         />
       </label>
-
-      {courses.length > 0 && (
-        <div className="course-faves">
-          <span className="faves-label">Saved courses</span>
-          <div className="fave-chips">
-            {courses.map((c) => (
-              <span key={c.id} className="fave-chip">
-                <button className="fave-load" onClick={() => loadCourse(c)}>
-                  {c.name}
-                </button>
-                <button
-                  className="fave-del"
-                  onClick={() => removeCourse(c.id)}
-                  aria-label={`Delete saved course ${c.name}`}
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
 
       <section className="card">
         <h2>Players</h2>
