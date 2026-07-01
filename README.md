@@ -1,34 +1,69 @@
 [![CI](https://github.com/thetechjam/press-golf/actions/workflows/ci.yml/badge.svg)](https://github.com/thetechjam/press-golf/actions/workflows/ci.yml)
 
-# React + TypeScript + Vite
+# Press ⛳️
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+**Press** is a mobile-first web app for tracking golf side-games. One scorekeeper
+enters scores for the whole group on a single phone, and Press does the math —
+live leaderboards while you play and a settle-up summary at the end.
 
-Currently, two official plugins are available:
+No accounts, no sign-up, nothing to install from a store. It runs entirely in
+your browser, works offline, and keeps everything on your device.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+**▶️ Live app: [pressgolf.netlify.app](https://pressgolf.netlify.app)**
 
-## React Compiler
+## Games
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Stroke play** — gross or net
+- **Match play** — 1v1 and 2v2 best-ball
+- **Skins**
+- **Stableford**
+- **Wolf**
+- **Nassau** — 1v1 and 2v2, with manual presses
+- **Golf League** — Thursday-night format (A/B singles + combined team match, league points)
 
-## Expanding the Oxlint configuration
+Net scoring with per-hole handicap strokes is supported throughout (capped at one
+stroke per hole). Save a course's pars and stroke indexes once and reload them
+with a tap, or pull them live from course search.
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
+## Settling up
 
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+Set a stake per game and Press resolves everyone's net result to a zero-sum total,
+then works out the fewest payments needed to settle the whole group.
+
+## Getting started
+
+Requires [Node](https://nodejs.org) 24+ (see `.nvmrc`).
+
+```bash
+npm install
+npm run dev            # local dev server
+npm run dev -- --host  # expose on your LAN to test on a phone
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Other scripts:
+
+```bash
+npm run test       # run the scoring-engine test suite
+npm run typecheck  # tsc --noEmit
+npm run lint       # oxlint
+npm run build      # production build
+```
+
+## How it's built
+
+Vite + React + TypeScript, shipped as an installable PWA. Each game is a
+pure-function scoring engine in [`src/games/`](./src/games), kept separate from
+the UI so the math is unit-tested independently. Deployed to Netlify on every
+push to `main`.
+
+## License
+
+Press is released under the [PolyForm Noncommercial License 1.0.0](./LICENSE) —
+free to use, modify, and share for any **noncommercial** purpose (play all the
+golf games you want). Commercial rights are reserved.
+
+**Why this license?** It matches how Press is meant to be used today — shared
+freely with friends for their rounds — while keeping the door open to a paid
+product later. As the sole copyright holder I can always loosen this to a fully
+open license (e.g. MIT), but a permissive release can't be taken back, so
+starting protective costs nothing and preserves every option.
