@@ -329,5 +329,36 @@ console.log('League — A/B/team matches + points:');
   check('complete', L.complete === true, L.complete);
 }
 
+// --- League handicap cap: max 1 stroke/hole, 9 per match ---
+// Al (hcp 20) vs Cy (hcp 0), diff 20. Uncapped on a 9-hole card that's 2
+// strokes on every hole (20-9=11 ≥ every SI), which would net Al to 3 and win
+// every hole. Capped at 9 it's 1 stroke/hole → Al nets 4 → every hole halved.
+console.log('League — handicap capped at 1 stroke/hole (9 max):');
+{
+  const holes = Array.from({ length: 9 }, (_, i) => ({ number: i + 1, par: 4, strokeIndex: i + 1 }));
+  const scores: Round['scores'] = {};
+  for (let n = 1; n <= 9; n++) scores[n] = { al: 5, bo: 4, cy: 4, di: 4 };
+  const r = baseRound({
+    players: [
+      { id: 'al', name: 'Al', handicap: 20 },
+      { id: 'bo', name: 'Bo', handicap: 0 },
+      { id: 'cy', name: 'Cy', handicap: 0 },
+      { id: 'di', name: 'Di', handicap: 0 },
+    ],
+    holes,
+    games: [],
+    options: {
+      ...opts,
+      league: { pointsPerMatch: 1, teams: [{ aId: 'al', bId: 'bo' }, { aId: 'cy', bId: 'di' }] },
+    },
+    scores,
+  });
+  const a = computeLeague(r).matches.find((m) => m.key === 'A')!;
+  check('A match halved (1 stroke/hole, not 2)', a.winner === null && a.over, {
+    winner: a.winner,
+    over: a.over,
+  });
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail > 0) process.exit(1);

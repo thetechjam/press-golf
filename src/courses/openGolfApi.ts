@@ -77,15 +77,26 @@ export async function fetchCourse(id: string, signal?: AbortSignal): Promise<Fet
 }
 
 /**
- * Slice a fetched scorecard to `count` holes and renumber 1..count.
+ * Slice a fetched scorecard to `count` holes and renumber them.
+ * - `nine: 'front'` (default) takes the first `count`, numbered 1..count.
+ * - `nine: 'back'` takes the last `count`, numbered 10..(9+count) — so a
+ *   back-nine round reads as holes 10–18.
  * When every selected hole has a stroke index, re-rank those indexes into
  * 1..count (hardest = 1) so handicap allocation is correct on a partial course
- * (e.g. front 9 of an 18-hole card). If any is missing, stroke indexes are
- * dropped entirely — handicap.ts requires a full set or it ignores them.
+ * (the back nine's raw indexes are e.g. even-only, and handicap.ts needs a
+ * contiguous 1..N set). If any is missing, stroke indexes are dropped entirely —
+ * handicap.ts requires a full set or it ignores them.
  */
-export function sliceCourseHoles(holes: Hole[], count: number): Hole[] {
-  const sliced = holes.slice(0, count).map((h, i) => ({
-    number: i + 1,
+export function sliceCourseHoles(
+  holes: Hole[],
+  count: number,
+  opts: { nine?: 'front' | 'back' } = {}
+): Hole[] {
+  const back = opts.nine === 'back';
+  const source = back ? holes.slice(-count) : holes.slice(0, count);
+  const startNumber = back ? 10 : 1;
+  const sliced = source.map((h, i) => ({
+    number: startNumber + i,
     par: h.par,
     strokeIndex: h.strokeIndex,
   }));

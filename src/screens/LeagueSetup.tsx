@@ -16,14 +16,23 @@ interface TeamState {
   b: Player;
 }
 
-const makeHoles = (): Hole[] =>
-  Array.from({ length: 9 }, (_, i) => ({ number: i + 1, par: 4, strokeIndex: i + 1 }));
+type Nine = 'front' | 'back';
+
+const makeHoles = (nine: Nine): Hole[] => {
+  const start = nine === 'back' ? 10 : 1;
+  return Array.from({ length: 9 }, (_, i) => ({ number: start + i, par: 4, strokeIndex: i + 1 }));
+};
 
 const newPlayer = (): Player => ({ id: uid(), name: '', handicap: undefined });
 
 export function LeagueSetup({ onCancel, onStart }: Props) {
   const [course, setCourse] = useState('');
-  const [holes, setHoles] = useState<Hole[]>(makeHoles());
+  const [nine, setNine] = useState<Nine>('front');
+  const [holes, setHoles] = useState<Hole[]>(makeHoles('front'));
+  // Full scorecard behind the current nine (18 holes when loaded from a course),
+  // so switching Front/Back re-slices the correct pars/indexes instead of just
+  // relabeling. Null when holes were entered by hand.
+  const [source, setSource] = useState<Hole[] | null>(null);
   const [pointsPerMatch, setPointsPerMatch] = useState(1);
   const [teams, setTeams] = useState<TeamState[]>([
     { name: '', a: newPlayer(), b: newPlayer() },
@@ -32,6 +41,17 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   const [savedNote, setSavedNote] = useState('');
   const [error, setError] = useState('');
+
+  const switchNine = (n: Nine) => {
+    setNine(n);
+    if (source && source.length >= 18) {
+      setHoles(sliceCourseHoles(source, 9, { nine: n }));
+    } else {
+      // Manual entry or a 9-hole source: keep pars/indexes, just renumber.
+      const start = n === 'back' ? 10 : 1;
+      setHoles((hs) => hs.map((h, i) => ({ ...h, number: start + i })));
+    }
+  };
 
   const updatePlayer = (ti: number, role: 'a' | 'b', patch: Partial<Player>) =>
     setTeams((ts) =>
@@ -47,10 +67,9 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
 
   const loadCourse = (c: SavedCourse) => {
     setCourse(c.name);
-    // League is 9 holes; take the first nine of the saved course.
-    const nine = c.holes.slice(0, 9).map((h, i) => ({ ...h, number: i + 1 }));
-    setHoles(nine.length === 9 ? nine : makeHoles());
-    setSavedNote(`Loaded "${c.name}"`);
+    setSource(c.holes);
+    setHoles(sliceCourseHoles(c.holes, 9, { nine }));
+    setSavedNote(`Loaded "${c.name}" — ${nine === 'back' ? 'back 9' : 'front 9'}`);
   };
   const saveFavorite = () => {
     const name = course.trim();
@@ -67,17 +86,23 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
   };
 
   const loadFromApi = (c: FetchedCourse) => {
-    if (c.holes.length < 9) {
-      setError(`"${c.name}" has no full 9-hole scorecard in the database.`);
+    const need = nine === 'back' ? 18 : 9;
+    if (c.holes.length < need) {
+      setError(
+        `"${c.name}" has no ${nine === 'back' ? 'back' : 'full'} 9-hole scorecard in the database.`
+      );
       return;
     }
     setCourse(c.name);
-    setHoles(sliceCourseHoles(c.holes, 9));
+    setSource(c.holes);
+    const applied = sliceCourseHoles(c.holes, 9, { nine });
+    setHoles(applied);
     setError('');
+    const label = nine === 'back' ? 'back 9' : 'front 9';
     setSavedNote(
-      c.holes.slice(0, 9).every((h) => typeof h.strokeIndex === 'number')
-        ? `Loaded front 9 of "${c.name}" — par + stroke index`
-        : `Loaded front 9 of "${c.name}" — par only`
+      applied.some((h) => typeof h.strokeIndex === 'number')
+        ? `Loaded ${label} of "${c.name}" — par + stroke index`
+        : `Loaded ${label} of "${c.name}" — par only`
     );
   };
 
@@ -196,7 +221,18 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
       ))}
 
       <section className="card">
-        <h2>Course · 9 holes</h2>
+        <h2>Course · {nine === 'back' ? 'Back 9 (holes 10–18)' : 'Front 9 (holes 1–9)'}</h2>
+        <div className="seg">
+          {(['front', 'back'] as const).map((n) => (
+            <button
+              key={n}
+              className={`seg-btn${nine === n ? ' active' : ''}`}
+              onClick={() => switchNine(n)}
+            >
+              {n === 'front' ? 'Front 9' : 'Back 9'}
+            </button>
+          ))}
+        </div>
         <div className="par-grid">
           {holes.map((h) => (
             <div key={h.number} className="par-cell">

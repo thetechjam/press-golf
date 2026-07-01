@@ -23,6 +23,12 @@ export function computeLeague(round: Round): LeagueResult {
   const si = strokeIndexMap(round);
   const total = round.holes.length;
 
+  // League rule: a player gets at most 1 stroke per hole, so at most `total`
+  // (9) strokes in a match. Capping the effective handicap at `total` makes the
+  // second-stroke branch of strokesReceivedOnHole unreachable and bounds the
+  // total, regardless of how large the raw handicap difference is.
+  const capHcp = (v: number) => Math.min(Math.max(0, v), total);
+
   const hcp = (id: string) => round.players.find((p) => p.id === id)?.handicap ?? 0;
   const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? '?';
   const teamName = (t: LeagueTeam, i: number) =>
@@ -44,8 +50,8 @@ export function computeLeague(round: Round): LeagueResult {
     const low = Math.min(hcp(id0), hcp(id1));
     const seg = runMatch(
       round.holes,
-      (h) => net(id0, h, hcp(id0) - low),
-      (h) => net(id1, h, hcp(id1) - low),
+      (h) => net(id0, h, capHcp(hcp(id0) - low)),
+      (h) => net(id1, h, capHcp(hcp(id1) - low)),
       nameOf(id0),
       nameOf(id1)
     );
@@ -65,8 +71,8 @@ export function computeLeague(round: Round): LeagueResult {
   // Team match: aggregate net (both partners), strokes off the lowest of all four.
   const low4 = Math.min(hcp(t0.aId), hcp(t0.bId), hcp(t1.aId), hcp(t1.bId));
   const teamAgg = (t: LeagueTeam) => (h: Hole): number | null => {
-    const n1 = net(t.aId, h, hcp(t.aId) - low4);
-    const n2 = net(t.bId, h, hcp(t.bId) - low4);
+    const n1 = net(t.aId, h, capHcp(hcp(t.aId) - low4));
+    const n2 = net(t.bId, h, capHcp(hcp(t.bId) - low4));
     if (n1 == null || n2 == null) return null;
     return n1 + n2;
   };
