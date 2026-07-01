@@ -5,6 +5,8 @@ import { GAMES } from '../games';
 import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
+import { CourseSearch } from '../components/CourseSearch';
+import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 
 interface Props {
   onCancel: () => void;
@@ -44,6 +46,21 @@ export function Setup({ onCancel, onStart }: Props) {
     setHoles(c.holes.map((h) => ({ ...h })));
     setAdvancedHoles(c.holes.some((h) => h.strokeIndex));
     setSavedNote(`Loaded "${c.name}"`);
+  };
+
+  const loadFromApi = (c: FetchedCourse) => {
+    const count = holeCount <= 9 ? Math.min(9, c.holes.length) : Math.min(18, c.holes.length);
+    const applied = sliceCourseHoles(c.holes, count);
+    setCourse(c.name);
+    setHoleCount(count);
+    setHoles(applied);
+    setAdvancedHoles(applied.some((h) => h.strokeIndex));
+    setError('');
+    setSavedNote(
+      applied.some((h) => h.strokeIndex)
+        ? `Loaded "${c.name}" — par + stroke index`
+        : `Loaded "${c.name}" — par only (no stroke index in database)`
+    );
   };
 
   const saveFavorite = () => {
@@ -205,6 +222,8 @@ export function Setup({ onCancel, onStart }: Props) {
         <h1>New Round</h1>
         <span />
       </header>
+
+      <CourseSearch onPick={loadFromApi} />
 
       {courses.length > 0 && (
         <section className="card course-picker">

@@ -264,6 +264,70 @@ select:focus {
   outline: 2px solid var(--fairway);
 }
 
+/* ---------- Course search (OpenGolfAPI) ---------- */
+.course-search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cs-status {
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: 0;
+}
+.cs-error {
+  color: var(--over);
+}
+.cs-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 6px;
+}
+.cs-hit {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+  min-height: var(--tap);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.cs-hit:active {
+  background: color-mix(in srgb, var(--fairway) 12%, var(--card));
+}
+.cs-hit:disabled {
+  opacity: 0.5;
+}
+.cs-hit-name {
+  font-weight: 700;
+  color: var(--green-700);
+}
+@media (prefers-color-scheme: dark) {
+  .cs-hit-name {
+    color: var(--fairway);
+  }
+}
+.cs-hit-meta {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.cs-attribution {
+  font-size: 0.68rem;
+  color: var(--muted);
+  opacity: 0.75;
+  margin: 2px 0 0;
+}
+
 .course-picker {
   border-color: color-mix(in srgb, var(--fairway) 40%, var(--line));
 }

@@ -20,6 +20,11 @@ what's deferred, and how to expand without a rewrite.
 - **Handicaps**: net scoring, per-hole stroke index, par presets.
 - **Favorite courses** (`storage.ts`, `press.courses.v1`): save pars + stroke
   indexes once, one-tap load later.
+- **Course search** (`courses/openGolfApi.ts`, `components/CourseSearch.tsx`):
+  live lookup via OpenGolfAPI (keyless, CORS, ODbL open data) prefills pars +
+  stroke indexes on the New Round and Golf League screens. Front-nine stroke
+  indexes are re-ranked 1–9 for League. Needs signal at setup; Favorite Courses
+  is the offline fallback.
 - **PWA**: installable, offline, splash screen, install prompt.
 
 ## Where data lives today
@@ -40,7 +45,7 @@ Nothing is shared between people or synced across devices. This is by design
 | Live multi-phone sync | Each player scores on their own phone; join a round via a game code; leaderboards sync in real time. |
 | Cross-round stats / history | Trends over time (skins won, Wolf record, net scoring average). |
 | Automatic Nassau presses | Setup toggle to auto-press when a side goes 2 down (plumbing already exists via the press segments in `nassau.ts`). |
-| Course database | Hole-by-hole par/stroke-index import. Skipped for now: no free/official API, paid options need a backend, and per-hole stroke index is patchy. Favorite courses is the current substitute. |
+| ~~Course database~~ | **Shipped** via OpenGolfAPI course search (keyless + CORS, so no backend needed; returns per-hole par and `handicap_index`). Coverage is US-strong; Favorite Courses covers gaps and offline use. |
 
 ## How to expand without a rewrite
 

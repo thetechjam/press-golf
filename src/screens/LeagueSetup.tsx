@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { Round, Player, Hole, SavedCourse } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
+import { CourseSearch } from '../components/CourseSearch';
+import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 
 interface Props {
   onCancel: () => void;
@@ -64,6 +66,21 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
     setCourses(listCourses());
   };
 
+  const loadFromApi = (c: FetchedCourse) => {
+    if (c.holes.length < 9) {
+      setError(`"${c.name}" has no full 9-hole scorecard in the database.`);
+      return;
+    }
+    setCourse(c.name);
+    setHoles(sliceCourseHoles(c.holes, 9));
+    setError('');
+    setSavedNote(
+      c.holes.slice(0, 9).every((h) => typeof h.strokeIndex === 'number')
+        ? `Loaded front 9 of "${c.name}" — par + stroke index`
+        : `Loaded front 9 of "${c.name}" — par only`
+    );
+  };
+
   const start = () => {
     const allPlayers = teams.flatMap((t) => [t.a, t.b]);
     if (allPlayers.some((p) => !p.name.trim()))
@@ -111,6 +128,8 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
         <h1>Golf League</h1>
         <span />
       </header>
+
+      <CourseSearch onPick={loadFromApi} />
 
       {courses.length > 0 && (
         <section className="card course-picker">
