@@ -3,6 +3,7 @@ import type { Round, WolfChoice } from '../types';
 import { HoleStepper } from '../components/HoleStepper';
 import { Leaderboard } from '../components/Leaderboard';
 import { WolfControls } from '../components/WolfControls';
+import { NassauControls } from '../components/NassauControls';
 import { Scorecard } from '../components/Scorecard';
 import { activeResults } from '../games';
 import { wolfForHole } from '../games/wolf';
@@ -44,6 +45,8 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     const holeScores = { ...(round.scores[hole.number] ?? {}), [playerId]: value };
     onChange({ ...round, scores: { ...round.scores, [hole.number]: holeScores } });
   };
+
+  const setPresses = (presses: number[]) => onChange({ ...round, presses });
 
   const setWolf = (choice: WolfChoice) => {
     const wolfPlayerId =
@@ -167,6 +170,10 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
 
           {round.games.includes('wolf') && (
             <WolfControls round={round} hole={hole} onChange={setWolf} />
+          )}
+
+          {round.games.includes('nassau') && (
+            <NassauControls round={round} hole={hole} onChange={setPresses} />
           )}
 
           <section className="steppers">

@@ -63,6 +63,8 @@ export interface Round {
   scores: Scores;
   /** holeNumber -> wolf assignment (only used when Wolf is active). */
   wolf: Record<number, WolfHole>;
+  /** Hole numbers where a Nassau press was called (each starts a new bet). */
+  presses?: number[];
   status: 'in_progress' | 'finished';
 }
 

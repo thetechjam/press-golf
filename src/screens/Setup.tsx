@@ -102,6 +102,7 @@ export function Setup({ onCancel, onStart }: Props) {
       options,
       scores: {},
       wolf: {},
+      presses: [],
       status: 'in_progress',
     };
 

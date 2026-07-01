@@ -3,6 +3,7 @@ import { computeSkins } from './skins';
 import { computeStableford } from './stableford';
 import { computeWolf } from './wolf';
 import { matchSegment } from './matchPlay';
+import { nassauSegments } from './nassau';
 import { totalStrokesReceived } from './handicap';
 
 export interface Transaction {
@@ -127,13 +128,9 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
   if (gameType === 'nassau') {
     if (round.players.length < 2) return net;
     const [p1, p2] = round.players;
-    const front = round.holes.filter((h) => h.number <= 9);
-    const back = round.holes.filter((h) => h.number > 9);
-    // Classic front/back/total only when there's a real back nine; else one bet.
-    const segments = back.length ? [front, back, round.holes] : [round.holes];
     let p1net = 0;
-    for (const holes of segments) {
-      const r = matchSegment(round, holes, p1, p2);
+    for (const seg of nassauSegments(round)) {
+      const r = matchSegment(round, seg.holes, p1, p2);
       if (r.winnerId === p1.id) p1net += stake;
       else if (r.winnerId === p2.id) p1net -= stake;
     }

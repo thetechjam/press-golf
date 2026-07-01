@@ -190,5 +190,37 @@ console.log('Settlement — 4-player skins pot:');
   check('3 payments to Al', s.transactions.length === 3, s.transactions.length);
 }
 
+// --- Settlement: Nassau press ($10). Total halved, press won by Al ---
+console.log('Settlement — Nassau press:');
+{
+  // 4 front-nine holes. Bo wins 1-2, Al wins 3-4 (total halved).
+  // Press called on hole 3 covers holes 3-4, which Al sweeps → Al wins the press.
+  const r = baseRound({
+    players: [
+      { id: 'a', name: 'Al' },
+      { id: 'b', name: 'Bo' },
+    ],
+    holes: [
+      { number: 1, par: 4 },
+      { number: 2, par: 4 },
+      { number: 3, par: 4 },
+      { number: 4, par: 4 },
+    ],
+    games: ['nassau'],
+    options: { ...opts, stakes: { nassau: 10 } },
+    presses: [3],
+    scores: {
+      1: { a: 5, b: 4 },
+      2: { a: 5, b: 4 },
+      3: { a: 3, b: 5 },
+      4: { a: 3, b: 5 },
+    },
+  });
+  const s = computeSettlement(r);
+  check('zero-sum', Math.abs(s.totals.a + s.totals.b) < 1e-9, s.totals);
+  check('Al +$10 from the press (total is halved)', s.totals.a === 10, s.totals.a);
+  check('Bo −$10', s.totals.b === -10, s.totals.b);
+}
+
 console.log(`\n${pass} passed, ${fail} failed`);
 if (fail > 0) process.exit(1);
