@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Round, WolfChoice } from '../types';
 import { HoleStepper } from '../components/HoleStepper';
 import { Leaderboard } from '../components/Leaderboard';
@@ -19,9 +19,20 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   const [idx, setIdx] = useState(0);
   const [mode, setMode] = useState<'hole' | 'card'>('hole');
   const [warn, setWarn] = useState<'next' | 'finish' | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
   const touchX = useRef<number | null>(null);
   const hole = round.holes[idx];
   const last = idx === round.holes.length - 1;
+
+  // Scroll the flagged stepper into view and clear the flash after it plays.
+  useEffect(() => {
+    if (!highlightId) return;
+    document
+      .getElementById(`stepper-${highlightId}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const t = setTimeout(() => setHighlightId(null), 1400);
+    return () => clearTimeout(t);
+  }, [highlightId]);
 
   const go = (next: number) => {
     setWarn(null);
@@ -59,6 +70,29 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     if (warn === 'next') go(idx + 1);
     else onFinish();
     setWarn(null);
+  };
+
+  // Dismiss the warning and jump to the first blank score to fill in.
+  const keepScoring = () => {
+    setWarn(null);
+    setMode('hole');
+    // Stay on this hole if it has a blank; otherwise go to the first incomplete hole.
+    let targetIdx = idx;
+    const currentHasBlank = round.players.some(
+      (p) => round.scores[hole.number]?.[p.id] == null
+    );
+    if (!currentHasBlank) {
+      const fi = round.holes.findIndex((h) =>
+        round.players.some((p) => round.scores[h.number]?.[p.id] == null)
+      );
+      if (fi >= 0) targetIdx = fi;
+    }
+    setIdx(targetIdx);
+    const targetHole = round.holes[targetIdx];
+    const firstBlank = round.players.find(
+      (p) => round.scores[targetHole.number]?.[p.id] == null
+    );
+    if (firstBlank) setHighlightId(firstBlank.id);
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
@@ -139,6 +173,8 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             {round.players.map((p) => (
               <HoleStepper
                 key={p.id}
+                id={`stepper-${p.id}`}
+                highlight={highlightId === p.id}
                 name={p.name}
                 par={hole.par}
                 value={round.scores[hole.number]?.[p.id] ?? null}
@@ -180,7 +216,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
                   } missing scores. Finish the round anyway?`}
             </p>
             <div className="warn-actions">
-              <button className="warn-keep" onClick={() => setWarn(null)}>
+              <button className="warn-keep" onClick={keepScoring}>
                 Keep scoring
               </button>
               <button className="btn-primary" onClick={confirmProceed}>

@@ -431,6 +431,25 @@ select:focus {
 .stepper.tone-even {
   border-left-color: var(--muted);
 }
+@keyframes flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  30% {
+    box-shadow: 0 0 0 3px var(--fairway);
+  }
+}
+.stepper.highlight {
+  animation: flash 1.2s ease;
+  border-color: var(--fairway);
+}
+@media (prefers-reduced-motion: reduce) {
+  .stepper.highlight {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--fairway);
+  }
+}
 .stepper-name {
   font-weight: 700;
   font-size: 1.05rem;

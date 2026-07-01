@@ -1,4 +1,6 @@
 interface Props {
+  id?: string;
+  highlight?: boolean;
   name: string;
   value: number | null;
   par: number;
@@ -18,7 +20,15 @@ const labelFor = (toPar: number): string => {
 
 const buzz = () => navigator.vibrate?.(10);
 
-export function HoleStepper({ name, value, par, strokesReceived = 0, onChange }: Props) {
+export function HoleStepper({
+  id,
+  highlight = false,
+  name,
+  value,
+  par,
+  strokesReceived = 0,
+  onChange,
+}: Props) {
   const toPar = value == null ? 0 : value - par;
   const tone =
     value == null ? 'empty' : toPar < 0 ? 'under' : toPar > 0 ? 'over' : 'even';
@@ -33,7 +43,7 @@ export function HoleStepper({ name, value, par, strokesReceived = 0, onChange }:
   };
 
   return (
-    <div className={`stepper tone-${tone}`}>
+    <div id={id} className={`stepper tone-${tone}${highlight ? ' highlight' : ''}`}>
       <div className="stepper-name">
         {name}
         {strokesReceived > 0 && (
