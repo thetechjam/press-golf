@@ -24,7 +24,28 @@ export function Setup({ onCancel, onStart }: Props) {
   const [holes, setHoles] = useState<Hole[]>(makeHoles(18));
   const [games, setGames] = useState<GameType[]>(['skins']);
   const [options, setOptions] = useState({ ...DEFAULT_OPTIONS });
+  const [advancedHoles, setAdvancedHoles] = useState(false);
   const [error, setError] = useState('');
+
+  // A common par-72 layout, repeated for 9 or 18 holes.
+  const STANDARD_PARS = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 4, 3, 5, 4, 4, 3, 4, 5];
+
+  const applyPreset = (kind: 'par4' | 'standard') =>
+    setHoles((hs) =>
+      hs.map((h, i) => ({ ...h, par: kind === 'par4' ? 4 : STANDARD_PARS[i % 18] }))
+    );
+
+  const setStrokeIndex = (number: number, si: number | undefined) =>
+    setHoles((hs) => hs.map((h) => (h.number === number ? { ...h, strokeIndex: si } : h)));
+
+  const toggleAdvanced = () =>
+    setAdvancedHoles((a) => {
+      const next = !a;
+      if (next)
+        // Seed stroke indexes in hole order so nothing is blank.
+        setHoles((hs) => hs.map((h, i) => (h.strokeIndex ? h : { ...h, strokeIndex: i + 1 })));
+      return next;
+    });
 
   const setHoleCountAndPars = (n: number) => {
     setHoleCount(n);
@@ -166,6 +187,15 @@ export function Setup({ onCancel, onStart }: Props) {
             </button>
           ))}
         </div>
+        <div className="preset-row">
+          <span>Quick set:</span>
+          <button className="chip" onClick={() => applyPreset('standard')}>
+            Standard par {holeCount === 9 ? 36 : 72}
+          </button>
+          <button className="chip" onClick={() => applyPreset('par4')}>
+            All par 4
+          </button>
+        </div>
         <div className="par-grid">
           {holes.map((h) => (
             <label key={h.number} className="par-cell">
@@ -177,9 +207,34 @@ export function Setup({ onCancel, onStart }: Props) {
                   </option>
                 ))}
               </select>
+              {advancedHoles && (
+                <input
+                  className="si-input"
+                  type="number"
+                  min={1}
+                  max={holes.length}
+                  value={h.strokeIndex ?? ''}
+                  onChange={(e) =>
+                    setStrokeIndex(
+                      h.number,
+                      e.target.value === '' ? undefined : Number(e.target.value)
+                    )
+                  }
+                  aria-label={`Stroke index for hole ${h.number}`}
+                />
+              )}
             </label>
           ))}
         </div>
+        <button className="btn-ghost add" onClick={toggleAdvanced}>
+          {advancedHoles ? '− Hide hole difficulty' : '+ Set hole difficulty (stroke index)'}
+        </button>
+        {advancedHoles && (
+          <p className="hint-inline">
+            Stroke index ranks hole difficulty (1 = hardest). Used to allocate handicap
+            strokes in net games.
+          </p>
+        )}
       </section>
 
       <section className="card">

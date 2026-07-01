@@ -20,7 +20,9 @@ export function Leaderboard({ result }: Props) {
               key={s.playerId ?? s.label}
               className={`board-row${s.isLeader ? ' leader' : ''}`}
             >
-              <span className="board-rank">{s.playerId ? s.rank : i + 1}</span>
+              <span className="board-rank">
+                {s.isLeader ? '🏆' : s.playerId ? s.rank : i + 1}
+              </span>
               <span className="board-name">{s.label}</span>
               <span className="board-detail">{s.detail}</span>
             </li>

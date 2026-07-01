@@ -597,3 +597,147 @@ select:focus {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* ---------- Polish: animation & feedback ---------- */
+@keyframes pop {
+  0% {
+    transform: scale(1.5);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.score-num {
+  animation: pop 0.18s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-num {
+    animation: none;
+  }
+}
+.hcp-dots {
+  color: var(--gold);
+  font-size: 0.7rem;
+  margin-left: 6px;
+  letter-spacing: 1px;
+  vertical-align: middle;
+}
+
+/* ---------- Install button ---------- */
+.install-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: var(--radius);
+  border: 1px dashed var(--green-600);
+  color: var(--green-600);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ---------- Presets & stroke index ---------- */
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.chip {
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--green-700);
+}
+.si-input {
+  margin-top: 4px;
+  padding: 6px;
+  min-height: 34px;
+  text-align: center;
+  font-size: 0.8rem;
+  width: 100%;
+}
+.hint-inline {
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+/* ---------- Scorecard grid ---------- */
+.card-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px;
+}
+.scorecard {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.scorecard th,
+.scorecard td {
+  padding: 8px 6px;
+  text-align: center;
+  min-width: 30px;
+  white-space: nowrap;
+}
+.sc-corner,
+.sc-name {
+  position: sticky;
+  left: 0;
+  background: var(--card);
+  text-align: left;
+  font-weight: 700;
+  z-index: 1;
+  min-width: 62px;
+}
+.sc-hole {
+  color: var(--muted);
+  font-weight: 700;
+  cursor: pointer;
+}
+.sc-hole.current,
+.sc-cell.current {
+  background: color-mix(in srgb, var(--fairway) 18%, transparent);
+  border-radius: 6px;
+}
+.sc-par-row td,
+.sc-par-row th {
+  color: var(--muted);
+  font-size: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+.sc-cell {
+  cursor: pointer;
+  position: relative;
+}
+.sc-cell.under {
+  color: var(--under);
+  font-weight: 700;
+}
+.sc-cell.over {
+  color: var(--over);
+}
+.sc-total {
+  font-weight: 700;
+  border-left: 1px solid var(--line);
+}
+.sc-dots {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 0.5rem;
+  color: var(--gold);
+  line-height: 1;
+}

@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/app-icon.svg" />
     <link rel="apple-touch-icon" href="/app-icon.svg" />
     <meta
       name="viewport"
@@ -17,9 +17,39 @@
       content="Track golf side games: match play, skins, Stableford, Wolf and more."
     />
     <title>Press — Golf Side Games</title>
+    <style>
+      /* Splash shown until React mounts (avoids a white flash on load). */
+      #splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: linear-gradient(160deg, #14694e, #0b3d2e);
+        color: #f4f7f2;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        z-index: 9999;
+      }
+      #splash .mark {
+        font-size: 3rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      #splash .sub {
+        font-size: 0.9rem;
+        opacity: 0.8;
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="splash">
+        <div class="mark">⛳ Press</div>
+        <div class="sub">Golf side games</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

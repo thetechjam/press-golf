@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Round } from '../types';
 import { listRounds, deleteRound } from '../storage';
+import { InstallPrompt } from '../components/InstallPrompt';
 
 interface Props {
   onNew: () => void;
@@ -26,6 +27,8 @@ export function Home({ onNew, onResume, onViewResults }: Props) {
       <button className="btn-primary big" onClick={onNew}>
         Start New Round
       </button>
+
+      <InstallPrompt />
 
       {rounds.length > 0 && (
         <section className="saved">
