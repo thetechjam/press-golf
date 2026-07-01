@@ -56,7 +56,8 @@ body {
 }
 
 .screen {
-  padding: 16px 16px calc(32px + env(safe-area-inset-bottom));
+  padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+    calc(32px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
   gap: 16px;
