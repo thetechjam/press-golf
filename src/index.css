@@ -226,6 +226,41 @@ select:focus {
   outline: 2px solid var(--fairway);
 }
 
+.course-faves {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.faves-label {
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+.fave-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.fave-chip {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--card);
+}
+.fave-load {
+  padding: 8px 12px;
+  font-weight: 600;
+  color: var(--green-700);
+  cursor: pointer;
+}
+.fave-del {
+  padding: 0 12px;
+  color: var(--muted);
+  border-left: 1px solid var(--line);
+  cursor: pointer;
+}
+
 .player-row {
   display: flex;
   gap: 8px;

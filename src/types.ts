@@ -22,6 +22,12 @@ export interface Hole {
   strokeIndex?: number;
 }
 
+export interface SavedCourse {
+  id: string;
+  name: string;
+  holes: Hole[];
+}
+
 /** playerId -> strokes taken (null = not yet entered). */
 export type HoleScores = Record<string, number | null>;
 /** holeNumber -> per-player scores. */

@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import type { Round, Player, GameType, Hole } from '../types';
+import type { Round, Player, GameType, Hole, SavedCourse } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { GAMES } from '../games';
 import { wolfForHole } from '../games/wolf';
-import { uid } from '../storage';
+import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
 
 interface Props {
   onCancel: () => void;
@@ -26,6 +26,38 @@ export function Setup({ onCancel, onStart }: Props) {
   const [options, setOptions] = useState({ ...DEFAULT_OPTIONS });
   const [advancedHoles, setAdvancedHoles] = useState(false);
   const [error, setError] = useState('');
+  const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
+  const [savedNote, setSavedNote] = useState('');
+
+  const loadCourse = (c: SavedCourse) => {
+    setCourse(c.name);
+    setHoleCount(c.holes.length);
+    setHoles(c.holes.map((h) => ({ ...h })));
+    setAdvancedHoles(c.holes.some((h) => h.strokeIndex));
+    setSavedNote(`Loaded "${c.name}"`);
+  };
+
+  const saveFavorite = () => {
+    const name = course.trim();
+    if (!name) {
+      setError('Add a course name (top field) before saving.');
+      return;
+    }
+    const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
+    saveCourse({
+      id: existing?.id ?? uid(),
+      name,
+      holes: holes.map((h) => ({ number: h.number, par: h.par, strokeIndex: h.strokeIndex })),
+    });
+    setCourses(listCourses());
+    setError('');
+    setSavedNote(`Saved "${name}" ★`);
+  };
+
+  const removeCourse = (id: string) => {
+    deleteCourse(id);
+    setCourses(listCourses());
+  };
 
   // A common par-72 layout, repeated for 9 or 18 holes.
   const STANDARD_PARS = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 4, 3, 5, 4, 4, 3, 4, 5];
@@ -137,6 +169,28 @@ export function Setup({ onCancel, onStart }: Props) {
         />
       </label>
 
+      {courses.length > 0 && (
+        <div className="course-faves">
+          <span className="faves-label">Saved courses</span>
+          <div className="fave-chips">
+            {courses.map((c) => (
+              <span key={c.id} className="fave-chip">
+                <button className="fave-load" onClick={() => loadCourse(c)}>
+                  {c.name}
+                </button>
+                <button
+                  className="fave-del"
+                  onClick={() => removeCourse(c.id)}
+                  aria-label={`Delete saved course ${c.name}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <section className="card">
         <h2>Players</h2>
         {players.map((p, i) => (
@@ -236,6 +290,10 @@ export function Setup({ onCancel, onStart }: Props) {
             strokes in net games.
           </p>
         )}
+        <button className="btn-ghost add" onClick={saveFavorite}>
+          ★ Save this course for next time
+        </button>
+        {savedNote && <p className="hint-inline">{savedNote}</p>}
       </section>
 
       <section className="card">
