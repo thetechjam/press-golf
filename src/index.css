@@ -365,6 +365,11 @@ select:focus {
 }
 
 /* ---------- Play ---------- */
+.hole-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
 .hole-nav {
   display: flex;
   align-items: center;
