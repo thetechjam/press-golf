@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import type { Round, Player, GameType, Hole, SavedCourse } from '../types';
+import type { Round, Player, GameType, Hole, SavedCourse, TeamSetup } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { GAMES } from '../games';
 import { wolfForHole } from '../games/wolf';
+import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
 
 interface Props {
@@ -29,9 +30,13 @@ export function Setup({ onCancel, onStart }: Props) {
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   const [savedNote, setSavedNote] = useState('');
   const [nassauMode, setNassauMode] = useState<'1v1' | '2v2'>('1v1');
-  const [sideA, setSideA] = useState('');
-  const [sideB, setSideB] = useState('');
-  const [teamAssign, setTeamAssign] = useState<Record<string, 'A' | 'B' | '-'>>({});
+  const [nassauSideA, setNassauSideA] = useState('');
+  const [nassauSideB, setNassauSideB] = useState('');
+  const [nassauAssign, setNassauAssign] = useState<Assign>({});
+  const [matchMode, setMatchMode] = useState<'1v1' | '2v2'>('1v1');
+  const [matchSideA, setMatchSideA] = useState('');
+  const [matchSideB, setMatchSideB] = useState('');
+  const [matchAssign, setMatchAssign] = useState<Assign>({});
 
   const loadCourse = (c: SavedCourse) => {
     setCourse(c.name);
@@ -110,17 +115,8 @@ export function Setup({ onCancel, onStart }: Props) {
   const showStableford = games.includes('stableford');
   const showWolf = games.includes('wolf');
   const showNassau = games.includes('nassau');
+  const showMatchPlay = games.includes('matchPlay');
   const canTeams = namedPlayers.length >= 4;
-
-  const nameOrPlaceholder = (p: Player, i: number) => p.name.trim() || `Player ${i + 1}`;
-  // Effective 1v1 sides default to the first two named players.
-  const effA = namedPlayers.find((p) => p.id === sideA)?.id ?? namedPlayers[0]?.id ?? '';
-  const effB = namedPlayers.find((p) => p.id === sideB)?.id ?? namedPlayers[1]?.id ?? '';
-  // 2v2 assignment defaults to first two = A, next two = B.
-  const assignOf = (id: string, i: number): 'A' | 'B' | '-' =>
-    teamAssign[id] ?? (i < 2 ? 'A' : i < 4 ? 'B' : '-');
-  const setAssign = (id: string, v: 'A' | 'B' | '-') =>
-    setTeamAssign((t) => ({ ...t, [id]: v }));
 
   const start = () => {
     if (namedPlayers.length < 1) return setError('Add at least one player.');
@@ -138,19 +134,38 @@ export function Setup({ onCancel, onStart }: Props) {
       handicap: showNet ? p.handicap : undefined,
     }));
 
-    let nassau: Round['options']['nassau'];
-    if (games.includes('nassau')) {
-      if (nassauMode === '2v2') {
-        const teamA = cleanPlayers.filter((p, i) => assignOf(p.id, i) === 'A').map((p) => p.id);
-        const teamB = cleanPlayers.filter((p, i) => assignOf(p.id, i) === 'B').map((p) => p.id);
+    // Builds a TeamSetup from picker state, or returns an error message.
+    const buildTeams = (
+      mode: '1v1' | '2v2',
+      sideA: string,
+      sideB: string,
+      assign: Assign
+    ): TeamSetup | string => {
+      if (mode === '2v2') {
+        const teamA = cleanPlayers.filter((p, i) => assignmentOf(assign, p.id, i) === 'A').map((p) => p.id);
+        const teamB = cleanPlayers.filter((p, i) => assignmentOf(assign, p.id, i) === 'B').map((p) => p.id);
         if (teamA.length !== 2 || teamB.length !== 2)
-          return setError('Assign exactly 2 players to each Nassau team.');
-        nassau = { mode: '2v2', teamA, teamB };
-      } else {
-        if (!effA || !effB || effA === effB)
-          return setError('Pick two different players for the Nassau match.');
-        nassau = { mode: '1v1', teamA: [effA], teamB: [effB] };
+          return 'Assign exactly 2 players to each team.';
+        return { mode: '2v2', teamA, teamB };
       }
+      const a = effectiveSide(cleanPlayers, sideA, 0);
+      const b = effectiveSide(cleanPlayers, sideB, 1);
+      if (!a || !b || a === b) return 'Pick two different players.';
+      return { mode: '1v1', teamA: [a], teamB: [b] };
+    };
+
+    let nassau: TeamSetup | undefined;
+    if (games.includes('nassau')) {
+      const r = buildTeams(nassauMode, nassauSideA, nassauSideB, nassauAssign);
+      if (typeof r === 'string') return setError(`Nassau: ${r}`);
+      nassau = r;
+    }
+
+    let matchPlay: TeamSetup | undefined;
+    if (games.includes('matchPlay')) {
+      const r = buildTeams(matchMode, matchSideA, matchSideB, matchAssign);
+      if (typeof r === 'string') return setError(`Match Play: ${r}`);
+      matchPlay = r;
     }
 
     const round: Round = {
@@ -162,7 +177,7 @@ export function Setup({ onCancel, onStart }: Props) {
       players: cleanPlayers,
       holes,
       games,
-      options: { ...options, nassau },
+      options: { ...options, nassau, matchPlay },
       scores: {},
       wolf: {},
       presses: [],
@@ -346,72 +361,36 @@ export function Setup({ onCancel, onStart }: Props) {
         </div>
       </section>
 
-      {showNassau && (
-        <section className="card">
-          <h2>Nassau teams</h2>
-          <div className="seg">
-            <button
-              className={`seg-btn${nassauMode === '1v1' ? ' active' : ''}`}
-              onClick={() => setNassauMode('1v1')}
-            >
-              1 v 1
-            </button>
-            <button
-              className={`seg-btn${nassauMode === '2v2' ? ' active' : ''}`}
-              onClick={() => canTeams && setNassauMode('2v2')}
-              disabled={!canTeams}
-            >
-              2 v 2
-            </button>
-          </div>
+      {showMatchPlay && (
+        <TeamPicker
+          label="Match Play teams"
+          players={namedPlayers}
+          canTeams={canTeams}
+          mode={matchMode}
+          onMode={setMatchMode}
+          sideA={matchSideA}
+          sideB={matchSideB}
+          onSideA={setMatchSideA}
+          onSideB={setMatchSideB}
+          assign={matchAssign}
+          onAssign={(id, v) => setMatchAssign((a) => ({ ...a, [id]: v }))}
+        />
+      )}
 
-          {nassauMode === '1v1' ? (
-            <div className="nassau-1v1">
-              <label className="field">
-                <span>Side A</span>
-                <select value={effA} onChange={(e) => setSideA(e.target.value)}>
-                  {namedPlayers.map((p, i) => (
-                    <option key={p.id} value={p.id}>
-                      {nameOrPlaceholder(p, i)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <span className="vs">vs</span>
-              <label className="field">
-                <span>Side B</span>
-                <select value={effB} onChange={(e) => setSideB(e.target.value)}>
-                  {namedPlayers.map((p, i) => (
-                    <option key={p.id} value={p.id}>
-                      {nameOrPlaceholder(p, i)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          ) : (
-            <div className="team-assign">
-              <p className="hint-inline">Assign exactly 2 players to each team.</p>
-              {namedPlayers.map((p, i) => (
-                <div key={p.id} className="assign-row">
-                  <span className="assign-name">{nameOrPlaceholder(p, i)}</span>
-                  <div className="seg small">
-                    {(['A', 'B', '-'] as const).map((v) => (
-                      <button
-                        key={v}
-                        className={`seg-btn${assignOf(p.id, i) === v ? ' active' : ''}`}
-                        onClick={() => setAssign(p.id, v)}
-                      >
-                        {v === '-' ? 'Out' : `Team ${v}`}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {!canTeams && <p className="hint-inline">Add 4 players to enable 2 v 2.</p>}
-        </section>
+      {showNassau && (
+        <TeamPicker
+          label="Nassau teams"
+          players={namedPlayers}
+          canTeams={canTeams}
+          mode={nassauMode}
+          onMode={setNassauMode}
+          sideA={nassauSideA}
+          sideB={nassauSideB}
+          onSideA={setNassauSideA}
+          onSideB={setNassauSideB}
+          assign={nassauAssign}
+          onAssign={(id, v) => setNassauAssign((a) => ({ ...a, [id]: v }))}
+        />
       )}
 
       {(showNet || showStableford || showWolf) && (

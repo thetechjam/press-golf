@@ -2,7 +2,7 @@ import type { Round, GameType } from '../types';
 import { computeSkins } from './skins';
 import { computeStableford } from './stableford';
 import { computeWolf } from './wolf';
-import { matchSegment, matchSegmentSides } from './matchPlay';
+import { matchSegmentSides, resolveSides } from './matchPlay';
 import { nassauSegments, nassauTeams } from './nassau';
 import { totalStrokesReceived } from './handicap';
 
@@ -113,14 +113,14 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
 
   if (gameType === 'matchPlay') {
     if (round.players.length < 2) return net;
-    const [p1, p2] = round.players;
-    const seg = matchSegment(round, round.holes, p1, p2);
+    const { a, b } = resolveSides(round, round.options.matchPlay);
+    const seg = matchSegmentSides(round, round.holes, a, b);
     if (seg.winner === 'A') {
-      net[p1.id] = stake;
-      net[p2.id] = -stake;
+      a.ids.forEach((id) => (net[id] += stake));
+      b.ids.forEach((id) => (net[id] -= stake));
     } else if (seg.winner === 'B') {
-      net[p2.id] = stake;
-      net[p1.id] = -stake;
+      b.ids.forEach((id) => (net[id] += stake));
+      a.ids.forEach((id) => (net[id] -= stake));
     }
     return net;
   }

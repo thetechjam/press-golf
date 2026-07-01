@@ -47,8 +47,8 @@ export interface WolfHole {
 /** Dollar stake per game. Unit varies by game (per skin, per point, etc.). */
 export type Stakes = Partial<Record<GameType, number>>;
 
-/** Nassau matchup: 1v1 (one player per side) or 2v2 (best-ball teams). */
-export interface NassauSetup {
+/** A matchup: 1v1 (one player per side) or 2v2 (best-ball teams). Used by Nassau and Match Play. */
+export interface TeamSetup {
   mode: '1v1' | '2v2';
   teamA: string[]; // player ids
   teamB: string[]; // player ids
@@ -61,8 +61,9 @@ export interface GameOptions {
   loneWolfMultiplier: number;
   blindWolfMultiplier: number;
   stakes: Stakes;
-  /** Nassau teams (defaults to 1v1 between the first two players). */
-  nassau?: NassauSetup;
+  /** Nassau / Match Play teams (default to 1v1 between the first two players). */
+  nassau?: TeamSetup;
+  matchPlay?: TeamSetup;
 }
 
 export interface Round {

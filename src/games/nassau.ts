@@ -1,20 +1,9 @@
 import type { Round, Hole, GameResult, GameStanding } from '../types';
-import { matchSegmentSides, type Side } from './matchPlay';
+import { matchSegmentSides, resolveSides, type Side } from './matchPlay';
 
 /** Resolves the two Nassau sides from options (defaults to 1v1, first two players). */
 export function nassauTeams(round: Round): { a: Side; b: Side } {
-  const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? '?';
-  const cfg = round.options.nassau;
-  if (cfg?.mode === '2v2' && cfg.teamA.length === 2 && cfg.teamB.length === 2) {
-    return {
-      a: { ids: cfg.teamA, label: cfg.teamA.map(nameOf).join(' & ') },
-      b: { ids: cfg.teamB, label: cfg.teamB.map(nameOf).join(' & ') },
-    };
-  }
-  const ids = round.players.map((p) => p.id);
-  const aId = cfg?.teamA?.[0] ?? ids[0];
-  const bId = cfg?.teamB?.[0] ?? ids[1];
-  return { a: { ids: [aId], label: nameOf(aId) }, b: { ids: [bId], label: nameOf(bId) } };
+  return resolveSides(round, round.options.nassau);
 }
 
 /** Holes belonging to the same nine as the given hole. */
