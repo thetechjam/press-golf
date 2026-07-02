@@ -61,6 +61,22 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  animation: screen-in 0.24s ease-out;
+}
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen {
+    animation: none;
+  }
 }
 
 /* ---------- Buttons ---------- */
@@ -91,7 +107,8 @@ button {
 }
 .btn-primary.sticky {
   position: sticky;
-  bottom: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 2;
 }
 
 .btn-ghost {
@@ -122,6 +139,10 @@ button {
 @media (prefers-color-scheme: dark) {
   .btn-secondary {
     color: var(--fairway);
+  }
+  /* The light-mode drop shadow reads muddy on a dark bg — soften to a subtle glow. */
+  .btn-primary {
+    box-shadow: 0 2px 12px rgba(47, 191, 134, 0.28);
   }
 }
 
@@ -212,6 +233,29 @@ button {
   color: var(--muted);
   font-size: 0.8rem;
   margin-top: auto;
+}
+
+/* ---------- Empty state (Home, no rounds) ---------- */
+.empty-state {
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+  margin-top: 4px;
+}
+.empty-icon {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+.empty-title {
+  font-weight: 700;
+  margin: 12px 0 4px;
+}
+.empty-sub {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0;
 }
 
 /* ---------- Top bar ---------- */
@@ -608,6 +652,39 @@ select:focus {
   font-size: 0.8rem;
   color: var(--muted);
   margin-top: -8px;
+}
+
+/* Glanceable per-hole progress strip. */
+.hole-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: -6px;
+}
+.hole-dot {
+  width: 14px;
+  height: 14px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  transition: transform 0.08s ease;
+}
+.hole-dot.done {
+  background: var(--fairway);
+  border-color: var(--fairway);
+}
+.hole-dot.current {
+  border-color: var(--green-700);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--fairway) 45%, transparent);
+  transform: scale(1.25);
+}
+@media (prefers-color-scheme: dark) {
+  .hole-dot.current {
+    border-color: var(--fairway);
+  }
 }
 
 .steppers {
@@ -1060,6 +1137,52 @@ select:focus {
   margin-left: 6px;
   letter-spacing: 1px;
   vertical-align: middle;
+}
+
+/* ---------- Scoring marks (golf circle/square convention) ---------- */
+/* Border color inherits the tone color already set on the number/cell. */
+.mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.7em;
+  height: 1.7em;
+  padding: 0 0.12em;
+  border: 2px solid currentColor;
+  line-height: 1;
+}
+.mark-circle {
+  border-radius: 999px;
+}
+.mark-square {
+  border-radius: 4px;
+}
+/* Second ring for eagle / double-bogey+ — gap drawn in the card color. */
+.mark-double {
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 4px currentColor;
+}
+
+/* Celebratory beat when a score lands under par. */
+@keyframes celebrate {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+.score-num.celebrate {
+  animation: celebrate 0.9s ease-out;
+  border-radius: 999px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-num.celebrate {
+    animation: none;
+  }
 }
 
 /* ---------- Install button ---------- */

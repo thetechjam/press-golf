@@ -1,3 +1,6 @@
+import { useRef, useState } from 'react';
+import { scoreMarkClass } from '../scoreMark';
+
 interface Props {
   id?: string;
   highlight?: boolean;
@@ -18,7 +21,8 @@ const labelFor = (toPar: number): string => {
   return `+${toPar}`;
 };
 
-const buzz = () => navigator.vibrate?.(10);
+// Vibration API is Android-only (no-op on iOS Safari/PWA); softer for taps, firmer for birdie+.
+const buzz = (pattern: number | number[]) => navigator.vibrate?.(pattern);
 
 export function HoleStepper({
   id,
@@ -33,14 +37,27 @@ export function HoleStepper({
   const tone =
     value == null ? 'empty' : toPar < 0 ? 'under' : toPar > 0 ? 'over' : 'even';
 
-  const dec = () => {
-    buzz();
-    onChange(value == null ? par : Math.max(1, value - 1));
+  // Celebrate is scoped to the exact score it fired on, so it never carries onto
+  // another hole: navigation swaps `value`, the match breaks, and the glow stops.
+  const [celebrateFor, setCelebrateFor] = useState<number | null>(null);
+  const celebrateTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const celebrating = celebrateFor != null && celebrateFor === value && toPar < 0;
+
+  const commit = (next: number) => {
+    if (next - par < 0) {
+      buzz([12, 30, 18]);
+      setCelebrateFor(next);
+      clearTimeout(celebrateTimer.current);
+      celebrateTimer.current = setTimeout(() => setCelebrateFor(null), 900);
+    } else {
+      buzz(10);
+      setCelebrateFor(null);
+    }
+    onChange(next);
   };
-  const inc = () => {
-    buzz();
-    onChange(value == null ? par : Math.min(15, value + 1));
-  };
+
+  const dec = () => commit(value == null ? par : Math.max(1, value - 1));
+  const inc = () => commit(value == null ? par : Math.min(15, value + 1));
 
   return (
     <div id={id} className={`stepper tone-${tone}${highlight ? ' highlight' : ''}`}>
@@ -58,7 +75,12 @@ export function HoleStepper({
         </button>
         <div className="stepper-value">
           {/* key forces a remount so the pop animation replays on each change */}
-          <span className="score-num" key={value ?? 'empty'}>
+          <span
+            className={`score-num${value == null ? '' : ` ${scoreMarkClass(toPar)}`}${
+              celebrating ? ' celebrate' : ''
+            }`}
+            key={value ?? 'empty'}
+          >
             {value ?? '–'}
           </span>
           <span className="score-tag">{value == null ? 'tap' : labelFor(toPar)}</span>

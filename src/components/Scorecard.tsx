@@ -1,5 +1,6 @@
 import type { Round } from '../types';
 import { strokeIndexMap, strokesReceivedOnHole } from '../games/handicap';
+import { scoreMarkClass } from '../scoreMark';
 
 interface Props {
   round: Round;
@@ -70,7 +71,7 @@ export function Scorecard({ round, currentHole, onJumpToHole }: Props) {
                       className={`sc-cell${tone}${h.number === currentHole ? ' current' : ''}`}
                       onClick={() => onJumpToHole?.(i)}
                     >
-                      {raw ?? ''}
+                      {raw != null && <span className={scoreMarkClass(toPar)}>{raw}</span>}
                       {dots > 0 && <span className="sc-dots">{'•'.repeat(dots)}</span>}
                     </td>
                   );

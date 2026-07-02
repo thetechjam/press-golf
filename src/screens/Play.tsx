@@ -113,6 +113,11 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   const parTotal = round.holes.reduce((s, h) => s + h.par, 0);
   const siMap = strokeIndexMap(round);
 
+  // A hole is complete when every player has a score — drives the progress strip.
+  const holeComplete = round.holes.map((h) =>
+    round.players.every((p) => round.scores[h.number]?.[p.id] != null)
+  );
+
   return (
     <div className="screen play">
       <header className="bar">
@@ -163,6 +168,20 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             >
               ›
             </button>
+          </div>
+
+          <div className="hole-dots" aria-label="Hole progress">
+            {round.holes.map((h, i) => (
+              <button
+                key={h.number}
+                className={`hole-dot${i === idx ? ' current' : ''}${
+                  holeComplete[i] ? ' done' : ''
+                }`}
+                onClick={() => go(i)}
+                aria-label={`Hole ${h.number}${holeComplete[i] ? ', complete' : ''}`}
+                aria-current={i === idx ? 'true' : undefined}
+              />
+            ))}
           </div>
 
           <div className="progress">
@@ -236,11 +255,11 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           </div>
         )}
         {last ? (
-          <button className="btn-primary big" onClick={tryFinish}>
+          <button className="btn-primary big sticky" onClick={tryFinish}>
             Finish Round →
           </button>
         ) : (
-          <button className="btn-primary big" onClick={tryNext}>
+          <button className="btn-primary big sticky" onClick={tryNext}>
             Next Hole →
           </button>
         )}
