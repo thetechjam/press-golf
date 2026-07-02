@@ -6,6 +6,8 @@ import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
 import { CourseSearch } from '../components/CourseSearch';
+import { PlayerAvatar } from '../components/PlayerAvatar';
+import { playerColor } from '../player';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 
 interface Props {
@@ -258,6 +260,7 @@ export function Setup({ onCancel, onStart }: Props) {
         <h2>Players</h2>
         {players.map((p, i) => (
           <div key={p.id} className="player-row">
+            <PlayerAvatar name={p.name || `${i + 1}`} color={playerColor(i)} />
             <input
               className="player-name"
               value={p.name}
