@@ -61,6 +61,22 @@ body {
   display: flex;
   flex-direction: column;
   gap: 16px;
+  animation: screen-in 0.24s ease-out;
+}
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen {
+    animation: none;
+  }
 }
 
 /* ---------- Buttons ---------- */
@@ -91,7 +107,8 @@ button {
 }
 .btn-primary.sticky {
   position: sticky;
-  bottom: 12px;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 2;
 }
 
 .btn-ghost {
@@ -123,6 +140,10 @@ button {
   .btn-secondary {
     color: var(--fairway);
   }
+  /* The light-mode drop shadow reads muddy on a dark bg — soften to a subtle glow. */
+  .btn-primary {
+    box-shadow: 0 2px 12px rgba(47, 191, 134, 0.28);
+  }
 }
 
 .ab-badge {
@@ -136,6 +157,22 @@ button {
   font-size: 0.8rem;
   display: grid;
   place-items: center;
+}
+
+/* Player identity badge — colored monogram, consistent across every screen. */
+.avatar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  vertical-align: middle;
 }
 
 /* ---------- Home ---------- */
@@ -212,6 +249,29 @@ button {
   color: var(--muted);
   font-size: 0.8rem;
   margin-top: auto;
+}
+
+/* ---------- Empty state (Home, no rounds) ---------- */
+.empty-state {
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+  margin-top: 4px;
+}
+.empty-icon {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+.empty-title {
+  font-weight: 700;
+  margin: 12px 0 4px;
+}
+.empty-sub {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0;
 }
 
 /* ---------- Top bar ---------- */
@@ -610,6 +670,49 @@ select:focus {
   margin-top: -8px;
 }
 
+/* Glanceable per-hole progress strip. Dots are small, but each button is a
+   full 24px WCAG 2.5.8 tap target; the visual dot lives in ::before. */
+.hole-dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 2px;
+  margin-top: -6px;
+}
+.hole-dot {
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  display: grid;
+  place-items: center;
+}
+.hole-dot::before {
+  content: '';
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  transition: transform 0.08s ease;
+}
+.hole-dot.done::before {
+  background: var(--fairway);
+  border-color: var(--fairway);
+}
+.hole-dot.current::before {
+  border-color: var(--green-700);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--fairway) 45%, transparent);
+  transform: scale(1.3);
+}
+@media (prefers-color-scheme: dark) {
+  .hole-dot.current::before {
+    border-color: var(--fairway);
+  }
+}
+
 .steppers {
   display: flex;
   flex-direction: column;
@@ -654,8 +757,17 @@ select:focus {
   }
 }
 .stepper-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-weight: 700;
   font-size: 1.05rem;
+  min-width: 0;
+}
+.stepper-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .stepper-controls {
   display: flex;
@@ -709,6 +821,7 @@ select:focus {
 }
 .wolf-head {
   font-size: 0.92rem;
+  line-height: 1.6;
   margin-bottom: 10px;
 }
 .wolf-options {
@@ -717,13 +830,20 @@ select:focus {
   gap: 8px;
 }
 .wolf-chip {
-  padding: 9px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px 8px 8px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--card);
   font-weight: 600;
   font-size: 0.85rem;
   min-height: 40px;
+}
+/* Lone/Blind chips have no avatar — keep them evenly padded. */
+.wolf-chip.lone {
+  padding: 8px 14px;
 }
 .wolf-chip.lone {
   border-style: dashed;
@@ -848,6 +968,15 @@ select:focus {
 }
 .board-name {
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.board-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .board-detail {
   font-variant-numeric: tabular-nums;
@@ -987,6 +1116,19 @@ select:focus {
 .net-list {
   margin-bottom: 10px;
 }
+.net-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 6px;
+}
+.net-name {
+  flex: 1;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .net-amount {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -1026,6 +1168,60 @@ select:focus {
 .results-meta {
   text-align: center;
 }
+
+/* Winner payoff hero. */
+.winner-hero {
+  text-align: center;
+  background: color-mix(in srgb, var(--gold) 14%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+  border-radius: var(--radius);
+  padding: 22px 20px;
+}
+.winner-avatars {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.winner-avatars .avatar {
+  box-shadow: 0 0 0 3px var(--card), 0 0 0 5px color-mix(in srgb, var(--gold) 60%, transparent);
+  animation: winner-pop 0.5s ease-out;
+}
+.winner-emoji {
+  font-size: 2.6rem;
+  line-height: 1;
+  animation: winner-pop 0.5s ease-out;
+}
+@keyframes winner-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .winner-avatars .avatar,
+  .winner-emoji {
+    animation: none;
+  }
+}
+.winner-line {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.winner-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: capitalize;
+  margin-top: 2px;
+}
 .results-course {
   font-size: 1.3rem;
   font-weight: 800;
@@ -1060,6 +1256,52 @@ select:focus {
   margin-left: 6px;
   letter-spacing: 1px;
   vertical-align: middle;
+}
+
+/* ---------- Scoring marks (golf circle/square convention) ---------- */
+/* Border color inherits the tone color already set on the number/cell. */
+.mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.7em;
+  height: 1.7em;
+  padding: 0 0.12em;
+  border: 2px solid currentColor;
+  line-height: 1;
+}
+.mark-circle {
+  border-radius: 999px;
+}
+.mark-square {
+  border-radius: 4px;
+}
+/* Second ring for eagle / double-bogey+ — gap drawn in the card color. */
+.mark-double {
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 4px currentColor;
+}
+
+/* Celebratory beat when a score lands under par. */
+@keyframes celebrate {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+.score-num.celebrate {
+  animation: celebrate 0.9s ease-out;
+  border-radius: 999px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-num.celebrate {
+    animation: none;
+  }
 }
 
 /* ---------- Install button ---------- */

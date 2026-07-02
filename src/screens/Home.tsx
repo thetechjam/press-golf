@@ -35,6 +35,14 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
 
       <InstallPrompt />
 
+      {rounds.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-icon">🏌️</div>
+          <p className="empty-title">No rounds yet</p>
+          <p className="empty-sub">Start your first round and Press keeps score for you.</p>
+        </div>
+      )}
+
       {rounds.length > 0 && (
         <section className="saved">
           <h2>Your rounds</h2>

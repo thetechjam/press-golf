@@ -1,4 +1,6 @@
 import type { Player } from '../types';
+import { PlayerAvatar } from './PlayerAvatar';
+import { playerColor } from '../player';
 
 export type Assign = Record<string, 'A' | 'B' | '-'>;
 
@@ -90,6 +92,7 @@ export function TeamPicker({
           <p className="hint-inline">Assign exactly 2 players to each team.</p>
           {players.map((p, i) => (
             <div key={p.id} className="assign-row">
+              <PlayerAvatar name={nameOrPlaceholder(p, i)} color={playerColor(i)} size={24} />
               <span className="assign-name">{nameOrPlaceholder(p, i)}</span>
               <div className="seg small">
                 {(['A', 'B', '-'] as const).map((v) => (

@@ -1,5 +1,7 @@
 import type { Round, Hole, WolfChoice } from '../types';
 import { wolfForHole } from '../games/wolf';
+import { PlayerAvatar } from './PlayerAvatar';
+import { colorMap } from '../player';
 
 interface Props {
   round: Round;
@@ -12,6 +14,7 @@ export function WolfControls({ round, hole, onChange }: Props) {
   const wolf = round.players.find((p) => p.id === wolfId);
   const choice = round.wolf[hole.number]?.choice ?? null;
   const others = round.players.filter((p) => p.id !== wolfId);
+  const colors = colorMap(round);
 
   const isPartner = (id: string) =>
     choice?.type === 'partner' && choice.partnerId === id;
@@ -19,7 +22,8 @@ export function WolfControls({ round, hole, onChange }: Props) {
   return (
     <div className="wolf">
       <div className="wolf-head">
-        🐺 <strong>{wolf?.name ?? 'Wolf'}</strong> is the Wolf — make the call
+        🐺 {wolf && <PlayerAvatar name={wolf.name} color={colors[wolf.id]} size={22} />}
+        <strong>{wolf?.name ?? 'Wolf'}</strong> is the Wolf — make the call
       </div>
       <div className="wolf-options">
         {others.map((p) => (
@@ -28,7 +32,8 @@ export function WolfControls({ round, hole, onChange }: Props) {
             className={`wolf-chip${isPartner(p.id) ? ' active' : ''}`}
             onClick={() => onChange({ type: 'partner', partnerId: p.id })}
           >
-            + {p.name}
+            <PlayerAvatar name={p.name} color={colors[p.id]} size={20} />
+            {p.name}
           </button>
         ))}
         <button
