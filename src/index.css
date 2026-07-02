@@ -533,19 +533,30 @@ select:focus {
 .seg.view-toggle {
   margin-bottom: 0;
 }
-/* Wake-lock toggle: fixed slot beside the view toggle, dimmed when off. */
+/* Wake-lock toggle: fixed slot beside the view toggle. */
 .awake-toggle {
+  position: relative;
   flex: 0 0 var(--tap);
   min-height: var(--tap);
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--bg);
-  font-size: 1.1rem;
+  font-size: 1.3rem;
   line-height: 1;
 }
-.awake-toggle:not(.on) {
-  opacity: 0.45;
-  filter: grayscale(1);
+/* Off = diagonal strike (muted-speaker convention) — dimming reads as disabled here. */
+.awake-toggle:not(.on)::after {
+  content: '';
+  position: absolute;
+  left: 11px;
+  right: 11px;
+  top: 50%;
+  height: 2.5px;
+  border-radius: 2px;
+  background: var(--ink);
+  /* Halo separates the strike from the glyph regardless of emoji colors. */
+  box-shadow: 0 0 0 1.5px var(--bg);
+  transform: rotate(-45deg);
 }
 
 .par-grid {
