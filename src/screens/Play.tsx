@@ -11,6 +11,8 @@ import { firstIncompleteHole } from '../games/util';
 import { wolfForHole } from '../games/wolf';
 import { strokeIndexMap, strokesReceivedOnHole } from '../games/handicap';
 import { playerColor, colorMap } from '../player';
+import { getSettings, saveSettings } from '../storage';
+import { useWakeLock, wakeLockSupported } from '../useWakeLock';
 
 interface Props {
   round: Round;
@@ -26,8 +28,18 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   const [warn, setWarn] = useState<'next' | 'finish' | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const [keepAwake, setKeepAwake] = useState(() => getSettings().keepAwake);
   const hole = round.holes[idx];
   const last = idx === round.holes.length - 1;
+
+  // Lock lives only while Play is mounted — released on exit/finish by unmount.
+  useWakeLock(keepAwake);
+
+  const toggleKeepAwake = () => {
+    const next = !keepAwake;
+    setKeepAwake(next);
+    saveSettings({ keepAwake: next });
+  };
 
   // Scroll the flagged stepper into view and clear the flash after it plays.
   useEffect(() => {
@@ -154,6 +166,17 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
         >
           Scorecard
         </button>
+        {wakeLockSupported && (
+          <button
+            className={`awake-toggle${keepAwake ? ' on' : ''}`}
+            onClick={toggleKeepAwake}
+            aria-label="Keep screen awake"
+            aria-pressed={keepAwake}
+            title="Keep screen awake"
+          >
+            🔆
+          </button>
+        )}
       </div>
 
       {mode === 'hole' ? (

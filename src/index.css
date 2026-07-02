@@ -533,6 +533,20 @@ select:focus {
 .seg.view-toggle {
   margin-bottom: 0;
 }
+/* Wake-lock toggle: fixed slot beside the view toggle, dimmed when off. */
+.awake-toggle {
+  flex: 0 0 var(--tap);
+  min-height: var(--tap);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg);
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.awake-toggle:not(.on) {
+  opacity: 0.45;
+  filter: grayscale(1);
+}
 
 .par-grid {
   display: grid;
