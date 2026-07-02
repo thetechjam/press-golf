@@ -1,10 +1,12 @@
 import { useRef, useState } from 'react';
 import { scoreMarkClass } from '../scoreMark';
+import { PlayerAvatar } from './PlayerAvatar';
 
 interface Props {
   id?: string;
   highlight?: boolean;
   name: string;
+  color: string;
   value: number | null;
   par: number;
   strokesReceived?: number;
@@ -28,6 +30,7 @@ export function HoleStepper({
   id,
   highlight = false,
   name,
+  color,
   value,
   par,
   strokesReceived = 0,
@@ -62,7 +65,8 @@ export function HoleStepper({
   return (
     <div id={id} className={`stepper tone-${tone}${highlight ? ' highlight' : ''}`}>
       <div className="stepper-name">
-        {name}
+        <PlayerAvatar name={name} color={color} />
+        <span className="stepper-name-text">{name}</span>
         {strokesReceived > 0 && (
           <span className="hcp-dots" aria-label={`${strokesReceived} handicap strokes`}>
             {'•'.repeat(strokesReceived)}

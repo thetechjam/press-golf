@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { Round, GameType } from '../types';
 import { computeSettlement, formatMoney, STAKE_UNIT } from '../games/settlement';
 import { gameMeta } from '../games';
+import { colorMap } from '../player';
+import { PlayerAvatar } from './PlayerAvatar';
 
 interface Props {
   round: Round;
@@ -23,6 +25,7 @@ export function Settlement({ round, onChange }: Props) {
     });
   };
 
+  const colors = colorMap(round);
   const netSorted = round.players
     .map((p) => ({ name: p.name, id: p.id, net: settlement.totals[p.id] ?? 0 }))
     .sort((a, b) => b.net - a.net);
@@ -68,8 +71,9 @@ export function Settlement({ round, onChange }: Props) {
         <>
           <ol className="board-list net-list">
             {netSorted.map((p) => (
-              <li key={p.id} className="board-row">
-                <span className="board-name">{p.name}</span>
+              <li key={p.id} className="net-row">
+                <PlayerAvatar name={p.name} color={colors[p.id]} size={22} />
+                <span className="net-name">{p.name}</span>
                 <span
                   className={`net-amount ${p.net > 0 ? 'up' : p.net < 0 ? 'down' : ''}`}
                 >

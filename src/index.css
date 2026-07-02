@@ -159,6 +159,21 @@ button {
   place-items: center;
 }
 
+/* Player identity badge — colored monogram, consistent across every screen. */
+.avatar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
 /* ---------- Home ---------- */
 .hero {
   text-align: center;
@@ -731,8 +746,17 @@ select:focus {
   }
 }
 .stepper-name {
+  display: flex;
+  align-items: center;
+  gap: 9px;
   font-weight: 700;
   font-size: 1.05rem;
+  min-width: 0;
+}
+.stepper-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .stepper-controls {
   display: flex;
@@ -925,6 +949,15 @@ select:focus {
 }
 .board-name {
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.board-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .board-detail {
   font-variant-numeric: tabular-nums;
@@ -1064,6 +1097,19 @@ select:focus {
 .net-list {
   margin-bottom: 10px;
 }
+.net-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 6px;
+}
+.net-name {
+  flex: 1;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .net-amount {
   font-weight: 800;
   font-variant-numeric: tabular-nums;
@@ -1102,6 +1148,60 @@ select:focus {
 /* ---------- Results ---------- */
 .results-meta {
   text-align: center;
+}
+
+/* Winner payoff hero. */
+.winner-hero {
+  text-align: center;
+  background: color-mix(in srgb, var(--gold) 14%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+  border-radius: var(--radius);
+  padding: 22px 20px;
+}
+.winner-avatars {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.winner-avatars .avatar {
+  box-shadow: 0 0 0 3px var(--card), 0 0 0 5px color-mix(in srgb, var(--gold) 60%, transparent);
+  animation: winner-pop 0.5s ease-out;
+}
+.winner-emoji {
+  font-size: 2.6rem;
+  line-height: 1;
+  animation: winner-pop 0.5s ease-out;
+}
+@keyframes winner-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .winner-avatars .avatar,
+  .winner-emoji {
+    animation: none;
+  }
+}
+.winner-line {
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+.winner-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-transform: capitalize;
+  margin-top: 2px;
 }
 .results-course {
   font-size: 1.3rem;

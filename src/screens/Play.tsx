@@ -9,6 +9,7 @@ import { LeagueBoard } from '../components/LeagueBoard';
 import { activeResults } from '../games';
 import { wolfForHole } from '../games/wolf';
 import { strokeIndexMap, strokesReceivedOnHole } from '../games/handicap';
+import { playerColor, colorMap } from '../player';
 
 interface Props {
   round: Round;
@@ -118,6 +119,8 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     round.players.every((p) => round.scores[h.number]?.[p.id] != null)
   );
 
+  const colors = colorMap(round);
+
   return (
     <div className="screen play">
       <header className="bar">
@@ -197,12 +200,13 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           )}
 
           <section className="steppers">
-            {round.players.map((p) => (
+            {round.players.map((p, i) => (
               <HoleStepper
                 key={p.id}
                 id={`stepper-${p.id}`}
                 highlight={highlightId === p.id}
                 name={p.name}
+                color={playerColor(i)}
                 par={hole.par}
                 value={round.scores[hole.number]?.[p.id] ?? null}
                 strokesReceived={
@@ -230,7 +234,9 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
         {round.options.league ? (
           <LeagueBoard round={round} />
         ) : (
-          results.map((r) => <Leaderboard key={r.gameType} result={r} />)
+          results.map((r) => (
+            <Leaderboard key={r.gameType} result={r} colorOf={(id) => colors[id]} />
+          ))
         )}
       </section>
 
