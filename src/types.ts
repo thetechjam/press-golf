@@ -68,7 +68,10 @@ export interface LeagueSetup {
 }
 
 export interface GameOptions {
-  /** Apply handicaps where a game supports net scoring. */
+  /**
+   * Apply handicaps where a game supports net scoring.
+   * Derived at setup: true when any player entered a handicap (> 0), never set manually.
+   */
   useNet: boolean;
   stablefordMode: 'standard' | 'modified';
   loneWolfMultiplier: number;

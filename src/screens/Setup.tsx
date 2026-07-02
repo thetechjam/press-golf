@@ -151,6 +151,9 @@ export function Setup({ onCancel, onStart }: Props) {
       handicap: showNet ? p.handicap : undefined,
     }));
 
+    // Net scoring is automatic: on when any player entered a handicap (> 0).
+    const useNet = cleanPlayers.some((p) => (p.handicap ?? 0) > 0);
+
     // Builds a TeamSetup from picker state, or returns an error message.
     const buildTeams = (
       mode: '1v1' | '2v2',
@@ -194,7 +197,7 @@ export function Setup({ onCancel, onStart }: Props) {
       players: cleanPlayers,
       holes,
       games,
-      options: { ...options, nassau, matchPlay },
+      options: { ...options, useNet, nassau, matchPlay },
       scores: {},
       wolf: {},
       presses: [],
@@ -223,7 +226,7 @@ export function Setup({ onCancel, onStart }: Props) {
         <span />
       </header>
 
-      <CourseSearch onPick={loadFromApi} />
+      <CourseSearch value={course} onChange={setCourse} onPick={loadFromApi} />
 
       {courses.length > 0 && (
         <section className="card course-picker">
@@ -250,15 +253,6 @@ export function Setup({ onCancel, onStart }: Props) {
           </div>
         </section>
       )}
-
-      <label className="field">
-        <span>Course (optional)</span>
-        <input
-          value={course}
-          onChange={(e) => setCourse(e.target.value)}
-          placeholder="Pebble Beach"
-        />
-      </label>
 
       <section className="card">
         <h2>Players</h2>
@@ -296,6 +290,12 @@ export function Setup({ onCancel, onStart }: Props) {
         <button className="btn-ghost add" onClick={addPlayer}>
           + Add player
         </button>
+        {showNet && (
+          <p className="hint">
+            Enter handicaps to score net — leave them all blank to score gross. A blank handicap
+            plays off 0.
+          </p>
+        )}
       </section>
 
       <section className="card">
@@ -416,19 +416,9 @@ export function Setup({ onCancel, onStart }: Props) {
         />
       )}
 
-      {(showNet || showStableford || showWolf) && (
+      {(showStableford || showWolf) && (
         <section className="card">
           <h2>Options</h2>
-          {showNet && (
-            <label className="toggle">
-              <input
-                type="checkbox"
-                checked={options.useNet}
-                onChange={(e) => setOptions({ ...options, useNet: e.target.checked })}
-              />
-              <span>Use handicaps (net scoring)</span>
-            </label>
-          )}
           {showStableford && (
             <label className="field">
               <span>Stableford scoring</span>

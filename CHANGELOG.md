@@ -15,6 +15,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `PolyForm Noncommercial 1.0.0` license.
 - `.nvmrc` and a `node` engines constraint pinning the Node major version.
 
+### Changed
+- Net scoring is now automatic: it turns on when any player has a handicap
+  entered and stays off when none are. The "Use handicaps (net scoring)"
+  checkbox is gone; a hint under the player list discloses the behavior.
+- Course search and the course-name field are merged into a single input on
+  Setup and League Setup: typing searches the course database (pick a match to
+  auto-fill the scorecard), and the typed text doubles as a manually entered
+  course name, with disclosure text under the field.
+
 ### Fixed
 - Match-play standings showed a trailing side as `-2 DN` instead of `2 DN`
   (double-negative in the UP/DN detail formatting).

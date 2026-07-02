@@ -154,7 +154,12 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
         <span />
       </header>
 
-      <CourseSearch onPick={loadFromApi} />
+      <CourseSearch
+        value={course}
+        onChange={setCourse}
+        onPick={loadFromApi}
+        placeholder="Thursday Night League"
+      />
 
       {courses.length > 0 && (
         <section className="card course-picker">
@@ -181,11 +186,6 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
           </div>
         </section>
       )}
-
-      <label className="field">
-        <span>Course (optional)</span>
-        <input value={course} onChange={(e) => setCourse(e.target.value)} placeholder="Thursday Night League" />
-      </label>
 
       {teams.map((t, ti) => (
         <section key={ti} className="card">
