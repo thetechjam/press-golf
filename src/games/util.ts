@@ -1,4 +1,25 @@
-import type { GameStanding } from '../types';
+import type { GameStanding, Round } from '../types';
+
+type ScoredRound = Pick<Round, 'holes' | 'players' | 'scores'>;
+
+/** A hole is complete when every player has a non-null score on it. */
+const isHoleComplete = (round: ScoredRound, holeNumber: number): boolean =>
+  round.players.every((p) => round.scores[holeNumber]?.[p.id] != null);
+
+/**
+ * Index of the first hole with any blank score — where a resumed round
+ * should land. Falls back to the last hole when everything is scored,
+ * so the Finish button is at hand.
+ */
+export function firstIncompleteHole(round: ScoredRound): number {
+  const i = round.holes.findIndex((h) => !isHoleComplete(round, h.number));
+  return i === -1 ? round.holes.length - 1 : i;
+}
+
+/** Number of fully-scored holes ("thru N" on the Home screen). */
+export function completedHoleCount(round: ScoredRound): number {
+  return round.holes.filter((h) => isHoleComplete(round, h.number)).length;
+}
 
 /**
  * Assigns ranks to standings (ties share a rank) and flags leaders.

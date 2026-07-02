@@ -3,6 +3,7 @@ import type { Round, Player, Hole, SavedCourse } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
 import { CourseSearch } from '../components/CourseSearch';
+import { DeleteButton } from '../components/DeleteButton';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 
 interface Props {
@@ -174,13 +175,13 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
                     {c.holes.some((h) => h.strokeIndex) ? ' · SI set' : ''}
                   </span>
                 </button>
-                <button
+                <DeleteButton
                   className="saved-course-del"
-                  onClick={() => removeCourse(c.id)}
-                  aria-label={`Delete saved course ${c.name}`}
+                  label={`saved course ${c.name}`}
+                  onDelete={() => removeCourse(c.id)}
                 >
                   ×
-                </button>
+                </DeleteButton>
               </div>
             ))}
           </div>

@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import type { Round } from '../types';
 import { listRounds, deleteRound } from '../storage';
+import { completedHoleCount } from '../games/util';
 import { InstallPrompt } from '../components/InstallPrompt';
+import { DeleteButton } from '../components/DeleteButton';
 
 interface Props {
   onNew: () => void;
@@ -46,30 +48,41 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
       {rounds.length > 0 && (
         <section className="saved">
           <h2>Your rounds</h2>
-          {rounds.map((r) => (
-            <div key={r.id} className="round-card">
-              <button
-                className="round-main"
-                onClick={() => (r.status === 'finished' ? onViewResults(r) : onResume(r))}
-              >
-                <div className="round-title">{r.course || 'Untitled round'}</div>
-                <div className="round-sub">
-                  {r.date} · {r.players.length} players · {r.holes.length} holes
-                  {r.status === 'finished' ? ' · finished' : ' · in progress'}
-                </div>
-                <div className="round-games">
-                  {r.games.map((g) => (
-                    <span key={g} className="tag">
-                      {g}
-                    </span>
-                  ))}
-                </div>
-              </button>
-              <button className="round-del" onClick={() => remove(r.id)} aria-label="Delete round">
-                ✕
-              </button>
-            </div>
-          ))}
+          {rounds.map((r) => {
+            const thru = completedHoleCount(r);
+            return (
+              <div key={r.id} className="round-card">
+                <button
+                  className="round-main"
+                  onClick={() => (r.status === 'finished' ? onViewResults(r) : onResume(r))}
+                >
+                  <div className="round-title">{r.course || 'Untitled round'}</div>
+                  <div className="round-sub">
+                    {r.date} · {r.players.length} players · {r.holes.length} holes
+                    {r.status === 'finished'
+                      ? ' · finished'
+                      : thru === 0
+                        ? ' · not started'
+                        : ` · thru ${thru}`}
+                  </div>
+                  <div className="round-games">
+                    {r.games.map((g) => (
+                      <span key={g} className="tag">
+                        {g}
+                      </span>
+                    ))}
+                  </div>
+                </button>
+                <DeleteButton
+                  className="round-del"
+                  label={`round ${r.course || r.date}`}
+                  onDelete={() => remove(r.id)}
+                >
+                  ✕
+                </DeleteButton>
+              </div>
+            );
+          })}
         </section>
       )}
 
