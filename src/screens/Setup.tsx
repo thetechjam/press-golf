@@ -6,6 +6,7 @@ import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
 import { CourseSearch } from '../components/CourseSearch';
+import { DeleteButton } from '../components/DeleteButton';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import { playerColor } from '../player';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
@@ -243,13 +244,13 @@ export function Setup({ onCancel, onStart }: Props) {
                     {c.holes.some((h) => h.strokeIndex) ? ' · SI set' : ''}
                   </span>
                 </button>
-                <button
+                <DeleteButton
                   className="saved-course-del"
-                  onClick={() => removeCourse(c.id)}
-                  aria-label={`Delete saved course ${c.name}`}
+                  label={`saved course ${c.name}`}
+                  onDelete={() => removeCourse(c.id)}
                 >
                   ×
-                </button>
+                </DeleteButton>
               </div>
             ))}
           </div>

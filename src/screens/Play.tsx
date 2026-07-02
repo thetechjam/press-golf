@@ -7,6 +7,7 @@ import { NassauControls } from '../components/NassauControls';
 import { Scorecard } from '../components/Scorecard';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { activeResults } from '../games';
+import { firstIncompleteHole } from '../games/util';
 import { wolfForHole } from '../games/wolf';
 import { strokeIndexMap, strokesReceivedOnHole } from '../games/handicap';
 import { playerColor, colorMap } from '../player';
@@ -19,11 +20,12 @@ interface Props {
 }
 
 export function Play({ round, onChange, onFinish, onExit }: Props) {
-  const [idx, setIdx] = useState(0);
+  // Resume where scoring left off, not on hole 1.
+  const [idx, setIdx] = useState(() => firstIncompleteHole(round));
   const [mode, setMode] = useState<'hole' | 'card'>('hole');
   const [warn, setWarn] = useState<'next' | 'finish' | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
-  const touchX = useRef<number | null>(null);
+  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const hole = round.holes[idx];
   const last = idx === round.holes.length - 1;
 
@@ -101,13 +103,19 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   };
 
   const onTouchStart = (e: React.TouchEvent) => {
-    touchX.current = e.changedTouches[0].clientX;
+    const t = e.changedTouches[0];
+    touchStart.current = { x: t.clientX, y: t.clientY };
   };
   const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchX.current == null) return;
-    const dx = e.changedTouches[0].clientX - touchX.current;
-    if (Math.abs(dx) > 50) go(idx + (dx < 0 ? 1 : -1));
-    touchX.current = null;
+    if (touchStart.current == null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - touchStart.current.x;
+    const dy = t.clientY - touchStart.current.y;
+    // Only decisively horizontal swipes navigate — a diagonal scroll must not flip holes.
+    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) {
+      go(idx + (dx < 0 ? 1 : -1));
+    }
+    touchStart.current = null;
   };
 
   const results = activeResults(round);

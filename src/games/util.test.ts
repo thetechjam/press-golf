@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { rankStandings, ordinal } from './util';
+import { rankStandings, ordinal, firstIncompleteHole, completedHoleCount } from './util';
+import { makeRound, holes, scoresFrom } from './testFixtures';
 import type { GameStanding } from '../types';
 
 function s(label: string, value: number): GameStanding {
@@ -45,6 +46,72 @@ describe('rankStandings', () => {
     const st = [s('Al', 72), s('Bo', 72), s('Cy', 80)];
     rankStandings(st, true);
     expect(st.filter((x) => x.isLeader).map((x) => x.label).sort()).toEqual(['Al', 'Bo']);
+  });
+});
+
+describe('firstIncompleteHole', () => {
+  it('returns 0 for an unstarted round', () => {
+    expect(firstIncompleteHole(makeRound())).toBe(0);
+  });
+
+  it('returns the first hole where any player is blank', () => {
+    const hs = holes(9);
+    const round = makeRound({
+      holes: hs,
+      scores: scoresFrom(hs, {
+        p1: [4, 4, 4, 4],
+        p2: [4, 4, 4], // p2 blank on hole 4
+      }),
+    });
+    expect(firstIncompleteHole(round)).toBe(3);
+  });
+
+  it('skips past a fully-scored front and lands mid-round', () => {
+    const hs = holes(18);
+    const full = Array.from({ length: 12 }, () => 4);
+    const round = makeRound({
+      holes: hs,
+      scores: scoresFrom(hs, { p1: full, p2: full }),
+    });
+    expect(firstIncompleteHole(round)).toBe(12);
+  });
+
+  it('returns the last hole when every hole is complete', () => {
+    const hs = holes(9);
+    const full = Array.from({ length: 9 }, () => 4);
+    const round = makeRound({
+      holes: hs,
+      scores: scoresFrom(hs, { p1: full, p2: full }),
+    });
+    expect(firstIncompleteHole(round)).toBe(8);
+  });
+});
+
+describe('completedHoleCount', () => {
+  it('is 0 for an unstarted round', () => {
+    expect(completedHoleCount(makeRound())).toBe(0);
+  });
+
+  it('only counts holes where every player has scored', () => {
+    const hs = holes(9);
+    const round = makeRound({
+      holes: hs,
+      scores: scoresFrom(hs, {
+        p1: [4, 4, 4, 4],
+        p2: [4, 4, null, 4], // hole 3 incomplete
+      }),
+    });
+    expect(completedHoleCount(round)).toBe(3);
+  });
+
+  it('counts all holes when the round is fully scored', () => {
+    const hs = holes(9);
+    const full = Array.from({ length: 9 }, () => 4);
+    const round = makeRound({
+      holes: hs,
+      scores: scoresFrom(hs, { p1: full, p2: full }),
+    });
+    expect(completedHoleCount(round)).toBe(9);
   });
 });
 
