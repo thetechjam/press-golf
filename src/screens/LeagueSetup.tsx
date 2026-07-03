@@ -33,7 +33,6 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
   // so switching Front/Back re-slices the correct pars/indexes instead of just
   // relabeling. Null when holes were entered by hand.
   const [source, setSource] = useState<Hole[] | null>(null);
-  const [pointsPerMatch, setPointsPerMatch] = useState(1);
   const [startHole, setStartHole] = useState(1);
   const [teams, setTeams] = useState<TeamState[]>([
     { a: newPlayer(), b: newPlayer() },
@@ -136,7 +135,8 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
       options: {
         ...DEFAULT_OPTIONS,
         league: {
-          pointsPerMatch,
+          // League standard: each match (A, B, Team) is worth 1 point.
+          pointsPerMatch: 1,
           teams: [
             { aId: teams[0].a.id, bId: teams[0].b.id },
             { aId: teams[1].a.id, bId: teams[1].b.id },
@@ -282,23 +282,6 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
         </div>
         <p className="hint-inline">
           The round begins here and wraps around — e.g. start on 5, finish on 4.
-        </p>
-      </section>
-
-      <section className="card">
-        <h2>Points</h2>
-        <label className="field small">
-          <span>Points per match won</span>
-          <input
-            type="number"
-            min={0}
-            step={1}
-            value={pointsPerMatch}
-            onChange={(e) => setPointsPerMatch(Number(e.target.value))}
-          />
-        </label>
-        <p className="hint-inline">
-          A, B, and Team matches each award this many points. A halved match splits them.
         </p>
       </section>
 
