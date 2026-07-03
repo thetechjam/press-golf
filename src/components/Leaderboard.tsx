@@ -6,12 +6,7 @@ interface Props {
   colorOf?: (playerId: string) => string | undefined;
 }
 
-const medal = (rank: number): string =>
-  rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}`;
-
 export function Leaderboard({ result, colorOf }: Props) {
-  // Medals only once scores actually separate players (rankStandings flags leaders then).
-  const hasSpread = result.standings.some((s) => s.isLeader);
 
   return (
     <div className="board">
@@ -30,9 +25,7 @@ export function Leaderboard({ result, colorOf }: Props) {
                 key={s.playerId ?? s.label}
                 className={`board-row${s.isLeader ? ' leader' : ''}`}
               >
-                <span className="board-rank">
-                  {s.playerId ? (hasSpread ? medal(s.rank) : s.rank) : i + 1}
-                </span>
+                <span className="board-rank">{s.playerId ? s.rank : i + 1}</span>
                 <span className="board-name">
                   {color && <PlayerAvatar name={s.label} color={color} size={22} />}
                   <span className="board-name-text">{s.label}</span>

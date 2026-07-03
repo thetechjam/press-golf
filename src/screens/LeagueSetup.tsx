@@ -5,6 +5,7 @@ import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
 import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
+import { StarIcon, XIcon } from '../icons';
 
 interface Props {
   onCancel: () => void;
@@ -78,7 +79,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
     saveCourse({ id: existing?.id ?? uid(), name, holes: holes.map((h) => ({ ...h })) });
     setCourses(listCourses());
     setError('');
-    setSavedNote(`Saved "${name}" ★`);
+    setSavedNote(`Saved "${name}"`);
   };
   const removeCourse = (id: string) => {
     deleteCourse(id);
@@ -186,7 +187,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
                   label={`saved course ${c.name}`}
                   onDelete={() => removeCourse(c.id)}
                 >
-                  ×
+                  <XIcon />
                 </DeleteButton>
               </div>
             ))}
@@ -261,7 +262,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
         </div>
         <p className="hint-inline">Top box = par, bottom = stroke index (1 = hardest).</p>
         <button className="btn-ghost add" onClick={saveFavorite}>
-          ★ Save this course for next time
+          <StarIcon size={16} /> Save this course for next time
         </button>
         {savedNote && <p className="hint-inline">{savedNote}</p>}
       </section>

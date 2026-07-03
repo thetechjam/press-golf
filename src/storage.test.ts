@@ -26,7 +26,7 @@ describe('settings', () => {
   });
 
   it('returns the merged settings from saveSettings', () => {
-    expect(saveSettings({ keepAwake: false })).toEqual({ keepAwake: false });
+    expect(saveSettings({ keepAwake: false })).toEqual({ ...DEFAULT_SETTINGS, keepAwake: false });
   });
 
   it('merges stored partials over defaults (forward-compatible)', () => {

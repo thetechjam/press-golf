@@ -1,6 +1,7 @@
 import type { Round, Hole, WolfChoice } from '../types';
 import { wolfForHole } from '../games/wolf';
 import { PlayerAvatar } from './PlayerAvatar';
+import { PawIcon } from '../icons';
 import { colorMap } from '../player';
 
 interface Props {
@@ -22,7 +23,7 @@ export function WolfControls({ round, hole, onChange }: Props) {
   return (
     <div className="wolf">
       <div className="wolf-head">
-        🐺 {wolf && <PlayerAvatar name={wolf.name} color={colors[wolf.id]} size={22} />}
+        <PawIcon size={16} /> {wolf && <PlayerAvatar name={wolf.name} color={colors[wolf.id]} size={22} />}
         <strong>{wolf?.name ?? 'Wolf'}</strong> is the Wolf — make the call
       </div>
       <div className="wolf-options">

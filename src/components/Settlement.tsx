@@ -3,6 +3,7 @@ import type { Round, GameType } from '../types';
 import { computeSettlement, formatMoney, STAKE_UNIT } from '../games/settlement';
 import { gameMeta } from '../games';
 import { colorMap } from '../player';
+import { CoinIcon } from '../icons';
 import { PlayerAvatar } from './PlayerAvatar';
 
 interface Props {
@@ -33,7 +34,9 @@ export function Settlement({ round, onChange }: Props) {
   return (
     <section className="board settlement">
       <div className="board-head">
-        <span className="board-title">💰 Settlement</span>
+        <span className="board-title">
+          <CoinIcon size={16} /> Settlement
+        </span>
         {onChange && (
           <button className="link-btn" onClick={() => setEditing((e) => !e)}>
             {editing ? 'Done' : 'Edit stakes'}
@@ -85,7 +88,7 @@ export function Settlement({ round, onChange }: Props) {
 
           <div className="payments">
             {settlement.transactions.length === 0 ? (
-              <div className="all-even">Everyone's even 🎉</div>
+              <div className="all-even">Everyone's even</div>
             ) : (
               settlement.transactions.map((t, i) => (
                 <div key={i} className="payment">

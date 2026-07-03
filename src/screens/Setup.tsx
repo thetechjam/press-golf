@@ -10,6 +10,7 @@ import { DeleteButton } from '../components/DeleteButton';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import { playerColor } from '../player';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
+import { StarIcon, XIcon } from '../icons';
 
 interface Props {
   onCancel: () => void;
@@ -80,7 +81,7 @@ export function Setup({ onCancel, onStart }: Props) {
     });
     setCourses(listCourses());
     setError('');
-    setSavedNote(`Saved "${name}" ★`);
+    setSavedNote(`Saved "${name}"`);
   };
 
   const removeCourse = (id: string) => {
@@ -249,7 +250,7 @@ export function Setup({ onCancel, onStart }: Props) {
                   label={`saved course ${c.name}`}
                   onDelete={() => removeCourse(c.id)}
                 >
-                  ×
+                  <XIcon />
                 </DeleteButton>
               </div>
             ))}
@@ -287,7 +288,7 @@ export function Setup({ onCancel, onStart }: Props) {
               onClick={() => removePlayer(p.id)}
               aria-label="Remove player"
             >
-              ✕
+              <XIcon />
             </button>
           </div>
         ))}
@@ -364,7 +365,7 @@ export function Setup({ onCancel, onStart }: Props) {
           </p>
         )}
         <button className="btn-ghost add" onClick={saveFavorite}>
-          ★ Save this course for next time
+          <StarIcon size={16} /> Save this course for next time
         </button>
         {savedNote && <p className="hint-inline">{savedNote}</p>}
       </section>
