@@ -12,7 +12,6 @@ interface Props {
 }
 
 interface TeamState {
-  name: string;
   a: Player;
   b: Player;
 }
@@ -35,9 +34,10 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
   // relabeling. Null when holes were entered by hand.
   const [source, setSource] = useState<Hole[] | null>(null);
   const [pointsPerMatch, setPointsPerMatch] = useState(1);
+  const [startHole, setStartHole] = useState(1);
   const [teams, setTeams] = useState<TeamState[]>([
-    { name: '', a: newPlayer(), b: newPlayer() },
-    { name: '', a: newPlayer(), b: newPlayer() },
+    { a: newPlayer(), b: newPlayer() },
+    { a: newPlayer(), b: newPlayer() },
   ]);
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   const [savedNote, setSavedNote] = useState('');
@@ -45,6 +45,8 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
 
   const switchNine = (n: Nine) => {
     setNine(n);
+    // Keep the same position within the nine (e.g. start hole 5 → 14).
+    setStartHole((s) => (n === 'back' ? (s <= 9 ? s + 9 : s) : s > 9 ? s - 9 : s));
     if (source && source.length >= 18) {
       setHoles(sliceCourseHoles(source, 9, { nine: n }));
     } else {
@@ -58,8 +60,6 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
     setTeams((ts) =>
       ts.map((t, i) => (i === ti ? { ...t, [role]: { ...t[role], ...patch } } : t))
     );
-  const updateTeamName = (ti: number, name: string) =>
-    setTeams((ts) => ts.map((t, i) => (i === ti ? { ...t, name } : t)));
 
   const setPar = (n: number, par: number) =>
     setHoles((hs) => hs.map((h) => (h.number === n ? { ...h, par } : h)));
@@ -118,6 +118,12 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
       handicap: p.handicap ?? 0,
     }));
 
+    // Rotate holes into play order so the round starts on the chosen hole
+    // (e.g. start on 5 → 5,6,7,8,9,1,2,3,4). Navigation, resume, and the
+    // Finish button all follow the array order, so this is the whole feature.
+    const si = holes.findIndex((h) => h.number === startHole);
+    const playOrder = si <= 0 ? holes : [...holes.slice(si), ...holes.slice(0, si)];
+
     const round: Round = {
       id: uid(),
       course: course.trim() || undefined,
@@ -125,15 +131,15 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
       createdAt: Date.now(),
       updatedAt: Date.now(),
       players,
-      holes,
+      holes: playOrder,
       games: [],
       options: {
         ...DEFAULT_OPTIONS,
         league: {
           pointsPerMatch,
           teams: [
-            { name: teams[0].name.trim() || undefined, aId: teams[0].a.id, bId: teams[0].b.id },
-            { name: teams[1].name.trim() || undefined, aId: teams[1].a.id, bId: teams[1].b.id },
+            { aId: teams[0].a.id, bId: teams[0].b.id },
+            { aId: teams[1].a.id, bId: teams[1].b.id },
           ],
         },
       },
@@ -191,10 +197,6 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
       {teams.map((t, ti) => (
         <section key={ti} className="card">
           <h2>Team {ti + 1}</h2>
-          <label className="field">
-            <span>Team name (optional)</span>
-            <input value={t.name} onChange={(e) => updateTeamName(ti, e.target.value)} placeholder={`Team ${ti + 1}`} />
-          </label>
           {(['a', 'b'] as const).map((role) => (
             <div key={role} className="player-row">
               <span className="ab-badge">{role.toUpperCase()}</span>
@@ -262,6 +264,25 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
           ★ Save this course for next time
         </button>
         {savedNote && <p className="hint-inline">{savedNote}</p>}
+      </section>
+
+      <section className="card">
+        <h2>Starting hole</h2>
+        <div className="start-hole-grid">
+          {holes.map((h) => (
+            <button
+              key={h.number}
+              className={`seg-btn${startHole === h.number ? ' active' : ''}`}
+              onClick={() => setStartHole(h.number)}
+              aria-pressed={startHole === h.number}
+            >
+              {h.number}
+            </button>
+          ))}
+        </div>
+        <p className="hint-inline">
+          The round begins here and wraps around — e.g. start on 5, finish on 4.
+        </p>
       </section>
 
       <section className="card">

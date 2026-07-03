@@ -2,15 +2,17 @@ import type { Round, Hole } from '../types';
 
 /**
  * Stroke index per hole. Uses the values the user entered when every hole has
- * one; otherwise falls back to sequential indexing in hole order so net games
- * still allocate strokes deterministically.
+ * one; otherwise falls back to sequential indexing by ascending hole number
+ * so net games allocate strokes the same way regardless of which hole the
+ * round started on (league rounds rotate holes into play order).
  */
 export function strokeIndexMap(round: Round): Record<number, number> {
   const allProvided = round.holes.every(
     (h) => typeof h.strokeIndex === 'number' && h.strokeIndex > 0
   );
+  const byNumber = [...round.holes].sort((a, b) => a.number - b.number);
   const map: Record<number, number> = {};
-  round.holes.forEach((h, i) => {
+  byNumber.forEach((h, i) => {
     map[h.number] = allProvided ? (h.strokeIndex as number) : i + 1;
   });
   return map;
