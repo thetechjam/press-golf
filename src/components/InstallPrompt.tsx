@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { DownloadIcon } from '../icons';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -38,7 +39,7 @@ export function InstallPrompt() {
 
   return (
     <button className="install-btn" onClick={install}>
-      ⬇ Install Press as an app
+      <DownloadIcon size={17} /> Install Press as an app
     </button>
   );
 }

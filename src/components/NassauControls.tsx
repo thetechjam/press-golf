@@ -1,6 +1,7 @@
 import type { Round, Hole } from '../types';
 import { matchSegmentSides } from '../games/matchPlay';
 import { nineHolesFor, endOfNine, nassauTeams } from '../games/nassau';
+import { FlagIcon } from '../icons';
 
 interface Props {
   round: Round;
@@ -32,7 +33,7 @@ export function NassauControls({ round, hole, onChange }: Props) {
   return (
     <div className="nassau">
       <div className="nassau-head">
-        ⛳ Nassau · {nineLabel}: <strong>{seg.status}</strong>
+        <FlagIcon size={14} /> Nassau · {nineLabel}: <strong>{seg.status}</strong>
       </div>
       <button className="press-btn" onClick={addPress} disabled={alreadyHere || !canPress}>
         {alreadyHere

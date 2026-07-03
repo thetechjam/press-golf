@@ -1,5 +1,6 @@
 import type { Round } from '../types';
 import { computeLeague } from '../games/league';
+import { TrophyIcon } from '../icons';
 
 const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
 
@@ -12,7 +13,9 @@ export function LeagueBoard({ round }: { round: Round }) {
   return (
     <section className="board league-board">
       <div className="board-head">
-        <span className="board-title">🏆 League</span>
+        <span className="board-title">
+          <TrophyIcon size={16} /> League
+        </span>
         <span className="board-status">{league.complete ? 'Final' : 'Live'}</span>
       </div>
 

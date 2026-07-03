@@ -104,12 +104,12 @@ button {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--green-600), var(--fairway));
+  background: var(--green-600);
   color: #fff;
   border-radius: var(--radius);
   font-weight: 700;
   padding: 14px 20px;
-  box-shadow: 0 6px 18px rgba(26, 125, 94, 0.32);
+  box-shadow: 0 3px 12px rgba(26, 125, 94, 0.22);
   transition: transform 0.08s ease;
 }
 .btn-primary:active {
@@ -119,6 +119,15 @@ button {
   font-size: 1.15rem;
   padding: 18px;
   min-height: var(--tap);
+}
+/* Buttons and titles that lead with an inline SVG icon. */
+.btn-primary.big,
+.btn-secondary.big,
+.btn-ghost.add {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 .btn-primary.sticky {
   position: sticky;
@@ -200,9 +209,16 @@ button {
   font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--green-700);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.sunlight) .logo {
+    color: var(--fairway);
+  }
+  :root:not(.sunlight) .round-result {
     color: var(--fairway);
   }
 }
@@ -239,6 +255,12 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.round-result {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--green-600);
+  margin-top: 2px;
 }
 .round-sub {
   font-size: 0.82rem;
@@ -284,8 +306,8 @@ button {
   margin-top: 4px;
 }
 .empty-icon {
-  font-size: 2.4rem;
   line-height: 1;
+  color: var(--green-600);
 }
 .empty-title {
   font-weight: 700;
@@ -553,8 +575,15 @@ select:focus {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--bg);
-  font-size: 1.3rem;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.awake-toggle.on {
+  color: var(--green-700);
+  border-color: var(--green-600);
 }
 /* Off = diagonal strike (muted-speaker convention) — dimming reads as disabled here. */
 .awake-toggle:not(.on)::after {
@@ -733,21 +762,50 @@ select:focus {
   flex-direction: column;
   gap: 16px;
 }
+.hole-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+@keyframes hole-in-next {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+@keyframes hole-in-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+.slide-next {
+  animation: hole-in-next 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide-prev {
+  animation: hole-in-prev 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide-next,
+  .slide-prev {
+    animation: none;
+  }
+}
 .hole-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--green-700);
-  color: #fff;
-  border-radius: var(--radius);
-  padding: 8px 8px;
+  color: var(--ink);
+  padding: 0 2px;
 }
 .nav-arrow {
   width: 52px;
   height: 52px;
-  font-size: 1.8rem;
-  color: #fff;
-  border-radius: 12px;
+  font-size: 1.6rem;
+  color: var(--green-700);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
 }
 .nav-arrow:disabled {
   opacity: 0.3;
@@ -756,12 +814,13 @@ select:focus {
   text-align: center;
 }
 .hole-num {
-  font-size: 1.5rem;
+  font-size: 2rem;
   font-weight: 800;
+  letter-spacing: -0.02em;
 }
 .hole-par {
   font-size: 0.85rem;
-  opacity: 0.85;
+  color: var(--muted);
 }
 .progress {
   text-align: center;
@@ -816,17 +875,20 @@ select:focus {
 .steppers {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
 }
 .stepper {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--card);
-  border: 1px solid var(--line);
   border-left: 5px solid var(--line);
-  border-radius: var(--radius);
-  padding: 10px 14px;
+  padding: 12px 14px 12px 11px;
+}
+.stepper + .stepper {
+  border-top: 1px solid var(--line);
 }
 .stepper.tone-under {
   border-left-color: var(--under);
@@ -843,7 +905,7 @@ select:focus {
     box-shadow: 0 0 0 0 transparent;
   }
   30% {
-    box-shadow: 0 0 0 3px var(--fairway);
+    box-shadow: inset 0 0 0 3px var(--fairway);
   }
 }
 .stepper.highlight {
@@ -853,7 +915,7 @@ select:focus {
 @media (prefers-reduced-motion: reduce) {
   .stepper.highlight {
     animation: none;
-    box-shadow: 0 0 0 3px var(--fairway);
+    box-shadow: inset 0 0 0 3px var(--fairway);
   }
 }
 .stepper-name {
@@ -889,13 +951,13 @@ select:focus {
   color: #fff;
 }
 .stepper-value {
-  width: 64px;
+  width: 76px;
   text-align: center;
   display: flex;
   flex-direction: column;
 }
 .score-num {
-  font-size: 1.6rem;
+  font-size: 2.2rem;
   font-weight: 800;
   line-height: 1;
 }
@@ -904,6 +966,15 @@ select:focus {
 }
 .tone-over .score-num {
   color: var(--over);
+}
+.scorecard,
+.score-num,
+.hole-num,
+.board-detail,
+.stepper-value,
+.lmatch-status,
+.player-hcp {
+  font-variant-numeric: tabular-nums;
 }
 .score-tag {
   font-size: 0.65rem;
@@ -923,6 +994,13 @@ select:focus {
   font-size: 0.92rem;
   line-height: 1.6;
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.wolf-head svg {
+  flex-shrink: 0;
 }
 .wolf-options {
   display: flex;
@@ -964,6 +1042,9 @@ select:focus {
 .nassau-head {
   font-size: 0.92rem;
   margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 .press-btn {
   width: 100%;
@@ -1031,6 +1112,9 @@ select:focus {
 }
 .board-title {
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .board-status {
   font-size: 0.8rem;
@@ -1138,15 +1222,14 @@ select:focus {
 .league-matches {
   margin-top: 10px;
   border-top: 1px solid var(--line);
-  padding-top: 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
 }
 .lmatch {
-  padding: 8px 6px;
-  border-radius: 10px;
-  background: var(--bg);
+  padding: 10px 2px;
+}
+.lmatch + .lmatch {
+  border-top: 1px solid var(--line);
 }
 .lmatch-top {
   display: flex;
@@ -1291,9 +1374,35 @@ select:focus {
   box-shadow: 0 0 0 3px var(--card), 0 0 0 5px color-mix(in srgb, var(--gold) 60%, transparent);
   animation: winner-pop 0.5s ease-out;
 }
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.results > * {
+  animation: rise-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.results > *:nth-child(2) {
+  animation-delay: 0.04s;
+}
+.results > *:nth-child(3) {
+  animation-delay: 0.08s;
+}
+.results > *:nth-child(4) {
+  animation-delay: 0.12s;
+}
+.results > *:nth-child(5) {
+  animation-delay: 0.16s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .results > * {
+    animation: none;
+  }
+}
 .winner-emoji {
-  font-size: 2.6rem;
   line-height: 1;
+  color: var(--gold);
   animation: winner-pop 0.5s ease-out;
 }
 @keyframes winner-pop {
@@ -1418,6 +1527,10 @@ select:focus {
   background: transparent;
   font-weight: 700;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
 /* ---------- Presets & stroke index ---------- */

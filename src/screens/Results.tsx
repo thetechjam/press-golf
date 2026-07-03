@@ -8,6 +8,7 @@ import { activeResults } from '../games';
 import { computeSettlement, formatMoney } from '../games/settlement';
 import { computeLeague } from '../games/league';
 import { colorMap } from '../player';
+import { TrophyIcon, ShareIcon } from '../icons';
 
 interface Hero {
   players: { name: string; color: string }[];
@@ -154,7 +155,9 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
         <div className="winner-hero">
           <div className="winner-avatars">
             {hero.players.length === 0 ? (
-              <span className="winner-emoji">🏆</span>
+              <span className="winner-emoji">
+                <TrophyIcon size={44} />
+              </span>
             ) : (
               hero.players.map((p, i) => (
                 <PlayerAvatar key={i} name={p.name} color={p.color} size={60} />
@@ -182,7 +185,13 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       )}
 
       <button className="btn-primary big" onClick={share}>
-        {copied ? '✓ Copied to clipboard' : '📤 Share results'}
+        {copied ? (
+          'Copied to clipboard'
+        ) : (
+          <>
+            <ShareIcon size={18} /> Share results
+          </>
+        )}
       </button>
     </div>
   );

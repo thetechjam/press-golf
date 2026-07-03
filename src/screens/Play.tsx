@@ -14,6 +14,7 @@ import { playerColor, colorMap } from '../player';
 import { getSettings, saveSettings } from '../storage';
 import { applySunlight } from '../sunlight';
 import { useWakeLock, wakeLockSupported } from '../useWakeLock';
+import { EyeIcon, SunIcon } from '../icons';
 
 interface Props {
   round: Round;
@@ -63,9 +64,13 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     return () => clearTimeout(t);
   }, [highlightId]);
 
+  // Which way the hole content slides in — matches the swipe/arrow direction.
+  const [dir, setDir] = useState<'next' | 'prev'>('next');
   const go = (next: number) => {
     setWarn(null);
-    setIdx(Math.max(0, Math.min(round.holes.length - 1, next)));
+    const clamped = Math.max(0, Math.min(round.holes.length - 1, next));
+    setDir(clamped >= idx ? 'next' : 'prev');
+    setIdx(clamped);
   };
 
   const setScore = (playerId: string, value: number | null) => {
@@ -143,7 +148,6 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   };
 
   const results = activeResults(round);
-  const parTotal = round.holes.reduce((s, h) => s + h.par, 0);
   const siMap = strokeIndexMap(round);
 
   // A hole is complete when every player has a score — drives the progress strip.
@@ -186,7 +190,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             aria-pressed={keepAwake}
             title="Keep screen awake"
           >
-            🔆
+            <EyeIcon size={20} />
           </button>
         )}
         <button
@@ -196,7 +200,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           aria-pressed={sunlight}
           title="Sunlight mode — high-contrast light theme"
         >
-          ☀️
+          <SunIcon size={20} />
         </button>
       </div>
 
@@ -239,37 +243,35 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             ))}
           </div>
 
-          <div className="progress">
-            Hole {idx + 1} of {round.holes.length} · Par {parTotal}
+          <div key={hole.number} className={`hole-body slide-${dir}`}>
+            {round.games.includes('wolf') && (
+              <WolfControls round={round} hole={hole} onChange={setWolf} />
+            )}
+
+            {round.games.includes('nassau') && (
+              <NassauControls round={round} hole={hole} onChange={setPresses} />
+            )}
+
+            <section className="steppers">
+              {round.players.map((p, i) => (
+                <HoleStepper
+                  key={p.id}
+                  id={`stepper-${p.id}`}
+                  highlight={highlightId === p.id}
+                  name={p.name}
+                  color={playerColor(i)}
+                  par={hole.par}
+                  value={round.scores[hole.number]?.[p.id] ?? null}
+                  strokesReceived={
+                    round.options.useNet
+                      ? strokesReceivedOnHole(p.handicap ?? 0, siMap[hole.number], round.holes.length)
+                      : 0
+                  }
+                  onChange={(v) => setScore(p.id, v)}
+                />
+              ))}
+            </section>
           </div>
-
-          {round.games.includes('wolf') && (
-            <WolfControls round={round} hole={hole} onChange={setWolf} />
-          )}
-
-          {round.games.includes('nassau') && (
-            <NassauControls round={round} hole={hole} onChange={setPresses} />
-          )}
-
-          <section className="steppers">
-            {round.players.map((p, i) => (
-              <HoleStepper
-                key={p.id}
-                id={`stepper-${p.id}`}
-                highlight={highlightId === p.id}
-                name={p.name}
-                color={playerColor(i)}
-                par={hole.par}
-                value={round.scores[hole.number]?.[p.id] ?? null}
-                strokesReceived={
-                  round.options.useNet
-                    ? strokesReceivedOnHole(p.handicap ?? 0, siMap[hole.number], round.holes.length)
-                    : 0
-                }
-                onChange={(v) => setScore(p.id, v)}
-              />
-            ))}
-          </section>
         </div>
       ) : (
         <Scorecard
