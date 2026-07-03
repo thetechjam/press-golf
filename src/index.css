@@ -20,7 +20,7 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not(.sunlight) {
     --cream: #0f1d18;
     --ink: #eaf3ee;
     --muted: #9fb4aa;
@@ -31,6 +31,18 @@
     --over-strong: #ff6b5e;
     --under: #43d281;
   }
+}
+
+/* Sunlight mode: max-contrast light theme for direct daylight, regardless of
+   the system appearance. Toggled via the ☀️ button; class lives on <html>. */
+:root.sunlight {
+  color-scheme: light;
+  --cream: #ffffff;
+  --ink: #04110b;
+  --muted: #3d4d45;
+  --card: #ffffff;
+  --line: #b9c8bd;
+  --bg: #ffffff;
 }
 
 * {
@@ -140,11 +152,11 @@ button {
   min-height: var(--tap);
 }
 @media (prefers-color-scheme: dark) {
-  .btn-secondary {
+  :root:not(.sunlight) .btn-secondary {
     color: var(--fairway);
   }
   /* The light-mode drop shadow reads muddy on a dark bg — soften to a subtle glow. */
-  .btn-primary {
+  :root:not(.sunlight) .btn-primary {
     box-shadow: 0 2px 12px rgba(47, 191, 134, 0.28);
   }
 }
@@ -190,7 +202,7 @@ button {
   color: var(--green-700);
 }
 @media (prefers-color-scheme: dark) {
-  .logo {
+  :root:not(.sunlight) .logo {
     color: var(--fairway);
   }
 }
@@ -384,7 +396,7 @@ select:focus {
   color: var(--green-700);
 }
 @media (prefers-color-scheme: dark) {
-  .cs-hit-name {
+  :root:not(.sunlight) .cs-hit-name {
     color: var(--fairway);
   }
 }
@@ -441,7 +453,7 @@ select:focus {
   text-overflow: ellipsis;
 }
 @media (prefers-color-scheme: dark) {
-  .saved-course-name {
+  :root:not(.sunlight) .saved-course-name {
     color: var(--fairway);
   }
 }
@@ -479,8 +491,8 @@ select:focus {
 }
 @media (prefers-color-scheme: dark) {
   /* White on the dark-mode --over fails contrast; the near-black bg clears it. */
-  .round-del.armed,
-  .saved-course-del.armed {
+  :root:not(.sunlight) .round-del.armed,
+  :root:not(.sunlight) .saved-course-del.armed {
     color: var(--bg);
   }
 }
@@ -796,7 +808,7 @@ select:focus {
   transform: scale(1.3);
 }
 @media (prefers-color-scheme: dark) {
-  .hole-dot.current::before {
+  :root:not(.sunlight) .hole-dot.current::before {
     border-color: var(--fairway);
   }
 }

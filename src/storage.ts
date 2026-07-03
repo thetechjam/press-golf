@@ -7,9 +7,11 @@ const SETTINGS_KEY = 'press.settings.v1';
 export interface Settings {
   /** Hold a screen wake lock while scoring. */
   keepAwake: boolean;
+  /** Force the high-contrast light theme for outdoor readability. */
+  sunlight: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { keepAwake: true };
+export const DEFAULT_SETTINGS: Settings = { keepAwake: true, sunlight: false };
 
 export function getSettings(): Settings {
   try {
