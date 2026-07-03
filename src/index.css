@@ -559,6 +559,20 @@ select:focus {
   transform: rotate(-45deg);
 }
 
+/* Starting-hole picker: seg-style buttons that wrap on narrow phones so each
+   stays a comfortable tap target (one row on wider screens). */
+.start-hole-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.start-hole-grid .seg-btn {
+  padding: 10px 0;
+  min-height: var(--tap);
+  font-variant-numeric: tabular-nums;
+}
+
 .par-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
