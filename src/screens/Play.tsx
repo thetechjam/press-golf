@@ -24,7 +24,10 @@ interface Props {
 export function Play({ round, onChange, onFinish, onExit }: Props) {
   // Resume where scoring left off, not on hole 1.
   const [idx, setIdx] = useState(() => firstIncompleteHole(round));
-  const [mode, setMode] = useState<'hole' | 'card'>('hole');
+  // A finished round opens on the scorecard — you're reviewing, not scoring.
+  const [mode, setMode] = useState<'hole' | 'card'>(
+    round.status === 'finished' ? 'card' : 'hole'
+  );
   const [warn, setWarn] = useState<'next' | 'finish' | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const touchStart = useRef<{ x: number; y: number } | null>(null);
