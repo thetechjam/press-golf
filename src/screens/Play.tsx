@@ -12,6 +12,7 @@ import { wolfForHole } from '../games/wolf';
 import { strokeIndexMap, strokesReceivedOnHole } from '../games/handicap';
 import { playerColor, colorMap } from '../player';
 import { getSettings, saveSettings } from '../storage';
+import { applySunlight } from '../sunlight';
 import { useWakeLock, wakeLockSupported } from '../useWakeLock';
 
 interface Props {
@@ -42,6 +43,14 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     const next = !keepAwake;
     setKeepAwake(next);
     saveSettings({ keepAwake: next });
+  };
+
+  const [sunlight, setSunlight] = useState(() => getSettings().sunlight);
+  const toggleSunlight = () => {
+    const next = !sunlight;
+    setSunlight(next);
+    saveSettings({ sunlight: next });
+    applySunlight(next);
   };
 
   // Scroll the flagged stepper into view and clear the flash after it plays.
@@ -180,6 +189,15 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             🔆
           </button>
         )}
+        <button
+          className={`awake-toggle${sunlight ? ' on' : ''}`}
+          onClick={toggleSunlight}
+          aria-label="Sunlight mode"
+          aria-pressed={sunlight}
+          title="Sunlight mode — high-contrast light theme"
+        >
+          ☀️
+        </button>
       </div>
 
       {mode === 'hole' ? (
