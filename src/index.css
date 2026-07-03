@@ -1045,6 +1045,10 @@ select:focus {
 .board-row.leader {
   background: color-mix(in srgb, var(--fairway) 14%, transparent);
 }
+/* League rows have no rank/trophy gutter — names sit flush left. */
+.league-board .board-row {
+  grid-template-columns: 1fr auto;
+}
 .board-rank {
   font-size: 0.8rem;
   color: var(--muted);

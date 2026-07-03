@@ -6,6 +6,7 @@ const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
 export function LeagueBoard({ round }: { round: Round }) {
   const league = computeLeague(round);
   const [t0, t1] = league.teams;
+  // Leader is marked by the row highlight alone — no trophy glyph.
   const lead = t0.points === t1.points ? null : t0.points > t1.points ? 0 : 1;
 
   return (
@@ -17,12 +18,10 @@ export function LeagueBoard({ round }: { round: Round }) {
 
       <ol className="board-list">
         <li className={`board-row${lead === 0 ? ' leader' : ''}`}>
-          <span className="board-rank">{lead === 0 ? '🏆' : ''}</span>
           <span className="board-name">{t0.name}</span>
           <span className="board-detail">{fmtPts(t0.points)} pts</span>
         </li>
         <li className={`board-row${lead === 1 ? ' leader' : ''}`}>
-          <span className="board-rank">{lead === 1 ? '🏆' : ''}</span>
           <span className="board-name">{t1.name}</span>
           <span className="board-detail">{fmtPts(t1.points)} pts</span>
         </li>

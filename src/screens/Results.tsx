@@ -15,21 +15,10 @@ interface Hero {
   sub: string;
 }
 
-const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
-
 // The payoff headline: money leader when stakes are set, else the leader of the
-// first decided game, else the league winner. Null only when nothing separates players.
+// first decided game. League rounds skip the hero — the board tells the story.
 function winnerHero(round: Round): Hero | null {
   const colors = colorMap(round);
-
-  if (round.options.league) {
-    const league = computeLeague(round);
-    const [a, b] = league.teams;
-    const score = `${fmtPts(a.points)}–${fmtPts(b.points)}`;
-    if (a.points === b.points) return { players: [], line: 'All square', sub: score };
-    const win = a.points > b.points ? a : b;
-    return { players: [], line: `${win.name} wins`, sub: score };
-  }
 
   const settlement = computeSettlement(round);
   if (settlement.active) {
@@ -120,7 +109,7 @@ function buildSummary(round: Round): string {
 export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
   const [copied, setCopied] = useState(false);
   const results = activeResults(round);
-  const hero = winnerHero(round);
+  const hero = round.options.league ? null : winnerHero(round);
   const colors = colorMap(round);
 
   const share = async () => {
