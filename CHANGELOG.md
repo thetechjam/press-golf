@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Brand identity: the "P Flag" mark (pin flag forms the P of Press, with a
+  poker-chip golf ball in the flag). New `app-icon.svg`, simplified
+  `favicon.svg`, PNG manifest icons (192/512, maskable), a real 180px
+  `apple-touch-icon.png` (iOS ignores SVG touch icons), the mark on the splash
+  screen and Home header (`PressMark` in `src/icons.tsx`), and `BRAND.md`
+  documenting the system. The old favicon was an unrelated placeholder
+  graphic.
 - Vitest unit-test suite covering every scoring engine in `src/games/`, with
   the money-settlement math (`settlement.ts`) exhaustively tested.
 - Continuous integration (GitHub Actions): lint, typecheck, test, and build run

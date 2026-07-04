@@ -1,22 +1,35 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <rect width="512" height="512" rx="112" fill="#14694e"/>
-  <rect width="512" height="512" rx="112" fill="url(#g)" opacity="0.35"/>
+  <!-- Press "P Flag" mark: the pin flag forms the P of Press; the poker-chip
+       golf ball (edge spots + dimples) sits in the flag. -->
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2fbf86"/>
-      <stop offset="1" stop-color="#0b3d2e"/>
+    <linearGradient id="felt" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#176e51"/>
+      <stop offset="1" stop-color="#0a3529"/>
     </linearGradient>
   </defs>
-  <!-- ground line -->
-  <ellipse cx="256" cy="392" rx="150" ry="26" fill="#0b3d2e" opacity="0.45"/>
-  <!-- flag pole -->
-  <rect x="248" y="138" width="14" height="248" rx="7" fill="#f4f7f2"/>
-  <!-- flag -->
-  <path d="M262 150 L386 182 L262 214 Z" fill="#e7b53c"/>
-  <!-- golf ball -->
-  <circle cx="200" cy="372" r="34" fill="#f4f7f2"/>
-  <circle cx="190" cy="364" r="4" fill="#cdd6cf"/>
-  <circle cx="206" cy="362" r="4" fill="#cdd6cf"/>
-  <circle cx="198" cy="378" r="4" fill="#cdd6cf"/>
-  <circle cx="214" cy="376" r="4" fill="#cdd6cf"/>
+  <rect width="512" height="512" rx="112" fill="url(#felt)"/>
+
+  <ellipse cx="170" cy="430" rx="120" ry="18" fill="#04231a" opacity="0.4"/>
+
+  <g fill="#04231a" opacity="0.35" transform="translate(0 12)">
+    <rect x="118" y="84" width="36" height="344" rx="18"/>
+    <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z"/>
+  </g>
+
+  <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z" fill="#e7b53c"/>
+  <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z"
+        fill="none" stroke="#c69a2b" stroke-width="7" stroke-linejoin="round"/>
+
+  <rect x="118" y="84" width="36" height="344" rx="18" fill="#f4f7f2"/>
+
+  <circle cx="268" cy="178" r="58" fill="#f4f7f2"/>
+  <circle cx="268" cy="178" r="49" fill="none" stroke="#14694e" stroke-width="16"
+          stroke-dasharray="18 20.5" stroke-dashoffset="9" transform="rotate(-90 268 178)"/>
+  <g fill="#ccd8cf">
+    <circle cx="268" cy="145" r="5.5"/>
+    <circle cx="257" cy="161" r="5.5"/><circle cx="279" cy="161" r="5.5"/>
+    <circle cx="246" cy="178" r="5.5"/><circle cx="268" cy="178" r="5.5"/><circle cx="290" cy="178" r="5.5"/>
+    <circle cx="257" cy="195" r="5.5"/><circle cx="279" cy="195" r="5.5"/>
+    <circle cx="268" cy="211" r="5.5"/>
+  </g>
 </svg>
