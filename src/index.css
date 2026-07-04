@@ -146,6 +146,14 @@ button {
   justify-content: center;
   gap: 8px;
 }
+/* The big CTAs speak in the scoreboard voice too. */
+.btn-primary.big,
+.btn-secondary.big {
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
 .btn-primary.sticky {
   position: sticky;
   bottom: calc(12px + env(safe-area-inset-bottom));
@@ -368,9 +376,15 @@ button {
   border-radius: var(--radius);
   padding: 16px;
 }
+/* Section headers are quiet labels (matches "Your rounds" on Home);
+   the content inside the card carries the weight. */
 .card h2 {
   margin: 0 0 12px;
-  font-size: 1rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
 }
 .field {
   display: flex;
@@ -582,7 +596,10 @@ select:focus {
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--bg);
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   min-height: var(--tap);
 }
 .seg-btn.active {
@@ -699,6 +716,14 @@ select:focus {
 .game-text {
   display: flex;
   flex-direction: column;
+}
+/* Game names read like a betting menu; the blurbs stay conversational. */
+.game-text strong {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .game-text small {
   color: var(--muted);
@@ -1145,16 +1170,26 @@ select:focus {
   margin-bottom: 8px;
 }
 .board-title {
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.02rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
+/* "LIVE" / "FINAL" reads as a scoreboard flag. */
 .board-status {
-  font-size: 0.8rem;
+  font-size: 0.66rem;
   color: var(--green-600);
-  font-weight: 600;
-  text-align: right;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  padding: 3px 9px;
+  align-self: center;
 }
 .board-list {
   list-style: none;
@@ -1275,7 +1310,10 @@ select:focus {
   gap: 8px;
 }
 .lmatch-label {
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .lmatch-up {
   font-size: 0.78rem;
@@ -1576,8 +1614,11 @@ select:focus {
   margin-top: 2px;
 }
 .results-course {
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 .results-sub {
   color: var(--muted);
@@ -1750,7 +1791,8 @@ select:focus {
 }
 .sc-hole {
   color: var(--muted);
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-weight: 500;
   cursor: pointer;
 }
 .sc-hole.current,
