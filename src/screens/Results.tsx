@@ -9,6 +9,7 @@ import { computeSettlement, formatMoney } from '../games/settlement';
 import { computeLeague } from '../games/league';
 import { colorMap } from '../player';
 import { TrophyIcon, ShareIcon } from '../icons';
+import { renderShareCard } from '../shareCard';
 
 interface Hero {
   players: { name: string; color: string }[];
@@ -109,11 +110,12 @@ function buildSummary(round: Round): string {
 
 export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
   const [copied, setCopied] = useState(false);
+  const [rendering, setRendering] = useState(false);
   const results = activeResults(round);
   const hero = round.options.league ? null : winnerHero(round);
   const colors = colorMap(round);
 
-  const share = async () => {
+  const shareText = async () => {
     const text = buildSummary(round);
     try {
       if (navigator.share) {
@@ -129,6 +131,40 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       setCopied(false);
+    }
+  };
+
+  // Scoreboard PNG first; falls back to a download, then to the text path.
+  // The busy state covers only the canvas render — the share sheet can stay
+  // open (or hang, on some desktop browsers) without freezing the button.
+  const share = async () => {
+    setRendering(true);
+    let file: File;
+    let blobUrl: string;
+    try {
+      const blob = await renderShareCard(round);
+      file = new File([blob], 'press-results.png', { type: 'image/png' });
+      blobUrl = URL.createObjectURL(blob);
+    } catch {
+      setRendering(false);
+      await shareText();
+      return;
+    }
+    setRendering(false);
+    try {
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Golf round results' });
+      } else {
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = 'press-results.png';
+        a.click();
+      }
+    } catch (err) {
+      // User closed the share sheet — not a failure, don't fall through.
+      if ((err as Error)?.name !== 'AbortError') await shareText();
+    } finally {
+      URL.revokeObjectURL(blobUrl);
     }
   };
 
@@ -187,14 +223,17 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
         </>
       )}
 
-      <button className="btn-primary big" onClick={share}>
-        {copied ? (
-          'Copied to clipboard'
+      <button className="btn-primary big" onClick={share} disabled={rendering}>
+        {rendering ? (
+          'Building scoreboard…'
         ) : (
           <>
             <ShareIcon size={18} /> Share results
           </>
         )}
+      </button>
+      <button className="btn-ghost share-text" onClick={shareText}>
+        {copied ? 'Copied to clipboard' : 'Share as text instead'}
       </button>
     </div>
   );

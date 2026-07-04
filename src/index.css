@@ -1829,3 +1829,9 @@ select:focus {
   color: var(--gold);
   line-height: 1;
 }
+
+/* Secondary text-share under the scoreboard share CTA. */
+.share-text {
+  margin: -6px auto 0;
+  font-size: 0.85rem;
+}
