@@ -237,9 +237,11 @@ button {
   letter-spacing: 0.06em;
   color: var(--green-700);
   display: flex;
-  align-items: center;
+  /* The P Flag mark stands in for the P: its bottom edge sits on the text
+     baseline, and the flag tip runs tight against the R. */
+  align-items: baseline;
   justify-content: center;
-  gap: 8px;
+  gap: 3px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not(.sunlight) .logo {

@@ -22,6 +22,39 @@ const base = (size: number) => ({
   'aria-hidden': true as const,
 });
 
+/**
+ * The Press brand mark ("P Flag"): the pin flag forms the P, with the
+ * poker-chip golf ball in the flag. Flag stays brand gold; pole and chip
+ * ring follow currentColor so the mark tracks theme and sunlight modes.
+ */
+export const PressMark = ({ size = 18, className }: IconProps) => (
+  <svg
+    width={size * 0.875}
+    height={size}
+    viewBox="100 64 336 384"
+    fill="none"
+    className={className}
+    aria-hidden
+  >
+    <path
+      d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z"
+      fill="#e7b53c"
+    />
+    <rect x="118" y="84" width="36" height="344" rx="18" fill="currentColor" />
+    <circle cx="268" cy="178" r="58" fill="#f4f7f2" />
+    <circle
+      cx="268"
+      cy="178"
+      r="49"
+      stroke="currentColor"
+      strokeWidth="16"
+      strokeDasharray="18 20.5"
+      strokeDashoffset="9"
+      transform="rotate(-90 268 178)"
+    />
+  </svg>
+);
+
 /** Golf flag on its pole. */
 export const FlagIcon = ({ size = 18, className }: IconProps) => (
   <svg {...base(size)} className={className}>

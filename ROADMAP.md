@@ -46,6 +46,7 @@ Nothing is shared between people or synced across devices. This is by design
 | Cross-round stats / history | Trends over time (skins won, Wolf record, net scoring average). |
 | Automatic Nassau presses | Setup toggle to auto-press when a side goes 2 down (plumbing already exists via the press segments in `nassau.ts`). |
 | ~~Course database~~ | **Shipped** via OpenGolfAPI course search (keyless + CORS, so no backend needed; returns per-hole par and `handicap_index`). Coverage is US-strong; Favorite Courses covers gaps and offline use. |
+| Tagline refresh | Current line ("Track golf side games — the fun way.") kept for now. Parked candidates from the July 2026 brand pass (no ranking yet): "Settle it on 18." / "Nobody plays for free." / "Every hole's a bet." / "Keep your friends honest." See `BRAND.md`. |
 
 ## How to expand without a rewrite
 

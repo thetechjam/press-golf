@@ -6,7 +6,7 @@ import { GAMES, activeResults } from '../games';
 import { computeLeague } from '../games/league';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { DeleteButton } from '../components/DeleteButton';
-import { FlagIcon, TrophyIcon, XIcon } from '../icons';
+import { FlagIcon, PressMark, TrophyIcon, XIcon } from '../icons';
 
 interface Props {
   onNew: () => void;
@@ -49,8 +49,9 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
   return (
     <div className="screen home">
       <header className="hero">
-        <div className="logo">
-          <FlagIcon size={30} /> Press
+        <div className="logo" role="img" aria-label="Press">
+          <PressMark size={34} />
+          <span aria-hidden="true">ress</span>
         </div>
         <p className="tagline">Track golf side games — the fun way.</p>
       </header>
