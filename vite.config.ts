@@ -14,6 +14,9 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,woff2}'],
+      },
       includeAssets: ['app-icon.svg', 'favicon.svg'],
       manifest: {
         name: 'Press — Golf Side Games',

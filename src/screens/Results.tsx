@@ -153,6 +153,9 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
 
       {hero && (
         <div className="winner-hero">
+          {Array.from({ length: 12 }, (_, i) => (
+            <span key={i} className="confetti" style={{ '--i': i } as React.CSSProperties} />
+          ))}
           <div className="winner-avatars">
             {hero.players.length === 0 ? (
               <span className="winner-emoji">

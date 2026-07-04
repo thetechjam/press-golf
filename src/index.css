@@ -1,4 +1,15 @@
+/* Condensed leaderboard face for names and numerals — the clubhouse
+   scoreboard look. Self-hosted latin subset (21KB), precached offline. */
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 500 600;
+  font-display: swap;
+  src: url('/fonts/oswald-latin.woff2') format('woff2');
+}
+
 :root {
+  --font-display: 'Oswald', 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
   --green-900: #0b3d2e;
   --green-700: #14694e;
   --green-600: #1a7d5e;
@@ -17,10 +28,13 @@
   --gold: #e7b53c;
   --radius: 16px;
   --tap: 48px;
+  /* Yardage-book contour lines, tiled behind everything. */
+  --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(16,35,27,0.05)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not(.sunlight) {
+    --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(234,243,238,0.045)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
     --cream: #0f1d18;
     --ink: #eaf3ee;
     --muted: #9fb4aa;
@@ -37,6 +51,7 @@
    the system appearance. Toggled via the ☀️ button; class lives on <html>. */
 :root.sunlight {
   color-scheme: light;
+  --topo: none;
   --cream: #ffffff;
   --ink: #04110b;
   --muted: #3d4d45;
@@ -59,7 +74,9 @@ body,
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
-  background: var(--bg);
+  background-color: var(--bg);
+  background-image: var(--topo);
+  background-size: 420px 420px;
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
@@ -205,9 +222,11 @@ button {
   padding: 24px 0 8px;
 }
 .logo {
-  font-size: 2.4rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: 2.3rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--green-700);
   display: flex;
   align-items: center;
@@ -251,7 +270,11 @@ button {
   padding: 14px 16px;
 }
 .round-title {
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.08rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -326,7 +349,11 @@ button {
   align-items: center;
 }
 .bar h1 {
-  font-size: 1.1rem;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   margin: 0;
   text-align: center;
 }
@@ -814,9 +841,11 @@ select:focus {
   text-align: center;
 }
 .hole-num {
-  font-size: 2rem;
-  font-weight: 800;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .hole-par {
   font-size: 0.85rem;
@@ -922,8 +951,11 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 9px;
-  font-weight: 700;
-  font-size: 1.05rem;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   min-width: 0;
 }
 .stepper-name-text {
@@ -952,13 +984,15 @@ select:focus {
 }
 .stepper-value {
   width: 76px;
+  perspective: 260px;
   text-align: center;
   display: flex;
   flex-direction: column;
 }
 .score-num {
-  font-size: 2.2rem;
-  font-weight: 800;
+  font-family: var(--font-display);
+  font-size: 2.3rem;
+  font-weight: 600;
   line-height: 1;
 }
 .tone-under .score-num {
@@ -1155,7 +1189,10 @@ select:focus {
   color: var(--gold);
 }
 .board-name {
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1333,22 +1370,61 @@ select:focus {
   flex-direction: column;
   gap: 8px;
 }
+/* The payout section reads as a bet slip: perforated tear line with
+   edge notches, monospaced amounts. Press is a wager, after all. */
+.settlement .payments {
+  position: relative;
+  margin: 14px -14px 0;
+  padding: 12px 14px 2px;
+  border-top: 2px dashed var(--line);
+}
+.settlement .payments::before,
+.settlement .payments::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.settlement .payments::before {
+  left: -9px;
+}
+.settlement .payments::after {
+  right: -9px;
+}
 .payment {
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 0.95rem;
 }
+.payment + .payment {
+  margin-top: 6px;
+}
 .pay-amount {
   margin-left: auto;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--green-700);
-  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.92em;
 }
+/* Rubber-stamped when no money moves. */
 .all-even {
-  text-align: center;
-  font-weight: 600;
-  color: var(--muted);
+  width: fit-content;
+  margin: 4px auto;
+  padding: 5px 12px;
+  border: 2px solid var(--under);
+  border-radius: 8px;
+  color: var(--under);
+  font-weight: 800;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  transform: rotate(-2deg);
+  opacity: 0.85;
 }
 
 /* ---------- Results ---------- */
@@ -1358,11 +1434,73 @@ select:focus {
 
 /* Winner payoff hero. */
 .winner-hero {
+  position: relative;
+  overflow: hidden;
   text-align: center;
   background: color-mix(in srgb, var(--gold) 14%, var(--card));
   border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
   border-radius: var(--radius);
   padding: 22px 20px;
+}
+/* One light sweep across the hero when Results opens — then still. */
+.winner-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 58%
+  );
+  transform: translateX(-130%);
+  animation: sheen 1s ease-out 0.35s 1 forwards;
+  pointer-events: none;
+}
+@keyframes sheen {
+  to {
+    transform: translateX(130%);
+  }
+}
+.confetti {
+  position: absolute;
+  top: -12px;
+  left: calc(6% + var(--i) * 7.5%);
+  width: 7px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--fairway);
+  opacity: 0;
+  animation: confetti-fall 1.5s ease-in calc(var(--i) * 0.07s) 1 both;
+  pointer-events: none;
+}
+.confetti:nth-child(3n) {
+  background: var(--gold);
+  width: 6px;
+  height: 10px;
+}
+.confetti:nth-child(3n + 1) {
+  background: var(--green-500);
+}
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(230px) rotate(520deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .winner-hero::after,
+  .confetti {
+    animation: none;
+    display: none;
+  }
 }
 .winner-avatars {
   display: flex;
@@ -1425,9 +1563,11 @@ select:focus {
   }
 }
 .winner-line {
-  font-size: 1.35rem;
-  font-weight: 800;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 .winner-sub {
   color: var(--muted);
@@ -1445,18 +1585,25 @@ select:focus {
 }
 
 /* ---------- Polish: animation & feedback ---------- */
-@keyframes pop {
+/* Split-flap: a new score flips down like a clubhouse scoreboard tile.
+   The stepper-value wrapper supplies the perspective. */
+@keyframes flap {
   0% {
-    transform: scale(1.5);
-    opacity: 0.4;
+    transform: rotateX(-88deg);
+    opacity: 0.3;
+  }
+  55% {
+    transform: rotateX(14deg);
+    opacity: 1;
   }
   100% {
-    transform: scale(1);
-    opacity: 1;
+    transform: rotateX(0);
   }
 }
 .score-num {
-  animation: pop 0.18s ease-out;
+  animation: flap 0.26s cubic-bezier(0.3, 0.9, 0.4, 1);
+  transform-origin: 50% 40%;
+  backface-visibility: hidden;
 }
 @media (prefers-reduced-motion: reduce) {
   .score-num {
@@ -1594,7 +1741,10 @@ select:focus {
   left: 0;
   background: var(--card);
   text-align: left;
-  font-weight: 700;
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   z-index: 1;
   min-width: 62px;
 }
