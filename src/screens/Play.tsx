@@ -262,6 +262,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
                   color={playerColor(i)}
                   par={hole.par}
                   value={round.scores[hole.number]?.[p.id] ?? null}
+                  handicap={round.options.league ? p.handicap : undefined}
                   strokesReceived={
                     round.options.useNet
                       ? strokesReceivedOnHole(p.handicap ?? 0, siMap[hole.number], round.holes.length)

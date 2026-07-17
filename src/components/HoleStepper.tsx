@@ -10,6 +10,8 @@ interface Props {
   value: number | null;
   par: number;
   strokesReceived?: number;
+  /** Course handicap, shown as a small badge so you can see what net scores off. */
+  handicap?: number;
   onChange: (value: number | null) => void;
 }
 
@@ -34,6 +36,7 @@ export function HoleStepper({
   value,
   par,
   strokesReceived = 0,
+  handicap,
   onChange,
 }: Props) {
   const toPar = value == null ? 0 : value - par;
@@ -67,6 +70,11 @@ export function HoleStepper({
       <div className="stepper-name">
         <PlayerAvatar name={name} color={color} />
         <span className="stepper-name-text">{name}</span>
+        {handicap != null && (
+          <span className="stepper-hcp" aria-label={`Handicap ${handicap}`}>
+            HCP {handicap}
+          </span>
+        )}
         {strokesReceived > 0 && (
           <span className="hcp-dots" aria-label={`${strokesReceived} handicap strokes`}>
             {'•'.repeat(strokesReceived)}

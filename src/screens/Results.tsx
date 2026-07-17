@@ -69,6 +69,8 @@ function buildSummary(round: Round): string {
     lines.push('');
     for (const m of league.matches) {
       lines.push(`${m.label} (${m.matchup}): ${m.status}`);
+      if (m.strokes.length)
+        lines.push(`   strokes: ${m.strokes.map((s) => `${s.name} +${s.strokes}`).join(', ')}`);
     }
     lines.push('');
     lines.push('🏆 Points');

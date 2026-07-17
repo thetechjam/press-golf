@@ -1330,6 +1330,12 @@ select:focus {
   color: var(--green-600);
   font-weight: 700;
 }
+.lmatch-strokes {
+  font-size: 0.76rem;
+  color: var(--gold);
+  margin-top: 3px;
+  letter-spacing: 0.01em;
+}
 
 /* ---------- Settlement ---------- */
 .settlement {
@@ -1659,6 +1665,19 @@ select:focus {
   margin-left: 6px;
   letter-spacing: 1px;
   vertical-align: middle;
+}
+.stepper-hcp {
+  flex-shrink: 0;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
 }
 
 /* ---------- Scoring marks (golf circle/square convention) ---------- */
