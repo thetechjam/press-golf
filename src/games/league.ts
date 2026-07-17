@@ -9,6 +9,8 @@ export interface LeagueMatchResult {
   status: string;
   winner: 'A' | 'B' | null; // A = team 0's side, B = team 1's side
   over: boolean;
+  /** Players who receive strokes in this match (off the low man), for display. */
+  strokes: { name: string; strokes: number }[];
 }
 
 export interface LeagueResult {
@@ -41,6 +43,16 @@ export function computeLeague(round: Round): LeagueResult {
     return g - strokesReceivedOnHole(effHcp, si[hole.number], total);
   };
 
+  // Strokes a player actually receives in a match, given their effective
+  // (already low-man-adjusted) handicap — at most one per hole here.
+  const strokesFor = (effHcp: number): number =>
+    round.holes.reduce((s, h) => s + strokesReceivedOnHole(effHcp, si[h.number], total), 0);
+  // The stroke-getters in a match, so the board can show what it scored off of.
+  const strokeList = (ids: string[], low: number) =>
+    ids
+      .map((id) => ({ name: nameOf(id), strokes: strokesFor(capHcp(hcp(id) - low)) }))
+      .filter((s) => s.strokes > 0);
+
   const [t0, t1] = cfg.teams;
   const isOver = (seg: { decided: boolean; holesPlayed: number; totalHoles: number }) =>
     seg.decided || (seg.holesPlayed > 0 && seg.holesPlayed === seg.totalHoles);
@@ -62,24 +74,30 @@ export function computeLeague(round: Round): LeagueResult {
       status: seg.status,
       winner: seg.winner,
       over: isOver(seg),
+      strokes: strokeList([id0, id1], low),
     };
   };
 
   const aMatch = singles(t0.aId, t1.aId, 'A');
   const bMatch = singles(t0.bId, t1.bId, 'B');
 
-  // Team match: aggregate net (both partners), strokes off the lowest of all four.
+  // Team match: best ball (the better net of the two partners), strokes off the
+  // lowest of all four so the team plays to the same baseline as the singles.
+  // Best ball, not combined total — a partner's blow-up hole is thrown out, and
+  // a high-handicapper's stroke-aided holes can carry the team. This matches the
+  // app's other team formats (2v2 Match Play, Nassau) and standard league play.
   const low4 = Math.min(hcp(t0.aId), hcp(t0.bId), hcp(t1.aId), hcp(t1.bId));
-  const teamAgg = (t: LeagueTeam) => (h: Hole): number | null => {
-    const n1 = net(t.aId, h, capHcp(hcp(t.aId) - low4));
-    const n2 = net(t.bId, h, capHcp(hcp(t.bId) - low4));
-    if (n1 == null || n2 == null) return null;
-    return n1 + n2;
+  const teamBest = (t: LeagueTeam) => (h: Hole): number | null => {
+    const nets = [
+      net(t.aId, h, capHcp(hcp(t.aId) - low4)),
+      net(t.bId, h, capHcp(hcp(t.bId) - low4)),
+    ].filter((n): n is number => n != null);
+    return nets.length ? Math.min(...nets) : null;
   };
   const teamSeg = runMatch(
     round.holes,
-    teamAgg(t0),
-    teamAgg(t1),
+    teamBest(t0),
+    teamBest(t1),
     teamName(t0, 0),
     teamName(t1, 1)
   );
@@ -90,6 +108,7 @@ export function computeLeague(round: Round): LeagueResult {
     status: teamSeg.status,
     winner: teamSeg.winner,
     over: isOver(teamSeg),
+    strokes: strokeList([t0.aId, t0.bId, t1.aId, t1.bId], low4),
   };
 
   const matches = [aMatch, bMatch, teamMatch];

@@ -155,6 +155,69 @@ describe('computeLeague — back-nine support', () => {
   });
 });
 
+describe('computeLeague — team match is best ball (better ball)', () => {
+  it("lets a high-handicap partner's stroke-aided holes carry the team", () => {
+    // The real league night that surfaced the bug: three 6s and a 14.
+    // Team 1: Alex (6, A) & Jesse (14, B).  Team 2: Mike (6, A) & Tyler (6, B).
+    // Front nine, SI 1..9. Strokes come off the low man of all four (6), so
+    // Jesse plays to an 8 → a stroke on SI 1..8; everyone else plays scratch.
+    const hs = holes(9);
+    const scores = scoresFrom(hs, {
+      // Alex: steady bogeys → net 5 every hole.
+      p1: [5, 5, 5, 5, 5, 5, 5, 5, 5],
+      // Jesse: nets 3 on the four hardest (stroke), fades to 4, then blows up on
+      // 8 & 9. His good balls beat the field; his blow-ups are junk to throw out.
+      p2: [4, 4, 4, 4, 5, 5, 5, 8, 7],
+      // Mike & Tyler: steady net 4s (scratch here).
+      p3: [4, 4, 4, 4, 4, 4, 4, 4, 4],
+      p4: [4, 4, 4, 4, 4, 4, 4, 4, 4],
+    });
+    const round = makeRound({
+      players: [
+        player('p1', 'Alex', 6),
+        player('p2', 'Jesse', 14),
+        player('p3', 'Mike', 6),
+        player('p4', 'Tyler', 6),
+      ],
+      holes: hs,
+      options: {
+        league: {
+          teams: [
+            { name: 'Alex & Jesse', aId: 'p1', bId: 'p2' },
+            { name: 'Mike & Tyler', aId: 'p3', bId: 'p4' },
+          ],
+          pointsPerMatch: 1,
+        },
+      },
+      scores,
+    });
+    const r = computeLeague(round);
+
+    // Jesse wins his singles vs Tyler on strokes.
+    const bMatch = r.matches.find((m) => m.key === 'B')!;
+    expect(bMatch.winner).toBe('A');
+
+    // Team match: best ball takes each team's BETTER net ball per hole, so
+    // Jesse's blow-ups are thrown out (Alex covers) and his stroke holes carry
+    // the team. Alex & Jesse win. Aggregate/combined-total would hand this to
+    // Mike & Tyler — that was the bug.
+    const teamMatch = r.matches.find((m) => m.key === 'team')!;
+    expect(teamMatch.winner).toBe('A');
+
+    // Alex & Jesse take the B match and the team match → 2 points to 1.
+    expect(r.teams[0].points).toBe(2);
+    expect(r.teams[1].points).toBe(1);
+
+    // Board shows what each match scored off of: strokes come off the low man,
+    // so only Jesse (14) receives them — 8 in his singles and 8 in the team.
+    expect(bMatch.strokes).toEqual([{ name: 'Jesse', strokes: 8 }]);
+    expect(teamMatch.strokes).toEqual([{ name: 'Jesse', strokes: 8 }]);
+    // A match is two 6s → dead even, no strokes.
+    const aMatch = r.matches.find((m) => m.key === 'A')!;
+    expect(aMatch.strokes).toEqual([]);
+  });
+});
+
 describe('computeLeague — incomplete night', () => {
   it('marks matches not over and the night incomplete when holes are unscored', () => {
     const hs = holes(9);

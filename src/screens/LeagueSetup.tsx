@@ -111,11 +111,15 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
     const allPlayers = teams.flatMap((t) => [t.a, t.b]);
     if (allPlayers.some((p) => !p.name.trim()))
       return setError('Name all four players (A and B on each team).');
+    // Handicaps are mandatory for a league: every match (A, B, Team) scores net
+    // off them, so a blank must not silently become scratch.
+    if (allPlayers.some((p) => p.handicap == null || Number.isNaN(p.handicap)))
+      return setError('Enter a handicap for all four players — league scoring needs it.');
 
     const players: Player[] = allPlayers.map((p) => ({
       id: p.id,
       name: p.name.trim(),
-      handicap: p.handicap ?? 0,
+      handicap: p.handicap as number,
     }));
 
     // Rotate holes into play order so the round starts on the chosen hole

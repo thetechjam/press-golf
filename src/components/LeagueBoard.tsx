@@ -38,6 +38,11 @@ export function LeagueBoard({ round }: { round: Round }) {
               <span className="lmatch-up">{m.matchup}</span>
             </div>
             <div className={`lmatch-status${m.over ? ' final' : ''}`}>{m.status}</div>
+            <div className="lmatch-strokes">
+              {m.strokes.length
+                ? m.strokes.map((s) => `${s.name} gets ${s.strokes}`).join(' · ')
+                : 'No strokes — plays scratch'}
+            </div>
           </div>
         ))}
       </div>
