@@ -894,10 +894,15 @@ select:focus {
    full 24px WCAG 2.5.8 tap target; the visual dot lives in ::before. */
 .hole-dots {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 2px;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 1px;
   margin-top: -6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hole-dots::-webkit-scrollbar {
+  display: none;
 }
 .hole-dot {
   width: 24px;
@@ -1260,8 +1265,16 @@ select:focus {
   padding-top: 6px;
 }
 
+/* The CTA's own `position: sticky` cannot work here — its containing block is
+   this element, which is only as tall as the button, so it has no room to move.
+   Stick the footer itself instead; its containing block is the tall .screen. */
 .play-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
   margin-top: 4px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  background: var(--bg);
 }
 .warn-banner {
   background: color-mix(in srgb, var(--gold) 18%, var(--card));
@@ -1979,4 +1992,36 @@ select:focus {
 }
 .swing-net.down {
   color: var(--over-strong);
+}
+
+/* ---- Collapsed game cards (Play → Hole tab) ---- */
+.wolf.collapsed,
+.nassau.collapsed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 0;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 0.82rem;
+  text-align: left;
+}
+.collapsed-text {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collapsed-hint {
+  flex: 0 0 auto;
+  color: var(--green-600);
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
 }

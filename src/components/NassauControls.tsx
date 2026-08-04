@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Round, Hole } from '../types';
 import { matchSegmentSides } from '../games/matchPlay';
 import { nineHolesFor, endOfNine, nassauTeams } from '../games/nassau';
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function NassauControls({ round, hole, onChange }: Props) {
+  const [open, setOpen] = useState(false);
   if (round.players.length < 2) return null;
 
   const { a, b } = nassauTeams(round);
@@ -29,6 +31,18 @@ export function NassauControls({ round, hole, onChange }: Props) {
     if (!alreadyHere && canPress) onChange([...presses, start]);
   };
   const removePress = (s: number) => onChange(presses.filter((x) => x !== s));
+
+  if (!open) {
+    return (
+      <button className="nassau collapsed" onClick={() => setOpen(true)}>
+        <FlagIcon size={14} />
+        <span className="collapsed-text">
+          {nineLabel}: {seg.status}
+        </span>
+        <span className="collapsed-hint">{presses.length ? `${presses.length} press` : 'Press'}</span>
+      </button>
+    );
+  }
 
   return (
     <div className="nassau">
