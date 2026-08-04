@@ -1,20 +1,19 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Round, WolfChoice } from '../types';
-import { HoleStepper } from '../components/HoleStepper';
 import { Leaderboard } from '../components/Leaderboard';
-import { WolfControls } from '../components/WolfControls';
-import { NassauControls } from '../components/NassauControls';
 import { Scorecard } from '../components/Scorecard';
 import { LeagueBoard } from '../components/LeagueBoard';
+import { HoleView } from './HoleView';
 import { activeResults } from '../games';
 import { firstIncompleteHole } from '../games/util';
 import { wolfForHole } from '../games/wolf';
-import { strokeIndexMap, strokesReceivedOnHole } from '../games/handicap';
-import { playerColor, colorMap } from '../player';
+import { colorMap } from '../player';
 import { getSettings, saveSettings } from '../storage';
 import { applySunlight } from '../sunlight';
 import { useWakeLock, wakeLockSupported } from '../useWakeLock';
 import { EyeIcon, SunIcon } from '../icons';
+
+export type PlayMode = 'hole' | 'board' | 'card';
 
 interface Props {
   round: Round;
@@ -27,12 +26,9 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   // Resume where scoring left off, not on hole 1.
   const [idx, setIdx] = useState(() => firstIncompleteHole(round));
   // A finished round opens on the scorecard — you're reviewing, not scoring.
-  const [mode, setMode] = useState<'hole' | 'card'>(
-    round.status === 'finished' ? 'card' : 'hole'
-  );
+  const [mode, setMode] = useState<PlayMode>(round.status === 'finished' ? 'card' : 'hole');
   const [warn, setWarn] = useState<'next' | 'finish' | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
   const [keepAwake, setKeepAwake] = useState(() => getSettings().keepAwake);
   const hole = round.holes[idx];
   const last = idx === round.holes.length - 1;
@@ -131,24 +127,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     if (firstBlank) setHighlightId(firstBlank.id);
   };
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    const t = e.changedTouches[0];
-    touchStart.current = { x: t.clientX, y: t.clientY };
-  };
-  const onTouchEnd = (e: React.TouchEvent) => {
-    if (touchStart.current == null) return;
-    const t = e.changedTouches[0];
-    const dx = t.clientX - touchStart.current.x;
-    const dy = t.clientY - touchStart.current.y;
-    // Only decisively horizontal swipes navigate — a diagonal scroll must not flip holes.
-    if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) {
-      go(idx + (dx < 0 ? 1 : -1));
-    }
-    touchStart.current = null;
-  };
-
   const results = activeResults(round);
-  const siMap = strokeIndexMap(round);
 
   // A hole is complete when every player has a score — drives the progress strip.
   const holeComplete = round.holes.map((h) =>
@@ -170,18 +149,15 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       </header>
 
       <div className="seg view-toggle">
-        <button
-          className={`seg-btn${mode === 'hole' ? ' active' : ''}`}
-          onClick={() => setMode('hole')}
-        >
-          Hole
-        </button>
-        <button
-          className={`seg-btn${mode === 'card' ? ' active' : ''}`}
-          onClick={() => setMode('card')}
-        >
-          Scorecard
-        </button>
+        {(['hole', 'board', 'card'] as const).map((m) => (
+          <button
+            key={m}
+            className={`seg-btn${mode === m ? ' active' : ''}`}
+            onClick={() => setMode(m)}
+          >
+            {m === 'hole' ? 'Hole' : m === 'board' ? 'Board' : 'Card'}
+          </button>
+        ))}
         {wakeLockSupported && (
           <button
             className={`awake-toggle${keepAwake ? ' on' : ''}`}
@@ -204,77 +180,34 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
         </button>
       </div>
 
-      {mode === 'hole' ? (
-        <div className="hole-view" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-          <div className="hole-nav">
-            <button
-              className="nav-arrow"
-              onClick={() => go(idx - 1)}
-              disabled={idx === 0}
-              aria-label="Previous hole"
-            >
-              ‹
-            </button>
-            <div className="hole-head">
-              <div className="hole-num">Hole {hole.number}</div>
-              <div className="hole-par">Par {hole.par}</div>
-            </div>
-            <button
-              className="nav-arrow"
-              onClick={() => go(idx + 1)}
-              disabled={last}
-              aria-label="Next hole"
-            >
-              ›
-            </button>
-          </div>
+      {mode === 'hole' && (
+        <HoleView
+          round={round}
+          hole={hole}
+          idx={idx}
+          dir={dir}
+          highlightId={highlightId}
+          holeComplete={holeComplete}
+          onGo={go}
+          onScore={setScore}
+          onWolf={setWolf}
+          onPresses={setPresses}
+        />
+      )}
 
-          <div className="hole-dots" aria-label="Hole progress">
-            {round.holes.map((h, i) => (
-              <button
-                key={h.number}
-                className={`hole-dot${i === idx ? ' current' : ''}${
-                  holeComplete[i] ? ' done' : ''
-                }`}
-                onClick={() => go(i)}
-                aria-label={`Hole ${h.number}${holeComplete[i] ? ', complete' : ''}`}
-                aria-current={i === idx ? 'true' : undefined}
-              />
-            ))}
-          </div>
+      {mode === 'board' && (
+        <section className="boards">
+          {round.options.league ? (
+            <LeagueBoard round={round} />
+          ) : (
+            results.map((r) => (
+              <Leaderboard key={r.gameType} result={r} colorOf={(id) => colors[id]} />
+            ))
+          )}
+        </section>
+      )}
 
-          <div key={hole.number} className={`hole-body slide-${dir}`}>
-            {round.games.includes('wolf') && (
-              <WolfControls round={round} hole={hole} onChange={setWolf} />
-            )}
-
-            {round.games.includes('nassau') && (
-              <NassauControls round={round} hole={hole} onChange={setPresses} />
-            )}
-
-            <section className="steppers">
-              {round.players.map((p, i) => (
-                <HoleStepper
-                  key={p.id}
-                  id={`stepper-${p.id}`}
-                  highlight={highlightId === p.id}
-                  name={p.name}
-                  color={playerColor(i)}
-                  par={hole.par}
-                  value={round.scores[hole.number]?.[p.id] ?? null}
-                  handicap={round.options.league ? p.handicap : undefined}
-                  strokesReceived={
-                    round.options.useNet
-                      ? strokesReceivedOnHole(p.handicap ?? 0, siMap[hole.number], round.holes.length)
-                      : 0
-                  }
-                  onChange={(v) => setScore(p.id, v)}
-                />
-              ))}
-            </section>
-          </div>
-        </div>
-      ) : (
+      {mode === 'card' && (
         <Scorecard
           round={round}
           currentHole={hole.number}
@@ -284,16 +217,6 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           }}
         />
       )}
-
-      <section className="boards">
-        {round.options.league ? (
-          <LeagueBoard round={round} />
-        ) : (
-          results.map((r) => (
-            <Leaderboard key={r.gameType} result={r} colorOf={(id) => colors[id]} />
-          ))
-        )}
-      </section>
 
       <div className="play-foot">
         {warn && (

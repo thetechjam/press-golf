@@ -613,6 +613,11 @@ select:focus {
 .seg.view-toggle {
   margin-bottom: 0;
 }
+/* Three tabs + two icon toggles share 343px at 375px wide — ~71px per tab. */
+.view-toggle .seg-btn {
+  padding: 12px 4px;
+  letter-spacing: 0.03em;
+}
 /* Wake-lock toggle: fixed slot beside the view toggle. */
 .awake-toggle {
   position: relative;
