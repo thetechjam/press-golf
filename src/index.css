@@ -1952,3 +1952,31 @@ select:focus {
 .tick.down .tick-net {
   color: var(--over-strong);
 }
+
+/* ---- Per-hole money swing (Play → Hole tab) ---- */
+.swing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 10px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+.swing-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.swing-net.up {
+  color: var(--under);
+}
+.swing-net.down {
+  color: var(--over-strong);
+}
