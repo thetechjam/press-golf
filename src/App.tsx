@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Round } from './types';
 import { Home } from './screens/Home';
 import { Setup } from './screens/Setup';
@@ -9,9 +9,30 @@ import { saveRound } from './storage';
 
 type View = 'home' | 'setup' | 'leagueSetup' | 'play' | 'results';
 
+/** Where the back gesture lands from each view. `null` = let the browser leave. */
+const BACK_TO: Record<View, View | null> = {
+  home: null,
+  setup: 'home',
+  leagueSetup: 'home',
+  play: 'home',
+  results: 'play',
+};
+
 export default function App() {
   const [view, setView] = useState<View>('home');
   const [round, setRound] = useState<Round | null>(null);
+
+  // Without this, the Android back gesture exits an installed PWA mid-round.
+  useEffect(() => {
+    const onPop = () => setView((v) => BACK_TO[v] ?? v);
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  const goTo = (next: View) => {
+    setView(next);
+    if (next !== 'home') window.history.pushState({ view: next }, '');
+  };
 
   const update = (next: Round) => {
     setRound(next);
@@ -21,7 +42,7 @@ export default function App() {
   const finish = () => {
     if (!round) return;
     update({ ...round, status: 'finished' });
-    setView('results');
+    goTo('results');
   };
 
   return (
@@ -30,53 +51,53 @@ export default function App() {
         <Home
           onNew={() => {
             setRound(null);
-            setView('setup');
+            goTo('setup');
           }}
           onNewLeague={() => {
             setRound(null);
-            setView('leagueSetup');
+            goTo('leagueSetup');
           }}
           onResume={(r) => {
             setRound(r);
-            setView('play');
+            goTo('play');
           }}
           onViewResults={(r) => {
             setRound(r);
-            setView('results');
+            goTo('results');
           }}
         />
       )}
 
       {view === 'setup' && (
         <Setup
-          onCancel={() => setView('home')}
+          onCancel={() => goTo('home')}
           onStart={(r) => {
             update(r);
-            setView('play');
+            goTo('play');
           }}
         />
       )}
 
       {view === 'leagueSetup' && (
         <LeagueSetup
-          onCancel={() => setView('home')}
+          onCancel={() => goTo('home')}
           onStart={(r) => {
             update(r);
-            setView('play');
+            goTo('play');
           }}
         />
       )}
 
       {view === 'play' && round && (
-        <Play round={round} onChange={update} onFinish={finish} onExit={() => setView('home')} />
+        <Play round={round} onChange={update} onFinish={finish} onExit={() => goTo('home')} />
       )}
 
       {view === 'results' && round && (
         <Results
           round={round}
           onChange={update}
-          onHome={() => setView('home')}
-          onBackToPlay={() => setView('play')}
+          onHome={() => goTo('home')}
+          onBackToPlay={() => goTo('play')}
         />
       )}
     </div>
