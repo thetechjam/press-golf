@@ -7,7 +7,11 @@ import { Play } from './screens/Play';
 import { Results } from './screens/Results';
 import { saveRound } from './storage';
 
-type View = 'home' | 'setup' | 'leagueSetup' | 'play' | 'results';
+const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results'] as const;
+type View = (typeof VIEWS)[number];
+
+const isView = (v: unknown): v is View =>
+  typeof v === 'string' && (VIEWS as readonly string[]).includes(v);
 
 export default function App() {
   const [view, setView] = useState<View>('home');
@@ -19,8 +23,8 @@ export default function App() {
     window.history.replaceState({ view: 'home' }, '');
 
     const onPop = (e: PopStateEvent) => {
-      const v = (e.state as { view?: View } | null)?.view;
-      setView(v ?? 'home');
+      const v = (e.state as { view?: unknown } | null)?.view;
+      setView(isView(v) ? v : 'home');
     };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
