@@ -26,6 +26,9 @@
   --over-strong: #bd392c;
   --under: #1a8f4c;
   --gold: #e7b53c;
+  /* Foreground-only gold. Split from --gold so the light theme can darken text
+     without muddying the color-mix tints and borders built on --gold. */
+  --gold-ink: var(--gold);
   --radius: 16px;
   --tap: 48px;
   /* Yardage-book contour lines, tiled behind everything. */
@@ -58,6 +61,8 @@
   --card: #ffffff;
   --line: #b9c8bd;
   --bg: #ffffff;
+  /* #e7b53c is 1.9:1 on white. #8a6410 is 5.37:1 — clears AA with headroom. */
+  --gold-ink: #8a6410;
 }
 
 * {
@@ -1234,7 +1239,7 @@ select:focus {
   font-weight: 700;
 }
 .board-row.leader .board-rank {
-  color: var(--gold);
+  color: var(--gold-ink);
 }
 .board-name {
   font-family: var(--font-display);
@@ -1351,7 +1356,7 @@ select:focus {
 }
 .lmatch-strokes {
   font-size: 0.76rem;
-  color: var(--gold);
+  color: var(--gold-ink);
   margin-top: 3px;
   letter-spacing: 0.01em;
 }
@@ -1605,7 +1610,7 @@ select:focus {
 }
 .winner-emoji {
   line-height: 1;
-  color: var(--gold);
+  color: var(--gold-ink);
   animation: winner-pop 0.5s ease-out;
 }
 @keyframes winner-pop {
@@ -1679,7 +1684,7 @@ select:focus {
   }
 }
 .hcp-dots {
-  color: var(--gold);
+  color: var(--gold-ink);
   font-size: 0.7rem;
   margin-left: 6px;
   letter-spacing: 1px;
@@ -1866,7 +1871,7 @@ select:focus {
   top: 2px;
   right: 3px;
   font-size: 0.5rem;
-  color: var(--gold);
+  color: var(--gold-ink);
   line-height: 1;
 }
 
