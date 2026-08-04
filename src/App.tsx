@@ -9,22 +9,19 @@ import { saveRound } from './storage';
 
 type View = 'home' | 'setup' | 'leagueSetup' | 'play' | 'results';
 
-/** Where the back gesture lands from each view. `null` = let the browser leave. */
-const BACK_TO: Record<View, View | null> = {
-  home: null,
-  setup: 'home',
-  leagueSetup: 'home',
-  play: 'home',
-  results: 'play',
-};
-
 export default function App() {
   const [view, setView] = useState<View>('home');
   const [round, setRound] = useState<Round | null>(null);
 
   // Without this, the Android back gesture exits an installed PWA mid-round.
   useEffect(() => {
-    const onPop = () => setView((v) => BACK_TO[v] ?? v);
+    // Seed the initial entry so the bottom-of-stack entry carries a view.
+    window.history.replaceState({ view: 'home' }, '');
+
+    const onPop = (e: PopStateEvent) => {
+      const v = (e.state as { view?: View } | null)?.view;
+      setView(v ?? 'home');
+    };
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, []);
