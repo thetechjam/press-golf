@@ -34,7 +34,7 @@ export function NassauControls({ round, hole, onChange }: Props) {
 
   if (!open) {
     return (
-      <button className="nassau collapsed" onClick={() => setOpen(true)}>
+      <button className="nassau collapsed" onClick={() => setOpen(true)} aria-expanded={false}>
         <FlagIcon size={14} />
         <span className="collapsed-text">
           {nineLabel}: {seg.status}

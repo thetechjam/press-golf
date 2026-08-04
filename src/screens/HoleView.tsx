@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Round, Hole, WolfChoice } from '../types';
 import { HoleStepper } from '../components/HoleStepper';
 import { WolfControls } from '../components/WolfControls';
@@ -25,8 +25,25 @@ export function HoleView({
   round, hole, idx, dir, highlightId, holeComplete, onGo, onScore, onWolf, onPresses,
 }: Props) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  const dotsRef = useRef<HTMLDivElement>(null);
   const siMap = strokeIndexMap(round);
   const last = idx === round.holes.length - 1;
+
+  // Keep the current hole's dot in view within the horizontally-scrolling strip.
+  // This only ever sets the strip's own scrollLeft — never scrollIntoView, which
+  // walks every scrollable ancestor (including the page) and would undo the
+  // one-screen layout this task depends on.
+  useEffect(() => {
+    const container = dotsRef.current;
+    if (!container) return;
+    const dot = container.querySelector<HTMLButtonElement>('.hole-dot.current');
+    if (!dot) return;
+    const target = dot.offsetLeft - container.clientWidth / 2 + dot.offsetWidth / 2;
+    const max = container.scrollWidth - container.clientWidth;
+    const left = Math.max(0, Math.min(target, max));
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    container.scrollTo({ left, behavior: reduceMotion ? 'auto' : 'smooth' });
+  }, [idx]);
 
   // Only the most recently completed hole gets a swing. For any earlier hole the
   // delta is a counterfactual — removing it changes skins carry-over downstream —
@@ -66,7 +83,7 @@ export function HoleView({
         <button className="nav-arrow" onClick={() => onGo(idx + 1)} disabled={last} aria-label="Next hole">›</button>
       </div>
 
-      <div className="hole-dots" aria-label="Hole progress">
+      <div className="hole-dots" ref={dotsRef} aria-label="Hole progress">
         {round.holes.map((h, i) => (
           <button
             key={h.number}

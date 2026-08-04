@@ -37,7 +37,7 @@ export function WolfControls({ round, hole, onChange }: Props) {
 
   if (!open && summary) {
     return (
-      <button className="wolf collapsed" onClick={() => setOpen(true)}>
+      <button className="wolf collapsed" onClick={() => setOpen(true)} aria-expanded={false}>
         <PawIcon size={14} />
         <span className="collapsed-text">{summary}</span>
         <span className="collapsed-hint">Change</span>
