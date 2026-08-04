@@ -1861,3 +1861,51 @@ select:focus {
   margin: -6px auto 0;
   font-size: 0.85rem;
 }
+
+/* ---- Money board (Play → Board tab) ---- */
+.money-board {
+  margin-bottom: 12px;
+}
+.pergame-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.pergame-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.pergame-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.82rem;
+}
+.pergame-stake {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+.pergame-nets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 4px;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+.pg-name {
+  color: var(--muted);
+  margin-right: 4px;
+}
+.pg-net.up {
+  color: var(--under);
+}
+.pg-net.down {
+  color: var(--over-strong);
+}

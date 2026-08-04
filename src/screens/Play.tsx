@@ -3,6 +3,7 @@ import type { Round, WolfChoice } from '../types';
 import { Leaderboard } from '../components/Leaderboard';
 import { Scorecard } from '../components/Scorecard';
 import { LeagueBoard } from '../components/LeagueBoard';
+import { MoneyBoard } from '../components/MoneyBoard';
 import { HoleView } from './HoleView';
 import { activeResults } from '../games';
 import { firstIncompleteHole } from '../games/util';
@@ -196,15 +197,18 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       )}
 
       {mode === 'board' && (
-        <section className="boards">
-          {round.options.league ? (
-            <LeagueBoard round={round} />
-          ) : (
-            results.map((r) => (
-              <Leaderboard key={r.gameType} result={r} colorOf={(id) => colors[id]} />
-            ))
-          )}
-        </section>
+        <>
+          {!round.options.league && <MoneyBoard round={round} onChange={onChange} />}
+          <section className="boards">
+            {round.options.league ? (
+              <LeagueBoard round={round} />
+            ) : (
+              results.map((r) => (
+                <Leaderboard key={r.gameType} result={r} colorOf={(id) => colors[id]} />
+              ))
+            )}
+          </section>
+        </>
       )}
 
       {mode === 'card' && (
