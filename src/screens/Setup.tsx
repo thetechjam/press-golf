@@ -11,6 +11,7 @@ import { PlayerAvatar } from '../components/PlayerAvatar';
 import { playerColor } from '../player';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 import { StarIcon, XIcon } from '../icons';
+import { StakesEditor } from '../components/StakesEditor';
 
 interface Props {
   onCancel: () => void;
@@ -467,6 +468,21 @@ export function Setup({ onCancel, onStart }: Props) {
               </label>
             </div>
           )}
+        </section>
+      )}
+
+      {games.length > 0 && (
+        <section className="card">
+          <h2>Money</h2>
+          <StakesEditor
+            games={games}
+            stakes={options.stakes}
+            onChange={(stakes) => setOptions({ ...options, stakes })}
+          />
+          <p className="hint">
+            Optional — leave blank to play for nothing. You can add or change stakes later from the
+            Board.
+          </p>
         </section>
       )}
 

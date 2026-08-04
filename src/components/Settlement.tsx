@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import type { Round, GameType } from '../types';
-import { computeSettlement, formatMoney, STAKE_UNIT } from '../games/settlement';
-import { gameMeta } from '../games';
+import type { Round } from '../types';
+import { computeSettlement, formatMoney } from '../games/settlement';
 import { colorMap } from '../player';
 import { CoinIcon } from '../icons';
 import { PlayerAvatar } from './PlayerAvatar';
+import { StakesEditor } from './StakesEditor';
 
 interface Props {
   round: Round;
@@ -14,17 +14,6 @@ interface Props {
 export function Settlement({ round, onChange }: Props) {
   const settlement = computeSettlement(round);
   const [editing, setEditing] = useState(!settlement.active);
-
-  const setStake = (gt: GameType, value: number) => {
-    if (!onChange) return;
-    onChange({
-      ...round,
-      options: {
-        ...round.options,
-        stakes: { ...round.options.stakes, [gt]: value },
-      },
-    });
-  };
 
   const colors = colorMap(round);
   const netSorted = round.players
@@ -45,27 +34,11 @@ export function Settlement({ round, onChange }: Props) {
       </div>
 
       {editing && onChange && (
-        <div className="stakes-editor">
-          {round.games.map((gt) => (
-            <label key={gt} className="stake-row">
-              <span className="stake-label">{gameMeta(gt).label}</span>
-              <span className="stake-input">
-                <span className="dollar">$</span>
-                <input
-                  type="number"
-                  min={0}
-                  inputMode="decimal"
-                  value={round.options.stakes?.[gt] ?? ''}
-                  placeholder="0"
-                  onChange={(e) =>
-                    setStake(gt, e.target.value === '' ? 0 : Number(e.target.value))
-                  }
-                />
-                <span className="per">per {STAKE_UNIT[gt]}</span>
-              </span>
-            </label>
-          ))}
-        </div>
+        <StakesEditor
+          games={round.games}
+          stakes={round.options.stakes ?? {}}
+          onChange={(stakes) => onChange({ ...round, options: { ...round.options, stakes } })}
+        />
       )}
 
       {!settlement.active ? (
