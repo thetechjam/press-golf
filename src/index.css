@@ -26,9 +26,9 @@
   --over-strong: #bd392c;
   --under: #1a8f4c;
   --gold: #e7b53c;
-  /* Foreground-only gold. Split from --gold so the light theme can darken text
-     without muddying the color-mix tints and borders built on --gold. */
-  --gold-ink: var(--gold);
+  /* Foreground-only gold. The base :root is a light theme, so dark ink is the
+     default. Bright gold is restored only in dark mode where surfaces are dark. */
+  --gold-ink: #8a6410;
   --radius: 16px;
   --tap: 48px;
   /* Yardage-book contour lines, tiled behind everything. */
@@ -47,6 +47,7 @@
     --over: #ff6b5e;
     --over-strong: #ff6b5e;
     --under: #43d281;
+    --gold-ink: var(--gold);
   }
 }
 
@@ -61,8 +62,6 @@
   --card: #ffffff;
   --line: #b9c8bd;
   --bg: #ffffff;
-  /* #e7b53c is 1.9:1 on white. #8a6410 is 5.37:1 — clears AA with headroom. */
-  --gold-ink: #8a6410;
 }
 
 * {
