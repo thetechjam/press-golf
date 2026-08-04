@@ -1909,3 +1909,46 @@ select:focus {
 .pg-net.down {
   color: var(--over-strong);
 }
+
+/* ---- Money ticker (Play → Hole tab) ---- */
+.money-ticker {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 6px 2px;
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.money-ticker::-webkit-scrollbar {
+  display: none;
+}
+.tick {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  flex: 0 0 auto;
+}
+.tick-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.tick-name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+.tick-net {
+  font-weight: 700;
+}
+.tick.up .tick-net {
+  color: var(--under);
+}
+.tick.down .tick-net {
+  color: var(--over-strong);
+}

@@ -4,6 +4,7 @@ import { Leaderboard } from '../components/Leaderboard';
 import { Scorecard } from '../components/Scorecard';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { MoneyBoard } from '../components/MoneyBoard';
+import { MoneyTicker } from '../components/MoneyTicker';
 import { HoleView } from './HoleView';
 import { activeResults } from '../games';
 import { firstIncompleteHole } from '../games/util';
@@ -180,6 +181,8 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           <SunIcon size={20} />
         </button>
       </div>
+
+      {mode === 'hole' && !round.options.league && <MoneyTicker round={round} />}
 
       {mode === 'hole' && (
         <HoleView
