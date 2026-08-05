@@ -3,9 +3,12 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { getSettings } from './storage'
-import { applySunlight } from './sunlight'
+import { applyTheme, watchSystemTheme } from './theme'
 
-applySunlight(getSettings().sunlight)
+// Applied before render so there is no flash of the wrong palette.
+const settings = getSettings()
+applyTheme(settings.theme, settings.glare)
+watchSystemTheme()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

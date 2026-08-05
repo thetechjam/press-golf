@@ -37,29 +37,29 @@
   --radius: 16px;
   --tap: 48px;
   /* Yardage-book contour lines, tiled behind everything. */
-  --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(16,35,27,0.05)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
+  --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(20,105,78,0.11)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not(.sunlight) {
-    --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(234,243,238,0.045)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
-    --cream: #0f1d18;
-    --ink: #eaf3ee;
-    --muted: #9fb4aa;
-    --card: #15241e;
-    --line: #243a31;
-    --bg: #0a1511;
-    --over: #ff6b5e;
-    --over-strong: #ff6b5e;
-    --under: #43d281;
-    --under-ink: var(--under);
-    --gold-ink: var(--gold);
-  }
+/* Dark palette. Applied by theme.ts as a class, not a media query, so an
+   explicit Dark choice works on a light phone. */
+:root.dark {
+  --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(234,243,238,0.045)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
+  --cream: #0f1d18;
+  --ink: #eaf3ee;
+  --muted: #9fb4aa;
+  --card: #15241e;
+  --line: #243a31;
+  --bg: #0a1511;
+  --over: #ff6b5e;
+  --over-strong: #ff6b5e;
+  --under: #43d281;
+  --under-ink: var(--under);
+  --gold-ink: var(--gold);
 }
 
-/* Sunlight mode: max-contrast light theme for direct daylight, regardless of
-   the system appearance. Toggled via the ☀️ button; class lives on <html>. */
-:root.sunlight {
+/* Glare mode: max-contrast light theme for direct daylight, whatever the
+   Appearance setting. Deliberately texture-free — see the spec. */
+:root.glare {
   color-scheme: light;
   --topo: none;
   --cream: #ffffff;
@@ -195,14 +195,12 @@ button {
   padding: 16px;
   min-height: var(--tap);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not(.sunlight) .btn-secondary {
-    color: var(--fairway);
-  }
-  /* The light-mode drop shadow reads muddy on a dark bg — soften to a subtle glow. */
-  :root:not(.sunlight) .btn-primary {
-    box-shadow: 0 2px 12px rgba(47, 191, 134, 0.28);
-  }
+:root.dark .btn-secondary {
+  color: var(--fairway);
+}
+/* The light-mode drop shadow reads muddy on a dark bg — soften to a subtle glow. */
+:root.dark .btn-primary {
+  box-shadow: 0 2px 12px rgba(47, 191, 134, 0.28);
 }
 
 .ab-badge {
@@ -253,13 +251,11 @@ button {
   justify-content: center;
   gap: 3px;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not(.sunlight) .logo {
-    color: var(--fairway);
-  }
-  :root:not(.sunlight) .round-result {
-    color: var(--fairway);
-  }
+:root.dark .logo {
+  color: var(--fairway);
+}
+:root.dark .round-result {
+  color: var(--fairway);
 }
 .tagline {
   color: var(--muted);
@@ -470,10 +466,8 @@ select:focus {
   font-weight: 700;
   color: var(--green-700);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not(.sunlight) .cs-hit-name {
-    color: var(--fairway);
-  }
+:root.dark .cs-hit-name {
+  color: var(--fairway);
 }
 .cs-hit-meta {
   font-size: 0.78rem;
@@ -527,10 +521,8 @@ select:focus {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not(.sunlight) .saved-course-name {
-    color: var(--fairway);
-  }
+:root.dark .saved-course-name {
+  color: var(--fairway);
 }
 .saved-course-meta {
   font-size: 0.78rem;
@@ -564,12 +556,10 @@ select:focus {
   font-size: 0.85rem;
   font-weight: 700;
 }
-@media (prefers-color-scheme: dark) {
-  /* White on the dark-mode --over fails contrast; the near-black bg clears it. */
-  :root:not(.sunlight) .round-del.armed,
-  :root:not(.sunlight) .saved-course-del.armed {
-    color: var(--bg);
-  }
+/* White on the dark-mode --over fails contrast; the near-black bg clears it. */
+:root.dark .round-del.armed,
+:root.dark .saved-course-del.armed {
+  color: var(--bg);
 }
 
 .player-row {
@@ -943,10 +933,8 @@ select:focus {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--fairway) 45%, transparent);
   transform: scale(1.3);
 }
-@media (prefers-color-scheme: dark) {
-  :root:not(.sunlight) .hole-dot.current::before {
-    border-color: var(--fairway);
-  }
+:root.dark .hole-dot.current::before {
+  border-color: var(--fairway);
 }
 
 .steppers {
