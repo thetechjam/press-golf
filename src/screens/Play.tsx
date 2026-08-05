@@ -12,9 +12,10 @@ import { visibleSwing } from '../games/money';
 import { wolfForHole } from '../games/wolf';
 import { colorMap } from '../player';
 import { getSettings, saveSettings } from '../storage';
-import { applySunlight } from '../sunlight';
+import { applyTheme } from '../theme';
 import { useWakeLock, wakeLockSupported } from '../useWakeLock';
-import { EyeIcon, SunIcon } from '../icons';
+import { EyeIcon, ContrastIcon, GearIcon } from '../icons';
+import { SettingsSheet } from '../components/SettingsSheet';
 
 type PlayMode = 'hole' | 'board' | 'card';
 
@@ -45,12 +46,20 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     saveSettings({ keepAwake: next });
   };
 
-  const [sunlight, setSunlight] = useState(() => getSettings().sunlight);
-  const toggleSunlight = () => {
-    const next = !sunlight;
-    setSunlight(next);
-    saveSettings({ sunlight: next });
-    applySunlight(next);
+  const [showSettings, setShowSettings] = useState(false);
+  const [glare, setGlare] = useState(() => getSettings().glare);
+  const toggleGlare = () => {
+    const next = !glare;
+    setGlare(next);
+    const s = saveSettings({ glare: next });
+    applyTheme(s.theme, s.glare);
+  };
+
+  // Because keepAwake is also editable in the sheet, re-read it on close so
+  // the two controls cannot disagree.
+  const closeSettings = () => {
+    setShowSettings(false);
+    setKeepAwake(getSettings().keepAwake);
   };
 
   // Scroll the flagged stepper into view and clear the flash after it plays.
@@ -182,13 +191,21 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           </button>
         )}
         <button
-          className={`awake-toggle${sunlight ? ' on' : ''}`}
-          onClick={toggleSunlight}
-          aria-label="Sunlight mode"
-          aria-pressed={sunlight}
-          title="Sunlight mode — high-contrast light theme"
+          className={`awake-toggle${glare ? ' on' : ''}`}
+          onClick={toggleGlare}
+          aria-label="Glare mode"
+          aria-pressed={glare}
+          title="Glare mode — max contrast for direct sun"
         >
-          <SunIcon size={20} />
+          <ContrastIcon size={20} />
+        </button>
+        <button
+          className="awake-toggle gear-btn"
+          onClick={() => setShowSettings(true)}
+          aria-label="Settings"
+          title="Settings"
+        >
+          <GearIcon size={20} />
         </button>
       </div>
 
@@ -271,6 +288,8 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           </button>
         )}
       </div>
+
+      {showSettings && <SettingsSheet onClose={closeSettings} />}
     </div>
   );
 }

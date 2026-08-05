@@ -5,7 +5,8 @@ import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
 import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
-import { StarIcon, XIcon } from '../icons';
+import { StarIcon, XIcon, GearIcon } from '../icons';
+import { SettingsSheet } from '../components/SettingsSheet';
 
 interface Props {
   onCancel: () => void;
@@ -42,6 +43,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   const [savedNote, setSavedNote] = useState('');
   const [error, setError] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
 
   const switchNine = (n: Nine) => {
     setNine(n);
@@ -163,7 +165,9 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
           ‹ Back
         </button>
         <h1>Golf League</h1>
-        <span />
+        <button className="btn-ghost" onClick={() => setShowSettings(true)} aria-label="Settings">
+          <GearIcon size={20} />
+        </button>
       </header>
 
       <CourseSearch
@@ -295,6 +299,8 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
       <button className="btn-primary big sticky" onClick={start}>
         Start League Round →
       </button>
+
+      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

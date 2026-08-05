@@ -10,8 +10,9 @@ import { DeleteButton } from '../components/DeleteButton';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import { playerColor } from '../player';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
-import { StarIcon, XIcon } from '../icons';
+import { StarIcon, XIcon, GearIcon } from '../icons';
 import { StakesEditor } from '../components/StakesEditor';
+import { SettingsSheet } from '../components/SettingsSheet';
 
 interface Props {
   onCancel: () => void;
@@ -44,6 +45,7 @@ export function Setup({ onCancel, onStart }: Props) {
   const [matchSideA, setMatchSideA] = useState('');
   const [matchSideB, setMatchSideB] = useState('');
   const [matchAssign, setMatchAssign] = useState<Assign>({});
+  const [showSettings, setShowSettings] = useState(false);
 
   const loadCourse = (c: SavedCourse) => {
     setCourse(c.name);
@@ -228,7 +230,9 @@ export function Setup({ onCancel, onStart }: Props) {
           ‹ Back
         </button>
         <h1>New Round</h1>
-        <span />
+        <button className="btn-ghost" onClick={() => setShowSettings(true)} aria-label="Settings">
+          <GearIcon size={20} />
+        </button>
       </header>
 
       <CourseSearch value={course} onChange={setCourse} onPick={loadFromApi} />
@@ -491,6 +495,8 @@ export function Setup({ onCancel, onStart }: Props) {
       <button className="btn-primary big sticky" onClick={start}>
         Start Round →
       </button>
+
+      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
     </div>
   );
 }

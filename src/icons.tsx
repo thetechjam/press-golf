@@ -1,7 +1,7 @@
 /**
  * Inline SVG icon set. One stroke weight (2), 24px grid, currentColor —
  * icons inherit text color so they follow the theme, dark mode, and
- * sunlight mode automatically. No icon library dependency.
+ * glare mode automatically. No icon library dependency.
  */
 
 interface IconProps {
@@ -25,7 +25,7 @@ const base = (size: number) => ({
 /**
  * The Press brand mark ("P Flag"): the pin flag forms the P, with the
  * poker-chip golf ball in the flag. Flag stays brand gold; pole and chip
- * ring follow currentColor so the mark tracks theme and sunlight modes.
+ * ring follow currentColor so the mark tracks theme and glare modes.
  */
 export const PressMark = ({ size = 18, className }: IconProps) => (
   <svg
@@ -92,10 +92,27 @@ export const EyeIcon = ({ size = 18, className }: IconProps) => (
   </svg>
 );
 
-export const SunIcon = ({ size = 18, className }: IconProps) => (
-  <svg {...base(size)} className={className}>
-    <circle cx="12" cy="12" r="4" />
-    <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4" />
+/** Half-filled circle — contrast, not brightness. Glare mode's mark. */
+export const ContrastIcon = ({ size = 18, className }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true">
+    <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" strokeWidth="2" />
+    <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" />
+  </svg>
+);
+
+export const GearIcon = ({ size = 18, className }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1.08-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+  </svg>
+);
+
+export const PencilIcon = ({ size = 18, className }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" className={className} aria-hidden="true"
+    fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 20h9" />
+    <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" />
   </svg>
 );
 

@@ -613,7 +613,7 @@ select:focus {
 .seg.view-toggle {
   margin-bottom: 0;
 }
-/* Three tabs + two icon toggles share 343px at 375px wide — ~71px per tab. */
+/* Three tabs + three icon toggles share 343px at 375px wide — ~53px per tab. */
 .view-toggle .seg-btn {
   padding: 12px 4px;
   letter-spacing: 0.03em;
@@ -649,6 +649,11 @@ select:focus {
   /* Halo separates the strike from the glyph regardless of emoji colors. */
   box-shadow: 0 0 0 1.5px var(--bg);
   transform: rotate(-45deg);
+}
+/* Settings reuses .awake-toggle's sizing but isn't a toggle — it has no "on"
+   state, so without this it would permanently show the off-state strike. */
+.awake-toggle.gear-btn::after {
+  content: none;
 }
 
 /* Starting-hole picker: seg-style buttons that wrap on narrow phones so each
@@ -2018,4 +2023,93 @@ select:focus {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   font-size: 0.7rem;
+}
+
+/* ---------- Sheet ---------- */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 17, 11, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 50;
+}
+.sheet {
+  background: var(--card);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%;
+  max-width: 540px;
+  padding: 16px calc(16px + env(safe-area-inset-right))
+    calc(24px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sheet-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+}
+.sheet-close {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  min-width: var(--tap);
+  min-height: var(--tap);
+}
+.set-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--tap);
+}
+.set-row span {
+  display: flex;
+  flex-direction: column;
+}
+.set-label {
+  font-weight: 600;
+}
+.set-hint {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.seg-disabled {
+  opacity: 0.45;
+}
+.set-override {
+  background: none;
+  border: 0;
+  text-align: left;
+  padding: 0;
+  color: var(--gold-ink);
+  font-size: 0.85rem;
+  text-decoration: underline;
+  min-height: var(--tap);
+}
+.hero-settings {
+  position: absolute;
+  top: calc(16px + env(safe-area-inset-top));
+  right: 16px;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  min-width: var(--tap);
+  min-height: var(--tap);
+}
+.home .hero {
+  position: relative;
 }

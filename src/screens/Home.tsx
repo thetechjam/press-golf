@@ -6,7 +6,8 @@ import { GAMES, activeResults } from '../games';
 import { computeLeague } from '../games/league';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { DeleteButton } from '../components/DeleteButton';
-import { FlagIcon, PressMark, TrophyIcon, XIcon } from '../icons';
+import { FlagIcon, PressMark, TrophyIcon, XIcon, GearIcon } from '../icons';
+import { SettingsSheet } from '../components/SettingsSheet';
 
 interface Props {
   onNew: () => void;
@@ -40,6 +41,7 @@ const resultLine = (r: Round): string | null => {
 
 export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
   const [rounds, setRounds] = useState<Round[]>(listRounds());
+  const [showSettings, setShowSettings] = useState(false);
 
   const remove = (id: string) => {
     deleteRound(id);
@@ -49,6 +51,9 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
   return (
     <div className="screen home">
       <header className="hero">
+        <button className="hero-settings" onClick={() => setShowSettings(true)} aria-label="Settings">
+          <GearIcon size={20} />
+        </button>
         <div className="logo" role="img" aria-label="Press">
           <PressMark size={34} />
           <span aria-hidden="true">ress</span>
@@ -121,6 +126,8 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
       )}
 
       <p className="hint">Tip: add Press to your home screen for one-tap access on the course.</p>
+
+      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
     </div>
   );
 }
