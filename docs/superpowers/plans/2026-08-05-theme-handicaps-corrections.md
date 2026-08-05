@@ -14,6 +14,7 @@
 - **Stub browser globals with `vi.stubGlobal`**, following the existing pattern at `src/storage.test.ts:5-11`.
 - Spec of record: `docs/superpowers/specs/2026-08-05-press-theme-handicaps-design.md`.
 - Run `npm test` (not `vitest` directly) — it is `vitest run`.
+- `npm run typecheck` is `tsc -b --noEmit`. **Do not change it back to `tsc --noEmit`** — the root `tsconfig.json` is solution-style (`"files": []` with `references`), so without `-b` it compiles zero files and exits 0 no matter what is broken. Fixed in `15d7fc8` after the Task 1 review caught it.
 - Commit after every task. Never commit with a failing test.
 - `--gold` is invisible on light backgrounds; any new gold-toned element must use `--gold-ink` in light and Glare, `--gold` in dark (regression fixed in `bbaca25`).
 - Existing `src/games/*.test.ts` must stay green throughout. Only `league.ts` gains real logic changes.
