@@ -8,6 +8,7 @@ import { activeResults } from '../games';
 import { computeSettlement, formatMoney } from '../games/settlement';
 import { computeLeague } from '../games/league';
 import { colorMap } from '../player';
+import { usesHandicaps } from '../games/handicap';
 import { TrophyIcon, ShareIcon } from '../icons';
 import { renderShareCard } from '../shareCard';
 
@@ -116,6 +117,8 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
   const results = activeResults(round);
   const hero = round.options.league ? null : winnerHero(round);
   const colors = colorMap(round);
+  const hcpOf = (id: string) =>
+    usesHandicaps(round) ? (round.players.find((p) => p.id === id)?.handicap ?? 0) : undefined;
 
   const shareText = async () => {
     const text = buildSummary(round);
@@ -219,7 +222,12 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
           <Settlement round={round} onChange={onChange} />
           <section className="boards">
             {results.map((r) => (
-              <Leaderboard key={r.gameType} result={r} colorOf={(id) => colors[id]} />
+              <Leaderboard
+                key={r.gameType}
+                result={r}
+                colorOf={(id) => colors[id]}
+                hcpOf={hcpOf}
+              />
             ))}
           </section>
         </>

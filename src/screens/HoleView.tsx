@@ -3,7 +3,7 @@ import type { Round, Hole, WolfChoice } from '../types';
 import { HoleStepper } from '../components/HoleStepper';
 import { WolfControls } from '../components/WolfControls';
 import { NassauControls } from '../components/NassauControls';
-import { strokeIndexMap, strokesReceivedOnHole } from '../games/handicap';
+import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
 import { playerColor } from '../player';
 
 interface Props {
@@ -99,7 +99,7 @@ export function HoleView({
               color={playerColor(i)}
               par={hole.par}
               value={round.scores[hole.number]?.[p.id] ?? null}
-              handicap={round.options.league ? p.handicap : undefined}
+              handicap={usesHandicaps(round) ? (p.handicap ?? 0) : undefined}
               strokesReceived={
                 round.options.useNet
                   ? strokesReceivedOnHole(p.handicap ?? 0, siMap[hole.number], round.holes.length)

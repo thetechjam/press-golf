@@ -61,3 +61,12 @@ export function totalStrokesReceived(round: Round, playerId: string): number {
     0
   );
 }
+
+/**
+ * Whether this round uses handicaps at all — the gate for every handicap
+ * display. Not the same as `options.useNet`: league rounds ship `useNet: false`
+ * (LeagueSetup spreads DEFAULT_OPTIONS) yet score net through computeLeague,
+ * which reads `player.handicap` directly.
+ */
+export const usesHandicaps = (round: Round): boolean =>
+  round.options.useNet || round.options.league != null;

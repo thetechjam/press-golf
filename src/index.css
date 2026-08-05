@@ -2116,3 +2116,21 @@ select:focus {
 .home .hero {
   position: relative;
 }
+
+.sc-name-text {
+  margin-right: 4px;
+}
+.sc-hcp,
+.board-hcp {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--fairway) 18%, transparent);
+  color: var(--muted);
+  vertical-align: middle;
+}
+.board-hcp {
+  margin-left: 6px;
+}

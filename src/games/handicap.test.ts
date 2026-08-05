@@ -4,8 +4,10 @@ import {
   strokesReceivedOnHole,
   holeScore,
   totalStrokesReceived,
+  usesHandicaps,
 } from './handicap';
 import { makeRound, player, holes } from './testFixtures';
+import type { LeagueSetup } from '../types';
 
 describe('strokeIndexMap', () => {
   it('uses provided stroke indexes when every hole has one', () => {
@@ -101,5 +103,31 @@ describe('totalStrokesReceived', () => {
   it('is zero when the player is unknown', () => {
     const round = makeRound({ players: [player('p1', 'Al', 7)], holes: holes(18) });
     expect(totalStrokesReceived(round, 'ghost')).toBe(0);
+  });
+});
+
+describe('usesHandicaps', () => {
+  it('is false for a gross round', () => {
+    expect(usesHandicaps(makeRound({ options: { useNet: false } }))).toBe(false);
+  });
+
+  it('is true for a net round', () => {
+    expect(usesHandicaps(makeRound({ options: { useNet: true } }))).toBe(true);
+  });
+
+  // The trap this predicate exists for: LeagueSetup spreads DEFAULT_OPTIONS and
+  // never sets useNet, because computeLeague reads player.handicap directly.
+  // Gating on useNet alone would hide handicaps in the only rounds that require them.
+  it('is true for a league round despite useNet being false', () => {
+    const cfg: LeagueSetup = {
+      teams: [
+        { aId: 'p1', bId: 'p2' },
+        { aId: 'p3', bId: 'p4' },
+      ],
+      pointsPerMatch: 1,
+    };
+    const r = makeRound({ options: { league: cfg } });
+    expect(r.options.useNet).toBe(false);
+    expect(usesHandicaps(r)).toBe(true);
   });
 });

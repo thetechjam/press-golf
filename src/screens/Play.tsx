@@ -11,6 +11,7 @@ import { firstIncompleteHole } from '../games/util';
 import { visibleSwing } from '../games/money';
 import { wolfForHole } from '../games/wolf';
 import { colorMap } from '../player';
+import { usesHandicaps } from '../games/handicap';
 import { getSettings, saveSettings } from '../storage';
 import { applyTheme } from '../theme';
 import { useWakeLock, wakeLockSupported } from '../useWakeLock';
@@ -155,6 +156,9 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     colors = colorMap(round);
   }
 
+  const hcpOf = (id: string) =>
+    usesHandicaps(round) ? (round.players.find((p) => p.id === id)?.handicap ?? 0) : undefined;
+
   // The most recently completed hole's money swing, gated exactly by
   // games/money.ts's visibleSwing — null falls back to the running ticker.
   const swing = mode === 'hole' && !round.options.league ? visibleSwing(round, hole) : null;
@@ -242,7 +246,12 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
               <LeagueBoard round={round} />
             ) : (
               results.map((r) => (
-                <Leaderboard key={r.gameType} result={r} colorOf={(id) => colors[id]} />
+                <Leaderboard
+                  key={r.gameType}
+                  result={r}
+                  colorOf={(id) => colors[id]}
+                  hcpOf={hcpOf}
+                />
               ))
             )}
           </section>

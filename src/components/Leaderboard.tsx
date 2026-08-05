@@ -4,9 +4,10 @@ import { PlayerAvatar } from './PlayerAvatar';
 interface Props {
   result: GameResult;
   colorOf?: (playerId: string) => string | undefined;
+  hcpOf?: (playerId: string) => number | undefined;
 }
 
-export function Leaderboard({ result, colorOf }: Props) {
+export function Leaderboard({ result, colorOf, hcpOf }: Props) {
 
   return (
     <div className="board">
@@ -29,6 +30,11 @@ export function Leaderboard({ result, colorOf }: Props) {
                 <span className="board-name">
                   {color && <PlayerAvatar name={s.label} color={color} size={22} />}
                   <span className="board-name-text">{s.label}</span>
+                  {s.playerId && hcpOf?.(s.playerId) != null && (
+                    <span className="board-hcp" aria-label={`Handicap ${hcpOf(s.playerId)}`}>
+                      {hcpOf(s.playerId)}
+                    </span>
+                  )}
                 </span>
                 <span className="board-detail">{s.detail}</span>
               </li>

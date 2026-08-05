@@ -1,5 +1,5 @@
 import type { Round } from '../types';
-import { strokeIndexMap, strokesReceivedOnHole } from '../games/handicap';
+import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
 import { scoreMarkClass } from '../scoreMark';
 
 interface Props {
@@ -12,6 +12,7 @@ interface Props {
 export function Scorecard({ round, currentHole, onJumpToHole }: Props) {
   const { holes, players } = round;
   const useNet = round.options.useNet;
+  const showHcp = usesHandicaps(round);
   const siMap = strokeIndexMap(round);
   const parTotal = holes.reduce((s, h) => s + h.par, 0);
 
@@ -66,7 +67,14 @@ export function Scorecard({ round, currentHole, onJumpToHole }: Props) {
             let playedPar = 0;
             return (
               <tr key={p.id}>
-                <th className="sc-name">{p.name}</th>
+                <th className="sc-name">
+                  <span className="sc-name-text">{p.name}</span>
+                  {showHcp && (
+                    <span className="sc-hcp" aria-label={`Handicap ${p.handicap ?? 0}`}>
+                      {p.handicap ?? 0}
+                    </span>
+                  )}
+                </th>
                 {holes.map((h, i) => {
                   const raw = round.scores[h.number]?.[p.id] ?? null;
                   if (raw != null) {
