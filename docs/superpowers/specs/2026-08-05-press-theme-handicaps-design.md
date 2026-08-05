@@ -207,6 +207,57 @@ becomes the sole jump control. This is a deliberate change to established muscle
 memory, made because correcting a typo is the more common need and currently
 costs up to fifteen taps.
 
+### F. Per-match stroke chips for league rounds
+
+League rounds show no stroke indicator on the Hole tab, so mid-hole you cannot
+see who is stroking. The obvious fix — routing the existing dots through
+`usesHandicaps` — is **wrong**, and this section exists to record why.
+
+League strokes are relative and computed per match, off three baselines
+(`league.ts:63,88`): the A match plays off the low of the two A players, the B
+match off the low of the two B players, and the Team match off the low of all
+four. A player therefore receives different strokes in different matches at the
+same time. For Team 1 (10, 14) v Team 2 (6, 8):
+
+| Player | B match | Team match | Full-handicap dots |
+|---|---|---|---|
+| 14 hcp | 6 | 8 | 14 |
+| 8 hcp | 0 | 2 | 8 |
+
+`.hcp-dots` renders `strokesReceivedOnHole(p.handicap, …)` — the third column.
+For the 14-handicap that is strokes on 14 holes where six are actually received.
+So the omission is correct, not a defect, and `LeagueBoard` already reports the
+truth per match (`LeagueBoard.tsx:43`).
+
+**The fix is per-match chips.** Under each player's name, one chip per match in
+which they receive a stroke *on this hole*: `A`, `B`, or `T`. In a four-player
+league every player is in exactly two matches (their singles and the team), so a
+player shows at most two chips. `capHcp` bounds league allocation to one stroke
+per hole (`league.ts:29`), so chips are binary — no counts needed.
+
+**Shared baselines, enforced by an invariant test.** A new
+`leagueStrokesOnHole(round, hole)` export must not recompute the baselines
+independently of `computeLeague` — two copies of `min(hcp…)` logic would drift
+the display away from the scoring. Both consume one internal
+`leagueBaselines(round)` helper returning the capped effective handicaps.
+
+The drift guard is a test, not a convention: **for every player and match,
+`leagueStrokesOnHole` summed across all holes must equal that player's total in
+`computeLeague().matches[].strokes`.** If the two ever disagree, that test fails.
+
+**Chip contrast.** `.hcp-dots` uses `--gold`, which was invisible in the light
+theme until `bbaca25` remapped it. Chips follow the same rule — `--gold-ink` in
+light and Glare, `--gold` in dark — rather than reintroducing the bug in a new
+element.
+
+**Component boundary.** `HoleStepper` stays league-agnostic: it takes
+`matchStrokes?: string[]` (e.g. `['A', 'T']`) and renders chips. `HoleView`
+computes them. `HoleStepper` does not import `league.ts`.
+
+**The scorecard is unchanged.** Per-match chips do not fit a grid cell, and a
+single merged dot would reintroduce exactly the ambiguity this section rejects.
+League stroke detail stays on the Hole tab and the Board.
+
 ## Files
 
 | File | Change |
@@ -216,8 +267,10 @@ costs up to fifteen taps.
 | `src/games/roundEdits.ts` | New. Handicap application + `useNet` recompute. |
 | `src/games/roundEdits.test.ts` | New. |
 | `src/games/handicap.ts` | Add `usesHandicaps(round)` predicate. |
-| `src/components/HoleStepper.tsx` | Badge shown for every handicap round. |
-| `src/screens/HoleView.tsx` | Pass `handicap` via `usesHandicaps`, not `league`. |
+| `src/components/HoleStepper.tsx` | Badge shown for every handicap round; `matchStrokes` chips. |
+| `src/screens/HoleView.tsx` | Pass `handicap` via `usesHandicaps`; compute league chips. |
+| `src/games/league.ts` | Extract `leagueBaselines`; add `leagueStrokesOnHole`. |
+| `src/games/league.test.ts` | Add the chips/`computeLeague` drift invariant. |
 | `src/components/SettingsSheet.tsx` | New. Appearance + Glare + Keep awake. |
 | `src/components/EditHandicaps.tsx` | New. |
 | `src/components/Scorecard.tsx` | HCP badge; editable cells; jump moves to header row. |
@@ -250,8 +303,14 @@ the next write rather than persisting forever.
   guard against silently dropping the badge from league rounds.
 - Settings migration: legacy `{ sunlight: true }` reads as `glare: true`.
 - Score clamping: 0 and 16 reject, empty clears, 1 and 15 accept.
-- The existing `src/games/*.test.ts` suite must stay green — no game logic
-  changes, so any failure means a regression.
+- `league.test.ts`: the drift invariant above — `leagueStrokesOnHole` summed over
+  every hole equals each player's per-match total from `computeLeague`. Plus the
+  worked example (10/14 v 6/8): the 14-handicap gets 6 chips in the B match and
+  8 in the Team match across nine holes, never 14.
+- The existing `src/games/*.test.ts` suite must stay green. `league.ts` is the
+  one file here with real logic changes (the `leagueBaselines` extraction), so
+  its existing tests are the regression gate for that refactor — they must pass
+  untouched.
 
 ## Acceptance
 
@@ -268,4 +327,9 @@ the next write rather than persisting forever.
 7. Editing a handicap in a round that started gross switches it to net scoring.
 8. A score typed into a scorecard cell persists across a tab switch and app
    reload.
-9. `npm test`, `tsc --noEmit`, and `npm run build` all clean.
+9. In a league round, a player stroking in the Team match but not their singles
+   shows exactly one chip (`T`), and the chip set on each hole matches what the
+   Board reports for that match.
+10. Chips are legible in all three themes and in Glare mode — the `--gold`
+    regression from `bbaca25` does not return in a new element.
+11. `npm test`, `tsc --noEmit`, and `npm run build` all clean.
