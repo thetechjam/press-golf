@@ -139,11 +139,33 @@ treatment and its `aria-label={\`Handicap ${n}\`}` pattern.
 `colorOf`, rendering a badge after `.board-name-text`. Play and Results share
 this component, so one change covers the Board tab and the final results.
 
-Both are shown only when `round.options.useNet` — in a gross round the number is
-inert and would be noise.
+**Hole steppers.** The existing badge (`HoleStepper.tsx:73`) is extended from
+league-only to every round that uses handicaps, so the number appears on the
+screen you score from, not just the ones you look things up on.
 
-**Out of scope, by decision:** hole steppers keep their current league-only
-badge, and Home round cards stay unchanged.
+**Visibility gate.** All three read from one helper rather than testing
+`useNet` directly:
+
+```ts
+export const usesHandicaps = (round: Round): boolean =>
+  round.options.useNet || round.options.league != null;
+```
+
+This is not a stylistic preference. **League rounds have `useNet === false`** —
+`LeagueSetup.tsx:141` spreads `DEFAULT_OPTIONS` and never sets it, because
+`computeLeague` reads `player.handicap` directly rather than consulting the flag.
+Gating on `useNet` alone would therefore *remove* the badge from league rounds,
+which are the only rounds that show it today and the only ones where a handicap
+is mandatory. The helper lives in `src/games/handicap.ts` next to the other
+handicap predicates.
+
+In a gross round with no handicaps anywhere, all three stay hidden — the number
+would be inert.
+
+**Out of scope, by decision:** Home round cards stay unchanged. Separately, league
+rounds also render no stroke dots (`HoleView.tsx:104`, `Scorecard.tsx:80` both
+gate on `useNet`); that is pre-existing behavior, is not a regression introduced
+here, and is left alone.
 
 ### E. Mid-round corrections
 
@@ -154,6 +176,10 @@ sheet listing every player with an editable handicap. Two rules carry the risk:
   (`Setup.tsx:160` — any handicap > 0). Without this, adding a handicap to a
   round that started gross would write the value and change nothing visible,
   because every net code path is gated on `useNet`.
+- **League rounds are exempt from that recompute.** They ship `useNet: false` by
+  construction and score net regardless; flipping it true would switch on stroke
+  dots that league rounds have never shown, which is a behavior change this work
+  has no mandate to make. League rounds keep `useNet` exactly as found.
 - League rounds require a handicap for all four players
   (`LeagueSetup.tsx:116`). Blanking one is blocked at save with an inline error
   rather than silently breaking league scoring.
@@ -189,6 +215,9 @@ costs up to fifteen taps.
 | `src/storage.ts` | `Settings` gains `theme`; `sunlight` → `glare` with read migration. |
 | `src/games/roundEdits.ts` | New. Handicap application + `useNet` recompute. |
 | `src/games/roundEdits.test.ts` | New. |
+| `src/games/handicap.ts` | Add `usesHandicaps(round)` predicate. |
+| `src/components/HoleStepper.tsx` | Badge shown for every handicap round. |
+| `src/screens/HoleView.tsx` | Pass `handicap` via `usesHandicaps`, not `league`. |
 | `src/components/SettingsSheet.tsx` | New. Appearance + Glare + Keep awake. |
 | `src/components/EditHandicaps.tsx` | New. |
 | `src/components/Scorecard.tsx` | HCP badge; editable cells; jump moves to header row. |
@@ -213,8 +242,12 @@ the next write rather than persisting forever.
 ## Testing
 
 - `roundEdits.test.ts`: `useNet` off→on when a handicap is added to a gross
-  round; on→off when the last handicap is cleared; league validation rejects a
-  blank; existing scores untouched by a handicap edit.
+  round; on→off when the last handicap is cleared; **a league round keeps
+  `useNet: false` through a handicap edit**; league validation rejects a blank;
+  existing scores untouched by a handicap edit.
+- `handicap.test.ts`: `usesHandicaps` is true for a league round despite
+  `useNet: false`, true for a net round, false for a gross round. This is the
+  guard against silently dropping the badge from league rounds.
 - Settings migration: legacy `{ sunlight: true }` reads as `glare: true`.
 - Score clamping: 0 and 16 reject, empty clears, 1 and 15 accept.
 - The existing `src/games/*.test.ts` suite must stay green — no game logic
@@ -228,9 +261,11 @@ the next write rather than persisting forever.
    override.
 3. Changing the phone's appearance while set to System repaints without a reload.
 4. Light mode contours are visible at arm's length and read green.
-5. A handicap edited mid-round changes the leaderboards and the money on the next
+5. A league round still shows every handicap badge — steppers, scorecard, and
+   boards — after the change, despite carrying `useNet: false`.
+6. A handicap edited mid-round changes the leaderboards and the money on the next
    render, with no reload.
-6. Editing a handicap in a round that started gross switches it to net scoring.
-7. A score typed into a scorecard cell persists across a tab switch and app
+7. Editing a handicap in a round that started gross switches it to net scoring.
+8. A score typed into a scorecard cell persists across a tab switch and app
    reload.
-8. `npm test`, `tsc --noEmit`, and `npm run build` all clean.
+9. `npm test`, `tsc --noEmit`, and `npm run build` all clean.
