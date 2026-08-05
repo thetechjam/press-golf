@@ -2163,3 +2163,14 @@ select:focus {
 :root.dark .lg-chip {
   color: var(--gold);
 }
+
+.hcp-edit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--tap);
+}
+.hcp-edit-name {
+  font-weight: 600;
+}

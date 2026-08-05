@@ -9,8 +9,9 @@ import { computeSettlement, formatMoney } from '../games/settlement';
 import { computeLeague } from '../games/league';
 import { colorMap } from '../player';
 import { usesHandicaps } from '../games/handicap';
-import { TrophyIcon, ShareIcon } from '../icons';
+import { TrophyIcon, ShareIcon, PencilIcon } from '../icons';
 import { renderShareCard } from '../shareCard';
+import { EditHandicaps } from '../components/EditHandicaps';
 
 interface Hero {
   players: { name: string; color: string }[];
@@ -114,6 +115,7 @@ function buildSummary(round: Round): string {
 export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
   const [copied, setCopied] = useState(false);
   const [rendering, setRendering] = useState(false);
+  const [showHcp, setShowHcp] = useState(false);
   const results = activeResults(round);
   const hero = round.options.league ? null : winnerHero(round);
   const colors = colorMap(round);
@@ -245,6 +247,13 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       <button className="btn-ghost share-text" onClick={shareText}>
         {copied ? 'Copied to clipboard' : 'Share as text instead'}
       </button>
+      <button className="btn-ghost" onClick={() => setShowHcp(true)}>
+        <PencilIcon size={16} /> Edit handicaps
+      </button>
+
+      {showHcp && (
+        <EditHandicaps round={round} onChange={onChange} onClose={() => setShowHcp(false)} />
+      )}
     </div>
   );
 }

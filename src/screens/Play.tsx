@@ -15,8 +15,9 @@ import { usesHandicaps } from '../games/handicap';
 import { getSettings, saveSettings } from '../storage';
 import { applyTheme } from '../theme';
 import { useWakeLock, wakeLockSupported } from '../useWakeLock';
-import { EyeIcon, ContrastIcon, GearIcon } from '../icons';
+import { EyeIcon, ContrastIcon, GearIcon, PencilIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
+import { EditHandicaps } from '../components/EditHandicaps';
 
 type PlayMode = 'hole' | 'board' | 'card';
 
@@ -48,6 +49,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   };
 
   const [showSettings, setShowSettings] = useState(false);
+  const [showHcp, setShowHcp] = useState(false);
   const [glare, setGlare] = useState(() => getSettings().glare);
   const toggleGlare = () => {
     const next = !glare;
@@ -255,6 +257,9 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
               ))
             )}
           </section>
+          <button className="btn-ghost edit-hcp" onClick={() => setShowHcp(true)}>
+            <PencilIcon size={16} /> Edit handicaps
+          </button>
         </>
       )}
 
@@ -301,6 +306,9 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       </div>
 
       {showSettings && <SettingsSheet onClose={closeSettings} />}
+      {showHcp && (
+        <EditHandicaps round={round} onChange={onChange} onClose={() => setShowHcp(false)} />
+      )}
     </div>
   );
 }
