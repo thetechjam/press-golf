@@ -990,6 +990,8 @@ select:focus {
 }
 .stepper-name {
   display: flex;
+  flex-wrap: wrap;
+  row-gap: 2px;
   align-items: center;
   gap: 9px;
   font-family: var(--font-display);
@@ -1000,6 +1002,13 @@ select:focus {
   min-width: 0;
 }
 .stepper-name-text {
+  /* A hard floor so the name survives sharing the row with the HCP badge and
+     league chips — without it, flex-shrink's default min-content-size-0 (a
+     side effect of overflow:hidden) lets those wider, non-shrinking siblings
+     crush this down to nothing on a 375px phone. Anything that still doesn't
+     fit wraps to a second line instead of hiding the player's name. */
+  min-width: 2.4em;
+  flex-shrink: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2133,4 +2142,24 @@ select:focus {
 }
 .board-hcp {
   margin-left: 6px;
+}
+
+.lg-chips {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 6px;
+}
+.lg-chip {
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: 4px;
+  /* --gold is invisible on light backgrounds (see bbaca25) — ink in light and
+     glare, bright gold only where the surface is dark. */
+  color: var(--gold-ink);
+  border: 1px solid currentColor;
+}
+:root.dark .lg-chip {
+  color: var(--gold);
 }

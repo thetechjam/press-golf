@@ -12,6 +12,11 @@ interface Props {
   strokesReceived?: number;
   /** Course handicap, shown as a small badge so you can see what net scores off. */
   handicap?: number;
+  /**
+   * League only: which matches give this player a stroke on this hole, e.g.
+   * ['A', 'T']. Kept as plain strings so this component stays league-agnostic.
+   */
+  matchStrokes?: string[];
   onChange: (value: number | null) => void;
 }
 
@@ -37,6 +42,7 @@ export function HoleStepper({
   par,
   strokesReceived = 0,
   handicap,
+  matchStrokes,
   onChange,
 }: Props) {
   const toPar = value == null ? 0 : value - par;
@@ -75,7 +81,19 @@ export function HoleStepper({
             HCP {handicap}
           </span>
         )}
-        {strokesReceived > 0 && (
+        {matchStrokes && matchStrokes.length > 0 && (
+          <span
+            className="lg-chips"
+            aria-label={`Gets a stroke in: ${matchStrokes.join(', ')}`}
+          >
+            {matchStrokes.map((m) => (
+              <span key={m} className="lg-chip">
+                {m}
+              </span>
+            ))}
+          </span>
+        )}
+        {!matchStrokes && strokesReceived > 0 && (
           <span className="hcp-dots" aria-label={`${strokesReceived} handicap strokes`}>
             {'•'.repeat(strokesReceived)}
           </span>

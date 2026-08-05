@@ -4,6 +4,7 @@ import { HoleStepper } from '../components/HoleStepper';
 import { WolfControls } from '../components/WolfControls';
 import { NassauControls } from '../components/NassauControls';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
+import { leagueStrokesOnHole } from '../games/league';
 import { playerColor } from '../player';
 
 interface Props {
@@ -59,6 +60,10 @@ export function HoleView({
     touchStart.current = null;
   };
 
+  // League strokes are per-match off three different baselines, so a single dot
+  // count would be ambiguous — chips name the matches instead. See the spec.
+  const chips = round.options.league ? leagueStrokesOnHole(round, hole) : null;
+
   return (
     <div className="hole-view" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       <div className="hole-nav">
@@ -105,6 +110,7 @@ export function HoleView({
                   ? strokesReceivedOnHole(p.handicap ?? 0, siMap[hole.number], round.holes.length)
                   : 0
               }
+              matchStrokes={chips ? chips[p.id] : undefined}
               onChange={(v) => onScore(p.id, v)}
             />
           ))}
