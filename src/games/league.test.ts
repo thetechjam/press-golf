@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeLeague } from './league';
+import { computeLeague, leagueStrokesOnHole } from './league';
 import { makeRound, player, holes, scoresFrom } from './testFixtures';
 import type { LeagueSetup } from '../types';
 
@@ -235,5 +235,56 @@ describe('computeLeague — incomplete night', () => {
     // No points awarded on unfinished matches.
     expect(r.teams[0].points).toBe(0);
     expect(r.teams[1].points).toBe(0);
+  });
+});
+
+describe('leagueStrokesOnHole', () => {
+  // Team 1 (10, 14) v Team 2 (6, 8). A match plays off 6, B match off 8,
+  // team match off 4 — three different baselines, so one player receives
+  // different strokes in their singles and team matches at the same time.
+  const FOUR_H = [
+    player('p1', 'Al', 10),
+    player('p2', 'Bo', 14),
+    player('p3', 'Cy', 6),
+    player('p4', 'Di', 8),
+  ];
+  const hs = holes(9);
+  const r = makeRound({ players: FOUR_H, holes: hs, options: { league: league() } });
+
+  it('gives Bo the B match stroke only on the holes the B match allows', () => {
+    // B match: 14 - 8 = 6 strokes, on stroke indexes 1..6.
+    expect(leagueStrokesOnHole(r, hs[0])['p2']).toContain('B');
+    expect(leagueStrokesOnHole(r, hs[6])['p2']).not.toContain('B');
+  });
+
+  it('gives Di team strokes where she gets none in her singles match', () => {
+    // B match: 8 - 8 = 0. Team match: 8 - 6 = 2, on stroke indexes 1..2.
+    expect(leagueStrokesOnHole(r, hs[0])['p4']).toEqual(['T']);
+    expect(leagueStrokesOnHole(r, hs[5])['p4']).toEqual([]);
+  });
+
+  it('gives the low man no strokes anywhere', () => {
+    for (const h of hs) expect(leagueStrokesOnHole(r, h)['p3']).toEqual([]);
+  });
+
+  it('returns an empty map for a non-league round', () => {
+    expect(leagueStrokesOnHole(makeRound({ holes: hs }), hs[0])).toEqual({});
+  });
+
+  // Drift guard: the chips and the scoring must never disagree. If someone
+  // changes a baseline in one place and not the other, this fails.
+  it('agrees with computeLeague on every per-match stroke total', () => {
+    const league_ = computeLeague(r);
+    const perHole = hs.map((h) => leagueStrokesOnHole(r, h));
+    const countFor = (pid: string, key: 'A' | 'B' | 'T') =>
+      perHole.filter((m) => m[pid]?.includes(key)).length;
+
+    for (const m of league_.matches) {
+      const key = m.key === 'team' ? 'T' : m.key;
+      for (const s of m.strokes) {
+        const p = FOUR_H.find((x) => x.name === s.name)!;
+        expect(countFor(p.id, key)).toBe(s.strokes);
+      }
+    }
   });
 });

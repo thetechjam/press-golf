@@ -20,19 +20,81 @@ export interface LeagueResult {
   complete: boolean;
 }
 
+export type LeagueMatchKey = 'A' | 'B' | 'T';
+
+interface Baselines {
+  /** Which singles match a player plays in, or null if they are not in the league. */
+  matchOf: (id: string) => 'A' | 'B' | null;
+  /** Capped, low-man-adjusted handicap for a player's singles match. */
+  singles: (id: string) => number;
+  /** Capped, low-man-adjusted handicap for the team match. */
+  team: (id: string) => number;
+  nameOf: (id: string) => string;
+  hcp: (id: string) => number;
+}
+
+/**
+ * The three stroke baselines a league night is scored off — A match off the low
+ * of the two A players, B match off the low of the two B players, team match off
+ * the low of all four. Extracted so computeLeague and leagueStrokesOnHole cannot
+ * drift apart; league.test.ts asserts they agree.
+ */
+function leagueBaselines(round: Round): Baselines {
+  const cfg = round.options.league!;
+  const total = round.holes.length;
+  // League rule: at most 1 stroke per hole, so capping the effective handicap at
+  // `total` makes the second-stroke branch of strokesReceivedOnHole unreachable.
+  const capHcp = (v: number) => Math.min(Math.max(0, v), total);
+  const hcp = (id: string) => round.players.find((p) => p.id === id)?.handicap ?? 0;
+  const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? '?';
+  const [t0, t1] = cfg.teams;
+  const aLow = Math.min(hcp(t0.aId), hcp(t1.aId));
+  const bLow = Math.min(hcp(t0.bId), hcp(t1.bId));
+  const low4 = Math.min(hcp(t0.aId), hcp(t0.bId), hcp(t1.aId), hcp(t1.bId));
+  const matchOf = (id: string): 'A' | 'B' | null =>
+    id === t0.aId || id === t1.aId ? 'A' : id === t0.bId || id === t1.bId ? 'B' : null;
+  return {
+    matchOf,
+    singles: (id) => {
+      const m = matchOf(id);
+      return m == null ? 0 : capHcp(hcp(id) - (m === 'A' ? aLow : bLow));
+    },
+    team: (id) => capHcp(hcp(id) - low4),
+    nameOf,
+    hcp,
+  };
+}
+
+/**
+ * Which matches give each player a stroke on this hole. Chips, not counts —
+ * `capHcp` bounds league allocation to one stroke per hole.
+ */
+export function leagueStrokesOnHole(
+  round: Round,
+  hole: Hole
+): Record<string, LeagueMatchKey[]> {
+  if (!round.options.league) return {};
+  const b = leagueBaselines(round);
+  const si = strokeIndexMap(round)[hole.number];
+  const total = round.holes.length;
+  const out: Record<string, LeagueMatchKey[]> = {};
+  for (const p of round.players) {
+    const keys: LeagueMatchKey[] = [];
+    const m = b.matchOf(p.id);
+    if (m && strokesReceivedOnHole(b.singles(p.id), si, total) > 0) keys.push(m);
+    if (strokesReceivedOnHole(b.team(p.id), si, total) > 0) keys.push('T');
+    out[p.id] = keys;
+  }
+  return out;
+}
+
 export function computeLeague(round: Round): LeagueResult {
   const cfg = round.options.league!;
   const si = strokeIndexMap(round);
   const total = round.holes.length;
 
-  // League rule: a player gets at most 1 stroke per hole, so at most `total`
-  // (9) strokes in a match. Capping the effective handicap at `total` makes the
-  // second-stroke branch of strokesReceivedOnHole unreachable and bounds the
-  // total, regardless of how large the raw handicap difference is.
-  const capHcp = (v: number) => Math.min(Math.max(0, v), total);
-
-  const hcp = (id: string) => round.players.find((p) => p.id === id)?.handicap ?? 0;
-  const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? '?';
+  const b = leagueBaselines(round);
+  const { nameOf } = b;
   const teamName = (t: LeagueTeam, i: number) =>
     t.name?.trim() || `${nameOf(t.aId)} & ${nameOf(t.bId)}` || `Team ${i + 1}`;
 
@@ -48,9 +110,9 @@ export function computeLeague(round: Round): LeagueResult {
   const strokesFor = (effHcp: number): number =>
     round.holes.reduce((s, h) => s + strokesReceivedOnHole(effHcp, si[h.number], total), 0);
   // The stroke-getters in a match, so the board can show what it scored off of.
-  const strokeList = (ids: string[], low: number) =>
+  const strokeList = (ids: string[], eff: (id: string) => number) =>
     ids
-      .map((id) => ({ name: nameOf(id), strokes: strokesFor(capHcp(hcp(id) - low)) }))
+      .map((id) => ({ name: nameOf(id), strokes: strokesFor(eff(id)) }))
       .filter((s) => s.strokes > 0);
 
   const [t0, t1] = cfg.teams;
@@ -59,11 +121,10 @@ export function computeLeague(round: Round): LeagueResult {
 
   // Singles: strokes off the lower handicap of the two.
   const singles = (id0: string, id1: string, key: 'A' | 'B'): LeagueMatchResult => {
-    const low = Math.min(hcp(id0), hcp(id1));
     const seg = runMatch(
       round.holes,
-      (h) => net(id0, h, capHcp(hcp(id0) - low)),
-      (h) => net(id1, h, capHcp(hcp(id1) - low)),
+      (h) => net(id0, h, b.singles(id0)),
+      (h) => net(id1, h, b.singles(id1)),
       nameOf(id0),
       nameOf(id1)
     );
@@ -74,7 +135,7 @@ export function computeLeague(round: Round): LeagueResult {
       status: seg.status,
       winner: seg.winner,
       over: isOver(seg),
-      strokes: strokeList([id0, id1], low),
+      strokes: strokeList([id0, id1], b.singles),
     };
   };
 
@@ -86,12 +147,10 @@ export function computeLeague(round: Round): LeagueResult {
   // Best ball, not combined total — a partner's blow-up hole is thrown out, and
   // a high-handicapper's stroke-aided holes can carry the team. This matches the
   // app's other team formats (2v2 Match Play, Nassau) and standard league play.
-  const low4 = Math.min(hcp(t0.aId), hcp(t0.bId), hcp(t1.aId), hcp(t1.bId));
   const teamBest = (t: LeagueTeam) => (h: Hole): number | null => {
-    const nets = [
-      net(t.aId, h, capHcp(hcp(t.aId) - low4)),
-      net(t.bId, h, capHcp(hcp(t.bId) - low4)),
-    ].filter((n): n is number => n != null);
+    const nets = [net(t.aId, h, b.team(t.aId)), net(t.bId, h, b.team(t.bId))].filter(
+      (n): n is number => n != null
+    );
     return nets.length ? Math.min(...nets) : null;
   };
   const teamSeg = runMatch(
@@ -108,7 +167,7 @@ export function computeLeague(round: Round): LeagueResult {
     status: teamSeg.status,
     winner: teamSeg.winner,
     over: isOver(teamSeg),
-    strokes: strokeList([t0.aId, t0.bId, t1.aId, t1.bId], low4),
+    strokes: strokeList([t0.aId, t0.bId, t1.aId, t1.bId], b.team),
   };
 
   const matches = [aMatch, bMatch, teamMatch];
