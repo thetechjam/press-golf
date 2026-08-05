@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Round } from '../types';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
 import { scoreMarkClass } from '../scoreMark';
@@ -6,17 +7,28 @@ interface Props {
   round: Round;
   currentHole?: number;
   onJumpToHole?: (index: number) => void;
+  onScore?: (holeNumber: number, playerId: string, value: number | null) => void;
 }
 
-/** Full-round grid: holes across, players down. Tap a cell to edit that hole. */
-export function Scorecard({ round, currentHole, onJumpToHole }: Props) {
+/** Full-round grid: holes across, players down. Tap a cell to type a score directly. */
+export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) {
   const { holes, players } = round;
   const useNet = round.options.useNet;
   const showHcp = usesHandicaps(round);
   const siMap = strokeIndexMap(round);
   const parTotal = holes.reduce((s, h) => s + h.par, 0);
+  const [editing, setEditing] = useState<{ playerId: string; holeNumber: number } | null>(null);
 
   const toParStr = (n: number) => (n === 0 ? 'E' : n > 0 ? `+${n}` : `${n}`);
+
+  // Clamped to the same 1..15 range the stepper enforces; empty clears the score.
+  const commit = (playerId: string, holeNumber: number, raw: string) => {
+    if (!onScore) return;
+    if (raw.trim() === '') return onScore(holeNumber, playerId, null);
+    const n = Number(raw);
+    if (!Number.isFinite(n)) return;
+    onScore(holeNumber, playerId, Math.min(15, Math.max(1, Math.round(n))));
+  };
 
   const jumpProps = (i: number) =>
     onJumpToHole
@@ -75,7 +87,7 @@ export function Scorecard({ round, currentHole, onJumpToHole }: Props) {
                     </span>
                   )}
                 </th>
-                {holes.map((h, i) => {
+                {holes.map((h) => {
                   const raw = round.scores[h.number]?.[p.id] ?? null;
                   if (raw != null) {
                     gross += raw;
@@ -88,14 +100,41 @@ export function Scorecard({ round, currentHole, onJumpToHole }: Props) {
                   const dots = useNet
                     ? strokesReceivedOnHole(p.handicap ?? 0, siMap[h.number], holes.length)
                     : 0;
+                  const isEditing =
+                    editing?.playerId === p.id && editing?.holeNumber === h.number;
                   return (
                     <td
                       key={h.number}
                       className={`sc-cell${tone}${h.number === currentHole ? ' current' : ''}`}
-                      onClick={() => onJumpToHole?.(i)}
                     >
-                      {raw != null && <span className={scoreMarkClass(toPar)}>{raw}</span>}
-                      {dots > 0 && <span className="sc-dots">{'•'.repeat(dots)}</span>}
+                      {isEditing ? (
+                        <input
+                          className="sc-input"
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={15}
+                          autoFocus
+                          defaultValue={raw ?? ''}
+                          onBlur={(e) => {
+                            commit(p.id, h.number, e.target.value);
+                            setEditing(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.currentTarget.blur();
+                            if (e.key === 'Escape') setEditing(null);
+                          }}
+                        />
+                      ) : (
+                        <button
+                          className="sc-cell-btn"
+                          onClick={() => onScore && setEditing({ playerId: p.id, holeNumber: h.number })}
+                          aria-label={`${p.name}, hole ${h.number}${raw != null ? `, ${raw}` : ', no score'}`}
+                        >
+                          {raw != null && <span className={scoreMarkClass(toPar)}>{raw}</span>}
+                          {dots > 0 && <span className="sc-dots">{'•'.repeat(dots)}</span>}
+                        </button>
+                      )}
                     </td>
                   );
                 })}

@@ -2174,3 +2174,24 @@ select:focus {
 .hcp-edit-name {
   font-weight: 600;
 }
+
+.sc-cell-btn {
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 0;
+  width: 100%;
+  min-height: 28px;
+  cursor: pointer;
+}
+.sc-input {
+  width: 34px;
+  padding: 2px;
+  text-align: center;
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 2px solid var(--fairway);
+  border-radius: 4px;
+}

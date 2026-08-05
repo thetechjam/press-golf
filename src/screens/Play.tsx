@@ -86,11 +86,14 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     setIdx(clamped);
   };
 
-  const setScore = (playerId: string, value: number | null) => {
+  const setScoreAt = (holeNumber: number, playerId: string, value: number | null) => {
     setWarn(null);
-    const holeScores = { ...(round.scores[hole.number] ?? {}), [playerId]: value };
-    onChange({ ...round, scores: { ...round.scores, [hole.number]: holeScores } });
+    const holeScores = { ...(round.scores[holeNumber] ?? {}), [playerId]: value };
+    onChange({ ...round, scores: { ...round.scores, [holeNumber]: holeScores } });
   };
+
+  const setScore = (playerId: string, value: number | null) =>
+    setScoreAt(hole.number, playerId, value);
 
   const setPresses = (presses: number[]) => onChange({ ...round, presses });
 
@@ -271,6 +274,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             setIdx(i);
             setMode('hole');
           }}
+          onScore={setScoreAt}
         />
       )}
 
