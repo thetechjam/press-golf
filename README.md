@@ -21,8 +21,9 @@ your browser, works offline, and keeps everything on your device.
 - **Nassau** — 1v1 and 2v2, with manual presses
 - **Golf League** — Thursday-night format (A/B singles + combined team match, league points)
 
-Net scoring with per-hole handicap strokes is supported throughout (capped at one
-stroke per hole). Save a course's pars and stroke indexes once and reload them
+Net scoring with per-hole handicap strokes is supported throughout — one stroke
+per hole down the stroke index, and a second on the hardest holes when a
+handicap exceeds the hole count. Save a course's pars and stroke indexes once and reload them
 with a tap, or pull them live from course search.
 
 ## Settling up

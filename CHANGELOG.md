@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Live money during the round: stakes are set at setup, a ticker shows each
+  player's running net while scoring, a new **Board** tab carries the live
+  standings plus a per-game money breakdown, and each completed hole shows what
+  it was worth.
 - Brand identity: the "P Flag" mark (pin flag forms the P of Press, with a
   poker-chip golf ball in the flag). New `app-icon.svg`, simplified
   `favicon.svg`, PNG manifest icons (192/512, maskable), a real 180px
@@ -32,6 +36,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   course name, with disclosure text under the field.
 
 ### Fixed
+- The Play screen's primary button never pinned — its `position: sticky` had no
+  room to move inside a containing block only as tall as itself, leaving the
+  CTA below four leaderboards.
+- Scoring sat below the fold with multiple games active; the Hole tab now fits
+  one screen.
+- Handicap stroke dots were unreadable on the light theme (1.9:1 on white) —
+  including the default light appearance, not only the opt-in sunlight mode.
+- The 18-hole progress strip on the Play screen was shrinking below the 24px
+  minimum touch-target size; it now keeps dots at 24px and scrolls the current
+  hole into view.
+- The back gesture exited the installed PWA mid-round instead of stepping back
+  a screen.
+- Scorecard tap-to-jump cells were unreachable by keyboard.
+- README and CHANGELOG described a one-stroke-per-hole handicap cap the engine
+  has never had.
 - Match-play standings showed a trailing side as `-2 DN` instead of `2 DN`
   (double-negative in the UP/DN detail formatting).
 
@@ -56,8 +75,9 @@ side-games — one scorekeeper enters scores for the whole group on one phone.
 - **Saved favorite courses**: store a course's pars and stroke indexes once and
   load them with one tap, surfaced as a prominent picker at the top of Setup and
   League Setup.
-- Net/handicap scoring with per-hole stroke allocation, capped at one stroke
-  per hole.
+- Net/handicap scoring with per-hole stroke allocation down the stroke index,
+  including a second stroke on the hardest holes when a handicap exceeds the
+  hole count.
 - Unentered-score guardrail that auto-jumps to the first blank score before
   advancing.
 - PWA install prompt, animated scorecard grid, and a Web Share results summary.

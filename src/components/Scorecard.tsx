@@ -17,6 +17,21 @@ export function Scorecard({ round, currentHole, onJumpToHole }: Props) {
 
   const toParStr = (n: number) => (n === 0 ? 'E' : n > 0 ? `+${n}` : `${n}`);
 
+  const jumpProps = (i: number) =>
+    onJumpToHole
+      ? {
+          role: 'button' as const,
+          tabIndex: 0,
+          onClick: () => onJumpToHole(i),
+          onKeyDown: (e: React.KeyboardEvent) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              onJumpToHole(i);
+            }
+          },
+        }
+      : {};
+
   return (
     <div className="card-scroll">
       <table className="scorecard">
@@ -27,7 +42,7 @@ export function Scorecard({ round, currentHole, onJumpToHole }: Props) {
               <th
                 key={h.number}
                 className={`sc-hole${h.number === currentHole ? ' current' : ''}`}
-                onClick={() => onJumpToHole?.(i)}
+                {...jumpProps(i)}
               >
                 {h.number}
               </th>
@@ -69,7 +84,7 @@ export function Scorecard({ round, currentHole, onJumpToHole }: Props) {
                     <td
                       key={h.number}
                       className={`sc-cell${tone}${h.number === currentHole ? ' current' : ''}`}
-                      onClick={() => onJumpToHole?.(i)}
+                      {...jumpProps(i)}
                     >
                       {raw != null && <span className={scoreMarkClass(toPar)}>{raw}</span>}
                       {dots > 0 && <span className="sc-dots">{'•'.repeat(dots)}</span>}
