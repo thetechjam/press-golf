@@ -4,28 +4,52 @@ const KEY = 'press.rounds.v1';
 const COURSES_KEY = 'press.courses.v1';
 const SETTINGS_KEY = 'press.settings.v1';
 
+export type Theme = 'system' | 'light' | 'dark';
+
 export interface Settings {
   /** Hold a screen wake lock while scoring. */
   keepAwake: boolean;
-  /** Force the high-contrast light theme for outdoor readability. */
-  sunlight: boolean;
+  /** Which palette to paint. 'system' follows the OS appearance. */
+  theme: Theme;
+  /** Max-contrast light theme for direct sun. Overrides `theme` while on. */
+  glare: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { keepAwake: true, sunlight: false };
+export const DEFAULT_SETTINGS: Settings = {
+  keepAwake: true,
+  theme: 'system',
+  glare: false,
+};
+
+const THEMES: readonly string[] = ['system', 'light', 'dark'];
+const isTheme = (v: unknown): v is Theme => typeof v === 'string' && THEMES.includes(v);
 
 export function getSettings(): Settings {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return { ...DEFAULT_SETTINGS };
-    // Merge over defaults so settings added later read as their default.
-    return { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<Settings>) };
+    const p = JSON.parse(raw) as Partial<Settings> & { sunlight?: unknown };
+    return {
+      keepAwake: typeof p.keepAwake === 'boolean' ? p.keepAwake : DEFAULT_SETTINGS.keepAwake,
+      theme: isTheme(p.theme) ? p.theme : DEFAULT_SETTINGS.theme,
+      // v1 stored this as `sunlight`. Read it across explicitly — a spread over
+      // defaults would silently reset an enabled setting to false on upgrade.
+      glare: typeof p.glare === 'boolean' ? p.glare : p.sunlight === true,
+    };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
 }
 
 export function saveSettings(patch: Partial<Settings>): Settings {
-  const next = { ...getSettings(), ...patch };
+  const cur = getSettings();
+  // Field-by-field rather than a spread, so the legacy `sunlight` key is not
+  // carried forward into the next write.
+  const next: Settings = {
+    keepAwake: patch.keepAwake ?? cur.keepAwake,
+    theme: patch.theme ?? cur.theme,
+    glare: patch.glare ?? cur.glare,
+  };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
   return next;
 }

@@ -38,4 +38,34 @@ describe('settings', () => {
     store.set('press.settings.v1', 'not-json{');
     expect(getSettings()).toEqual(DEFAULT_SETTINGS);
   });
+
+  it('defaults theme to system and glare off', () => {
+    expect(getSettings().theme).toBe('system');
+    expect(getSettings().glare).toBe(false);
+  });
+
+  it('carries a v1 sunlight:true across to glare', () => {
+    store.set('press.settings.v1', JSON.stringify({ keepAwake: true, sunlight: true }));
+    expect(getSettings().glare).toBe(true);
+  });
+
+  it('drops the legacy sunlight key on the next write', () => {
+    store.set('press.settings.v1', JSON.stringify({ keepAwake: true, sunlight: true }));
+    saveSettings({ keepAwake: false });
+    expect(JSON.parse(store.get('press.settings.v1')!)).toEqual({
+      keepAwake: false,
+      theme: 'system',
+      glare: true,
+    });
+  });
+
+  it('falls back to system when a stored theme is unrecognized', () => {
+    store.set('press.settings.v1', JSON.stringify({ theme: 'sepia' }));
+    expect(getSettings().theme).toBe('system');
+  });
+
+  it('persists an explicit theme', () => {
+    saveSettings({ theme: 'dark' });
+    expect(getSettings().theme).toBe('dark');
+  });
 });
