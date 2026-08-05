@@ -25,6 +25,11 @@
   /* Text-safe error red: ≥4.5:1 both as text on --bg and under #fff text. --over stays accent-only. */
   --over-strong: #bd392c;
   --under: #1a8f4c;
+  /* Foreground-only green, same pattern as --gold-ink below: the base :root is
+     a light theme, so darker ink is the default text color. Measures 5.46:1
+     on #ffffff (WCAG AA wants 4.5:1). Bright green is restored only in dark
+     mode where surfaces are dark. */
+  --under-ink: #167940;
   --gold: #e7b53c;
   /* Foreground-only gold. The base :root is a light theme, so dark ink is the
      default. Bright gold is restored only in dark mode where surfaces are dark. */
@@ -47,6 +52,7 @@
     --over: #ff6b5e;
     --over-strong: #ff6b5e;
     --under: #43d281;
+    --under-ink: var(--under);
     --gold-ink: var(--gold);
   }
 }
@@ -1427,10 +1433,10 @@ select:focus {
   font-variant-numeric: tabular-nums;
 }
 .net-amount.up {
-  color: var(--under);
+  color: var(--under-ink);
 }
 .net-amount.down {
-  color: var(--over);
+  color: var(--over-strong);
 }
 .payments {
   border-top: 1px solid var(--line);
@@ -1487,7 +1493,7 @@ select:focus {
   padding: 5px 12px;
   border: 2px solid var(--under);
   border-radius: 8px;
-  color: var(--under);
+  color: var(--under-ink);
   font-weight: 800;
   font-size: 0.82rem;
   text-transform: uppercase;
@@ -1922,7 +1928,7 @@ select:focus {
   margin-right: 4px;
 }
 .pg-net.up {
-  color: var(--under);
+  color: var(--under-ink);
 }
 .pg-net.down {
   color: var(--over-strong);
@@ -1965,35 +1971,30 @@ select:focus {
   font-weight: 700;
 }
 .tick.up .tick-net {
-  color: var(--under);
+  color: var(--under-ink);
 }
 .tick.down .tick-net {
   color: var(--over-strong);
 }
 
-/* ---- Per-hole money swing (Play → Hole tab) ---- */
-.swing {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 10px;
-  margin-top: 10px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--card);
-  font-size: 0.78rem;
-  font-variant-numeric: tabular-nums;
-}
+/* ---- Per-hole money swing (Play → Hole tab) ----
+   Renders inside the very same .money-ticker box the running total normally
+   occupies, above .hole-nav — the two are mutually exclusive per hole (see
+   games/money.ts's visibleSwing), so swapping one for the other costs no
+   extra height and never pushes the steppers or footer. */
 .swing-label {
   font-family: var(--font-display);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--muted);
+  flex-shrink: 0;
+}
+.swing-net {
+  flex-shrink: 0;
 }
 .swing-net.up {
-  color: var(--under);
+  color: var(--under-ink);
 }
 .swing-net.down {
   color: var(--over-strong);

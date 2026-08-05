@@ -1,4 +1,4 @@
-import type { Round } from '../types';
+import type { Round, Hole } from '../types';
 import { computeSettlement } from './settlement';
 
 /**
@@ -35,4 +35,21 @@ export function holeSwing(round: Round, holeNumber: number): Record<string, numb
     swing[p.id] = Math.round(delta * 100) / 100;
   }
   return swing;
+}
+
+/**
+ * The swing to show in the Hole tab's ticker slot for `hole`, or null when it
+ * shouldn't be shown there and the running-total ticker should render instead.
+ *
+ * This is the single copy of the swing's correctness gate — never league
+ * play, only while stakes are active, only for the most recently completed
+ * hole (see `holeSwing`'s doc comment for why), and only when it actually
+ * moved money. Callers must not re-implement this gate themselves.
+ */
+export function visibleSwing(round: Round, hole: Hole): Record<string, number> | null {
+  if (round.options.league) return null;
+  if (!computeSettlement(round).active) return null;
+  if (lastCompletedHole(round) !== hole.number) return null;
+  const s = holeSwing(round, hole.number);
+  return Object.values(s).some((v) => v !== 0) ? s : null;
 }

@@ -4,7 +4,8 @@
 
 **Press** is a mobile-first web app for tracking golf side-games. One scorekeeper
 enters scores for the whole group on a single phone, and Press does the math —
-live leaderboards while you play and a settle-up summary at the end.
+live leaderboards and running money totals while you play, then a settle-up
+summary at the end.
 
 No accounts, no sign-up, nothing to install from a store. It runs entirely in
 your browser, works offline, and keeps everything on your device.
@@ -28,8 +29,10 @@ with a tap, or pull them live from course search.
 
 ## Settling up
 
-Set a stake per game and Press resolves everyone's net result to a zero-sum total,
-then works out the fewest payments needed to settle the whole group.
+Set a stake per game and Press tracks everyone's net result live during the
+round — a money ticker and per-game breakdown on the Hole and Board tabs —
+then resolves the final total into the fewest payments needed to settle the
+whole group.
 
 ## Getting started
 

@@ -4,10 +4,11 @@ import { Leaderboard } from '../components/Leaderboard';
 import { Scorecard } from '../components/Scorecard';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { MoneyBoard } from '../components/MoneyBoard';
-import { MoneyTicker } from '../components/MoneyTicker';
+import { MoneyTicker, SwingTicker } from '../components/MoneyTicker';
 import { HoleView } from './HoleView';
 import { activeResults } from '../games';
 import { firstIncompleteHole } from '../games/util';
+import { visibleSwing } from '../games/money';
 import { wolfForHole } from '../games/wolf';
 import { colorMap } from '../player';
 import { getSettings, saveSettings } from '../storage';
@@ -15,7 +16,7 @@ import { applySunlight } from '../sunlight';
 import { useWakeLock, wakeLockSupported } from '../useWakeLock';
 import { EyeIcon, SunIcon } from '../icons';
 
-export type PlayMode = 'hole' | 'board' | 'card';
+type PlayMode = 'hole' | 'board' | 'card';
 
 interface Props {
   round: Round;
@@ -129,14 +130,23 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     if (firstBlank) setHighlightId(firstBlank.id);
   };
 
-  const results = activeResults(round);
-
   // A hole is complete when every player has a score — drives the progress strip.
   const holeComplete = round.holes.map((h) =>
     round.players.every((p) => round.scores[h.number]?.[p.id] != null)
   );
 
-  const colors = colorMap(round);
+  // Only the Board tab's non-league leaderboards need these — skip the work
+  // on the other two tabs, and for league rounds (which render LeagueBoard).
+  let results: ReturnType<typeof activeResults> = [];
+  let colors: ReturnType<typeof colorMap> = {};
+  if (mode === 'board' && !round.options.league) {
+    results = activeResults(round);
+    colors = colorMap(round);
+  }
+
+  // The most recently completed hole's money swing, gated exactly by
+  // games/money.ts's visibleSwing — null falls back to the running ticker.
+  const swing = mode === 'hole' && !round.options.league ? visibleSwing(round, hole) : null;
 
   return (
     <div className="screen play">
@@ -182,7 +192,13 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
         </button>
       </div>
 
-      {mode === 'hole' && !round.options.league && <MoneyTicker round={round} />}
+      {mode === 'hole' && !round.options.league && (
+        swing ? (
+          <SwingTicker round={round} hole={hole} swing={swing} />
+        ) : (
+          <MoneyTicker round={round} />
+        )
+      )}
 
       {mode === 'hole' && (
         <HoleView
@@ -246,11 +262,11 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           </div>
         )}
         {last ? (
-          <button className="btn-primary big sticky" onClick={tryFinish}>
+          <button className="btn-primary big" onClick={tryFinish}>
             Finish Round →
           </button>
         ) : (
-          <button className="btn-primary big sticky" onClick={tryNext}>
+          <button className="btn-primary big" onClick={tryNext}>
             Next Hole →
           </button>
         )}

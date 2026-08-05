@@ -5,8 +5,6 @@ import { WolfControls } from '../components/WolfControls';
 import { NassauControls } from '../components/NassauControls';
 import { strokeIndexMap, strokesReceivedOnHole } from '../games/handicap';
 import { playerColor } from '../player';
-import { computeSettlement, formatMoney } from '../games/settlement';
-import { lastCompletedHole, holeSwing } from '../games/money';
 
 interface Props {
   round: Round;
@@ -44,17 +42,6 @@ export function HoleView({
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     container.scrollTo({ left, behavior: reduceMotion ? 'auto' : 'smooth' });
   }, [idx]);
-
-  // Only the most recently completed hole gets a swing. For any earlier hole the
-  // delta is a counterfactual — removing it changes skins carry-over downstream —
-  // so showing it would display a number that hole never actually produced.
-  const swing = (() => {
-    if (round.options.league) return null;
-    if (!computeSettlement(round).active) return null;
-    if (lastCompletedHole(round) !== hole.number) return null;
-    const s = holeSwing(round, hole.number);
-    return Object.values(s).some((v) => v !== 0) ? s : null;
-  })();
 
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.changedTouches[0];
@@ -122,19 +109,6 @@ export function HoleView({
             />
           ))}
         </section>
-        {swing && (
-          <div className="swing" aria-label={`Money swing on hole ${hole.number}`}>
-            <span className="swing-label">Hole {hole.number}</span>
-            {round.players.map((p) => {
-              const n = swing[p.id] ?? 0;
-              return (
-                <span key={p.id} className={`swing-net${n > 0 ? ' up' : n < 0 ? ' down' : ''}`}>
-                  {p.name} {n === 0 ? '—' : formatMoney(n)}
-                </span>
-              );
-            })}
-          </div>
-        )}
       </div>
     </div>
   );
