@@ -40,7 +40,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   room to move inside a containing block only as tall as itself, leaving the
   CTA below four leaderboards.
 - Scoring sat below the fold with multiple games active; the Hole tab now fits
-  one screen.
+  one screen when you arrive at a hole. Entering scores grows the steppers via
+  score-mark rings, so the fourth can drop below the fold once filled in.
 - Handicap stroke dots were unreadable on the light theme (1.9:1 on white) —
   including the default light appearance, not only the opt-in sunlight mode.
 - The 18-hole progress strip on the Play screen was shrinking below the 24px

@@ -212,7 +212,10 @@ Two changes close the ~80px gap with room to spare:
 
 **Acceptance criterion, measured the same way the problem was measured:** at
 375×812 on a 4-player round with Wolf and Nassau active and a call already made,
-all four steppers and the CTA are visible without scrolling.
+all four steppers and the CTA are visible without scrolling **when you arrive at
+a hole**. Entering scores adds score-mark rings that grow each stepper ~26px, so
+the fourth can drop below the fold once the hole is filled in. The original
+defect was 2 of 4 steppers with the CTA at y=1877.
 
 ## Defect fixes
 

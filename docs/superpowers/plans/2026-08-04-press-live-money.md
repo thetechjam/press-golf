@@ -1084,7 +1084,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 - Consumes: nothing new.
 - Produces: nothing consumed downstream.
 
-**Acceptance criterion:** at 375×812 on the seeded 4-player round with Wolf and Nassau active and the Wolf call already made, **all four steppers and the CTA are visible without scrolling.**
+**Acceptance criterion:** at 375×812 on the seeded 4-player round with Wolf and Nassau active and the Wolf call already made, **all four steppers and the CTA are visible without scrolling when you arrive at a hole**. Entering scores adds score-mark rings that grow each stepper ~26px, so the fourth can drop below the fold once filled in. The original defect was 2 of 4 steppers with the CTA at y=1877.
 
 Baseline measured before this task: ~892px of content against 812px of viewport. Wolf ~145px, Nassau ~135px, wrapped hole dots 50px.
 
@@ -1612,7 +1612,7 @@ cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test &&
 
 | Claim | Baseline | Target | How |
 |---|---|---|---|
-| Steppers fully visible on Hole tab | 2 of 4 | **4 of 4** | Task 7 Step 7 probe |
+| Steppers fully visible at arrival (before scored) | 2 of 4 | **4 of 4** | Task 7 Step 7 probe |
 | CTA visible at scroll-top | no (y=1877) | **yes** | Task 7 Step 7 probe |
 | `.hcp-dots` contrast in sunlight | 1.9:1 | **≥ 4.5:1** | Task 8 Step 4 probe |
 | Swing on a non-latest hole | n/a | **absent** | Task 6 Step 5 |
