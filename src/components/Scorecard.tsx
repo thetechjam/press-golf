@@ -84,7 +84,7 @@ export function Scorecard({ round, currentHole, onJumpToHole }: Props) {
                     <td
                       key={h.number}
                       className={`sc-cell${tone}${h.number === currentHole ? ' current' : ''}`}
-                      {...jumpProps(i)}
+                      onClick={() => onJumpToHole?.(i)}
                     >
                       {raw != null && <span className={scoreMarkClass(toPar)}>{raw}</span>}
                       {dots > 0 && <span className="sc-dots">{'•'.repeat(dots)}</span>}
