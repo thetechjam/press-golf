@@ -1488,20 +1488,21 @@ export function EditHandicaps({ round, onChange, onClose }: Props) {
 
 - [ ] **Step 6: Mount on Play and Results**
 
-In `src/screens/Play.tsx`, add `PencilIcon` to the `../icons` import and `EditHandicaps` from `../components/EditHandicaps`, then add `const [showHcp, setShowHcp] = useState(false);` and a pencil button in the toolbar row beside the gear:
+⚠️ **Amended after Task 4 — do NOT put the pencil in Play's toolbar row.** Measured at 375px after Task 4 landed: the row is 343px wide holding three tabs (51.3 / 56.4 / 51.3px) and three 48px icon buttons. Adding a seventh control projects the Hole/Board/Card tabs down to **37px**, below the app's own `--tap: 48px` minimum — a tap-target regression on the most-used control in the app.
+
+Instead, put the entry point on the **Board tab**, where you would actually notice a wrong handicap (the standings look wrong), which has vertical room and is not the scoring-critical Hole tab. This also matches the ghost-button pattern this task already uses on Results.
+
+In `src/screens/Play.tsx`, add `PencilIcon` to the `../icons` import and `EditHandicaps` from `../components/EditHandicaps`, then add `const [showHcp, setShowHcp] = useState(false);`. Inside the `{mode === 'board' && ( … )}` fragment, after the `<section className="boards">` block, add:
 
 ```tsx
-        <button
-          className="awake-toggle"
-          onClick={() => setShowHcp(true)}
-          aria-label="Edit handicaps"
-          title="Edit handicaps"
-        >
-          <PencilIcon size={20} />
-        </button>
+          <button className="btn-ghost edit-hcp" onClick={() => setShowHcp(true)}>
+            <PencilIcon size={16} /> Edit handicaps
+          </button>
 ```
 
-and render beside the settings sheet:
+Leave the toolbar row exactly as Task 4 left it — three tabs plus eye, glare, and gear.
+
+Render beside the settings sheet:
 
 ```tsx
       {showHcp && (
