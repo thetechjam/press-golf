@@ -55,11 +55,13 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     applyTheme(s.theme, s.glare);
   };
 
-  // Because keepAwake is also editable in the sheet, re-read it on close so
-  // the two controls cannot disagree.
+  // Because keepAwake and glare are also editable in the sheet, re-read both
+  // on close so neither pair of controls can disagree.
   const closeSettings = () => {
     setShowSettings(false);
-    setKeepAwake(getSettings().keepAwake);
+    const s = getSettings();
+    setKeepAwake(s.keepAwake);
+    setGlare(s.glare);
   };
 
   // Scroll the flagged stepper into view and clear the flash after it plays.

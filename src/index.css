@@ -2087,8 +2087,11 @@ select:focus {
   color: var(--muted);
   font-size: 0.85rem;
 }
+/* No opacity here — each seg-btn already dims itself via :disabled (see
+   .seg-btn:disabled above). Stacking opacity on this wrapper too would
+   multiply (0.45 × 0.45 ≈ 0.2), washing the SYSTEM/LIGHT labels out to
+   near-illegible right when the override messaging needs to be readable. */
 .seg-disabled {
-  opacity: 0.45;
 }
 .set-override {
   background: none;
