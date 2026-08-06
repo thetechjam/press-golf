@@ -113,3 +113,28 @@ export function watchConnectivity(post: Poster): void {
     void flushQueue(post);
   });
 }
+
+const FORM_ENDPOINT = '/__forms.html';
+const FORM_NAME = 'press-feedback';
+
+/**
+ * Production poster. Deliberately omits `bot-field`: Netlify discards any
+ * submission whose honeypot field is non-empty, so sending it at all — even
+ * with a placeholder — risks binning every real report.
+ */
+export const postFeedback: Poster = async (entry) => {
+  const body = new URLSearchParams({
+    'form-name': FORM_NAME,
+    kind: entry.kind,
+    reporter: entry.reporter,
+    message: entry.message,
+    diagnostics: entry.diagnostics,
+    round: entry.round,
+  });
+  const res = await fetch(FORM_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: body.toString(),
+  });
+  if (!res.ok) throw new Error(`Feedback POST failed: ${res.status}`);
+};

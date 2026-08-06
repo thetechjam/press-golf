@@ -27,6 +27,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // A build artifact for Netlify's form scanner, not an app asset.
+        globIgnores: ['**/__forms.html'],
       },
       includeAssets: ['app-icon.svg', 'favicon.svg', 'apple-touch-icon.png'],
       manifest: {

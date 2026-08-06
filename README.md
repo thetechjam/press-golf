@@ -60,6 +60,25 @@ pure-function scoring engine in [`src/games/`](./src/games), kept separate from
 the UI so the math is unit-tested independently. Deployed to Netlify on every
 push to `main`.
 
+## Feedback setup (Netlify)
+
+In-app feedback posts to Netlify Forms. Two settings live in the Netlify UI, not
+in this repo, and **without the first every submission is lost**:
+
+1. **Site configuration → Forms → enable Form detection.**
+2. **Forms → Form notifications → add an email notification** for the
+   `press-feedback` form.
+3. **Redeploy.** Detection runs at deploy time; enabling it does not
+   retroactively scan the previous build.
+
+The form definition lives in `public/__forms.html`. It is the POST target as
+well as the definition — posting to `/` would hit the catch-all rewrite in
+`netlify.toml`, which returns the app shell with HTTP 200 and would make a lost
+report look like a successful one.
+
+Free tier allows 100 submissions/month. Reports that fail to send stay queued in
+the browser and retry; nothing is dropped.
+
 ## License
 
 Press is released under the [PolyForm Noncommercial License 1.0.0](./LICENSE) —

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Press form definitions</title>
+  </head>
+  <body>
+    <!--
+      Not a user-facing page. Two jobs:
+
+      1. Netlify detects forms by scanning deployed HTML at build time. A form
+         rendered by React is invisible to that scan, so the definition has to
+         exist as static markup.
+      2. This file is also the POST target. Posting to "/" would hit the
+         catch-all `status = 200` rewrite in netlify.toml, which applies to
+         POSTs too — the request would be rewritten to the app shell and return
+         200 with HTML, so the app would report success while nothing reached
+         the inbox. Netlify serves a real file before applying redirects.
+    -->
+    <form name="press-feedback" netlify netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="press-feedback" />
+      <input name="bot-field" />
+      <input type="text" name="kind" />
+      <input type="text" name="reporter" />
+      <textarea name="message"></textarea>
+      <textarea name="diagnostics"></textarea>
+      <textarea name="round"></textarea>
+    </form>
+  </body>
+</html>
