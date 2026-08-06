@@ -320,8 +320,12 @@ the next write rather than persisting forever.
    override.
 3. Changing the phone's appearance while set to System repaints without a reload.
 4. Light mode contours are visible at arm's length and read green.
-5. A league round still shows every handicap badge — steppers, scorecard, and
-   boards — after the change, despite carrying `useNet: false`.
+5. A league round still shows every handicap badge — steppers and scorecard —
+   after the change, despite carrying `useNet: false`. `LeagueBoard` is exempt:
+   it deliberately never received `hcpOf` (see "Per-match stroke chips for
+   league rounds" above) because it already shows per-match stroke
+   allocations, which is better information there, and a course-handicap
+   badge would duplicate the Hole tab.
 6. A handicap edited mid-round changes the leaderboards and the money on the next
    render, with no reload.
 7. Editing a handicap in a round that started gross switches it to net scoring.
