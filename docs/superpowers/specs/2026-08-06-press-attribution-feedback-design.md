@@ -89,6 +89,7 @@ that Netlify's build-time detector scans for, and is also the POST target:
       <input type="hidden" name="form-name" value="press-feedback" />
       <input name="bot-field" />
       <input type="text" name="kind" />
+      <input type="text" name="reporter" />
       <textarea name="message"></textarea>
       <textarea name="diagnostics"></textarea>
       <textarea name="round"></textarea>
@@ -133,6 +134,8 @@ export type FeedbackKind = 'bug' | 'idea';
 export interface QueuedFeedback {
   id: string;
   kind: FeedbackKind;
+  /** Self-supplied reporter name, or '' if they left it blank. */
+  reporter: string;
   message: string;
   /** JSON string of technical context. Never contains player data. */
   diagnostics: string;
@@ -144,6 +147,8 @@ export interface QueuedFeedback {
 
 export interface FeedbackDraft {
   kind: FeedbackKind;
+  /** Who is reporting. Optional — an empty string is valid. */
+  reporter: string;
   message: string;
   includeRound: boolean;
 }
@@ -217,8 +222,29 @@ Settings view gains, above the About block:
   queued item is never invisible.
 
 Feedback view: Bug / Idea segmented control (reusing `.seg`/`.seg-btn`), a
-message `<textarea>`, the round checkbox when applicable, a Send button, and a
-status line.
+**"Your name" text input**, a message `<textarea>`, the round checkbox when
+applicable, a Send button, and a status line.
+
+### F. Remembering the reporter
+
+An anonymous report is a dead end — there is no way to ask "which hole?". The
+name is **optional** (a blank submission still sends) and **remembered**, so the
+cost is paid once.
+
+`Settings` gains `reporterName: string`, defaulting to `''`, persisted in the
+existing `press.settings.v1` blob and prefilled into the form. A non-empty name
+is written back on submit.
+
+⚠️ **`storage.ts` builds both `getSettings` and `saveSettings` field-by-field**
+— deliberately, so the legacy `sunlight` key cannot survive a write. That means a
+new setting must be added in **three** places or it silently vanishes on the next
+save: `DEFAULT_SETTINGS`, the object literal in `getSettings`, and the `next`
+literal in `saveSettings`. A spread would have picked it up automatically; this
+shape will not.
+
+The field is sent to Netlify as `reporter`, **not** `name` — `form-name` is
+already meaningful to Netlify, and a bare `name` field invites confusion when
+reading submissions in the dashboard.
 
 ## Files
 
@@ -230,7 +256,9 @@ status line.
 | `src/feedback.ts` | New. Payload building, queue, flush, connectivity watch. |
 | `src/feedback.test.ts` | New. |
 | `src/components/FeedbackForm.tsx` | New. Feedback view body. |
-| `src/components/SettingsSheet.tsx` | View switch, Send feedback row, About block, `round` prop. |
+| `src/components/SettingsSheet.tsx` | View switch, Send feedback row, About block, `round` + `screen` props. |
+| `src/storage.ts` | Add `reporterName` to `Settings` (three places — see §F). |
+| `src/storage.test.ts` | Cover `reporterName` default and round-trip. |
 | `src/screens/Play.tsx` | Pass `round` and `screen="play"` to `SettingsSheet`. |
 | `src/screens/Home.tsx`, `Setup.tsx`, `LeagueSetup.tsx` | Pass their `screen` literal. |
 | `src/main.tsx` | `flushQueue` at boot + `watchConnectivity()`. |
@@ -262,6 +290,9 @@ existing pattern at `src/storage.test.ts:5-11`:
   players have distinctive names and assert those names do not appear anywhere in
   `entry.diagnostics`. This is the regression guard on the privacy line.
 - **Queue cap** — enqueueing 21 entries keeps 20, dropping the oldest.
+- **Reporter is optional** — a blank name builds a valid entry with `reporter: ''`.
+- **`reporterName` survives a save** — set it, save an unrelated setting, read it
+  back. Guards the three-places trap in §F.
 - **Flush** — all-success empties the queue; a rejecting poster leaves entries
   queued with `attempts` incremented; a partial failure sends what it can and
   keeps the rest.
@@ -283,4 +314,6 @@ silently never run.
    catch-all-rewrite failure mode returns HTTP 200 with the app shell, so a
    local or naive check cannot distinguish success from silent loss.
 5. The round checkbox does not appear when Settings is opened from Home.
-6. `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build` all clean.
+6. A name entered once is prefilled on the next report, and survives changing an
+   unrelated setting.
+7. `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build` all clean.
