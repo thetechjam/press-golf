@@ -150,7 +150,8 @@ button {
 /* Buttons and titles that lead with an inline SVG icon. */
 .btn-primary.big,
 .btn-secondary.big,
-.btn-ghost.add {
+.btn-ghost.add,
+.btn-ghost.edit-hcp {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -612,6 +613,7 @@ select:focus {
 /* Play's toggle already sits in .screen's 16px flex gap — no extra margin. */
 .seg.view-toggle {
   margin-bottom: 0;
+  flex-wrap: wrap;
 }
 /* Three tabs + three icon toggles share 343px at 375px wide — ~53px per tab. */
 .view-toggle .seg-btn {
@@ -652,7 +654,7 @@ select:focus {
 }
 /* Settings reuses .awake-toggle's sizing but isn't a toggle — it has no "on"
    state, so without this it would permanently show the off-state strike. */
-.awake-toggle.gear-btn::after {
+.awake-toggle.gear-btn:not(.on)::after {
   content: none;
 }
 
@@ -758,6 +760,10 @@ select:focus {
   gap: 12px;
 }
 
+/* No opacity on the wrapping .seg — each seg-btn already dims itself via
+   :disabled below. Stacking opacity on the wrapper too would multiply
+   (0.45 × 0.45 ≈ 0.2), washing the SYSTEM/LIGHT labels out to near-illegible
+   right when the override messaging needs to be readable. */
 .seg-btn:disabled {
   opacity: 0.45;
   cursor: default;
@@ -1862,6 +1868,9 @@ select:focus {
   cursor: pointer;
   position: relative;
 }
+.scorecard td.sc-cell {
+  padding: 0;
+}
 .sc-cell.under {
   color: var(--under);
   font-weight: 700;
@@ -2096,12 +2105,6 @@ select:focus {
   color: var(--muted);
   font-size: 0.85rem;
 }
-/* No opacity here — each seg-btn already dims itself via :disabled (see
-   .seg-btn:disabled above). Stacking opacity on this wrapper too would
-   multiply (0.45 × 0.45 ≈ 0.2), washing the SYSTEM/LIGHT labels out to
-   near-illegible right when the override messaging needs to be readable. */
-.seg-disabled {
-}
 .set-override {
   background: none;
   border: 0;
@@ -2114,7 +2117,7 @@ select:focus {
 }
 .hero-settings {
   position: absolute;
-  top: calc(16px + env(safe-area-inset-top));
+  top: 16px;
   right: 16px;
   background: none;
   border: 0;
@@ -2132,6 +2135,7 @@ select:focus {
 .sc-hcp,
 .board-hcp {
   display: inline-block;
+  flex-shrink: 0;
   font-size: 0.7rem;
   font-weight: 700;
   padding: 1px 5px;
@@ -2180,7 +2184,7 @@ select:focus {
   border: 0;
   color: inherit;
   font: inherit;
-  padding: 0;
+  padding: 8px 6px;
   width: 100%;
   min-height: 28px;
   cursor: pointer;
@@ -2194,4 +2198,7 @@ select:focus {
   background: var(--bg);
   border: 2px solid var(--fairway);
   border-radius: 4px;
+}
+.sc-cell .sc-input {
+  margin: 6px 3px;
 }

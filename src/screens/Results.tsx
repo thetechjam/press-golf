@@ -247,7 +247,7 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       <button className="btn-ghost share-text" onClick={shareText}>
         {copied ? 'Copied to clipboard' : 'Share as text instead'}
       </button>
-      <button className="btn-ghost" onClick={() => setShowHcp(true)}>
+      <button className="btn-ghost edit-hcp" onClick={() => setShowHcp(true)}>
         <PencilIcon size={16} /> Edit handicaps
       </button>
 

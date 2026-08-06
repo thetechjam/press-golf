@@ -23,7 +23,7 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
     <Sheet title="Settings" onClose={onClose}>
       <div className="set-group">
         <div className="set-label">Appearance</div>
-        <div className={`seg${s.glare ? ' seg-disabled' : ''}`}>
+        <div className="seg">
           {THEMES.map((t) => (
             <button
               key={t.id}
