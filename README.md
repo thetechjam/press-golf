@@ -84,7 +84,9 @@ that as a failure rather than delivery, so a report is only counted as sent
 once Netlify's actual form handler accepts it.
 
 Free tier allows 100 submissions/month. Reports that fail to send stay queued in
-the browser and retry; nothing is dropped.
+the browser and retry — a report is only counted as sent once Netlify's form
+handler actually accepts it. The queue holds up to 20 unsent reports; beyond
+that, the oldest is discarded to make room for the newest.
 
 ## License
 
