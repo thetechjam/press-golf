@@ -63,6 +63,14 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
           onChange={(e) => set({ keepAwake: e.target.checked })}
         />
       </label>
+
+      <div className="about">
+        <div className="about-title">
+          Press <span className="about-ver">v{__APP_VERSION__}</span>
+        </div>
+        <div className="about-line">Created by Jesse Morrison</div>
+        <div className="about-line">PolyForm Noncommercial License 1.0.0</div>
+      </div>
     </Sheet>
   );
 }

@@ -2202,3 +2202,24 @@ select:focus {
 .sc-cell .sc-input {
   margin: 6px 3px;
 }
+
+/* ---------- About ---------- */
+.about {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.about-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 0.95rem;
+}
+.about-ver {
+  color: var(--muted);
+  font-weight: 500;
+}
