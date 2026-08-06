@@ -345,14 +345,22 @@ the next write rather than persisting forever.
     is `tsc -b --noEmit`; plain `tsc --noEmit` against this repo's
     solution-style root config compiles zero files and always passes.)
 
-### Still unverified on hardware
+### Hardware verification — complete 2026-08-06
 
-Criteria 3 and the safe-area fix below need a device this work had no access to:
+Three criteria could not be settled from the automation browser. All three were
+confirmed on a real device, and this spec is now fully verified:
 
 - **#3, live system-appearance repaint.** Covered by five `theme.test.ts` unit
   tests whose falsification was checked, but the automation browser updates
   `matchMedia().matches` without firing `change` to registered listeners.
+  Confirmed working on hardware.
+- **#8, the scorecard blur-commit.** See the note on that criterion above.
 - **The Home gear's safe-area position.** `.hero-settings` double-counted
-  `env(safe-area-inset-top)` and was corrected; the bug only manifests on a
-  notched screen, where the inset is non-zero. At 375×812 the inset is 0, so
-  neither the defect nor its fix is observable.
+  `env(safe-area-inset-top)`; the bug only manifests on a notched screen, where
+  the inset is non-zero. At 375×812 the inset is 0, so neither the defect nor
+  its fix was observable in testing. Confirmed correct on hardware.
+
+The pattern worth keeping: each of these was a real behaviour the automation
+environment structurally could not exercise, not a gap in test coverage. Writing
+them down as open items — rather than quietly counting the unit tests as
+sufficient — is what got them checked.
