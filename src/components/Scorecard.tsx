@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Round } from '../types';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
 import { scoreMarkClass } from '../scoreMark';
+import { clampScore } from '../scoreEntry';
 
 interface Props {
   round: Round;
@@ -24,10 +25,9 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
   // Clamped to the same 1..15 range the stepper enforces; empty clears the score.
   const commit = (playerId: string, holeNumber: number, raw: string) => {
     if (!onScore) return;
-    if (raw.trim() === '') return onScore(holeNumber, playerId, null);
-    const n = Number(raw);
-    if (!Number.isFinite(n)) return;
-    onScore(holeNumber, playerId, Math.min(15, Math.max(1, Math.round(n))));
+    const value = clampScore(raw);
+    if (value === undefined) return;
+    onScore(holeNumber, playerId, value);
   };
 
   const jumpProps = (i: number) =>
