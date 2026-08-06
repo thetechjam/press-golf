@@ -13,12 +13,15 @@ export interface Settings {
   theme: Theme;
   /** Max-contrast light theme for direct sun. Overrides `theme` while on. */
   glare: boolean;
+  /** Remembered so a reporter types their name once. '' means not set. */
+  reporterName: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   keepAwake: true,
   theme: 'system',
   glare: false,
+  reporterName: '',
 };
 
 const THEMES: readonly string[] = ['system', 'light', 'dark'];
@@ -35,6 +38,8 @@ export function getSettings(): Settings {
       // v1 stored this as `sunlight`. Read it across explicitly — a spread over
       // defaults would silently reset an enabled setting to false on upgrade.
       glare: typeof p.glare === 'boolean' ? p.glare : p.sunlight === true,
+      reporterName:
+        typeof p.reporterName === 'string' ? p.reporterName : DEFAULT_SETTINGS.reporterName,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -49,6 +54,7 @@ export function saveSettings(patch: Partial<Settings>): Settings {
     keepAwake: patch.keepAwake ?? cur.keepAwake,
     theme: patch.theme ?? cur.theme,
     glare: patch.glare ?? cur.glare,
+    reporterName: patch.reporterName ?? cur.reporterName,
   };
   localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
   return next;

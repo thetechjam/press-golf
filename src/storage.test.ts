@@ -56,6 +56,7 @@ describe('settings', () => {
       keepAwake: false,
       theme: 'system',
       glare: true,
+      reporterName: '',
     });
   });
 
@@ -67,5 +68,23 @@ describe('settings', () => {
   it('persists an explicit theme', () => {
     saveSettings({ theme: 'dark' });
     expect(getSettings().theme).toBe('dark');
+  });
+
+  it('defaults reporterName to an empty string', () => {
+    expect(getSettings().reporterName).toBe('');
+  });
+
+  it('round-trips reporterName', () => {
+    saveSettings({ reporterName: 'Bo' });
+    expect(getSettings().reporterName).toBe('Bo');
+  });
+
+  // getSettings and saveSettings both build their result field-by-field (so the
+  // legacy `sunlight` key cannot survive a write). A field added to only one of
+  // them vanishes on the next unrelated save — this is the guard for that.
+  it('keeps reporterName across an unrelated save', () => {
+    saveSettings({ reporterName: 'Bo' });
+    saveSettings({ keepAwake: false });
+    expect(getSettings().reporterName).toBe('Bo');
   });
 });
