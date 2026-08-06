@@ -14,6 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Dark mode is an explicit choice now, not just a mirror of the phone's system
   setting — pick it directly, or leave Appearance on System to keep following
   the OS. A system-appearance change repaints live, with no reload.
+- **About block and in-app feedback**: the Settings sheet now ends with an About
+  block — `Press v<version>`, "Created by Jesse Morrison", and the PolyForm
+  Noncommercial License 1.0.0 — the first attribution reachable from inside the
+  app itself. The version is read from `package.json` at build time, so it
+  can't drift out of sync with a release. A new "Send feedback" row opens a
+  Bug/Idea form in the same sheet (not a stacked dialog): a message, an
+  optional name that's remembered after the first submission, and a Send
+  button. App version, screen, browser/OS, and viewport are attached
+  automatically; the round in progress (player names and scores) is attached
+  only behind an explicit opt-in checkbox that states exactly what it sends,
+  and the checkbox only appears while a round is open — it's absent from Home.
+  Reports are written to `localStorage` before they're sent, so one composed
+  on a course with no signal isn't lost; delivery retries on reconnect and at
+  app start. Transport is Netlify Forms — no backend was added.
 - **Handicaps are visible everywhere they're used**: the hole steppers (every
   handicap round now, not just league), the scorecard (beside each player's
   name), and every leaderboard (Board tab and Results).
