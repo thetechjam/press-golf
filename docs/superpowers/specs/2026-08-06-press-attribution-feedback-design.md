@@ -318,3 +318,49 @@ silently never run.
 6. A name entered once is prefilled on the next report, and survives changing an
    unrelated setting.
 7. `npm test`, `npm run typecheck`, `npm run lint`, and `npm run build` all clean.
+
+## Verified in production — 2026-08-06
+
+A real report from the deployed app arrived in the Netlify Forms dashboard,
+closing every open item on this spec.
+
+**The sentinel guard produces no false negatives.** `postFeedback` rejects when
+the response body contains the stub's `Press form definitions` title, because a
+static host with no form handler attached answers POST with 200 and the stub
+itself — which would otherwise be counted as delivery and the report deleted.
+It was unknown whether Netlify's *success* response also echoes the stub. It
+does not: the submission was accepted and delivered with `attempts: 0`. The
+guard can stay as written.
+
+**The privacy boundary held in production.** The report was sent from Home, and
+the `Round` field arrived empty — the checkbox is only offered when a round is
+in context.
+
+`queuedAt` arrived in diagnostics as intended, so compose time is distinguishable
+from Netlify's receipt time.
+
+## Note for future layout work — verify at the real viewport
+
+The first real report carried `"viewport":"402x554"`. All layout verification
+during implementation was done at **375×812**, which is 258px taller than the
+device actually reports in Safari.
+
+Measured afterwards on a 4-player league round:
+
+| Context | Height | Result |
+|---|---|---|
+| Safari, browser chrome visible | 554px | overflows 153px, one player below the fold |
+| Installed to home screen (standalone) | ~781px | no overflow, all four visible |
+
+**This is pre-existing, not caused by that work**: the same round scored gross,
+with no handicap badges and no stroke chips, still overflows by 134px with a
+player below the fold. The badges and chips cost 19px of the 153.
+
+Decision: the installed PWA is the target. `manifest.display` is `standalone`,
+Home already prompts installation, and the Hole tab fits there with the CTA at
+667 of 781. Compressing the scoring UI by 153px to serve a browser tab would
+cost touch-target size in the mode actually used on a course.
+
+The transferable lesson is the diagnostics one: this was invisible until a real
+device reported its own viewport. Verify layout against the viewport your users
+report, not the one the emulator defaults to.
