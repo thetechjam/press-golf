@@ -24,7 +24,7 @@ suggest the P.
 | `public/favicon.svg` | Simplified cut (no dimples/shadows, bolder forms) for 16–32px. |
 | `public/icon-192.png`, `public/icon-512.png` | PWA manifest icons (`any maskable`), rendered full-square. |
 | `public/apple-touch-icon.png` | 180px full-square PNG (iOS ignores SVG touch icons). |
-| `src/icons.tsx` → `PressMark` | In-app mark, no background tile. Flag stays gold; pole + chip ring follow `currentColor` so it tracks dark/sunlight modes. |
+| `src/icons.tsx` → `PressMark` | In-app mark, no background tile. Flag stays gold; pole + chip ring follow `currentColor` so it tracks dark/glare modes. |
 | `index.html` splash | Inline copy of the mark (splash background is already the felt). |
 
 ### Wordmark lockup

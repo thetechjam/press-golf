@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Settings sheet**: an Appearance picker (System / Light / Dark), the Glare
+  mode toggle, and Keep screen awake now live in one place, reachable from a
+  gear on Home, Setup, and League Setup, and as a third toolbar button in Play.
+  Dark mode is an explicit choice now, not just a mirror of the phone's system
+  setting — pick it directly, or leave Appearance on System to keep following
+  the OS. A system-appearance change repaints live, with no reload.
+- **Handicaps are visible everywhere they're used**: the hole steppers (every
+  handicap round now, not just league), the scorecard (beside each player's
+  name), and every leaderboard (Board tab and Results).
+- **Per-match stroke chips** (`A` / `B` / `T`) on the Hole tab for league
+  rounds. League strokes are computed per match off three different
+  baselines, so a single dot count would be ambiguous about which match a
+  player is actually getting a shot in — the chips name the match instead.
+- **Edit handicaps**: a pencil in Play's Board tab and in Results opens a
+  sheet that corrects a handicap mid-round. Saving recomputes net scoring for
+  rounds that started gross (league rounds are exempt — they already score
+  net regardless) and blocks leaving a league round's handicap blank.
+  Corrections propagate to every leaderboard and money total on the next
+  render.
+- **Direct scorecard entry**: tap a scorecard cell and type the score (1–15,
+  clamped; empty clears) instead of stepping through `+`/`−`.
 - Live money during the round: stakes are set at setup, a ticker shows each
   player's running net while scoring, a new **Board** tab carries the live
   standings plus a per-game money breakdown, and each completed hole shows what
@@ -27,6 +48,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.nvmrc` and a `node` engines constraint pinning the Node major version.
 
 ### Changed
+- **Sunlight mode is renamed Glare mode** and re-iconed — a contrast glyph
+  replaces the sun icon it carried before. It was always a max-contrast
+  override for direct sun, not a theme, and the sun icon implied otherwise.
+  It still overrides Appearance while it's on, and the Settings sheet now
+  says so explicitly instead of leaving the effect unexplained.
+- **Scorecard cell tap now edits the score directly instead of jumping to
+  that hole.** Tap a hole's number in the header row to jump — that's the
+  new home for the jump gesture. This changes muscle memory established
+  since 0.1.0; it was made because correcting a mistyped score is the more
+  common need, and the old stepper-only path could cost up to fourteen taps.
+- Light mode's topographic contours are now visibly green (were a
+  near-invisible near-black at 5% opacity).
 - Net scoring is now automatic: it turns on when any player has a handicap
   entered and stays off when none are. The "Use handicaps (net scoring)"
   checkbox is gone; a hint under the player list discloses the behavior.
@@ -43,13 +76,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   one screen when you arrive at a hole. Entering scores grows the steppers via
   score-mark rings, so the fourth can drop below the fold once filled in.
 - Handicap stroke dots were unreadable on the light theme (1.9:1 on white) —
-  including the default light appearance, not only the opt-in sunlight mode.
+  including the default light appearance, not only the opt-in glare mode.
 - The 18-hole progress strip on the Play screen was shrinking below the 24px
   minimum touch-target size; it now keeps dots at 24px and scrolls the current
   hole into view.
 - The back gesture exited the installed PWA mid-round instead of stepping back
   a screen.
-- Scorecard tap-to-jump cells were unreachable by keyboard.
+- The scorecard's hole-jump control was unreachable by keyboard.
 - README and CHANGELOG described a one-stroke-per-hole handicap cap the engine
   has never had.
 - Match-play standings showed a trailing side as `-2 DN` instead of `2 DN`
