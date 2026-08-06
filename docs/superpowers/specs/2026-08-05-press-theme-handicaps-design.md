@@ -330,10 +330,29 @@ the next write rather than persisting forever.
    render, with no reload.
 7. Editing a handicap in a round that started gross switches it to net scoring.
 8. A score typed into a scorecard cell persists across a tab switch and app
-   reload.
+   reload. **Also verified on a real device 2026-08-06:** typing a score and
+   then tapping away *without* pressing Enter commits it. This path could not be
+   confirmed during implementation — the automation browser runs with
+   `document.hasFocus() === false`, so Chrome suppresses the `blur`/`focusout`
+   event the commit handler depends on. The handler was proven correct when
+   handed the event; hardware confirmed the event actually fires on tap-away.
 9. In a league round, a player stroking in the Team match but not their singles
    shows exactly one chip (`T`), and the chip set on each hole matches what the
    Board reports for that match.
 10. Chips are legible in all three themes and in Glare mode — the `--gold`
     regression from `bbaca25` does not return in a new element.
-11. `npm test`, `tsc --noEmit`, and `npm run build` all clean.
+11. `npm test`, `npm run typecheck`, and `npm run build` all clean. (`typecheck`
+    is `tsc -b --noEmit`; plain `tsc --noEmit` against this repo's
+    solution-style root config compiles zero files and always passes.)
+
+### Still unverified on hardware
+
+Criteria 3 and the safe-area fix below need a device this work had no access to:
+
+- **#3, live system-appearance repaint.** Covered by five `theme.test.ts` unit
+  tests whose falsification was checked, but the automation browser updates
+  `matchMedia().matches` without firing `change` to registered listeners.
+- **The Home gear's safe-area position.** `.hero-settings` double-counted
+  `env(safe-area-inset-top)` and was corrected; the bug only manifests on a
+  notched screen, where the inset is non-zero. At 375×812 the inset is 0, so
+  neither the defect nor its fix is observable.
