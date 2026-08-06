@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Theme } from '../storage';
 import type { Round } from '../types';
 import { getSettings, saveSettings } from '../storage';
 import { applyTheme } from '../theme';
 import { Sheet } from './Sheet';
 import { FeedbackForm } from './FeedbackForm';
-import { listQueue } from '../feedback';
+import { clearQueue, listQueue } from '../feedback';
 
 const THEMES: { id: Theme; label: string }[] = [
   { id: 'system', label: 'System' },
@@ -21,13 +21,24 @@ interface Props {
 
 export function SettingsSheet({ onClose, screen, round }: Props) {
   const [view, setView] = useState<'settings' | 'feedback'>('settings');
-  const queued = listQueue().length;
+  const [queued, setQueued] = useState(() => listQueue().length);
   const [s, setS] = useState(getSettings);
+
+  // Refresh the count whenever we land back on the settings list — e.g. after
+  // sending (or failing to send) a report in the feedback view.
+  useEffect(() => {
+    if (view === 'settings') setQueued(listQueue().length);
+  }, [view]);
 
   const set = (patch: Partial<typeof s>) => {
     const next = saveSettings(patch);
     setS(next);
     applyTheme(next.theme, next.glare);
+  };
+
+  const clearReports = () => {
+    clearQueue();
+    setQueued(0);
   };
 
   return (
@@ -94,6 +105,11 @@ export function SettingsSheet({ onClose, screen, round }: Props) {
             </span>
             <span aria-hidden="true">›</span>
           </button>
+          {queued > 0 && (
+            <button type="button" className="set-clear-queue" onClick={clearReports}>
+              Clear waiting reports
+            </button>
+          )}
 
           <div className="about">
             <div className="about-title">

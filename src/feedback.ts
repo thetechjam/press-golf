@@ -51,6 +51,7 @@ export function buildFeedback(draft: FeedbackDraft, ctx: FeedbackContext): Queue
   // The round is the only third-party data here — other people's names and
   // scores. It travels only on an explicit opt-in, and never via diagnostics.
   const attach = draft.includeRound && ctx.round != null;
+  const queuedAt = Date.now();
   return {
     id: uid(),
     kind: draft.kind,
@@ -61,9 +62,12 @@ export function buildFeedback(draft: FeedbackDraft, ctx: FeedbackContext): Queue
       version: ctx.version,
       userAgent: ctx.userAgent,
       viewport: ctx.viewport,
+      // ISO string so a report composed offline shows when it happened, not
+      // just when Netlify received it (which can be days later on retry).
+      queuedAt: new Date(queuedAt).toISOString(),
     }),
     round: attach ? JSON.stringify(ctx.round) : '',
-    queuedAt: Date.now(),
+    queuedAt,
     attempts: 0,
   };
 }
@@ -87,29 +91,46 @@ export function enqueue(entry: QueuedFeedback): void {
   writeQueue([...listQueue(), entry].slice(-MAX_QUEUE));
 }
 
+/** Discards every queued report. Used when a user wants stale round data gone. */
+export function clearQueue(): void {
+  localStorage.removeItem(QUEUE_KEY);
+}
+
+// Guards against concurrent flushes double-sending, and against a slow earlier
+// flush resurrecting an entry a later, faster flush already delivered.
+let flushInFlight = false;
+
 /**
  * Attempts every queued entry. Failures stay queued with `attempts` bumped —
  * nothing is ever dropped for failing, including when the monthly Netlify cap
  * is the cause.
  */
 export async function flushQueue(post: Poster): Promise<{ sent: number; remaining: number }> {
-  const snapshot = listQueue();
-  const keep: QueuedFeedback[] = [];
-  let sent = 0;
-  for (const entry of snapshot) {
-    try {
-      await post(entry);
-      sent += 1;
-    } catch {
-      keep.push({ ...entry, attempts: entry.attempts + 1 });
-    }
+  if (flushInFlight) {
+    return { sent: 0, remaining: listQueue().length };
   }
-  // Re-read: entries enqueued while we were awaiting must not be clobbered by
-  // the snapshot we started with.
-  const attempted = new Set(snapshot.map((e) => e.id));
-  const arrived = listQueue().filter((e) => !attempted.has(e.id));
-  writeQueue([...keep, ...arrived]);
-  return { sent, remaining: keep.length };
+  flushInFlight = true;
+  try {
+    const snapshot = listQueue();
+    const keep: QueuedFeedback[] = [];
+    let sent = 0;
+    for (const entry of snapshot) {
+      try {
+        await post(entry);
+        sent += 1;
+      } catch {
+        keep.push({ ...entry, attempts: entry.attempts + 1 });
+      }
+    }
+    // Re-read: entries enqueued while we were awaiting must not be clobbered
+    // by the snapshot we started with.
+    const attempted = new Set(snapshot.map((e) => e.id));
+    const arrived = listQueue().filter((e) => !attempted.has(e.id));
+    writeQueue([...keep, ...arrived].slice(-MAX_QUEUE));
+    return { sent, remaining: keep.length };
+  } finally {
+    flushInFlight = false;
+  }
 }
 
 /** Retry whatever is queued as soon as the device comes back online. */
@@ -128,12 +149,19 @@ const FORM_NAME = 'press-feedback';
  * with a placeholder — risks binning every real report.
  */
 export const postFeedback: Poster = async (entry) => {
+  // Merge the retry count into diagnostics before posting so the retry
+  // history travels with the report — `attempts` is otherwise written and
+  // never read outside a test.
+  const diagnostics = JSON.stringify({
+    ...(JSON.parse(entry.diagnostics) as Record<string, unknown>),
+    attempts: entry.attempts,
+  });
   const body = new URLSearchParams({
     'form-name': FORM_NAME,
     kind: entry.kind,
     reporter: entry.reporter,
     message: entry.message,
-    diagnostics: entry.diagnostics,
+    diagnostics,
     round: entry.round,
   });
   const res = await fetch(FORM_ENDPOINT, {
@@ -142,4 +170,17 @@ export const postFeedback: Poster = async (entry) => {
     body: body.toString(),
   });
   if (!res.ok) throw new Error(`Feedback POST failed: ${res.status}`);
+  // __forms.html is a real static file, so a host with no form handler attached
+  // answers POST with 200 and the stub itself. Treating that as delivery deletes
+  // the report. Staying queued is the safe direction: worst case the user is
+  // told it will send later, instead of being told it sent when it did not.
+  //
+  // Unconfirmed: nobody has checked what Netlify's own form handler returns on
+  // a successful AJAX POST to this same URL. If it also echoes the stub body,
+  // this guard produces false negatives — reports stay queued forever instead
+  // of being marked sent, which is still the safe direction (nothing is lost)
+  // but needs confirming against one real deployed submission.
+  if ((await res.text()).includes('Press form definitions')) {
+    throw new Error('Netlify form handler not attached — keeping report queued');
+  }
 };

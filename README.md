@@ -48,7 +48,7 @@ Other scripts:
 
 ```bash
 npm run test       # run the scoring-engine test suite
-npm run typecheck  # tsc --noEmit
+npm run typecheck  # tsc -b --noEmit
 npm run lint       # oxlint
 npm run build      # production build
 ```
@@ -62,10 +62,12 @@ push to `main`.
 
 ## Feedback setup (Netlify)
 
-In-app feedback posts to Netlify Forms. Two settings live in the Netlify UI, not
-in this repo, and **without the first every submission is lost**:
+In-app feedback posts to Netlify Forms. **Form detection is OFF by default on
+every new Netlify site.** Three settings live in the Netlify UI, not in this
+repo, and **without the first every submission is lost**:
 
-1. **Site configuration → Forms → enable Form detection.**
+1. **Site configuration → Forms → enable Form detection.** Off is the
+   default — this is the step that's easy to skip.
 2. **Forms → Form notifications → add an email notification** for the
    `press-feedback` form.
 3. **Redeploy.** Detection runs at deploy time; enabling it does not
@@ -74,7 +76,12 @@ in this repo, and **without the first every submission is lost**:
 The form definition lives in `public/__forms.html`. It is the POST target as
 well as the definition — posting to `/` would hit the catch-all rewrite in
 `netlify.toml`, which returns the app shell with HTTP 200 and would make a lost
-report look like a successful one.
+report look like a successful one. Because `__forms.html` is itself a real
+static file, a site with detection off (or not yet redeployed) also answers
+POST with 200 and the stub's own HTML instead of a 404 — `postFeedback` in
+`src/feedback.ts` checks the response body for the stub's title and treats
+that as a failure rather than delivery, so a report is only counted as sent
+once Netlify's actual form handler accepts it.
 
 Free tier allows 100 submissions/month. Reports that fail to send stay queued in
 the browser and retry; nothing is dropped.

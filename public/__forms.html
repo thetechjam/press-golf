@@ -2,6 +2,14 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <!--
+      The exact text of this <title> is load-bearing: src/feedback.ts's
+      postFeedback() checks the POST response body for "Press form
+      definitions" to detect a host with no form handler attached (which
+      answers with this file's own markup instead of Netlify's real
+      response). Changing this title without updating that guard string
+      breaks the detection silently.
+    -->
     <title>Press form definitions</title>
   </head>
   <body>

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { Round } from '../types';
 import type { FeedbackKind } from '../feedback';
-import { buildFeedback, enqueue, flushQueue, postFeedback } from '../feedback';
+import { buildFeedback, enqueue, flushQueue, listQueue, postFeedback } from '../feedback';
 import { getSettings, saveSettings } from '../storage';
 
 interface Props {
@@ -28,23 +28,33 @@ export function FeedbackForm({ screen, round, onBack }: Props) {
   const send = async () => {
     if (!message.trim() || sending) return;
     setSending(true);
+    // Clear a stale confirmation from a prior send in this same session so it
+    // can't be mistaken for this attempt's outcome while it's in flight.
+    setStatus(null);
     const name = reporter.trim();
     if (name) saveSettings({ reporterName: name });
-    enqueue(
-      buildFeedback(
-        { kind, reporter: name, message, includeRound },
-        {
-          screen,
-          version: __APP_VERSION__,
-          userAgent: navigator.userAgent,
-          viewport: `${window.innerWidth}x${window.innerHeight}`,
-          round,
-        }
-      )
+    const entry = buildFeedback(
+      { kind, reporter: name, message, includeRound },
+      {
+        screen,
+        version: __APP_VERSION__,
+        userAgent: navigator.userAgent,
+        viewport: `${window.innerWidth}x${window.innerHeight}`,
+        round,
+      }
     );
-    const { remaining } = await flushQueue(postFeedback);
-    setStatus(remaining === 0 ? 'sent' : 'queued');
+    enqueue(entry);
+    await flushQueue(postFeedback);
+    // `remaining` from flushQueue is queue-wide — a stale, still-failing
+    // entry from an earlier report would make this one report "Saved" even
+    // though it delivered. Check this entry specifically.
+    const stillQueued = listQueue().some((e) => e.id === entry.id);
+    setStatus(stillQueued ? 'queued' : 'sent');
     setMessage('');
+    // Reset so a second, unrelated report doesn't silently carry the last
+    // round along — this is the one control where stickiness has a privacy
+    // cost.
+    setIncludeRound(false);
     setSending(false);
   };
 
@@ -73,6 +83,7 @@ export function FeedbackForm({ screen, round, onBack }: Props) {
           className="fb-input"
           value={reporter}
           placeholder="Optional"
+          autoComplete="name"
           onChange={(e) => setReporter(e.target.value)}
         />
       </label>
@@ -92,7 +103,9 @@ export function FeedbackForm({ screen, round, onBack }: Props) {
         <label className="set-row">
           <span>
             <span className="set-label">Include this round</span>
-            <span className="set-hint">Player names and scores — helps reproduce scoring bugs</span>
+            <span className="set-hint">
+              Player names, scores and round settings — helps reproduce scoring bugs
+            </span>
           </span>
           <input
             type="checkbox"
@@ -106,13 +119,16 @@ export function FeedbackForm({ screen, round, onBack }: Props) {
         {sending ? 'Sending…' : 'Send'}
       </button>
 
-      {status && (
-        <p className="fb-status" role="status">
-          {status === 'sent'
-            ? 'Sent — thanks!'
-            : "Saved — it'll send when you're back online."}
-        </p>
-      )}
+      {/* Always mounted so screen readers announce the text change on this
+          live region — inserting the element with text already present is
+          missed by many screen readers. */}
+      <p className="fb-status" role="status">
+        {status === 'sent'
+          ? 'Sent — thanks!'
+          : status === 'queued'
+            ? "Saved — it'll send when you're back online."
+            : ''}
+      </p>
     </div>
   );
 }

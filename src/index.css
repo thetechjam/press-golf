@@ -2223,6 +2223,9 @@ select:focus {
   color: var(--muted);
   font-weight: 500;
 }
+.about-line {
+  line-height: 1.4;
+}
 
 /* ---------- Feedback ---------- */
 .feedback {
@@ -2267,4 +2270,15 @@ select:focus {
   color: inherit;
   text-align: left;
   cursor: pointer;
+}
+.set-clear-queue {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-top: -6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-decoration: underline;
+  min-height: var(--tap);
 }

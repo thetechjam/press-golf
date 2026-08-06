@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { buildFeedback, enqueue, listQueue, flushQueue } from './feedback';
+import { readFileSync } from 'node:fs';
+import { buildFeedback, clearQueue, enqueue, listQueue, flushQueue, postFeedback } from './feedback';
 import type { QueuedFeedback, FeedbackContext } from './feedback';
 import { makeRound, player } from './games/testFixtures';
 
@@ -63,6 +64,7 @@ describe('buildFeedback — the privacy line', () => {
       version: '9.9.9',
       userAgent: 'TestAgent/1.0',
       viewport: '375x812',
+      queuedAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/),
     });
   });
 });
@@ -149,5 +151,118 @@ describe('flushQueue', () => {
     expect(q).toHaveLength(1);
     expect(q[0].id).toBe(late.id);
     expect(q[0].message).toBe('arrived-mid-flush');
+  });
+
+  // Regression guard: the final write in flushQueue merges `keep` (failed,
+  // retried entries) with `arrived` (entries enqueued mid-flush) and must
+  // still respect MAX_QUEUE, the only bound on localStorage growth.
+  it('caps the merged keep+arrived write at MAX_QUEUE', async () => {
+    seed(3); // all three fail below and are kept
+    let injected = false;
+    const res = await flushQueue(async () => {
+      if (!injected) {
+        injected = true;
+        // Simulate a burst of reports arriving from elsewhere (e.g. another
+        // tab) while this flush's first post is still in flight.
+        for (let i = 0; i < 20; i++) {
+          enqueue(buildFeedback(draft({ message: `arrival-${i}` }), ctx()));
+        }
+      }
+      throw new Error('offline');
+    });
+    expect(res.remaining).toBe(3);
+    expect(listQueue().length).toBeLessThanOrEqual(20);
+  });
+
+  // Regression guard: a flush already running must not let a second caller
+  // (e.g. a second Send tap, or the online-retry listener firing mid-send)
+  // iterate the queue too — that risks a duplicate send, or resurrecting an
+  // entry the first flush is about to remove.
+  it('returns immediately without posting when a flush is already in flight', async () => {
+    seed(1);
+    let releaseFirst!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      releaseFirst = resolve;
+    });
+    let firstPostCalls = 0;
+
+    const firstFlush = flushQueue(async () => {
+      firstPostCalls += 1;
+      await gate;
+    });
+
+    const secondResult = await flushQueue(async () => {
+      throw new Error('should never be called — a flush is already running');
+    });
+    expect(secondResult).toEqual({ sent: 0, remaining: 1 });
+    expect(firstPostCalls).toBe(1);
+
+    releaseFirst();
+    expect(await firstFlush).toEqual({ sent: 1, remaining: 0 });
+  });
+});
+
+describe('clearQueue', () => {
+  beforeEach(() => store.clear());
+
+  it('empties the queue', () => {
+    enqueue(buildFeedback(draft(), ctx()));
+    enqueue(buildFeedback(draft(), ctx()));
+    expect(listQueue()).toHaveLength(2);
+    clearQueue();
+    expect(listQueue()).toEqual([]);
+  });
+});
+
+describe('postFeedback — Netlify form-handler stub guard', () => {
+  // Critical 1: __forms.html is a real static file, so a host with no form
+  // handler attached answers POST with 200 and the stub's own HTML. Treating
+  // that as delivery would delete the report while the UI says "Sent".
+  const stubFetch = (body: string) => {
+    vi.stubGlobal('fetch', async () => ({
+      ok: true,
+      status: 200,
+      text: async () => body,
+    }));
+  };
+
+  it('rejects when the response is 200 with the unattached-handler stub body', async () => {
+    stubFetch(
+      '<!doctype html><html><head><title>Press form definitions</title></head><body></body></html>'
+    );
+    await expect(postFeedback(buildFeedback(draft(), ctx()))).rejects.toThrow(/not attached/);
+  });
+
+  it('resolves when the response is 200 without the stub body', async () => {
+    stubFetch('Thanks!');
+    await expect(postFeedback(buildFeedback(draft(), ctx()))).resolves.toBeUndefined();
+  });
+});
+
+describe('postFeedback — Netlify field contract', () => {
+  // Important 2: parity between the fields posted here and the fields
+  // declared in public/__forms.html is what Netlify actually stores. Both
+  // drift directions fail silently — a stray bot-field bins every report,
+  // and a renamed field drops it with no error.
+  it('posts exactly the fields declared in __forms.html, minus the honeypot', async () => {
+    const html = readFileSync(new URL('../public/__forms.html', import.meta.url), 'utf8');
+    // Only <input>/<textarea> name attributes are posted fields — the <form>
+    // tag also carries a `name="press-feedback"` (the Netlify form name
+    // itself, sent as the `form-name` field's value, not its own key).
+    const declared = new Set(
+      Array.from(html.matchAll(/<(?:input|textarea)\b[^>]*\bname="([^"]+)"/g), (m) => m[1])
+    );
+    declared.delete('bot-field');
+
+    let posted: URLSearchParams | undefined;
+    vi.stubGlobal('fetch', async (_url: string, init: { body?: BodyInit }) => {
+      posted = new URLSearchParams(init.body as string);
+      return { ok: true, status: 200, text: async () => 'Thanks!' };
+    });
+
+    await postFeedback(buildFeedback(draft(), ctx()));
+
+    expect(posted).toBeDefined();
+    expect(new Set(posted!.keys())).toEqual(declared);
   });
 });
