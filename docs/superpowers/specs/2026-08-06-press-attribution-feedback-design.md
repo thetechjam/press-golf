@@ -170,12 +170,13 @@ export function buildFeedback(draft: FeedbackDraft, ctx: FeedbackContext): Queue
 export function enqueue(entry: QueuedFeedback): void;
 export function listQueue(): QueuedFeedback[];
 export function flushQueue(post: Poster): Promise<{ sent: number; remaining: number }>;
-export function watchConnectivity(): void;
+export function watchConnectivity(post: Poster): void;
 ```
 
-`flushQueue` takes its poster as a parameter rather than calling `fetch`
-directly, so the queue logic is testable in Vitest's `node` environment without
-stubbing the network.
+`flushQueue` and `watchConnectivity` both take the poster as a parameter rather
+than calling `fetch` directly, so the queue logic is testable in Vitest's `node`
+environment without stubbing the network. The production poster, `postFeedback`,
+is exported from the same module and injected at the call sites.
 
 **`screen` is passed in, not inferred.** `SettingsSheet` cannot know which screen
 mounted it, so each mounting screen supplies a literal: `Play` passes `'play'`,
