@@ -300,7 +300,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
         Start League Round →
       </button>
 
-      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
+      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} screen="leagueSetup" />}
     </div>
   );
 }

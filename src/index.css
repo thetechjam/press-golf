@@ -2223,3 +2223,48 @@ select:focus {
   color: var(--muted);
   font-weight: 500;
 }
+
+/* ---------- Feedback ---------- */
+.feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fb-back {
+  align-self: flex-start;
+  padding: 0;
+  min-height: var(--tap);
+}
+.fb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fb-input,
+.fb-text {
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px;
+  width: 100%;
+}
+.fb-text {
+  resize: vertical;
+  min-height: 96px;
+}
+.fb-status {
+  margin: 0;
+  color: var(--under-ink);
+  font-size: 0.9rem;
+}
+.set-action {
+  width: 100%;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}

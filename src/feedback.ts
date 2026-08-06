@@ -93,9 +93,10 @@ export function enqueue(entry: QueuedFeedback): void {
  * is the cause.
  */
 export async function flushQueue(post: Poster): Promise<{ sent: number; remaining: number }> {
+  const snapshot = listQueue();
   const keep: QueuedFeedback[] = [];
   let sent = 0;
-  for (const entry of listQueue()) {
+  for (const entry of snapshot) {
     try {
       await post(entry);
       sent += 1;
@@ -103,7 +104,11 @@ export async function flushQueue(post: Poster): Promise<{ sent: number; remainin
       keep.push({ ...entry, attempts: entry.attempts + 1 });
     }
   }
-  writeQueue(keep);
+  // Re-read: entries enqueued while we were awaiting must not be clobbered by
+  // the snapshot we started with.
+  const attempted = new Set(snapshot.map((e) => e.id));
+  const arrived = listQueue().filter((e) => !attempted.has(e.id));
+  writeQueue([...keep, ...arrived]);
   return { sent, remaining: keep.length };
 }
 

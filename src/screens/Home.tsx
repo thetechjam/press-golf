@@ -127,7 +127,7 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
 
       <p className="hint">Tip: add Press to your home screen for one-tap access on the course.</p>
 
-      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
+      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} screen="home" />}
     </div>
   );
 }

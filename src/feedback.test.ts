@@ -130,4 +130,24 @@ describe('flushQueue', () => {
     expect(res).toEqual({ sent: 2, remaining: 1 });
     expect(listQueue()[0].message).toBe('m1');
   });
+
+  // Regression guard for the lost-write race: an entry enqueued mid-flush
+  // (while the snapshot's post is in flight) must survive the final write,
+  // not be clobbered by a queue-empty snapshot taken before it existed.
+  it('preserves an entry enqueued while a post is in flight', async () => {
+    seed(1);
+    const late = buildFeedback(draft({ message: 'arrived-mid-flush' }), ctx());
+
+    const res = await flushQueue(async () => {
+      // Simulate a concurrent caller (e.g. the user hitting Send) writing to
+      // the queue while this flush's single post is still awaiting.
+      enqueue(late);
+    });
+
+    expect(res).toEqual({ sent: 1, remaining: 0 });
+    const q = listQueue();
+    expect(q).toHaveLength(1);
+    expect(q[0].id).toBe(late.id);
+    expect(q[0].message).toBe('arrived-mid-flush');
+  });
 });

@@ -496,7 +496,7 @@ export function Setup({ onCancel, onStart }: Props) {
         Start Round →
       </button>
 
-      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} />}
+      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} screen="setup" />}
     </div>
   );
 }

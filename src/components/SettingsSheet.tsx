@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import type { Theme } from '../storage';
+import type { Round } from '../types';
 import { getSettings, saveSettings } from '../storage';
 import { applyTheme } from '../theme';
 import { Sheet } from './Sheet';
+import { FeedbackForm } from './FeedbackForm';
+import { listQueue } from '../feedback';
 
 const THEMES: { id: Theme; label: string }[] = [
   { id: 'system', label: 'System' },
@@ -10,7 +13,15 @@ const THEMES: { id: Theme; label: string }[] = [
   { id: 'dark', label: 'Dark' },
 ];
 
-export function SettingsSheet({ onClose }: { onClose: () => void }) {
+interface Props {
+  onClose: () => void;
+  screen: string;
+  round?: Round;
+}
+
+export function SettingsSheet({ onClose, screen, round }: Props) {
+  const [view, setView] = useState<'settings' | 'feedback'>('settings');
+  const queued = listQueue().length;
   const [s, setS] = useState(getSettings);
 
   const set = (patch: Partial<typeof s>) => {
@@ -20,57 +31,79 @@ export function SettingsSheet({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <Sheet title="Settings" onClose={onClose}>
-      <div className="set-group">
-        <div className="set-label">Appearance</div>
-        <div className="seg">
-          {THEMES.map((t) => (
-            <button
-              key={t.id}
-              className={`seg-btn${s.theme === t.id ? ' active' : ''}`}
-              onClick={() => set({ theme: t.id })}
-              disabled={s.glare}
-              aria-pressed={s.theme === t.id}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        {/* Without this, picking Dark under Glare appears to do nothing. */}
-        {s.glare && (
-          <button className="set-override" onClick={() => set({ glare: false })}>
-            Glare mode is overriding this — tap to turn off
+    <Sheet title={view === 'feedback' ? 'Send feedback' : 'Settings'} onClose={onClose}>
+      {view === 'feedback' ? (
+        <FeedbackForm screen={screen} round={round} onBack={() => setView('settings')} />
+      ) : (
+        <>
+          <div className="set-group">
+            <div className="set-label">Appearance</div>
+            <div className="seg">
+              {THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  className={`seg-btn${s.theme === t.id ? ' active' : ''}`}
+                  onClick={() => set({ theme: t.id })}
+                  disabled={s.glare}
+                  aria-pressed={s.theme === t.id}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+            {/* Without this, picking Dark under Glare appears to do nothing. */}
+            {s.glare && (
+              <button className="set-override" onClick={() => set({ glare: false })}>
+                Glare mode is overriding this — tap to turn off
+              </button>
+            )}
+          </div>
+
+          <label className="set-row">
+            <span>
+              <span className="set-label">Glare mode</span>
+              <span className="set-hint">Max contrast for direct sun</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={s.glare}
+              onChange={(e) => set({ glare: e.target.checked })}
+            />
+          </label>
+
+          <label className="set-row">
+            <span>
+              <span className="set-label">Keep screen awake</span>
+              <span className="set-hint">While scoring a round</span>
+            </span>
+            <input
+              type="checkbox"
+              checked={s.keepAwake}
+              onChange={(e) => set({ keepAwake: e.target.checked })}
+            />
+          </label>
+
+          <button className="set-row set-action" onClick={() => setView('feedback')}>
+            <span>
+              <span className="set-label">Send feedback</span>
+              <span className="set-hint">
+                {queued > 0
+                  ? `${queued} report${queued === 1 ? '' : 's'} waiting to send`
+                  : 'Report a bug or suggest an idea'}
+              </span>
+            </span>
+            <span aria-hidden="true">›</span>
           </button>
-        )}
-      </div>
 
-      <label className="set-row">
-        <span>
-          <span className="set-label">Glare mode</span>
-          <span className="set-hint">Max contrast for direct sun</span>
-        </span>
-        <input type="checkbox" checked={s.glare} onChange={(e) => set({ glare: e.target.checked })} />
-      </label>
-
-      <label className="set-row">
-        <span>
-          <span className="set-label">Keep screen awake</span>
-          <span className="set-hint">While scoring a round</span>
-        </span>
-        <input
-          type="checkbox"
-          checked={s.keepAwake}
-          onChange={(e) => set({ keepAwake: e.target.checked })}
-        />
-      </label>
-
-      <div className="about">
-        <div className="about-title">
-          Press <span className="about-ver">v{__APP_VERSION__}</span>
-        </div>
-        <div className="about-line">Created by Jesse Morrison</div>
-        <div className="about-line">PolyForm Noncommercial License 1.0.0</div>
-      </div>
+          <div className="about">
+            <div className="about-title">
+              Press <span className="about-ver">v{__APP_VERSION__}</span>
+            </div>
+            <div className="about-line">Created by Jesse Morrison</div>
+            <div className="about-line">PolyForm Noncommercial License 1.0.0</div>
+          </div>
+        </>
+      )}
     </Sheet>
   );
 }

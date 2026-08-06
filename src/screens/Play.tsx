@@ -309,7 +309,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
         )}
       </div>
 
-      {showSettings && <SettingsSheet onClose={closeSettings} />}
+      {showSettings && <SettingsSheet onClose={closeSettings} screen="play" round={round} />}
       {showHcp && (
         <EditHandicaps round={round} onChange={onChange} onClose={() => setShowHcp(false)} />
       )}
