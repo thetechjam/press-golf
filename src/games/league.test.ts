@@ -240,7 +240,7 @@ describe('computeLeague — incomplete night', () => {
 
 describe('leagueStrokesOnHole', () => {
   // Team 1 (10, 14) v Team 2 (6, 8). A match plays off 6, B match off 8,
-  // team match off 4 — three different baselines, so one player receives
+  // team match off 6 — three different baselines, so one player receives
   // different strokes in their singles and team matches at the same time.
   const FOUR_H = [
     player('p1', 'Al', 10),

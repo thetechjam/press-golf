@@ -30,7 +30,6 @@ interface Baselines {
   /** Capped, low-man-adjusted handicap for the team match. */
   team: (id: string) => number;
   nameOf: (id: string) => string;
-  hcp: (id: string) => number;
 }
 
 /**
@@ -61,7 +60,6 @@ function leagueBaselines(round: Round): Baselines {
     },
     team: (id) => capHcp(hcp(id) - low4),
     nameOf,
-    hcp,
   };
 }
 
