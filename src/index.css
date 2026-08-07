@@ -1921,6 +1921,16 @@ select:focus {
   color: var(--gold);
 }
 
+/* Two share CTAs of equal weight — results and the hole-by-hole card. */
+.share-row {
+  display: flex;
+  gap: 10px;
+}
+.share-row .btn-primary {
+  flex: 1;
+  min-width: 0;
+}
+
 /* Secondary text-share under the scoreboard share CTA. */
 .share-text {
   margin: -6px auto 0;
