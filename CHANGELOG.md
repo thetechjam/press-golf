@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Stroke index on the scorecard**: the Card tab now carries an SI row under
+  Hole and Par, showing each hole's difficulty rank — the number that decides
+  where handicap strokes fall. It shows in gross rounds too, since it's a fact
+  about the course rather than about how you're scoring.
+- **Share the scorecard**: Results now has two share buttons. "Share results"
+  is the existing standings-and-settlement scoreboard; "Share scorecard" is new
+  — the full hole-by-hole grid as a landscape PNG in the same clubhouse livery,
+  with pars, stroke indexes, every player's card, and circle/square marks. The
+  board widens with the hole count, so a 9-hole league night doesn't come out
+  half empty.
+- **Landscape**: turning the phone sideways now expands the app across the
+  screen instead of leaving it in a narrow column — the scorecard fits all 18
+  holes without scrolling sideways. The installed app was previously locked to
+  portrait by its manifest and wouldn't rotate at all.
 - **Settings sheet**: an Appearance picker (System / Light / Dark), the Glare
   mode toggle, and Keep screen awake now live in one place, reachable from a
   gear on Home, Setup, and League Setup, and as a third toolbar button in Play.
@@ -83,6 +97,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   course name, with disclosure text under the field.
 
 ### Fixed
+- **League rounds showed no handicap strokes on the scorecard**: the Card tab
+  decided whether to draw stroke markers from the `useNet` flag, which league
+  rounds don't set even though they score net. The result was a card showing
+  each player's handicap beside their name and not a single stroke marker in
+  the grid. It now names the matches a stroke applies to — `A`, `B`, `T` — the
+  same way the Hole view already did.
 - The Play screen's primary button never pinned — its `position: sticky` had no
   room to move inside a containing block only as tall as itself, leaving the
   CTA below four leaderboards.
