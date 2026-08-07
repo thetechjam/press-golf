@@ -2,10 +2,14 @@ import type { Round } from './types';
 import { activeResults } from './games';
 import { computeLeague } from './games/league';
 import { computeSettlement, formatMoney } from './games/settlement';
+import {
+  CREAM, MUTED, GOLD, BRIGHT, RED, BG,
+  disp, mono, setLS, up, fit, dashedRule,
+  loadDisplayFonts, drawHeader, finishCard,
+} from './shareCanvas';
 
 /**
- * Renders round results as a clubhouse-scoreboard PNG for sharing:
- * dark green board, gold trim, condensed caps — the group-chat billboard.
+ * Renders round results as a clubhouse-scoreboard PNG for sharing.
  * Draws on an oversized canvas while tracking y, then crops to fit.
  */
 
@@ -13,50 +17,10 @@ const W = 1080;
 const PAD = 84;
 const MAXW = W - PAD * 2;
 
-const BG = '#0b3d2e';
-const CREAM = '#f4f7f2';
-const MUTED = 'rgba(244, 247, 242, 0.62)';
-const GOLD = '#e7b53c';
-const BRIGHT = '#57d9a3';
-const RED = '#ff8a7e';
-
-const disp = (weight: number, size: number) => `${weight} ${size}px Oswald, sans-serif`;
-const mono = (size: number) => `${size}px ui-monospace, Menlo, monospace`;
-
-const setLS = (ctx: CanvasRenderingContext2D, px: number) => {
-  (ctx as unknown as { letterSpacing: string }).letterSpacing = `${px}px`;
-};
-
-const up = (s: string) => s.toUpperCase();
-
 const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
 
-/** Truncates with an ellipsis so text never collides with a right column. */
-function fit(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string {
-  if (ctx.measureText(text).width <= maxWidth) return text;
-  let t = text;
-  while (t.length > 1 && ctx.measureText(t + '…').width > maxWidth) t = t.slice(0, -1);
-  return t + '…';
-}
-
-function dashedRule(ctx: CanvasRenderingContext2D, y: number) {
-  ctx.save();
-  ctx.strokeStyle = 'rgba(231, 181, 60, 0.35)';
-  ctx.lineWidth = 2;
-  ctx.setLineDash([8, 10]);
-  ctx.beginPath();
-  ctx.moveTo(PAD, y);
-  ctx.lineTo(W - PAD, y);
-  ctx.stroke();
-  ctx.restore();
-}
-
 export async function renderShareCard(round: Round): Promise<Blob> {
-  // The display face must be resident before canvas text is measured.
-  await Promise.all([
-    document.fonts.load('500 52px Oswald'),
-    document.fonts.load('600 72px Oswald'),
-  ]);
+  await loadDisplayFonts();
 
   const work = document.createElement('canvas');
   work.width = W;
@@ -66,51 +30,14 @@ export async function renderShareCard(round: Round): Promise<Blob> {
   ctx.fillRect(0, 0, work.width, work.height);
   ctx.textBaseline = 'alphabetic';
 
-  let y = PAD + 36;
-
-  // Wordmark
-  ctx.fillStyle = GOLD;
-  ctx.font = disp(600, 34);
-  setLS(ctx, 9);
-  ctx.textAlign = 'center';
-  ctx.fillText('PRESS', W / 2, y);
-  setLS(ctx, 0);
-  y += 78;
-
-  // Course name, shrunk to fit on one line
-  const title = up(round.course || 'Golf round');
-  let size = 72;
-  ctx.font = disp(600, size);
-  setLS(ctx, 3);
-  while (size > 44 && ctx.measureText(title).width > MAXW) {
-    size -= 4;
-    ctx.font = disp(600, size);
-  }
-  ctx.fillStyle = CREAM;
-  ctx.fillText(title, W / 2, y);
-  setLS(ctx, 0);
-  y += 54;
-
-  ctx.fillStyle = MUTED;
-  ctx.font = disp(500, 28);
-  setLS(ctx, 3);
-  ctx.fillText(
-    up(`${round.date} · ${round.players.length} players · ${round.holes.length} holes`),
-    W / 2,
-    y
-  );
-  setLS(ctx, 0);
-  y += 44;
-
-  ctx.strokeStyle = 'rgba(231, 181, 60, 0.55)';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.moveTo(PAD, y);
-  ctx.lineTo(W - PAD, y);
-  ctx.stroke();
-  y += 24;
-
-  ctx.textAlign = 'left';
+  let y = drawHeader({
+    ctx,
+    width: W,
+    pad: PAD,
+    title: round.course || 'Golf round',
+    meta: `${round.date} · ${round.players.length} players · ${round.holes.length} holes`,
+    y: PAD + 36,
+  });
 
   if (round.options.league) {
     const league = computeLeague(round);
@@ -145,7 +72,7 @@ export async function renderShareCard(round: Round): Promise<Blob> {
     });
 
     y += 18;
-    dashedRule(ctx, y);
+    dashedRule(ctx, y, PAD, W - PAD);
     y += 30;
 
     for (const m of league.matches) {
@@ -204,7 +131,7 @@ export async function renderShareCard(round: Round): Promise<Blob> {
 
     const settlement = computeSettlement(round);
     if (settlement.active) {
-      dashedRule(ctx, y);
+      dashedRule(ctx, y, PAD, W - PAD);
       y += 32;
       ctx.font = disp(500, 32);
       ctx.fillStyle = GOLD;
@@ -248,7 +175,7 @@ export async function renderShareCard(round: Round): Promise<Blob> {
 
   // Footer
   y += 30;
-  dashedRule(ctx, y);
+  dashedRule(ctx, y, PAD, W - PAD);
   y += 56;
   ctx.font = disp(500, 25);
   ctx.fillStyle = GOLD;
@@ -258,23 +185,5 @@ export async function renderShareCard(round: Round): Promise<Blob> {
   setLS(ctx, 0);
   y += PAD - 20;
 
-  // Crop to content and frame it
-  const out = document.createElement('canvas');
-  out.width = W;
-  out.height = y;
-  const octx = out.getContext('2d')!;
-  octx.drawImage(work, 0, 0);
-  octx.strokeStyle = 'rgba(231, 181, 60, 0.6)';
-  octx.lineWidth = 3;
-  octx.strokeRect(26, 26, W - 52, y - 52);
-  octx.strokeStyle = 'rgba(231, 181, 60, 0.25)';
-  octx.lineWidth = 1.5;
-  octx.strokeRect(38, 38, W - 76, y - 76);
-
-  return new Promise<Blob>((resolve, reject) => {
-    out.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error('canvas toBlob failed'))),
-      'image/png'
-    );
-  });
+  return finishCard(work, W, y);
 }
