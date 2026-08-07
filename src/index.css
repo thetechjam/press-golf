@@ -97,6 +97,16 @@ body {
   min-height: 100%;
 }
 
+/* A phone in landscape is ~874px wide. 900px is effectively full width there
+   while still capping line length on a tablet or desktop browser, where an
+   uncapped Setup or Results screen would stretch text to an unreadable measure.
+   The scorecard is the real beneficiary: 18 holes fit without horizontal scroll. */
+@media (orientation: landscape) {
+  .app {
+    max-width: 900px;
+  }
+}
+
 .screen {
   padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
     calc(32px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
@@ -2106,6 +2116,15 @@ select:focus {
   max-height: 85vh;
   overflow-y: auto;
 }
+
+/* Sheets carry their own cap and must track .app's, or they look pinched
+   against a wider page in landscape. */
+@media (orientation: landscape) {
+  .sheet {
+    max-width: 900px;
+  }
+}
+
 .sheet-head {
   display: flex;
   align-items: center;
