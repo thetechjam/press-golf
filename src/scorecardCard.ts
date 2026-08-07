@@ -109,13 +109,21 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
     const hcpText = model.showHandicap ? `  ${row.handicap}` : '';
     let hcpW = 0;
     if (hcpText) {
+      // Measure under the same letterSpacing (0) the handicap text is later
+      // drawn with — measuring under the name's letterSpacing (2) would
+      // overstate hcpW and needlessly shrink the name's truncation budget.
       ctx.font = mono(26);
+      setLS(ctx, 0);
       hcpW = ctx.measureText(hcpText).width;
+      setLS(ctx, 2);
       ctx.font = disp(500, 36);
     }
-    ctx.fillText(fit(ctx, up(row.name), NAME_W - 20 - hcpW), PAD, base);
+    const nameText = fit(ctx, up(row.name), NAME_W - 20 - hcpW);
+    ctx.fillText(nameText, PAD, base);
     if (hcpText) {
-      const nameW = ctx.measureText(fit(ctx, up(row.name), NAME_W - 20 - hcpW)).width;
+      // Measured under the same font/letterSpacing (disp 36 / LS 2) the name
+      // was just drawn with, so this matches the drawn glyph width.
+      const nameW = ctx.measureText(nameText).width;
       setLS(ctx, 0);
       ctx.font = mono(26);
       ctx.fillStyle = MUTED;
@@ -149,15 +157,25 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
         center(ctx, `${cell.score}`, cx, base);
       }
 
-      // Stroke markers, top-right of the cell — dots for net, match keys for league.
+      // Stroke markers, top-right of the cell — dots for net, match keys for
+      // league. Right-anchored on the column's own right edge (minus a small
+      // inset) rather than centered on a guessed point: right-aligned text
+      // grows leftward, so it can never bleed into the next column no matter
+      // how many dots or chips there are. Do not nest this in center() —
+      // it needs its own textAlign, not the centered one.
+      const markerRightEdge = cx + holeW / 2 - 6;
       if (cell.dots > 0) {
         ctx.font = mono(20);
         ctx.fillStyle = GOLD;
-        center(ctx, '•'.repeat(cell.dots), cx + holeW / 2 - 12, base - 30);
+        ctx.textAlign = 'right';
+        ctx.fillText('•'.repeat(cell.dots), markerRightEdge, base - 30);
+        ctx.textAlign = 'left';
       } else if (cell.chips.length > 0) {
         ctx.font = disp(600, 18);
         ctx.fillStyle = GOLD;
-        center(ctx, cell.chips.join(''), cx + holeW / 2 - 14, base - 30);
+        ctx.textAlign = 'right';
+        ctx.fillText(cell.chips.join(''), markerRightEdge, base - 30);
+        ctx.textAlign = 'left';
       }
     });
 
