@@ -247,21 +247,31 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       )}
 
       <div className="share-row">
-        <button className="btn-primary big" onClick={shareResults} disabled={rendering}>
+        <button
+          className="btn-primary big"
+          onClick={shareResults}
+          disabled={rendering}
+          aria-label="Share results"
+        >
           {rendering ? (
             'Building…'
           ) : (
             <>
-              <ShareIcon size={18} /> Share results
+              <ShareIcon size={18} /> Results
             </>
           )}
         </button>
-        <button className="btn-primary big" onClick={shareScorecard} disabled={renderingCard}>
+        <button
+          className="btn-primary big"
+          onClick={shareScorecard}
+          disabled={renderingCard}
+          aria-label="Share scorecard"
+        >
           {renderingCard ? (
             'Building…'
           ) : (
             <>
-              <ShareIcon size={18} /> Share scorecard
+              <ShareIcon size={18} /> Scorecard
             </>
           )}
         </button>

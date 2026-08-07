@@ -13,7 +13,11 @@ import {
  */
 
 const PAD = 64;
-const NAME_W = 250;
+// Wide enough that ordinary two-word names (~12-14 chars, e.g. "Bailey Ford",
+// "Christina Ng") fit under fit()'s truncation budget even with a handicap
+// drawn alongside them (NAME_W - 20 - hcpW; hcpW ~62px for a 2-digit
+// handicap in mono 26). Genuinely long names still truncate via fit().
+const NAME_W = 380;
 const TOTAL_W = 96;
 const ROW_H = 74;
 const HEAD_ROW_H = 46;
