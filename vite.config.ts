@@ -38,7 +38,10 @@ export default defineConfig({
         theme_color: '#14694e',
         background_color: '#0b3d2e',
         display: 'standalone',
-        orientation: 'portrait',
+        // 'portrait' locked the installed app so it would not rotate at all,
+        // regardless of CSS. Landscape is supported now — see the landscape
+        // media query in index.css.
+        orientation: 'any',
         start_url: '/',
         icons: [
           {

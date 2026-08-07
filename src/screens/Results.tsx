@@ -11,6 +11,7 @@ import { colorMap } from '../player';
 import { usesHandicaps } from '../games/handicap';
 import { TrophyIcon, ShareIcon, PencilIcon } from '../icons';
 import { renderShareCard } from '../shareCard';
+import { renderScorecardCard } from '../scorecardCard';
 import { EditHandicaps } from '../components/EditHandicaps';
 
 interface Hero {
@@ -115,6 +116,7 @@ function buildSummary(round: Round): string {
 export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
   const [copied, setCopied] = useState(false);
   const [rendering, setRendering] = useState(false);
+  const [renderingCard, setRenderingCard] = useState(false);
   const [showHcp, setShowHcp] = useState(false);
   const results = activeResults(round);
   const hero = round.options.league ? null : winnerHero(round);
@@ -144,27 +146,31 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
   // Scoreboard PNG first; falls back to a download, then to the text path.
   // The busy state covers only the canvas render — the share sheet can stay
   // open (or hang, on some desktop browsers) without freezing the button.
-  const share = async () => {
-    setRendering(true);
+  const shareImage = async (
+    render: () => Promise<Blob>,
+    filename: string,
+    setBusy: (v: boolean) => void
+  ) => {
+    setBusy(true);
     let file: File;
     let blobUrl: string;
     try {
-      const blob = await renderShareCard(round);
-      file = new File([blob], 'press-results.png', { type: 'image/png' });
+      const blob = await render();
+      file = new File([blob], filename, { type: 'image/png' });
       blobUrl = URL.createObjectURL(blob);
     } catch {
-      setRendering(false);
+      setBusy(false);
       await shareText();
       return;
     }
-    setRendering(false);
+    setBusy(false);
     try {
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: 'Golf round results' });
       } else {
         const a = document.createElement('a');
         a.href = blobUrl;
-        a.download = 'press-results.png';
+        a.download = filename;
         a.click();
       }
     } catch (err) {
@@ -175,11 +181,18 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
     }
   };
 
+  const shareResults = () =>
+    shareImage(() => renderShareCard(round), 'press-results.png', setRendering);
+  const shareScorecard = () =>
+    shareImage(() => renderScorecardCard(round), 'press-scorecard.png', setRenderingCard);
+
   return (
     <div className="screen results">
       <header className="bar">
+        {/* "Card" matches Play's tab name, and keeps this distinct from the
+            Share scorecard button further down. */}
         <button className="btn-ghost" onClick={onBackToPlay}>
-          ‹ Scorecard
+          ‹ Card
         </button>
         <h1>Results</h1>
         <button className="btn-ghost" onClick={onHome}>
@@ -235,15 +248,36 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
         </>
       )}
 
-      <button className="btn-primary big" onClick={share} disabled={rendering}>
-        {rendering ? (
-          'Building scoreboard…'
-        ) : (
-          <>
-            <ShareIcon size={18} /> Share results
-          </>
-        )}
-      </button>
+      <div className="share-row">
+        <button
+          className="btn-primary big"
+          onClick={shareResults}
+          disabled={rendering}
+          aria-label="Share results"
+        >
+          {rendering ? (
+            'Building…'
+          ) : (
+            <>
+              <ShareIcon size={18} /> Results
+            </>
+          )}
+        </button>
+        <button
+          className="btn-primary big"
+          onClick={shareScorecard}
+          disabled={renderingCard}
+          aria-label="Share scorecard"
+        >
+          {renderingCard ? (
+            'Building…'
+          ) : (
+            <>
+              <ShareIcon size={18} /> Scorecard
+            </>
+          )}
+        </button>
+      </div>
       <button className="btn-ghost share-text" onClick={shareText}>
         {copied ? 'Copied to clipboard' : 'Share as text instead'}
       </button>
