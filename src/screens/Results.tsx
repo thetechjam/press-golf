@@ -189,8 +189,10 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
   return (
     <div className="screen results">
       <header className="bar">
+        {/* "Card" matches Play's tab name, and keeps this distinct from the
+            Share scorecard button further down. */}
         <button className="btn-ghost" onClick={onBackToPlay}>
-          ‹ Scorecard
+          ‹ Card
         </button>
         <h1>Results</h1>
         <button className="btn-ghost" onClick={onHome}>
