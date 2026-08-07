@@ -12,9 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Hole and Par, showing each hole's difficulty rank — the number that decides
   where handicap strokes fall. It shows in gross rounds too, since it's a fact
   about the course rather than about how you're scoring.
-- **Share the scorecard**: Results now has two share buttons. "Share results"
-  is the existing standings-and-settlement scoreboard; "Share scorecard" is new
-  — the full hole-by-hole grid as a landscape PNG in the same clubhouse livery,
+- **Share the scorecard**: Results now has two share buttons. "Results" is the
+  existing standings-and-settlement scoreboard; "Scorecard" is new — the full
+  hole-by-hole grid as a landscape PNG in the same clubhouse livery,
   with pars, stroke indexes, every player's card, and circle/square marks. The
   board widens with the hole count, so a 9-hole league night doesn't come out
   half empty.

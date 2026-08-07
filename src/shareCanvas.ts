@@ -45,9 +45,15 @@ export function dashedRule(
   ctx.restore();
 }
 
-/** The display face must be resident before canvas text is measured. */
+/**
+ * The display face must be resident before canvas text is measured.
+ * The Font Loading API matches faces by weight, not size — the size
+ * value here is arbitrary and never affects which face loads. These
+ * are the two weights `disp()` is used with in this codebase (500 and
+ * 600); a new weight added elsewhere needs its own `load()` call.
+ */
 export const loadDisplayFonts = () =>
-  Promise.all([document.fonts.load('500 52px Oswald'), document.fonts.load('600 72px Oswald')]);
+  Promise.all([document.fonts.load('500 1em Oswald'), document.fonts.load('600 1em Oswald')]);
 
 export interface HeaderOpts {
   ctx: CanvasRenderingContext2D;
@@ -58,7 +64,11 @@ export interface HeaderOpts {
   y: number;
 }
 
-/** Wordmark, course title shrunk to one line, meta line, gold rule. Returns the new y. */
+/**
+ * Wordmark, course title shrunk to one line, meta line, gold rule. Returns the new y.
+ * Leaves `ctx.textAlign` set to `'left'` on exit — both callers (shareCard.ts,
+ * scorecardCard.ts) rely on this and do not re-set it before drawing further text.
+ */
 export function drawHeader({ ctx, width, pad, title, meta, y }: HeaderOpts): number {
   const maxw = width - pad * 2;
 

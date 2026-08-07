@@ -130,19 +130,26 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                         }
                         aria-label={`${row.name}, hole ${cell.holeNumber}${
                           cell.score != null ? `, ${cell.score}` : ', no score'
+                        }${
+                          cell.dots > 0
+                            ? `, ${cell.dots} handicap stroke${cell.dots === 1 ? '' : 's'}`
+                            : ''
+                        }${
+                          cell.chips.length > 0
+                            ? `, gets a stroke in ${cell.chips.join(', ')}`
+                            : ''
                         }`}
                       >
                         {cell.score != null && (
                           <span className={cell.markClass}>{cell.score}</span>
                         )}
                         {cell.dots > 0 && (
-                          <span className="sc-dots">{'•'.repeat(cell.dots)}</span>
+                          <span className="sc-dots" aria-hidden="true">
+                            {'•'.repeat(cell.dots)}
+                          </span>
                         )}
                         {cell.chips.length > 0 && (
-                          <span
-                            className="sc-chips"
-                            aria-label={`Gets a stroke in: ${cell.chips.join(', ')}`}
-                          >
+                          <span className="sc-chips" aria-hidden="true">
                             {cell.chips.map((k) => (
                               <span key={k} className="sc-chip">
                                 {k}

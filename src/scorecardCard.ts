@@ -174,7 +174,8 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
         ctx.textAlign = 'right';
         ctx.fillText('•'.repeat(cell.dots), markerRightEdge, base - 30);
         ctx.textAlign = 'left';
-      } else if (cell.chips.length > 0) {
+      }
+      if (cell.chips.length > 0) {
         ctx.font = disp(600, 18);
         ctx.fillStyle = GOLD;
         ctx.textAlign = 'right';
