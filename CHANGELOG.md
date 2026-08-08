@@ -90,8 +90,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   cell; on the Hole tab the tone-coloured left border and the selected chip's
   fill already say the same thing, so the ring was redundant weight that also
   grew every non-par row by 20px. The rows are still taller than the old
-  single-line stepper: four players fit on screen without scrolling, but a
-  fivesome scrolls to see everyone, with Next Hole staying pinned via
+  single-line stepper. An earlier version of this note claimed "four players
+  fit on screen without scrolling" — that was measured on a synthetic 812px
+  viewport with no browser chrome and no safe-area inset, and it was wrong on
+  every real device: a 390×750 installed PWA (iPhone 15) overflowed by ~60px
+  and needed a scroll to see the fourth row. A follow-up padding/gap trim
+  (tighter `.screen`/`.hole-view` gaps, slimmer `.hole-nav`/`.hole-dots`
+  padding, a smaller `.hole-num`, and a 44px `.nav-arrow`) plus the safe-area
+  double-count fix below closes that gap — four players now clear
+  `.play-foot` with room to spare on a real 390×750 device, and a fivesome
+  still scrolls to see everyone, with Next Hole staying pinned via
   `.play-foot`'s existing `position: sticky`.
 - **Sunlight mode is renamed Glare mode** and re-iconed — a contrast glyph
   replaces the sun icon it carried before. It was always a max-contrast
@@ -114,6 +122,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   course name, with disclosure text under the field.
 
 ### Fixed
+- **The Play screen double-counted the bottom safe-area inset**: `.screen`'s
+  base padding already adds `env(safe-area-inset-bottom)`, and `.play-foot` —
+  the last child on the Play screen — separately adds its own
+  `env(safe-area-inset-bottom)` on top of that, so the home-indicator inset
+  was applied twice: worth roughly 34px of extra page height, and extra
+  scrolling, on any notched iPhone. `.screen.play` now uses a flat 12px
+  bottom padding with no inset term, since `.play-foot`'s own padding already
+  clears the home indicator. Home, Setup, League Setup, and Results have no
+  `.play-foot` and keep the original inset-aware `.screen` padding.
 - **League rounds showed no handicap strokes on the scorecard**: the Card tab
   decided whether to draw stroke markers from the `useNet` flag, which league
   rounds don't set even though they score net. The result was a card showing
