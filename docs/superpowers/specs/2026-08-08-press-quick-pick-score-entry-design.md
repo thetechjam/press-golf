@@ -49,21 +49,41 @@ control and must not be styled as one.
 Six targets at 375px viewport width measure **50px each**, above the 44px touch
 minimum.
 
-### Layout cost (corrected 2026-08-08)
+### Layout cost (measured 2026-08-08)
 
 Today's `.stepper` is a **single horizontal row** — name left, `−`/number/`+`
-right, inside one shared `.steppers` card with dividers — at roughly 70px.
-Stacking a name row over a 46px chip row makes it roughly **102px**, so the
-chip row is about **32px taller per player**, not shorter. An earlier mockup
-compared against a two-row layout Press does not have; this is the corrected
-figure.
+right, inside one shared `.steppers` card with dividers — at roughly 70px, and
+four players fit an 812pt screen with about 98px to spare.
 
-Accepted consequence: four players still fit an 812pt screen without scrolling
-(≈408px of rows against ≈460px available). Five or more scroll. That is a cost,
-not a breakage — `.play-foot` is already `position: sticky; bottom: 0`, so the
-Next Hole button stays pinned and the screen already scrolls today whenever a
-warn banner opens. Decided 2026-08-08: accept the height rather than compress
-padding or shrink the inline chip range.
+The chip row stacks a name row over a chip row, which costs real height. Two
+estimates were wrong before this was measured in a browser; these are the
+measured figures at 375×812 with four players:
+
+| | Untightened | Tightened (shipped) |
+|---|---|---|
+| Row height | 112px | 96px target |
+| `.steppers` total | 451px | ~390px |
+| Page overflow | **70px** | none |
+
+Untightened, four players overflow by 70px — about 3.4 players visible, so the
+scorekeeper scrolls on nearly every hole in the app's core loop. That was
+judged too high a price.
+
+**Decided 2026-08-08: tighten the row to fit four players.**
+
+- `.stepper` padding `12px 14px 12px 11px` → `8px 14px 8px 11px`
+- `.stepper` gap `10px` → `6px`
+- `.score-chip` height `46px` → `44px` (the hard touch-target floor)
+- `.stepper-name` font-size `1.1rem` → `1rem`
+
+Chips therefore sit **at** the 44px minimum rather than above it — the
+deliberate price of fitting a foursome without scrolling. Five or more players
+still scroll, which is a cost and not a breakage: `.play-foot` is already
+`position: sticky; bottom: 0`, so Next Hole stays pinned, and the screen
+already scrolls today whenever a warn banner opens.
+
+Measured chip width is 48.5px, comfortably above the minimum, and unchanged by
+the tightening.
 
 **Why not include par−2 (eagle).** Seven targets measure 42.3px, below the
 minimum. One of three things has to give: the eagle, four pixels, or the
