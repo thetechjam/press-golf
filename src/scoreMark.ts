@@ -1,7 +1,9 @@
 /**
  * Golf circle/square scoring convention, as CSS class names.
  * Circle under par, square over par, doubled ring at ±2 (eagle / double-bogey+).
- * Returns '' for par (no mark). Shared by HoleStepper and Scorecard.
+ * Returns '' for par (no mark). The Hole tab dropped this mark (the tone-
+ * coloured chips already say the same thing); `scorecardModel.ts` is now its
+ * only caller, feeding the Card tab's scorecard grid.
  */
 export function scoreMarkClass(toPar: number): string {
   if (toPar === 0) return '';

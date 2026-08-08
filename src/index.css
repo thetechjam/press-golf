@@ -2040,7 +2040,7 @@ select:focus {
   line-height: 1;
 }
 /* League strokes come off three baselines, so the cell names the matches
-   instead of counting dots — same convention as HoleStepper's .lg-chip. */
+   instead of counting dots — same convention as PlayerScoreRow's .lg-chip. */
 .sc-chips {
   position: absolute;
   top: 1px;
