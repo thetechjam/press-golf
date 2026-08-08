@@ -26,11 +26,13 @@ export function ScoreChips({ name, par, value, onChange }: Props) {
   return (
     <div className="score-chips-wrap">
       <div className="score-chips">
-        {/* .score-chip-group is display:contents — its five buttons lay out
-            as direct flex items of .score-chips (same row as before) while
-            still being real DOM descendants of the radiogroup. The "…"
-            button is a disclosure, not a score choice, so it stays a plain
-            button outside the group instead of a non-radio child of it. */}
+        {/* .score-chip-group is a real, boxed subgrid element (not
+            display:contents) — an ARIA role assigned to a boxless element is
+            exposed unreliably across engines, so the radiogroup role needs
+            an actual box. subgrid lets it align to .score-chips's six
+            column tracks without owning its own width math. The "…" button
+            is a disclosure, not a score choice, so it stays a plain button
+            outside the group instead of a non-radio child of it. */}
         <div
           className="score-chip-group"
           role="radiogroup"
@@ -54,7 +56,7 @@ export function ScoreChips({ name, par, value, onChange }: Props) {
           type="button"
           className={`score-chip score-more${hidden ? ' has-value' : ''}`}
           aria-expanded={showAll}
-          aria-label={`More scores for ${name}`}
+          aria-label={hidden ? `More scores for ${name}, currently ${value}` : `More scores for ${name}`}
           onClick={() => setShowAll((s) => !s)}
         >
           {hidden ? value : '…'}
@@ -68,6 +70,7 @@ export function ScoreChips({ name, par, value, onChange }: Props) {
               key={n}
               type="button"
               className={`score-chip${value === n ? ' sel' : ''}`}
+              aria-pressed={value === n}
               aria-label={`${n}, ${scoreLabel(n - par)}`}
               onClick={() => pick(n)}
             >

@@ -1070,17 +1070,20 @@ select:focus {
 
 /* ---------- Quick-pick score chips ---------- */
 .score-chips {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
   gap: 4px;
 }
-/* Keeps the radiogroup's five buttons as direct flex items of .score-chips
-   (identical layout to a flat row) while the role stays on a real DOM
-   ancestor — see ScoreChips.tsx for why the "..." button lives outside it. */
+/* A real, boxed subgrid element — not display:contents — so the
+   role="radiogroup" in ScoreChips.tsx sits on an element engines reliably
+   expose. subgrid aligns its five children to .score-chips's own column
+   tracks, so the row still reads as six equal columns. */
 .score-chip-group {
-  display: contents;
+  grid-column: span 5;
+  display: grid;
+  grid-template-columns: subgrid;
 }
 .score-chip {
-  flex: 1;
   min-width: 0;
   height: 44px;
   border-radius: 10px;
