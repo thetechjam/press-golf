@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { scoreMarkClass } from '../scoreMark';
+import { scoreLabel, scoreMarkClass } from '../scoreMark';
 import { PlayerAvatar } from './PlayerAvatar';
 
 interface Props {
@@ -19,16 +19,6 @@ interface Props {
   matchStrokes?: string[];
   onChange: (value: number | null) => void;
 }
-
-const labelFor = (toPar: number): string => {
-  if (toPar <= -3) return 'Albatross';
-  if (toPar === -2) return 'Eagle';
-  if (toPar === -1) return 'Birdie';
-  if (toPar === 0) return 'Par';
-  if (toPar === 1) return 'Bogey';
-  if (toPar === 2) return 'Double';
-  return `+${toPar}`;
-};
 
 // Vibration API is Android-only (no-op on iOS Safari/PWA); softer for taps, firmer for birdie+.
 const buzz = (pattern: number | number[]) => navigator.vibrate?.(pattern);
@@ -113,7 +103,7 @@ export function HoleStepper({
           >
             {value ?? '–'}
           </span>
-          <span className="score-tag">{value == null ? 'tap' : labelFor(toPar)}</span>
+          <span className="score-tag">{value == null ? 'tap' : scoreLabel(toPar)}</span>
         </div>
         <button className="step-btn" onClick={inc} aria-label={`Raise ${name}'s score`}>
           +
