@@ -970,9 +970,9 @@ select:focus {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
+  gap: 6px;
   border-left: 5px solid var(--line);
-  padding: 12px 14px 12px 11px;
+  padding: 8px 14px 8px 11px;
 }
 .stepper + .stepper {
   border-top: 1px solid var(--line);
@@ -1013,7 +1013,7 @@ select:focus {
   gap: 9px;
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1.1rem;
+  font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   min-width: 0;
@@ -1038,6 +1038,7 @@ select:focus {
   align-items: baseline;
   gap: 6px;
   text-align: right;
+  perspective: 260px;
 }
 .score-num {
   font-family: var(--font-display);
@@ -1075,7 +1076,7 @@ select:focus {
 .score-chip {
   flex: 1;
   min-width: 0;
-  height: 46px;
+  height: 44px;
   border-radius: 10px;
   border: 1.5px solid var(--line);
   background: var(--bg);
