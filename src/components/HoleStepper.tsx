@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { scoreLabel, scoreMarkClass } from '../scoreMark';
 import { PlayerAvatar } from './PlayerAvatar';
+import { ScoreChips } from './ScoreChips';
 
 interface Props {
   id?: string;
@@ -58,9 +59,6 @@ export function HoleStepper({
     onChange(next);
   };
 
-  const dec = () => commit(value == null ? par : Math.max(1, value - 1));
-  const inc = () => commit(value == null ? par : Math.min(15, value + 1));
-
   return (
     <div id={id} className={`stepper tone-${tone}${highlight ? ' highlight' : ''}`}>
       <div className="stepper-name">
@@ -88,13 +86,8 @@ export function HoleStepper({
             {'•'.repeat(strokesReceived)}
           </span>
         )}
-      </div>
-      <div className="stepper-controls">
-        <button className="step-btn" onClick={dec} aria-label={`Lower ${name}'s score`}>
-          −
-        </button>
-        <div className="stepper-value">
-          {/* key forces a remount so the pop animation replays on each change */}
+        {/* Display only — the chips are the control. Must not be styled as one. */}
+        <span className="stepper-value" aria-hidden="true">
           <span
             className={`score-num${value == null ? '' : ` ${scoreMarkClass(toPar)}`}${
               celebrating ? ' celebrate' : ''
@@ -104,11 +97,15 @@ export function HoleStepper({
             {value ?? '–'}
           </span>
           <span className="score-tag">{value == null ? 'tap' : scoreLabel(toPar)}</span>
-        </div>
-        <button className="step-btn" onClick={inc} aria-label={`Raise ${name}'s score`}>
-          +
-        </button>
+        </span>
       </div>
+      <ScoreChips
+        name={name}
+        par={par}
+        value={value}
+        // Clearing must not buzz or celebrate — commit() is for real scores only.
+        onChange={(v) => (v == null ? onChange(null) : commit(v))}
+      />
     </div>
   );
 }

@@ -968,8 +968,9 @@ select:focus {
 }
 .stepper {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
   border-left: 5px solid var(--line);
   padding: 12px 14px 12px 11px;
 }
@@ -1029,35 +1030,18 @@ select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.stepper-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.step-btn {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--green-700);
-}
-.step-btn:active {
-  background: var(--green-600);
-  color: #fff;
-}
 .stepper-value {
-  width: 76px;
-  perspective: 260px;
-  text-align: center;
+  /* Pushed to the end of the name row; the chips sit on the row below. */
+  margin-left: auto;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  text-align: right;
 }
 .score-num {
   font-family: var(--font-display);
-  font-size: 2.3rem;
+  font-size: 1.9rem;
   font-weight: 600;
   line-height: 1;
 }
@@ -1081,6 +1065,55 @@ select:focus {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
+}
+
+/* ---------- Quick-pick score chips ---------- */
+.score-chips {
+  display: flex;
+  gap: 4px;
+}
+.score-chip {
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* Par gets a quiet anchor so the row is readable without counting. */
+.score-chip.par {
+  border-color: color-mix(in srgb, var(--muted) 40%, var(--line));
+  background: var(--card);
+}
+.score-chip[aria-checked='true'] {
+  background: var(--green-600);
+  border-color: var(--green-600);
+  color: #fff;
+}
+.tone-under .score-chip[aria-checked='true'] {
+  background: var(--under);
+  border-color: var(--under);
+}
+.tone-over .score-chip[aria-checked='true'] {
+  background: var(--over-strong);
+  border-color: var(--over-strong);
+}
+.score-chip:active {
+  transform: scale(0.96);
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-chip:active {
+    transform: none;
+  }
+}
+.score-more {
+  color: var(--muted);
+  letter-spacing: 0.08em;
 }
 
 /* ---------- Wolf ---------- */
