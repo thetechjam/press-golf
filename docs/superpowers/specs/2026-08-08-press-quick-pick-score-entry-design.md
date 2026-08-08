@@ -170,9 +170,14 @@ specs, not because they belong in this change:
 - Setup friction — no player roster, no "repeat last round" from Home
 - Cross-round history and season stats (computable from `localStorage` today,
   no backend)
-- Handicap allowance — `handicap.ts` allocates off full handicap; match play
-  and Nassau conventionally play off the **low** handicap, and four-ball
-  applies an 85–90% allowance
+- **Handicap allowance — confirmed as a bug, spec'd next (decided 2026-08-08).**
+  `handicap.ts` allocates off each player's full handicap; match play and
+  Nassau conventionally play off the **low** handicap (differences only), and
+  four-ball applies an 85–90% allowance. This changes hole-by-hole outcomes
+  and therefore settlement: a 20 vs a 4 gets different results on the
+  stroke-index 3 hole depending on the convention. It gets its own spec
+  immediately after this change ships, before further games are built on top
+  of the current behaviour.
 - Play toolbar density — six targets in one strip
 - Auto-press Nassau; additional games (Junk/Dots, Bingo Bango Bongo, Vegas,
   Snake, Quota)
