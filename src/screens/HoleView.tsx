@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { Round, Hole, WolfChoice } from '../types';
-import { HoleStepper } from '../components/HoleStepper';
+import { PlayerScoreRow } from '../components/PlayerScoreRow';
 import { WolfControls } from '../components/WolfControls';
 import { NassauControls } from '../components/NassauControls';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
@@ -96,9 +96,9 @@ export function HoleView({
         )}
         <section className="steppers">
           {round.players.map((p, i) => (
-            <HoleStepper
+            <PlayerScoreRow
               key={p.id}
-              id={`stepper-${p.id}`}
+              id={`player-row-${p.id}`}
               highlight={highlightId === p.id}
               name={p.name}
               color={playerColor(i)}

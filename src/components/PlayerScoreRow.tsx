@@ -24,7 +24,7 @@ interface Props {
 // Vibration API is Android-only (no-op on iOS Safari/PWA); softer for taps, firmer for birdie+.
 const buzz = (pattern: number | number[]) => navigator.vibrate?.(pattern);
 
-export function HoleStepper({
+export function PlayerScoreRow({
   id,
   highlight = false,
   name,

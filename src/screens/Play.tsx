@@ -71,7 +71,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   useEffect(() => {
     if (!highlightId) return;
     document
-      .getElementById(`stepper-${highlightId}`)
+      .getElementById(`player-row-${highlightId}`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     const t = setTimeout(() => setHighlightId(null), 1400);
     return () => clearTimeout(t);
