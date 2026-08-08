@@ -1073,6 +1073,12 @@ select:focus {
   display: flex;
   gap: 4px;
 }
+/* Keeps the radiogroup's five buttons as direct flex items of .score-chips
+   (identical layout to a flat row) while the role stays on a real DOM
+   ancestor — see ScoreChips.tsx for why the "..." button lives outside it. */
+.score-chip-group {
+  display: contents;
+}
 .score-chip {
   flex: 1;
   min-width: 0;
@@ -1115,6 +1121,24 @@ select:focus {
 .score-more {
   color: var(--muted);
   letter-spacing: 0.08em;
+}
+.score-more.has-value {
+  border-color: var(--green-600);
+  color: var(--green-700);
+  background: var(--card);
+}
+.score-overflow {
+  display: grid;
+  /* Five columns × three rows fits 1–15 exactly, at ~64px wide each on a
+     375px phone — comfortably above the 44px touch minimum. */
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+.score-overflow .score-chip.sel {
+  background: var(--green-600);
+  border-color: var(--green-600);
+  color: #fff;
 }
 
 /* ---------- Wolf ---------- */
