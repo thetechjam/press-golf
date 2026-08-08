@@ -49,6 +49,22 @@ control and must not be styled as one.
 Six targets at 375px viewport width measure **50px each**, above the 44px touch
 minimum.
 
+### Layout cost (corrected 2026-08-08)
+
+Today's `.stepper` is a **single horizontal row** — name left, `−`/number/`+`
+right, inside one shared `.steppers` card with dividers — at roughly 70px.
+Stacking a name row over a 46px chip row makes it roughly **102px**, so the
+chip row is about **32px taller per player**, not shorter. An earlier mockup
+compared against a two-row layout Press does not have; this is the corrected
+figure.
+
+Accepted consequence: four players still fit an 812pt screen without scrolling
+(≈408px of rows against ≈460px available). Five or more scroll. That is a cost,
+not a breakage — `.play-foot` is already `position: sticky; bottom: 0`, so the
+Next Hole button stays pinned and the screen already scrolls today whenever a
+warn banner opens. Decided 2026-08-08: accept the height rather than compress
+padding or shrink the inline chip range.
+
 **Why not include par−2 (eagle).** Seven targets measure 42.3px, below the
 minimum. One of three things has to give: the eagle, four pixels, or the
 explicit overflow affordance. A triple bogey is far more common than an eagle,
@@ -101,7 +117,7 @@ the `Round` shape. This is a pure presentation swap.
 | `src/components/HoleStepper.tsx` | **Modified + renamed** to `PlayerScoreRow.tsx`. Drops `dec`/`inc` and the `.stepper-controls` block; renders `<ScoreChips>`. Keeps `commit()` and passes it down. |
 | `src/screens/Play.tsx` | DOM id prefix `stepper-` → `player-row-`, which the auto-jump `getElementById` at ~L73 reads. |
 | `src/screens/HoleView.tsx` | Import and element rename. |
-| `src/index.css` | Adds `.score-chips` / `.score-chip`; retires `.step-btn` and `.stepper-controls`. |
+| `src/index.css` | `.stepper` flips from a horizontal row to `flex-direction: column; align-items: stretch`. `.stepper-value` moves into the name row. Adds `.score-chips` / `.score-chip` / `.score-overflow`; retires `.step-btn` and `.stepper-controls`. |
 
 **On the rename.** Once `+`/`−` are gone, a component named `HoleStepper`
 containing no stepper is a lie this change introduces, so the component, file,
