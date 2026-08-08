@@ -37,3 +37,13 @@ export function nextValue(current: number | null, tapped: number): number | null
 export function overflowRange(): number[] {
   return Array.from({ length: SCORE_MAX - SCORE_MIN + 1 }, (_, i) => SCORE_MIN + i);
 }
+
+/**
+ * Whether a score lives outside the inline chip range and so is only
+ * reachable through the "…" overflow grid. Drives the "…" chip's glyph, its
+ * accessible name, and `.has-value` — kept here rather than inlined in
+ * ScoreChips.tsx so it can't silently drift out of agreement with
+ * `chipRange` if the range's shape ever changes.
+ */
+export const isOverflowValue = (par: number, value: number | null): boolean =>
+  value != null && !chipRange(par).includes(value);

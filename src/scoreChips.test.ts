@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { chipRange, nextValue, overflowRange, SCORE_MAX, SCORE_MIN } from './scoreChips';
+import {
+  chipRange,
+  isOverflowValue,
+  nextValue,
+  overflowRange,
+  SCORE_MAX,
+  SCORE_MIN,
+} from './scoreChips';
 
 describe('chipRange', () => {
   it('centres on par for a par 4', () => {
@@ -50,5 +57,20 @@ describe('overflowRange', () => {
     expect(overflowRange()).toHaveLength(SCORE_MAX - SCORE_MIN + 1);
     expect(overflowRange()[0]).toBe(1);
     expect(overflowRange().at(-1)).toBe(15);
+  });
+});
+
+describe('isOverflowValue', () => {
+  it('is false for a value inside the inline chip range', () => {
+    expect(isOverflowValue(4, 5)).toBe(false);
+  });
+
+  it('is true for a value outside the inline chip range', () => {
+    // 9 is not in chipRange(4) === [3, 4, 5, 6, 7].
+    expect(isOverflowValue(4, 9)).toBe(true);
+  });
+
+  it('is false for null', () => {
+    expect(isOverflowValue(4, null)).toBe(false);
   });
 });

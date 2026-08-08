@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { chipRange, nextValue, overflowRange } from '../scoreChips';
+import { useId, useState } from 'react';
+import { chipRange, isOverflowValue, nextValue, overflowRange } from '../scoreChips';
 import { scoreLabel } from '../scoreMark';
 
 interface Props {
@@ -13,10 +13,11 @@ interface Props {
 
 export function ScoreChips({ name, par, value, onChange }: Props) {
   const [showAll, setShowAll] = useState(false);
+  const overflowId = useId();
   const chips = chipRange(par);
   // A score outside the inline range lives behind "…" — mark the chip so the
   // row doesn't read as empty when a 9 is entered on a par 4.
-  const hidden = value != null && !chips.includes(value);
+  const hidden = isOverflowValue(par, value);
 
   const pick = (n: number) => {
     onChange(nextValue(value, n));
@@ -56,6 +57,7 @@ export function ScoreChips({ name, par, value, onChange }: Props) {
           type="button"
           className={`score-chip score-more${hidden ? ' has-value' : ''}`}
           aria-expanded={showAll}
+          aria-controls={overflowId}
           aria-label={hidden ? `More scores for ${name}, currently ${value}` : `More scores for ${name}`}
           onClick={() => setShowAll((s) => !s)}
         >
@@ -64,7 +66,12 @@ export function ScoreChips({ name, par, value, onChange }: Props) {
       </div>
 
       {showAll && (
-        <div className="score-overflow" role="group" aria-label={`All scores for ${name}`}>
+        <div
+          id={overflowId}
+          className="score-overflow"
+          role="group"
+          aria-label={`All scores for ${name}`}
+        >
           {overflowRange().map((n) => (
             <button
               key={n}
