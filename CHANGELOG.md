@@ -76,6 +76,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.nvmrc` and a `node` engines constraint pinning the Node major version.
 
 ### Changed
+- **One-tap score entry**: the Hole tab's `−`/`+` stepper is now a row of
+  score chips centred on par — `3 4 5 6 7` on a par 4 — so any score from
+  birdie to triple bogey is a single tap. A typical hole costs four taps
+  instead of eight. Tapping the selected chip clears that score, which also
+  fixes a dead end: a score set on the Hole tab previously couldn't be unset
+  without switching to the Card tab. Anything outside the range (an eagle, a
+  snowman) opens a 1–15 grid from the `…` chip, in place, with no keyboard.
+  Chips are 44px tall, capped at 72px wide in landscape so they don't stretch
+  edge to edge on a rotated phone. The score readout no longer draws the
+  circle/square scoring mark on this tab — that's a scorecard convention and
+  stays on the Card tab, where it's the only over/under-par signal on the
+  cell; on the Hole tab the tone-coloured left border and the selected chip's
+  fill already say the same thing, so the ring was redundant weight that also
+  grew every non-par row by 20px.
 - **Sunlight mode is renamed Glare mode** and re-iconed — a contrast glyph
   replaces the sun icon it carried before. It was always a max-contrast
   override for direct sun, not a theme, and the sun icon implied otherwise.
