@@ -89,7 +89,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   stays on the Card tab, where it's the only over/under-par signal on the
   cell; on the Hole tab the tone-coloured left border and the selected chip's
   fill already say the same thing, so the ring was redundant weight that also
-  grew every non-par row by 20px.
+  grew every non-par row by 20px. The rows are still taller than the old
+  single-line stepper: four players fit on screen without scrolling, but a
+  fivesome scrolls to see everyone, with Next Hole staying pinned via
+  `.play-foot`'s existing `position: sticky`.
 - **Sunlight mode is renamed Glare mode** and re-iconed — a contrast glyph
   replaces the sun icon it carried before. It was always a max-contrast
   override for direct sun, not a theme, and the sun icon implied otherwise.
@@ -121,8 +124,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   room to move inside a containing block only as tall as itself, leaving the
   CTA below four leaderboards.
 - Scoring sat below the fold with multiple games active; the Hole tab now fits
-  one screen when you arrive at a hole. Entering scores grows the steppers via
-  score-mark rings, so the fourth can drop below the fold once filled in.
+  one screen when you arrive at a hole. Rows hold at a flat ~99px no matter
+  what's entered, so four players leave a constant ~22px of overflow instead
+  of the up-to-95px the old score-mark rings used to add as scores went in.
 - Handicap stroke dots were unreadable on the light theme (1.9:1 on white) —
   including the default light appearance, not only the opt-in glare mode.
 - The 18-hole progress strip on the Play screen was shrinking below the 24px
