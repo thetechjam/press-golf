@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { scoreLabel, scoreMarkClass } from '../scoreMark';
+import { scoreLabel } from '../scoreMark';
 import { PlayerAvatar } from './PlayerAvatar';
 import { ScoreChips } from './ScoreChips';
 
@@ -89,9 +89,7 @@ export function PlayerScoreRow({
         {/* Display only — the chips are the control. Must not be styled as one. */}
         <span className="stepper-value" aria-hidden="true">
           <span
-            className={`score-num${value == null ? '' : ` ${scoreMarkClass(toPar)}`}${
-              celebrating ? ' celebrate' : ''
-            }`}
+            className={`score-num${celebrating ? ' celebrate' : ''}`}
             key={value ?? 'empty'}
           >
             {value ?? '–'}

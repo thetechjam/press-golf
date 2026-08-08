@@ -1073,6 +1073,13 @@ select:focus {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 4px;
+  /* Six columns * 72px chips + five 4px gaps. Below this width the row
+     stretches to fill .stepper same as always (portrait is well under the
+     cap); above it, the flex-stretch from .stepper's align-items: stretch
+     is clamped here, so the row stops growing in landscape instead of
+     blowing chips up to 120px+, and falls back to left-aligned instead of
+     stretching edge to edge. */
+  max-width: 452px;
 }
 /* A real, boxed subgrid element — not display:contents — so the
    role="radiogroup" in ScoreChips.tsx sits on an element engines reliably
