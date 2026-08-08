@@ -112,8 +112,16 @@ body {
     calc(32px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   animation: screen-in 0.24s ease-out;
+}
+/* Play's .play-foot already pads itself for the home indicator (see .play-foot
+   below), so the base safe-area-inset-bottom above would be double-counted on
+   any notched/home-indicator device — Play is the only screen with a sticky
+   foot, so it's the only one that needs the base inset dropped. Home, Setup,
+   League Setup and Results have no .play-foot and still rely on the base rule. */
+.screen.play {
+  padding-bottom: 12px;
 }
 @keyframes screen-in {
   from {
@@ -627,7 +635,7 @@ select:focus {
 }
 /* Three tabs + three icon toggles share 343px at 375px wide — ~53px per tab. */
 .view-toggle .seg-btn {
-  padding: 12px 4px;
+  padding: 9px 4px;
   letter-spacing: 0.03em;
 }
 /* Wake-lock toggle: fixed slot beside the view toggle. */
@@ -840,7 +848,7 @@ select:focus {
 .hole-view {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 .hole-body {
   display: flex;
@@ -876,11 +884,11 @@ select:focus {
   align-items: center;
   justify-content: space-between;
   color: var(--ink);
-  padding: 0 2px;
+  padding: 0 14px;
 }
 .nav-arrow {
   width: 52px;
-  height: 52px;
+  height: 44px;
   font-size: 1.6rem;
   color: var(--green-700);
   background: var(--card);
@@ -895,7 +903,7 @@ select:focus {
 }
 .hole-num {
   font-family: var(--font-display);
-  font-size: 2.1rem;
+  font-size: 1.5rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -918,6 +926,7 @@ select:focus {
   flex-wrap: nowrap;
   justify-content: space-between;
   gap: 1px;
+  padding: 2px 0;
   margin-top: -6px;
   overflow-x: auto;
   scrollbar-width: none;
@@ -968,10 +977,11 @@ select:focus {
 }
 .stepper {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
   border-left: 5px solid var(--line);
-  padding: 12px 14px 12px 11px;
+  padding: 8px 14px 8px 11px;
 }
 .stepper + .stepper {
   border-top: 1px solid var(--line);
@@ -1012,7 +1022,7 @@ select:focus {
   gap: 9px;
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1.1rem;
+  font-size: 1rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
   min-width: 0;
@@ -1029,35 +1039,19 @@ select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.stepper-controls {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.step-btn {
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 1px solid var(--line);
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--green-700);
-}
-.step-btn:active {
-  background: var(--green-600);
-  color: #fff;
-}
 .stepper-value {
-  width: 76px;
-  perspective: 260px;
-  text-align: center;
+  /* Pushed to the end of the name row; the chips sit on the row below. */
+  margin-left: auto;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  text-align: right;
+  perspective: 260px;
 }
 .score-num {
   font-family: var(--font-display);
-  font-size: 2.3rem;
+  font-size: 1.9rem;
   font-weight: 600;
   line-height: 1;
 }
@@ -1081,6 +1075,152 @@ select:focus {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
+}
+
+/* ---------- Quick-pick score chips ---------- */
+/* .score-chips-wrap is the actual flex child of .stepper (align-items:
+   stretch) — .score-chips and .score-overflow are both its children, so
+   capping the wrap, not .score-chips alone, clamps both surfaces to the same
+   width: six columns * 72px chips + five 4px gaps. Below this width the wrap
+   stretches to fill .stepper same as always (portrait is well under the
+   cap); above it, the flex-stretch from .stepper's align-items: stretch is
+   clamped here, so both the chip row and the overflow grid stop growing in
+   landscape instead of the chips blowing up to 120px+ while the grid keeps
+   stretching past them, and both fall back to left-aligned instead of
+   stretching edge to edge. */
+.score-chips-wrap {
+  max-width: 452px;
+}
+.score-chips {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+/* A real, boxed subgrid element — not display:contents — so the
+   role="radiogroup" in ScoreChips.tsx sits on an element engines reliably
+   expose. subgrid aligns its five children to .score-chips's own column
+   tracks, so the row still reads as six equal columns. grid-column: span 5
+   here, and .score-more's grid-column: 6 below, are both coupled to
+   chipRange's fixed length of 5 (BELOW_PAR + ABOVE_PAR + 1 in
+   src/scoreChips.ts) and to the parent's repeat(6, 1fr) — if those constants
+   change, these two rules need to move with them. scoreChips.test.ts's
+   `toHaveLength(5)` assertion is the tripwire. */
+.score-chip-group {
+  grid-column: span 5;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+.score-chip {
+  min-width: 0;
+  height: 44px;
+  border-radius: 10px;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+/* Par gets a quiet anchor so the row is readable without counting. */
+.score-chip.par {
+  border-color: color-mix(in srgb, var(--muted) 40%, var(--line));
+  background: var(--card);
+}
+.score-chip[aria-checked='true'] {
+  background: var(--green-600);
+  border-color: var(--green-600);
+  color: #fff;
+}
+/* Light mode: white text on --under (#1a8f4c) measures 4.14:1, short of
+   AA's 4.5:1. green-600 keeps the selected fill at the base rule's proven
+   5.07:1; the birdie/par distinction still reads via .tone-under's left
+   border and the name row's .score-num color, both using --under as a
+   foreground — its documented role (see the --under-ink comment near the
+   top of this file). Dark mode's --under has the headroom to stay itself;
+   see the override below. */
+.tone-under .score-chip[aria-checked='true'] {
+  background: var(--green-600);
+  border-color: var(--green-600);
+}
+.tone-over .score-chip[aria-checked='true'] {
+  background: var(--over-strong);
+  border-color: var(--over-strong);
+}
+/* Dark mode: white text on --under (1.95:1) and on --over-strong (2.79:1)
+   both fail AA. var(--bg) clears both (9.55:1, 6.66:1) — same near-black-
+   text-on-bright-fill pattern as .round-del.armed above. */
+:root.dark .tone-under .score-chip[aria-checked='true'] {
+  background: var(--under);
+  border-color: var(--under);
+  color: var(--bg);
+}
+:root.dark .tone-over .score-chip[aria-checked='true'] {
+  color: var(--bg);
+}
+.score-chip:active {
+  transform: scale(0.96);
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-chip:active {
+    transform: none;
+  }
+}
+.score-more {
+  /* Explicit placement, not auto-placement, so it doesn't depend on there
+     being exactly one preceding sibling (.score-chip-group, span 5) to land
+     in the last column. */
+  grid-column: 6;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+.score-more.has-value {
+  border-color: var(--green-600);
+  color: var(--green-700);
+  background: var(--card);
+}
+/* Dark mode: --green-700 (unchanged from light) on dark --card measures
+   2.43:1, well short of AA. --fairway clears it at 6.84:1 there. --fairway
+   isn't used in light mode because it only measures 2.35:1 on the light
+   --card — green-700's 6.64:1 already covers light mode. */
+:root.dark .score-more.has-value {
+  color: var(--fairway);
+}
+.score-overflow {
+  display: grid;
+  /* Five columns × three rows fits 1–15 exactly. Measured 59px wide each on
+     a 375px phone — comfortably above the 44px touch minimum. Row width
+     tracks .score-chips-wrap's cap above, same as the inline chip row. */
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+.score-overflow .score-chip.sel {
+  background: var(--green-600);
+  border-color: var(--green-600);
+  color: #fff;
+}
+/* Same over/under tone language as the inline chips above, so a score like 9
+   on a par 4 — no inline chip checked, only reachable through the overflow
+   grid — doesn't read as a birdie just because it's selected. Specificity
+   trap: `.score-overflow .score-chip.sel` is (0,3,0); a sibling-shaped
+   `.tone-over .score-chip.sel` would tie it and lose on source order, so
+   these chain through both `.tone-*` and `.score-overflow` for (0,4,0). */
+.tone-under .score-overflow .score-chip.sel {
+  background: var(--green-600);
+  border-color: var(--green-600);
+}
+.tone-over .score-overflow .score-chip.sel {
+  background: var(--over-strong);
+  border-color: var(--over-strong);
+}
+:root.dark .tone-under .score-overflow .score-chip.sel {
+  background: var(--under);
+  border-color: var(--under);
+  color: var(--bg);
+}
+:root.dark .tone-over .score-overflow .score-chip.sel {
+  color: var(--bg);
 }
 
 /* ---------- Wolf ---------- */
@@ -1909,7 +2049,7 @@ select:focus {
   line-height: 1;
 }
 /* League strokes come off three baselines, so the cell names the matches
-   instead of counting dots — same convention as HoleStepper's .lg-chip. */
+   instead of counting dots — same convention as PlayerScoreRow's .lg-chip. */
 .sc-chips {
   position: absolute;
   top: 1px;

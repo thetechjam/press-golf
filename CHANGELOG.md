@@ -76,6 +76,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.nvmrc` and a `node` engines constraint pinning the Node major version.
 
 ### Changed
+- **One-tap score entry**: the Hole tab's `−`/`+` stepper is now a row of
+  score chips centred on par — `3 4 5 6 7` on a par 4 — so any score from
+  birdie to triple bogey is a single tap. A typical hole costs four taps
+  instead of eight. Tapping the selected chip clears that score, which also
+  fixes a dead end: a score set on the Hole tab previously couldn't be unset
+  without switching to the Card tab. Anything outside the range (an eagle, a
+  snowman) opens a 1–15 grid from the `…` chip, in place, with no keyboard.
+  Chips are 44px tall, capped at 72px wide in landscape so they don't stretch
+  edge to edge on a rotated phone. The score readout no longer draws the
+  circle/square scoring mark on this tab — that's a scorecard convention and
+  stays on the Card tab, where it's the only over/under-par signal on the
+  cell; on the Hole tab the tone-coloured left border and the selected chip's
+  fill already say the same thing, so the ring was redundant weight that also
+  grew every non-par row by 20px. The rows are still taller than the old
+  single-line stepper. An earlier version of this note claimed "four players
+  fit on screen without scrolling" — that was measured on a synthetic 812px
+  viewport with no browser chrome and no safe-area inset, and it was wrong on
+  every real device: a 390×750 installed PWA (iPhone 15) overflowed by ~60px
+  and needed a scroll to see the fourth row. A follow-up padding/gap trim
+  (tighter `.screen`/`.hole-view` gaps, slimmer `.hole-nav`/`.hole-dots`
+  padding, a smaller `.hole-num`, and a 44px `.nav-arrow`) plus the safe-area
+  double-count fix below closes that gap — four players now clear
+  `.play-foot` with room to spare on a real 390×750 device, and a fivesome
+  still scrolls to see everyone, with Next Hole staying pinned via
+  `.play-foot`'s existing `position: sticky`.
 - **Sunlight mode is renamed Glare mode** and re-iconed — a contrast glyph
   replaces the sun icon it carried before. It was always a max-contrast
   override for direct sun, not a theme, and the sun icon implied otherwise.
@@ -97,6 +122,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   course name, with disclosure text under the field.
 
 ### Fixed
+- **The Play screen double-counted the bottom safe-area inset**: `.screen`'s
+  base padding already adds `env(safe-area-inset-bottom)`, and `.play-foot` —
+  the last child on the Play screen — separately adds its own
+  `env(safe-area-inset-bottom)` on top of that, so the home-indicator inset
+  was applied twice: worth roughly 34px of extra page height, and extra
+  scrolling, on any notched iPhone. `.screen.play` now uses a flat 12px
+  bottom padding with no inset term, since `.play-foot`'s own padding already
+  clears the home indicator. Home, Setup, League Setup, and Results have no
+  `.play-foot` and keep the original inset-aware `.screen` padding.
 - **League rounds showed no handicap strokes on the scorecard**: the Card tab
   decided whether to draw stroke markers from the `useNet` flag, which league
   rounds don't set even though they score net. The result was a card showing
@@ -107,8 +141,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   room to move inside a containing block only as tall as itself, leaving the
   CTA below four leaderboards.
 - Scoring sat below the fold with multiple games active; the Hole tab now fits
-  one screen when you arrive at a hole. Entering scores grows the steppers via
-  score-mark rings, so the fourth can drop below the fold once filled in.
+  one screen when you arrive at a hole. Rows hold at a flat ~99px no matter
+  what's entered, so four players leave a constant ~22px of overflow instead
+  of the up-to-95px the old score-mark rings used to add as scores went in.
 - Handicap stroke dots were unreadable on the light theme (1.9:1 on white) —
   including the default light appearance, not only the opt-in glare mode.
 - The 18-hole progress strip on the Play screen was shrinking below the 24px

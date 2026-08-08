@@ -15,7 +15,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
   const model = buildScorecard(round);
   const [editing, setEditing] = useState<{ playerId: string; holeNumber: number } | null>(null);
 
-  // Clamped to the same 1..15 range the stepper enforces; empty clears the score.
+  // Clamped to the 1..15 range clampScore enforces below; empty clears the score.
   const commit = (playerId: string, holeNumber: number, raw: string) => {
     if (!onScore) return;
     const value = clampScore(raw);

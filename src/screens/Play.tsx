@@ -67,11 +67,11 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     setGlare(s.glare);
   };
 
-  // Scroll the flagged stepper into view and clear the flash after it plays.
+  // Scroll the flagged player row into view and clear the flash after it plays.
   useEffect(() => {
     if (!highlightId) return;
     document
-      .getElementById(`stepper-${highlightId}`)
+      .getElementById(`player-row-${highlightId}`)
       ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     const t = setTimeout(() => setHighlightId(null), 1400);
     return () => clearTimeout(t);

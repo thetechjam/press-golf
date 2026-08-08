@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
-import { scoreMarkClass } from '../scoreMark';
+import { scoreLabel } from '../scoreMark';
 import { PlayerAvatar } from './PlayerAvatar';
+import { ScoreChips } from './ScoreChips';
 
 interface Props {
   id?: string;
@@ -20,20 +21,10 @@ interface Props {
   onChange: (value: number | null) => void;
 }
 
-const labelFor = (toPar: number): string => {
-  if (toPar <= -3) return 'Albatross';
-  if (toPar === -2) return 'Eagle';
-  if (toPar === -1) return 'Birdie';
-  if (toPar === 0) return 'Par';
-  if (toPar === 1) return 'Bogey';
-  if (toPar === 2) return 'Double';
-  return `+${toPar}`;
-};
-
 // Vibration API is Android-only (no-op on iOS Safari/PWA); softer for taps, firmer for birdie+.
 const buzz = (pattern: number | number[]) => navigator.vibrate?.(pattern);
 
-export function HoleStepper({
+export function PlayerScoreRow({
   id,
   highlight = false,
   name,
@@ -68,9 +59,6 @@ export function HoleStepper({
     onChange(next);
   };
 
-  const dec = () => commit(value == null ? par : Math.max(1, value - 1));
-  const inc = () => commit(value == null ? par : Math.min(15, value + 1));
-
   return (
     <div id={id} className={`stepper tone-${tone}${highlight ? ' highlight' : ''}`}>
       <div className="stepper-name">
@@ -98,27 +86,24 @@ export function HoleStepper({
             {'•'.repeat(strokesReceived)}
           </span>
         )}
-      </div>
-      <div className="stepper-controls">
-        <button className="step-btn" onClick={dec} aria-label={`Lower ${name}'s score`}>
-          −
-        </button>
-        <div className="stepper-value">
-          {/* key forces a remount so the pop animation replays on each change */}
+        {/* Display only — the chips are the control. Must not be styled as one. */}
+        <span className="stepper-value" aria-hidden="true">
           <span
-            className={`score-num${value == null ? '' : ` ${scoreMarkClass(toPar)}`}${
-              celebrating ? ' celebrate' : ''
-            }`}
+            className={`score-num${celebrating ? ' celebrate' : ''}`}
             key={value ?? 'empty'}
           >
             {value ?? '–'}
           </span>
-          <span className="score-tag">{value == null ? 'tap' : labelFor(toPar)}</span>
-        </div>
-        <button className="step-btn" onClick={inc} aria-label={`Raise ${name}'s score`}>
-          +
-        </button>
+          <span className="score-tag">{value == null ? 'tap' : scoreLabel(toPar)}</span>
+        </span>
       </div>
+      <ScoreChips
+        name={name}
+        par={par}
+        value={value}
+        // Clearing must not buzz or celebrate — commit() is for real scores only.
+        onChange={(v) => (v == null ? onChange(null) : commit(v))}
+      />
     </div>
   );
 }
