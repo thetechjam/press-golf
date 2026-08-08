@@ -112,8 +112,16 @@ body {
     calc(32px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
   animation: screen-in 0.24s ease-out;
+}
+/* Play's .play-foot already pads itself for the home indicator (see .play-foot
+   below), so the base safe-area-inset-bottom above would be double-counted on
+   any notched/home-indicator device — Play is the only screen with a sticky
+   foot, so it's the only one that needs the base inset dropped. Home, Setup,
+   League Setup and Results have no .play-foot and still rely on the base rule. */
+.screen.play {
+  padding-bottom: 12px;
 }
 @keyframes screen-in {
   from {
@@ -627,7 +635,7 @@ select:focus {
 }
 /* Three tabs + three icon toggles share 343px at 375px wide — ~53px per tab. */
 .view-toggle .seg-btn {
-  padding: 12px 4px;
+  padding: 9px 4px;
   letter-spacing: 0.03em;
 }
 /* Wake-lock toggle: fixed slot beside the view toggle. */
@@ -840,7 +848,7 @@ select:focus {
 .hole-view {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 .hole-body {
   display: flex;
@@ -876,11 +884,11 @@ select:focus {
   align-items: center;
   justify-content: space-between;
   color: var(--ink);
-  padding: 0 2px;
+  padding: 0 14px;
 }
 .nav-arrow {
   width: 52px;
-  height: 52px;
+  height: 44px;
   font-size: 1.6rem;
   color: var(--green-700);
   background: var(--card);
@@ -895,7 +903,7 @@ select:focus {
 }
 .hole-num {
   font-family: var(--font-display);
-  font-size: 2.1rem;
+  font-size: 1.5rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -918,6 +926,7 @@ select:focus {
   flex-wrap: nowrap;
   justify-content: space-between;
   gap: 1px;
+  padding: 2px 0;
   margin-top: -6px;
   overflow-x: auto;
   scrollbar-width: none;
