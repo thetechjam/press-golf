@@ -1069,22 +1069,33 @@ select:focus {
 }
 
 /* ---------- Quick-pick score chips ---------- */
+/* .score-chips-wrap is the actual flex child of .stepper (align-items:
+   stretch) — .score-chips and .score-overflow are both its children, so
+   capping the wrap, not .score-chips alone, clamps both surfaces to the same
+   width: six columns * 72px chips + five 4px gaps. Below this width the wrap
+   stretches to fill .stepper same as always (portrait is well under the
+   cap); above it, the flex-stretch from .stepper's align-items: stretch is
+   clamped here, so both the chip row and the overflow grid stop growing in
+   landscape instead of the chips blowing up to 120px+ while the grid keeps
+   stretching past them, and both fall back to left-aligned instead of
+   stretching edge to edge. */
+.score-chips-wrap {
+  max-width: 452px;
+}
 .score-chips {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
   gap: 4px;
-  /* Six columns * 72px chips + five 4px gaps. Below this width the row
-     stretches to fill .stepper same as always (portrait is well under the
-     cap); above it, the flex-stretch from .stepper's align-items: stretch
-     is clamped here, so the row stops growing in landscape instead of
-     blowing chips up to 120px+, and falls back to left-aligned instead of
-     stretching edge to edge. */
-  max-width: 452px;
 }
 /* A real, boxed subgrid element — not display:contents — so the
    role="radiogroup" in ScoreChips.tsx sits on an element engines reliably
    expose. subgrid aligns its five children to .score-chips's own column
-   tracks, so the row still reads as six equal columns. */
+   tracks, so the row still reads as six equal columns. grid-column: span 5
+   here, and .score-more's grid-column: 6 below, are both coupled to
+   chipRange's fixed length of 5 (BELOW_PAR + ABOVE_PAR + 1 in
+   src/scoreChips.ts) and to the parent's repeat(6, 1fr) — if those constants
+   change, these two rules need to move with them. scoreChips.test.ts's
+   `toHaveLength(5)` assertion is the tripwire. */
 .score-chip-group {
   grid-column: span 5;
   display: grid;
@@ -1112,13 +1123,31 @@ select:focus {
   border-color: var(--green-600);
   color: #fff;
 }
+/* Light mode: white text on --under (#1a8f4c) measures 4.14:1, short of
+   AA's 4.5:1. green-600 keeps the selected fill at the base rule's proven
+   5.07:1; the birdie/par distinction still reads via .tone-under's left
+   border and the name row's .score-num color, both using --under as a
+   foreground — its documented role (see the --under-ink comment near the
+   top of this file). Dark mode's --under has the headroom to stay itself;
+   see the override below. */
 .tone-under .score-chip[aria-checked='true'] {
-  background: var(--under);
-  border-color: var(--under);
+  background: var(--green-600);
+  border-color: var(--green-600);
 }
 .tone-over .score-chip[aria-checked='true'] {
   background: var(--over-strong);
   border-color: var(--over-strong);
+}
+/* Dark mode: white text on --under (1.95:1) and on --over-strong (2.79:1)
+   both fail AA. var(--bg) clears both (9.55:1, 6.66:1) — same near-black-
+   text-on-bright-fill pattern as .round-del.armed above. */
+:root.dark .tone-under .score-chip[aria-checked='true'] {
+  background: var(--under);
+  border-color: var(--under);
+  color: var(--bg);
+}
+:root.dark .tone-over .score-chip[aria-checked='true'] {
+  color: var(--bg);
 }
 .score-chip:active {
   transform: scale(0.96);
@@ -1129,6 +1158,10 @@ select:focus {
   }
 }
 .score-more {
+  /* Explicit placement, not auto-placement, so it doesn't depend on there
+     being exactly one preceding sibling (.score-chip-group, span 5) to land
+     in the last column. */
+  grid-column: 6;
   color: var(--muted);
   letter-spacing: 0.08em;
 }
@@ -1137,10 +1170,18 @@ select:focus {
   color: var(--green-700);
   background: var(--card);
 }
+/* Dark mode: --green-700 (unchanged from light) on dark --card measures
+   2.43:1, well short of AA. --fairway clears it at 6.84:1 there. --fairway
+   isn't used in light mode because it only measures 2.35:1 on the light
+   --card — green-700's 6.64:1 already covers light mode. */
+:root.dark .score-more.has-value {
+  color: var(--fairway);
+}
 .score-overflow {
   display: grid;
-  /* Five columns × three rows fits 1–15 exactly, at ~64px wide each on a
-     375px phone — comfortably above the 44px touch minimum. */
+  /* Five columns × three rows fits 1–15 exactly. Measured 59px wide each on
+     a 375px phone — comfortably above the 44px touch minimum. Row width
+     tracks .score-chips-wrap's cap above, same as the inline chip row. */
   grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   margin-top: 6px;
@@ -1149,6 +1190,28 @@ select:focus {
   background: var(--green-600);
   border-color: var(--green-600);
   color: #fff;
+}
+/* Same over/under tone language as the inline chips above, so a score like 9
+   on a par 4 — no inline chip checked, only reachable through the overflow
+   grid — doesn't read as a birdie just because it's selected. Specificity
+   trap: `.score-overflow .score-chip.sel` is (0,3,0); a sibling-shaped
+   `.tone-over .score-chip.sel` would tie it and lose on source order, so
+   these chain through both `.tone-*` and `.score-overflow` for (0,4,0). */
+.tone-under .score-overflow .score-chip.sel {
+  background: var(--green-600);
+  border-color: var(--green-600);
+}
+.tone-over .score-overflow .score-chip.sel {
+  background: var(--over-strong);
+  border-color: var(--over-strong);
+}
+:root.dark .tone-under .score-overflow .score-chip.sel {
+  background: var(--under);
+  border-color: var(--under);
+  color: var(--bg);
+}
+:root.dark .tone-over .score-overflow .score-chip.sel {
+  color: var(--bg);
 }
 
 /* ---------- Wolf ---------- */
