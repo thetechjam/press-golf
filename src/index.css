@@ -376,6 +376,10 @@ button {
   font-size: 0.88rem;
   margin: 0;
 }
+.empty-help {
+  margin-top: 10px;
+  font-size: 0.88rem;
+}
 
 /* ---------- Top bar ---------- */
 .bar {
@@ -718,8 +722,8 @@ select:focus {
 }
 .game-card {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  flex-direction: column;
+  cursor: pointer;
   text-align: left;
   padding: 14px;
   border-radius: 12px;
@@ -729,6 +733,33 @@ select:focus {
 .game-card.active {
   border-color: var(--fairway);
   background: color-mix(in srgb, var(--fairway) 12%, var(--card));
+}
+.game-card-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.game-info-btn {
+  flex-shrink: 0;
+  width: var(--tap);
+  height: var(--tap);
+  margin: calc(var(--tap) / -2) calc(var(--tap) / -4) calc(var(--tap) / -2) 0;
+  border-radius: 50%;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: 1.1rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.game-info-text {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--under-ink);
+  font-size: 0.85rem;
+  line-height: 1.45;
 }
 .game-check {
   width: 24px;
@@ -748,6 +779,8 @@ select:focus {
 .game-text {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 /* Game names read like a betting menu; the blurbs stay conversational. */
 .game-text strong {
@@ -2481,4 +2514,42 @@ select:focus {
   font-size: 0.8rem;
   text-decoration: underline;
   min-height: var(--tap);
+}
+
+/* ---------- Help / How to Play ---------- */
+.help-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.help-section h3 {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  margin: 0;
+}
+.help-section p {
+  margin: 0;
+  color: var(--under-ink);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.help-game {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.help-game:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.help-game-label {
+  font-weight: 600;
+  font-size: 0.9rem;
 }

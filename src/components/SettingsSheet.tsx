@@ -5,6 +5,7 @@ import { getSettings, saveSettings } from '../storage';
 import { applyTheme } from '../theme';
 import { Sheet } from './Sheet';
 import { FeedbackForm } from './FeedbackForm';
+import { HelpSheet } from './HelpSheet';
 import { clearQueue, listQueue } from '../feedback';
 
 const THEMES: { id: Theme; label: string }[] = [
@@ -17,10 +18,11 @@ interface Props {
   onClose: () => void;
   screen: string;
   round?: Round;
+  initialView?: 'settings' | 'help';
 }
 
-export function SettingsSheet({ onClose, screen, round }: Props) {
-  const [view, setView] = useState<'settings' | 'feedback'>('settings');
+export function SettingsSheet({ onClose, screen, round, initialView = 'settings' }: Props) {
+  const [view, setView] = useState<'settings' | 'feedback' | 'help'>(initialView);
   const [queued, setQueued] = useState(() => listQueue().length);
   const [s, setS] = useState(getSettings);
 
@@ -42,9 +44,14 @@ export function SettingsSheet({ onClose, screen, round }: Props) {
   };
 
   return (
-    <Sheet title={view === 'feedback' ? 'Send feedback' : 'Settings'} onClose={onClose}>
+    <Sheet
+      title={view === 'feedback' ? 'Send feedback' : view === 'help' ? 'How to Play' : 'Settings'}
+      onClose={onClose}
+    >
       {view === 'feedback' ? (
         <FeedbackForm screen={screen} round={round} onBack={() => setView('settings')} />
+      ) : view === 'help' ? (
+        <HelpSheet onBack={() => setView('settings')} />
       ) : (
         <>
           <div className="set-group">
@@ -93,6 +100,14 @@ export function SettingsSheet({ onClose, screen, round }: Props) {
               onChange={(e) => set({ keepAwake: e.target.checked })}
             />
           </label>
+
+          <button className="set-row set-action" onClick={() => setView('help')}>
+            <span>
+              <span className="set-label">How to Play</span>
+              <span className="set-hint">Scoring, games, and league rules</span>
+            </span>
+            <span aria-hidden="true">›</span>
+          </button>
 
           <button className="set-row set-action" onClick={() => setView('feedback')}>
             <span>

@@ -42,6 +42,12 @@ const resultLine = (r: Round): string | null => {
 export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
   const [rounds, setRounds] = useState<Round[]>(listRounds());
   const [showSettings, setShowSettings] = useState(false);
+  const [settingsView, setSettingsView] = useState<'settings' | 'help'>('settings');
+
+  const openHelp = () => {
+    setSettingsView('help');
+    setShowSettings(true);
+  };
 
   const remove = (id: string) => {
     deleteRound(id);
@@ -51,7 +57,14 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
   return (
     <div className="screen home">
       <header className="hero">
-        <button className="hero-settings" onClick={() => setShowSettings(true)} aria-label="Settings">
+        <button
+          className="hero-settings"
+          onClick={() => {
+            setSettingsView('settings');
+            setShowSettings(true);
+          }}
+          aria-label="Settings"
+        >
           <GearIcon size={20} />
         </button>
         <div className="logo" role="img" aria-label="Press">
@@ -78,6 +91,9 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
           </div>
           <p className="empty-title">No rounds yet</p>
           <p className="empty-sub">Start your first round and Press keeps score for you.</p>
+          <button className="btn-ghost empty-help" onClick={openHelp}>
+            New here? See how it works ›
+          </button>
         </div>
       )}
 
@@ -127,7 +143,13 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
 
       <p className="hint">Tip: add Press to your home screen for one-tap access on the course.</p>
 
-      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} screen="home" />}
+      {showSettings && (
+        <SettingsSheet
+          onClose={() => setShowSettings(false)}
+          screen="home"
+          initialView={settingsView}
+        />
+      )}
     </div>
   );
 }
