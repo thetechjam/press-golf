@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { Round, Player, GameType, Hole, SavedCourse, TeamSetup } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { GAMES } from '../games';
+import { GAME_RULES } from '../games/rules';
 import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
@@ -46,6 +47,7 @@ export function Setup({ onCancel, onStart }: Props) {
   const [matchSideB, setMatchSideB] = useState('');
   const [matchAssign, setMatchAssign] = useState<Assign>({});
   const [showSettings, setShowSettings] = useState(false);
+  const [expandedGame, setExpandedGame] = useState<GameType | null>(null);
 
   const loadCourse = (c: SavedCourse) => {
     setCourse(c.name);
@@ -379,17 +381,42 @@ export function Setup({ onCancel, onStart }: Props) {
         <h2>Side games</h2>
         <div className="game-list">
           {GAMES.map((g) => (
-            <button
+            <div
               key={g.id}
+              role="button"
+              tabIndex={0}
               className={`game-card${games.includes(g.id) ? ' active' : ''}`}
               onClick={() => toggleGame(g.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleGame(g.id);
+                }
+              }}
             >
-              <span className="game-check">{games.includes(g.id) ? '✓' : ''}</span>
-              <span className="game-text">
-                <strong>{g.label}</strong>
-                <small>{g.blurb}</small>
-              </span>
-            </button>
+              <div className="game-card-row">
+                <span className="game-check">{games.includes(g.id) ? '✓' : ''}</span>
+                <span className="game-text">
+                  <strong>{g.label}</strong>
+                  <small>{g.blurb}</small>
+                </span>
+                <button
+                  type="button"
+                  className="game-info-btn"
+                  aria-label={`${g.label} rules`}
+                  aria-expanded={expandedGame === g.id}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setExpandedGame((cur) => (cur === g.id ? null : g.id));
+                  }}
+                >
+                  ⓘ
+                </button>
+              </div>
+              {expandedGame === g.id && (
+                <p className="game-info-text">{GAME_RULES[g.id]}</p>
+              )}
+            </div>
           ))}
         </div>
       </section>
