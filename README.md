@@ -34,6 +34,13 @@ round — a money ticker and per-game breakdown on the Hole and Board tabs —
 then resolves the final total into the fewest payments needed to settle the
 whole group.
 
+## Awards
+
+A finished round hands out a few superlatives — Shot of the Day, The Snowman,
+The ATM, Sandbagger, Wolf's Gamble — ranked by how notable they are and capped
+so no one player takes the whole card. They show on the Results screen and on
+the shared scoreboard image, and each one cites the number behind it.
+
 ## Getting started
 
 Requires [Node](https://nodejs.org) 24+ (see `.nvmrc`).

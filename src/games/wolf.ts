@@ -21,13 +21,28 @@ function teamBest(
   return Math.min(...(scores as number[]));
 }
 
-export function computeWolf(round: Round): GameResult {
+/** How one Wolf hole resolved. `null` for holes that were never played out. */
+export interface WolfOutcome {
+  hole: number;
+  wolfId: string;
+  choice: 'partner' | 'lone' | 'blind';
+  /** The Wolf's side: the Wolf alone, or the Wolf and their partner. */
+  side: string[];
+  opponents: string[];
+  result: 'won' | 'lost' | 'push';
+  /** Points at stake for the Wolf's side — 1 for a partner hole. */
+  multiplier: number;
+}
+
+/**
+ * Resolves every scored Wolf hole. The single copy of the "who was on which
+ * side and who won" rules — `computeWolf` tallies points from this, and the
+ * awards engine reads it for the lone/blind gambles worth talking about.
+ */
+export function wolfOutcomes(round: Round): WolfOutcome[] {
   const useNet = round.options.useNet;
   const { loneWolfMultiplier, blindWolfMultiplier } = round.options;
-  const points: Record<string, number> = {};
-  round.players.forEach((p) => (points[p.id] = 0));
-
-  let holesScored = 0;
+  const out: WolfOutcome[] = [];
 
   for (const h of round.holes) {
     const assignment = round.wolf[h.number];
@@ -35,34 +50,48 @@ export function computeWolf(round: Round): GameResult {
     const choice = assignment?.choice ?? null;
     if (!wolfId || !choice) continue;
 
-    // Build the two sides.
-    let wolfSide: string[];
-    if (choice.type === 'partner') wolfSide = [wolfId, choice.partnerId];
-    else wolfSide = [wolfId];
-    const opponents = round.players.map((p) => p.id).filter((id) => !wolfSide.includes(id));
+    const side = choice.type === 'partner' ? [wolfId, choice.partnerId] : [wolfId];
+    const opponents = round.players.map((p) => p.id).filter((id) => !side.includes(id));
 
-    const wolfScore = teamBest(round, h, wolfSide, useNet);
+    const wolfScore = teamBest(round, h, side, useNet);
     const oppScore = teamBest(round, h, opponents, useNet);
     if (wolfScore == null || oppScore == null) continue;
-    holesScored += 1;
 
-    if (wolfScore === oppScore) continue; // push, no points
+    out.push({
+      hole: h.number,
+      wolfId,
+      choice: choice.type,
+      side,
+      opponents,
+      result: wolfScore === oppScore ? 'push' : wolfScore < oppScore ? 'won' : 'lost',
+      multiplier:
+        choice.type === 'blind'
+          ? blindWolfMultiplier
+          : choice.type === 'lone'
+            ? loneWolfMultiplier
+            : 1,
+    });
+  }
 
-    const wolfWon = wolfScore < oppScore;
-    const multiplier =
-      choice.type === 'blind'
-        ? blindWolfMultiplier
-        : choice.type === 'lone'
-          ? loneWolfMultiplier
-          : 1;
+  return out;
+}
 
-    if (wolfWon) {
+export function computeWolf(round: Round): GameResult {
+  const points: Record<string, number> = {};
+  round.players.forEach((p) => (points[p.id] = 0));
+
+  const outcomes = wolfOutcomes(round);
+  const holesScored = outcomes.length;
+
+  for (const o of outcomes) {
+    if (o.result === 'push') continue; // push, no points
+    if (o.result === 'won') {
       // Wolf's side wins: lone/blind wolf scores the multiplier solo,
       // partners each take a point.
-      wolfSide.forEach((id) => (points[id] += multiplier));
+      o.side.forEach((id) => (points[id] += o.multiplier));
     } else {
       // Opponents win: each opponent banks a point.
-      opponents.forEach((id) => (points[id] += 1));
+      o.opponents.forEach((id) => (points[id] += 1));
     }
   }
 
