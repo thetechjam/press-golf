@@ -2553,3 +2553,58 @@ select:focus {
   font-weight: 600;
   font-size: 0.9rem;
 }
+
+/* ---- Round awards ------------------------------------------------------- */
+/* Superlatives from the finished round. Each row is avatar · title over the
+   line · the stat that backs it up, so the joke always cites its evidence. */
+.award-list {
+  gap: 6px;
+}
+.award-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+}
+.award-row + .award-row {
+  border-top: 1px solid var(--line);
+}
+.award-avatars {
+  display: inline-flex;
+}
+.award-avatars > * + * {
+  margin-left: -8px;
+}
+.award-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+/* Title and its stat share a row so the line below gets the full width —
+   at 375px a wrapped line squeezed against a nowrap stat reads badly. */
+.award-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.award-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--gold-ink);
+}
+.award-line {
+  font-size: 0.92rem;
+  color: var(--ink);
+}
+.award-detail {
+  font-family: ui-monospace, Menlo, monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+}

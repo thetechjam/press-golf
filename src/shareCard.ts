@@ -2,6 +2,7 @@ import type { Round } from './types';
 import { activeResults } from './games';
 import { computeLeague } from './games/league';
 import { computeSettlement, formatMoney } from './games/settlement';
+import { computeAwards } from './games/awards';
 import {
   CREAM, MUTED, GOLD, BRIGHT, RED, BG,
   disp, mono, setLS, up, fit, dashedRule,
@@ -171,6 +172,40 @@ export async function renderShareCard(round: Round): Promise<Blob> {
         }
       }
     }
+  }
+
+  // Awards — the round's superlatives, drawn for league nights too.
+  const awards = computeAwards(round);
+  if (awards.length) {
+    dashedRule(ctx, y, PAD, W - PAD);
+    y += 32;
+    ctx.font = disp(500, 32);
+    ctx.fillStyle = GOLD;
+    setLS(ctx, 5);
+    ctx.fillText('AWARDS', PAD, y + 30);
+    setLS(ctx, 0);
+    y += 66;
+
+    for (const a of awards) {
+      const head = y + 34;
+      ctx.font = disp(500, 32);
+      ctx.fillStyle = GOLD;
+      setLS(ctx, 3);
+      ctx.fillText(up(a.title), PAD, head);
+      setLS(ctx, 0);
+
+      ctx.font = mono(30);
+      ctx.fillStyle = MUTED;
+      ctx.textAlign = 'right';
+      ctx.fillText(fit(ctx, a.detail, MAXW * 0.45), W - PAD, head);
+      ctx.textAlign = 'left';
+
+      ctx.font = disp(500, 38);
+      ctx.fillStyle = CREAM;
+      ctx.fillText(fit(ctx, a.line, MAXW), PAD, head + 46);
+      y += 100;
+    }
+    y += 10;
   }
 
   // Footer

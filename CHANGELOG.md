@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Round awards**: a finished round now hands out superlatives — Shot of the
+  Day, Bounce Back, The Snowman, Sandbagger, The ATM, Highway Robbery, Skin
+  Thief, Wolf's Gamble, and Shut Out. They appear as a card under the winner
+  hero on Results and as an `AWARDS` block on the shared results PNG. Each is
+  a pure function of the finished `Round` in `src/games/awards.ts`, unit-tested
+  alongside the scoring engines, and every award cites the number behind it —
+  "Cy found trouble on 4 · 7 on a par 4 · +3" — so the ribbing is backed by the
+  card. A round only earns the awards it actually deserves: candidates that
+  don't clear their threshold simply don't fire, so a quiet gross round shows
+  nothing rather than filler. The top four are shown, ranked by notability,
+  with no player taking more than two so the whole group gets ribbed. Money
+  awards rank on their share of the round's biggest swing rather than on raw
+  dollars, so a $2 game and a $50 game produce the same card. There is
+  deliberately no "biggest winner" award — the hero above already says that.
+  Highway Robbery reads money per hole from a running settlement (the round
+  truncated hole by hole) rather than `money.holeSwing`, whose counterfactual
+  is only exact for the most recent hole; that's what lets a carried skin be
+  credited to the hole that actually won it.
 - **Stroke index on the scorecard**: the Card tab now carries an SI row under
   Hole and Par, showing each hole's difficulty rank — the number that decides
   where handicap strokes fall. It shows in gross rounds too, since it's a fact
@@ -76,6 +94,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.nvmrc` and a `node` engines constraint pinning the Node major version.
 
 ### Changed
+- `computeWolf` now tallies its points from a new exported `wolfOutcomes`,
+  which resolves each Wolf hole's sides, result, and multiplier. Same scoring,
+  one copy of the rules — the awards engine reads the same outcomes to find
+  the lone and blind gambles worth talking about.
 - **One-tap score entry**: the Hole tab's `−`/`+` stepper is now a row of
   score chips centred on par — `3 4 5 6 7` on a par 4 — so any score from
   birdie to triple bogey is a single tap. A typical hole costs four taps

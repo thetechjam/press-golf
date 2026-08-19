@@ -13,6 +13,7 @@ import { TrophyIcon, ShareIcon, PencilIcon } from '../icons';
 import { renderShareCard } from '../shareCard';
 import { renderScorecardCard } from '../scorecardCard';
 import { EditHandicaps } from '../components/EditHandicaps';
+import { Awards } from '../components/Awards';
 
 interface Hero {
   players: { name: string; color: string }[];
@@ -227,6 +228,8 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
           <div className="winner-sub">{hero.sub}</div>
         </div>
       )}
+
+      <Awards round={round} />
 
       {round.options.league ? (
         <section className="boards">
