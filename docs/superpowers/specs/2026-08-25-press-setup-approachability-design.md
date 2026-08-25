@@ -42,9 +42,10 @@ must complete before you may play." That is the one property worth protecting.
 
 ## Solution
 
-One screen. Players open on arrival; everything else becomes a collapsed row
-showing its current value. Nothing navigates, expansion happens in place, and
-Start stays live throughout.
+One screen. Players open on arrival; everything else becomes a row showing its
+current value, collapsed by default (with one first-run exception — see Default
+expansion). Nothing navigates, expansion happens in place, and Start stays live
+throughout.
 
 ```
 ‹              NEW ROUND              ⚙
@@ -70,6 +71,9 @@ Start stays live throughout.
   └───────────────────────────────────┘
 ```
 
+_Shown above: a returning user. On a first-ever round the crew and recent chips
+are absent and the Games row is expanded._
+
 For a returning group: tap the crew chip, tap Start. Two taps.
 
 ### Why each row carries a summary
@@ -94,6 +98,22 @@ than top-level sections. Nine sections become four rows plus Players.
 
 Rows toggle independently — not an accordion. Opening Games must not silently
 close Course; a user comparing two rows should not have to fight the screen.
+
+### Default expansion
+
+Every row starts collapsed, with one exception: **Games starts expanded when
+there is no round history** (`listRounds().length === 0`).
+
+Collapsing Games is the one part of this design that costs something real — a
+genuine first-timer may never learn that Wolf or Nassau exist. Opening it on a
+first-ever round buys that discovery back for the only person who needs it,
+and costs nothing on every round after, since the condition is false forever
+once a round is saved.
+
+The signal is deliberately round history rather than an empty roster: it asks
+"has this person ever run a round?", which is the question that matters. A user
+who deletes all their rounds gets the introduction again, which is harmless and
+arguably right.
 
 ## Player recall
 
@@ -150,10 +170,14 @@ deselected, which is existing behaviour (`Setup.tsx:160`) and out of scope.
 
 ### First-ever round
 
-With no saved rounds, both chip groups are absent and the screen is today's
-minus the wall: Players open, four collapsed rows, Start live. No empty states,
-no "you have no saved players yet" messaging — an empty affordance is worse
-than an absent one.
+With no saved rounds, both chip groups are absent — no empty states, no "you
+have no saved players yet" messaging, since an empty affordance is worse than
+an absent one. The screen is Players open, Games open (see Default expansion),
+Course / Holes / Money collapsed, Start live.
+
+So a first-timer's screen answers the two questions worth asking — who is
+playing, and what are you playing — and quietly says everything else is
+handled.
 
 ## Out of scope
 
@@ -179,6 +203,9 @@ The roster is the part with real logic and it is pure, so it carries the tests:
 - `lastCrew` returns `[]` for no rounds and for a round with fewer than two
   named players.
 - Summary formatters ("18 holes · par 72", stake summary) render each state.
+- Games defaults to expanded with no saved rounds, and collapsed with one or
+  more. This is the rule most likely to rot silently, since it is invisible
+  after a user's first round.
 
 Layout and disclosure behaviour are verified in the browser across dark, light
 and glare, portrait and landscape, and — per the standing rule for this app —
@@ -186,11 +213,11 @@ on a real device via the deploy preview before the work is called done.
 
 ## Risks
 
-- **Games hidden behind a row** means a first-timer may never discover Wolf or
-  Nassau. Accepted: Skins is preselected so the round works regardless, and
-  discovery is the couch-buddy problem this design explicitly deprioritises.
-  If it proves wrong, opening Games by default on a first-ever round is a
-  one-line change.
+- **Games hidden behind a row** would mean a first-timer never discovers Wolf
+  or Nassau. Addressed by the first-ever-round expansion above rather than
+  accepted. Residual risk: someone who plays one round and never opens Games
+  again stays on Skins forever. Acceptable — Skins is a real game and the row
+  names the current pick on every subsequent round.
 - **The crew chip replacing rather than merging** could surprise someone who
   has already typed a name. Mitigated by hiding the chip once the list matches
   the crew, and by the replacement being immediately undoable by hand.
