@@ -2992,3 +2992,101 @@ select:focus {
   width: 15px;
   text-align: center;
 }
+
+/* ---- Landscape scoring layout ---------------------------------------------
+   In landscape the chrome (header, tabs, ticker, hole nav, dots) spends ~221px
+   of a 390px viewport, and the players stack down the remaining 169px — so on
+   a 4-player round the first score chip landed at y=410 and nothing tappable
+   was on screen at all. The width is the unused resource: 844px carrying a
+   single column. Pairing the players uses it and halves the stack. */
+@media (orientation: landscape) {
+  /* Hole nav and the dot strip share one row: the nav is 52px tall and the
+     dots 28px, so side by side they cost 52px instead of 90px. The nav sizes
+     to its content and the dots take the rest of the 844px, which they have
+     plenty of room for. */
+  .hole-view {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'nav dots'
+      'body body';
+    align-items: center;
+    column-gap: 14px;
+  }
+  .hole-nav {
+    grid-area: nav;
+  }
+  .hole-dots {
+    grid-area: dots;
+  }
+  .hole-body {
+    grid-area: body;
+  }
+  /* Wolf and Nassau are one-line strips when collapsed, so stacking two
+     full-width bars spends ~110px on content that fits side by side. The
+     steppers span both columns beneath them. */
+  .hole-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+  .hole-body > .steppers {
+    grid-column: 1 / -1;
+  }
+  /* A round with only one of the two would otherwise leave its strip at half
+     width with a gap beside it. */
+  .hole-body > .wolf:only-of-type:first-child:nth-last-child(2),
+  .hole-body > .nassau:only-of-type:first-child:nth-last-child(2) {
+    grid-column: 1 / -1;
+  }
+  .steppers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  /* The vertical budget is the scarce one here; the chips keep their full
+     44px height regardless. */
+  .steppers .stepper {
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+  /* Reclaiming the last ~40px so the first pair of players is fully tappable
+     without scrolling. Everything trimmed here is spacing, never a control:
+     the chips, the nav arrows and the CTA all keep their touch targets. */
+  .screen.play {
+    padding-top: calc(6px + env(safe-area-inset-top));
+    gap: 6px;
+  }
+  .hole-view {
+    row-gap: 6px;
+  }
+  .hole-body {
+    gap: 8px;
+  }
+  .play-foot .btn-primary.big {
+    padding-top: 11px;
+    padding-bottom: 11px;
+    font-size: 1rem;
+  }
+  /* The stacked layout drew its separator with `.stepper + .stepper`, which in
+     a grid would underline the wrong edges. Every cell gets a top and left
+     hairline instead, and the outer ones are trimmed back off. */
+  .stepper + .stepper {
+    border-top: 0;
+  }
+  .steppers .stepper {
+    border-top: 1px solid var(--line);
+    border-left: 5px solid var(--line);
+    box-shadow: inset 1px 0 0 var(--line);
+  }
+  .steppers .stepper:nth-child(-n + 2) {
+    border-top: 0;
+  }
+  .steppers .stepper:nth-child(odd) {
+    box-shadow: none;
+  }
+  /* An odd player count leaves the last cell alone on its row; letting it span
+     both columns keeps the block rectangular instead of ending in a notch. */
+  .steppers .stepper:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
