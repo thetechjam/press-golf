@@ -107,11 +107,25 @@ body,
   height: 100%;
 }
 
+/* Stops the browser's pull-to-refresh reloading the app mid-round when a
+   scorekeeper overscrolls at the top of the Hole tab.
+   Two things this must get right, both of which a first attempt got wrong:
+   - It belongs on the ROOT element. Unlike `overflow`, overscroll-behavior
+     does not propagate from `body` to the viewport, and `document.scrolling
+     Element` here is `html` — with the rule on `body`, `html` still computed
+     `auto` and the gesture still fired.
+   - The keyword must be `none`, not `contain`. `contain` only stops scroll
+     chaining to ancestors and explicitly *preserves* the element's own
+     default overscroll behaviours, refresh among them. `none` is the one
+     that suppresses the default.
+   Inner scrollers (.card-scroll, .hole-dots, .money-ticker) are unaffected
+   and keep their own overscroll behaviour. */
+html {
+  overscroll-behavior-y: none;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
-  /* An overscroll at the top of the Hole tab would otherwise trigger the
-     browser's pull-to-refresh and reload the app mid-round. */
-  overscroll-behavior-y: contain;
   background-color: var(--bg);
   background-image: var(--topo);
   background-size: 420px 420px;
@@ -410,10 +424,15 @@ button {
 }
 
 /* ---------- Top bar ---------- */
+/* Actions are sized to their content and the title takes what's left. With
+   the title on `auto` and the actions on `1fr`, a long course name squeezed
+   the side columns until "‹ Rounds" wrapped to two lines and grew the header
+   — a title is the thing that should give, not a control. */
 .bar {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
+  gap: 8px;
 }
 .bar h1 {
   font-family: var(--font-display);
@@ -423,9 +442,54 @@ button {
   letter-spacing: 0.08em;
   margin: 0;
   text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The header actions read as text links, which undersold them — Finish ends
+   the round and Rounds abandons the screen, and neither looked pressable.
+   They take the same bordered-pill vocabulary as the Play toolbar's icon
+   toggles directly beneath, so the top of the screen reads as one control
+   system. Height is unchanged: .btn-ghost already reserved var(--tap), so
+   this paints the box that was always being occupied. */
+.bar .btn-ghost {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  padding: 8px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  transition: transform 0.08s ease, border-color 0.08s ease;
+}
+/* 1fr side columns would stretch a bordered button across the whole gutter. */
+.bar .btn-ghost:first-child {
+  justify-self: start;
 }
 .bar .btn-ghost:last-child {
-  text-align: right;
+  justify-self: end;
+}
+.bar .btn-ghost:active {
+  transform: scale(0.97);
+  border-color: var(--green-600);
+}
+/* Icon-only header buttons stay square, matching the toolbar toggles. */
+.bar .btn-ghost.icon,
+.hero-settings {
+  min-width: var(--tap);
+  padding: 0;
+  color: var(--muted);
+}
+.hero-settings {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* ---------- Cards & fields ---------- */
@@ -2533,10 +2597,6 @@ select:focus {
   position: absolute;
   top: 16px;
   right: 16px;
-  background: none;
-  border: 0;
-  color: var(--muted);
-  min-width: var(--tap);
   min-height: var(--tap);
 }
 .home .hero {
