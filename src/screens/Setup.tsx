@@ -65,6 +65,19 @@ export function Setup({ onCancel, onStart }: Props) {
   const toggleRow = (key: string) =>
     setOpenRows((rows) => ({ ...rows, [key]: !rows[key] }));
 
+  // Sets true rather than toggling, so an already-open row stays open, and
+  // spreads rather than replaces, so opening one row never closes another.
+  const openRow = (key: string) =>
+    setOpenRows((rows) => ({ ...rows, [key]: true }));
+
+  // An error the user cannot act on is worse than no error. Collapsing the
+  // sections took these controls out of the DOM entirely, so an error that
+  // names one has to reveal it in the same breath.
+  const gamesError = (message: string) => {
+    openRow('games');
+    setError(message);
+  };
+
   const loadCourse = (c: SavedCourse) => {
     setCourse(c.name);
     setHoleCount(c.holes.length);
@@ -91,6 +104,7 @@ export function Setup({ onCancel, onStart }: Props) {
   const saveFavorite = () => {
     const name = course.trim();
     if (!name) {
+      openRow('course');
       setError('Add a course name (in the Course row) before saving.');
       return;
     }
@@ -162,11 +176,11 @@ export function Setup({ onCancel, onStart }: Props) {
 
   const start = () => {
     if (namedPlayers.length < 1) return setError('Add at least one player.');
-    if (games.length === 0) return setError('Pick at least one game.');
+    if (games.length === 0) return gamesError('Pick at least one game.');
     for (const g of games) {
       const meta = GAMES.find((m) => m.id === g)!;
       if (namedPlayers.length < meta.minPlayers) {
-        return setError(`${meta.label} needs at least ${meta.minPlayers} players.`);
+        return gamesError(`${meta.label} needs at least ${meta.minPlayers} players.`);
       }
     }
 
@@ -202,14 +216,14 @@ export function Setup({ onCancel, onStart }: Props) {
     let nassau: TeamSetup | undefined;
     if (games.includes('nassau')) {
       const r = buildTeams(nassauMode, nassauSideA, nassauSideB, nassauAssign);
-      if (typeof r === 'string') return setError(`Nassau: ${r}`);
+      if (typeof r === 'string') return gamesError(`Nassau: ${r}`);
       nassau = r;
     }
 
     let matchPlay: TeamSetup | undefined;
     if (games.includes('matchPlay')) {
       const r = buildTeams(matchMode, matchSideA, matchSideB, matchAssign);
-      if (typeof r === 'string') return setError(`Match Play: ${r}`);
+      if (typeof r === 'string') return gamesError(`Match Play: ${r}`);
       matchPlay = r;
     }
 
