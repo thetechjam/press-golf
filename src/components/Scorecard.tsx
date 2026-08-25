@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import type { Round } from '../types';
 import { buildScorecard, formatToPar } from '../scorecardModel';
 import { clampScore } from '../scoreEntry';
@@ -14,6 +14,9 @@ interface Props {
 export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) {
   const model = buildScorecard(round);
   const [editing, setEditing] = useState<{ playerId: string; holeNumber: number } | null>(null);
+
+  /** The subtotal column that follows hole-column `i`, if any. */
+  const nineAfter = (i: number) => model.nines.find((n) => n.afterIndex === i);
 
   // Clamped to the 1..15 range clampScore enforces below; empty clears the score.
   const commit = (playerId: string, holeNumber: number, raw: string) => {
@@ -39,27 +42,33 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
       : {};
 
   return (
+    <>
     <div className="card-scroll">
       <table className="scorecard">
         <thead>
           <tr>
             <th className="sc-corner">Hole</th>
             {model.holes.map((h, i) => (
-              <th
-                key={h.number}
-                className={`sc-hole${h.number === currentHole ? ' current' : ''}`}
-                {...jumpProps(i)}
-              >
-                {h.number}
-              </th>
+              <Fragment key={h.number}>
+                <th
+                  className={`sc-hole${h.number === currentHole ? ' current' : ''}`}
+                  {...jumpProps(i)}
+                >
+                  {h.number}
+                </th>
+                {nineAfter(i) && <th className="sc-nine">{nineAfter(i)!.label}</th>}
+              </Fragment>
             ))}
             <th className="sc-total">Tot</th>
             <th className="sc-total">+/−</th>
           </tr>
           <tr className="sc-par-row">
             <th className="sc-corner">Par</th>
-            {model.holes.map((h) => (
-              <td key={h.number}>{h.par}</td>
+            {model.holes.map((h, i) => (
+              <Fragment key={h.number}>
+                <td>{h.par}</td>
+                {nineAfter(i) && <td className="sc-nine">{nineAfter(i)!.par}</td>}
+              </Fragment>
             ))}
             <td className="sc-total">{model.parTotal}</td>
             <td className="sc-total" />
@@ -69,8 +78,12 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
             <th className="sc-corner" title="Stroke index — hole difficulty rank">
               SI
             </th>
-            {model.holes.map((h) => (
-              <td key={h.number}>{h.strokeIndex}</td>
+            {model.holes.map((h, i) => (
+              <Fragment key={h.number}>
+                <td>{h.strokeIndex}</td>
+                {/* A stroke index is a rank, so it has no subtotal to show. */}
+                {nineAfter(i) && <td className="sc-nine" />}
+              </Fragment>
             ))}
             <td className="sc-total" />
             <td className="sc-total" />
@@ -87,7 +100,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                   </span>
                 )}
               </th>
-              {row.cells.map((cell) => {
+              {row.cells.map((cell, cellIndex) => {
                 const tone =
                   cell.score == null
                     ? ''
@@ -98,9 +111,14 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                         : ' even';
                 const isEditing =
                   editing?.playerId === row.playerId && editing?.holeNumber === cell.holeNumber;
+                const nine = nineAfter(cellIndex);
+                const nineTotal =
+                  nine == null
+                    ? null
+                    : row.nineTotals[model.nines.indexOf(nine)];
                 return (
+                  <Fragment key={cell.holeNumber}>
                   <td
-                    key={cell.holeNumber}
                     className={`sc-cell${tone}${cell.holeNumber === currentHole ? ' current' : ''}`}
                   >
                     {isEditing ? (
@@ -160,6 +178,10 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                       </button>
                     )}
                   </td>
+                  {nine && (
+                    <td className="sc-nine">{nineTotal ?? ''}</td>
+                  )}
+                  </Fragment>
                 );
               })}
               <td className="sc-total">{row.gross ?? ''}</td>
@@ -169,5 +191,31 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
         </tbody>
       </table>
     </div>
+    {/* The circle/square convention and the gold stroke dot were drawn all
+        over this grid and explained nowhere — the aria-labels carried the
+        meaning for screen-reader users while sighted users had to guess. */}
+    <ul className="sc-legend">
+      <li>
+        <span className="mark mark-circle" aria-hidden="true" />
+        Under par
+      </li>
+      <li>
+        <span className="mark mark-square" aria-hidden="true" />
+        Over par
+      </li>
+      <li>
+        <span className="mark mark-square mark-double" aria-hidden="true" />
+        By two or more
+      </li>
+      {model.showHandicap && (
+        <li>
+          <span className="sc-legend-dot" aria-hidden="true">
+            •
+          </span>
+          Handicap stroke
+        </li>
+      )}
+    </ul>
+    </>
   );
 }

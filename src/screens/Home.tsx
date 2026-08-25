@@ -8,6 +8,7 @@ import { InstallPrompt } from '../components/InstallPrompt';
 import { DeleteButton } from '../components/DeleteButton';
 import { FlagIcon, PressMark, TrophyIcon, XIcon, GearIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
+import { formatRoundDate } from '../roundDate';
 
 interface Props {
   onNew: () => void;
@@ -111,7 +112,7 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
                 >
                   <div className="round-title">{roundTitle(r)}</div>
                   <div className="round-sub">
-                    {r.date} · {r.players.length} players · {r.holes.length} holes
+                    {formatRoundDate(r.date)} · {r.players.length} players · {r.holes.length} holes
                     {r.status === 'finished'
                       ? ''
                       : thru === 0

@@ -19,6 +19,8 @@ const PAD = 64;
 // handicap in mono 26). Genuinely long names still truncate via fit().
 const NAME_W = 380;
 const TOTAL_W = 96;
+/** OUT / IN subtotal column. Narrower than TOT — it is a waypoint, not the headline. */
+const NINE_W = 72;
 const ROW_H = 74;
 const HEAD_ROW_H = 46;
 
@@ -27,7 +29,7 @@ const holeColWidth = (count: number) => (count > 12 ? 56 : 78);
 
 function boardWidth(model: ScorecardModel): number {
   const cols = model.holes.length * holeColWidth(model.holes.length);
-  return PAD * 2 + NAME_W + cols + TOTAL_W * 2;
+  return PAD * 2 + NAME_W + cols + model.nines.length * NINE_W + TOTAL_W * 2;
 }
 
 /** Centers text in a column. */
@@ -62,8 +64,16 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
   });
 
   const gridX = PAD + NAME_W;
-  const colX = (i: number) => gridX + i * holeW + holeW / 2;
-  const totX = gridX + model.holes.length * holeW + TOTAL_W / 2;
+  // Every column right of a subtotal shifts by its width. Counting the
+  // subtotals that precede a hole keeps one rule for holes, subtotals and
+  // totals alike, so the geometry can't drift between them.
+  const ninesBefore = (holeIndex: number) =>
+    model.nines.filter((n) => n.afterIndex < holeIndex).length * NINE_W;
+  const colX = (i: number) => gridX + i * holeW + ninesBefore(i) + holeW / 2;
+  const nineX = (n: { afterIndex: number }) =>
+    gridX + (n.afterIndex + 1) * holeW + ninesBefore(n.afterIndex) + NINE_W / 2;
+  const totX =
+    gridX + model.holes.length * holeW + model.nines.length * NINE_W + TOTAL_W / 2;
   const parX = totX + TOTAL_W;
 
   // ---- Header rows: Hole, Par, SI ----
@@ -73,6 +83,7 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
   setLS(ctx, 2);
   ctx.fillText('HOLE', PAD, y);
   model.holes.forEach((h, i) => center(ctx, `${h.number}`, colX(i), y));
+  model.nines.forEach((n) => center(ctx, n.label, nineX(n), y));
   center(ctx, 'TOT', totX, y);
   center(ctx, '+/−', parX, y);
   setLS(ctx, 0);
@@ -83,6 +94,7 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
   setLS(ctx, 2);
   ctx.fillText('PAR', PAD, y);
   model.holes.forEach((h, i) => center(ctx, `${h.par}`, colX(i), y));
+  model.nines.forEach((n) => center(ctx, `${n.par}`, nineX(n), y));
   center(ctx, `${model.parTotal}`, totX, y);
   setLS(ctx, 0);
 
@@ -182,6 +194,14 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
         ctx.fillText(cell.chips.join(''), markerRightEdge, base - 30);
         ctx.textAlign = 'left';
       }
+    });
+
+    // Nine subtotals, then the round totals.
+    ctx.font = mono(30);
+    ctx.fillStyle = MUTED;
+    model.nines.forEach((n, i) => {
+      const v = row.nineTotals[i];
+      center(ctx, v == null ? '' : `${v}`, nineX(n), base);
     });
 
     // Totals.

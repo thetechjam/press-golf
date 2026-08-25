@@ -161,11 +161,11 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
   return (
     <div className="screen setup">
       <header className="bar">
-        <button className="btn-ghost" onClick={onCancel}>
-          ‹ Back
+        <button className="btn-ghost icon back" onClick={onCancel} aria-label="Back">
+          ‹
         </button>
         <h1>Golf League</h1>
-        <button className="btn-ghost" onClick={() => setShowSettings(true)} aria-label="Settings">
+        <button className="btn-ghost icon" onClick={() => setShowSettings(true)} aria-label="Settings">
           <GearIcon size={20} />
         </button>
       </header>

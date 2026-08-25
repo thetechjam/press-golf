@@ -44,7 +44,7 @@ describe('nassauSegments', () => {
   it('appends press segments after the base bets', () => {
     const round = makeRound({ holes: holes18(), presses: [13] });
     const labels = nassauSegments(round).map((s) => s.label);
-    expect(labels).toEqual(['Front', 'Back', 'Total', 'Press h13–18']);
+    expect(labels).toEqual(['Front', 'Back', 'Total', 'Press 13–18']);
   });
 });
 

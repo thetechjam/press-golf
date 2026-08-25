@@ -14,6 +14,7 @@ import { renderShareCard } from '../shareCard';
 import { renderScorecardCard } from '../scorecardCard';
 import { EditHandicaps } from '../components/EditHandicaps';
 import { Awards } from '../components/Awards';
+import { formatRoundDate } from '../roundDate';
 
 interface Hero {
   players: { name: string; color: string }[];
@@ -192,8 +193,8 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       <header className="bar">
         {/* "Card" matches Play's tab name, and keeps this distinct from the
             Share scorecard button further down. */}
-        <button className="btn-ghost" onClick={onBackToPlay}>
-          ‹ Card
+        <button className="btn-ghost icon back" onClick={onBackToPlay} aria-label="Back to the scorecard">
+          ‹
         </button>
         <h1>Results</h1>
         <button className="btn-ghost" onClick={onHome}>
@@ -204,7 +205,7 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       <div className="results-meta">
         <div className="results-course">{round.course || 'Golf round'}</div>
         <div className="results-sub">
-          {round.date} · {round.players.length} players · {round.holes.length} holes
+          {formatRoundDate(round.date)} · {round.players.length} players · {round.holes.length} holes
         </div>
       </div>
 

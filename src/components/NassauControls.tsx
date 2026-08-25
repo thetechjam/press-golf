@@ -62,7 +62,7 @@ export function NassauControls({ round, hole, onChange }: Props) {
             .sort((a, b) => a - b)
             .map((start) => (
               <span key={start} className="press-chip">
-                Press h{start}–{endOfNine(round, start)}
+                Press {start}–{endOfNine(round, start)}
                 <button
                   onClick={() => removePress(start)}
                   aria-label={`Remove press starting hole ${start}`}

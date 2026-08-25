@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildScorecard, formatToPar } from './scorecardModel';
-import { makeRound, player, holes, scoresFrom } from './games/testFixtures';
+import { makeRound, player, holes, holes18, scoresFrom } from './games/testFixtures';
 import type { LeagueSetup } from './types';
 
 const FOUR = [
@@ -193,5 +193,91 @@ describe('formatToPar', () => {
     expect(formatToPar(0)).toBe('E');
     expect(formatToPar(3)).toBe('+3');
     expect(formatToPar(-2)).toBe('-2');
+  });
+});
+
+describe('buildScorecard — OUT / IN subtotals', () => {
+  const par4s = (nums: number[]) =>
+    nums.map((n) => ({ number: n, par: n % 3 === 0 ? 3 : 4, strokeIndex: n }));
+
+  it('emits OUT then IN for a standard 18, each after its own nine', () => {
+    const model = buildScorecard(makeRound({ holes: holes18() }));
+    expect(model.nines.map((n) => n.label)).toEqual(['OUT', 'IN']);
+    expect(model.nines.map((n) => n.afterIndex)).toEqual([8, 17]);
+  });
+
+  it('sums par per nine', () => {
+    const hs = par4s([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    const model = buildScorecard(makeRound({ holes: hs }));
+    const frontPar = hs.slice(0, 9).reduce((s, h) => s + h.par, 0);
+    const backPar = hs.slice(9).reduce((s, h) => s + h.par, 0);
+    expect(model.nines.map((n) => n.par)).toEqual([frontPar, backPar]);
+    expect(frontPar + backPar).toBe(model.parTotal);
+  });
+
+  it('totals each nine over played holes only, like gross', () => {
+    const hs = holes18();
+    // Front nine complete at 5s; back nine only holes 10 and 11 played.
+    const card = [5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6];
+    const round = makeRound({
+      players: [player('p1', 'Al')],
+      holes: hs,
+      scores: scoresFrom(hs, { p1: card }),
+    });
+    const row = buildScorecard(round).rows[0];
+    expect(row.nineTotals).toEqual([45, 12]);
+    expect(row.gross).toBe(57);
+  });
+
+  it('reports null for a nine with nothing played', () => {
+    const hs = holes18();
+    const round = makeRound({
+      players: [player('p1', 'Al')],
+      holes: hs,
+      scores: scoresFrom(hs, { p1: [4, 4, 4] }),
+    });
+    const row = buildScorecard(round).rows[0];
+    expect(row.nineTotals).toEqual([12, null]);
+  });
+
+  it('emits no subtotal column for a nine-hole round', () => {
+    // One nine means OUT would just restate TOT.
+    const model = buildScorecard(makeRound({ holes: holes(9) }));
+    expect(model.nines).toEqual([]);
+    expect(model.rows[0].nineTotals).toEqual([]);
+  });
+
+  it('emits no subtotal for a back-nine-only round', () => {
+    const hs = par4s([10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    expect(buildScorecard(makeRound({ holes: hs })).nines).toEqual([]);
+  });
+
+  it('follows play order for a rotated start, so IN comes first off the 10th', () => {
+    const hs = par4s([10, 11, 12, 13, 14, 15, 16, 17, 18, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    const model = buildScorecard(makeRound({ holes: hs }));
+    // Each subtotal must sit next to the nine it sums, not in paper-card order.
+    expect(model.nines.map((n) => n.label)).toEqual(['IN', 'OUT']);
+    expect(model.nines.map((n) => n.afterIndex)).toEqual([8, 17]);
+  });
+
+  it('keeps a rotated start’s nine totals with the right nine', () => {
+    const hs = par4s([10, 11, 12, 13, 14, 15, 16, 17, 18, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    const round = makeRound({
+      players: [player('p1', 'Al')],
+      holes: hs,
+      // Nine 6s off the 10th, then nine 4s on the front.
+      scores: scoresFrom(hs, { p1: [6, 6, 6, 6, 6, 6, 6, 6, 6, 4, 4, 4, 4, 4, 4, 4, 4, 4] }),
+    });
+    const row = buildScorecard(round).rows[0];
+    expect(row.nineTotals).toEqual([54, 36]);
+  });
+
+  it('keeps nineTotals aligned to model.nines for every row', () => {
+    const model = buildScorecard(
+      makeRound({ holes: holes18(), players: FOUR, scores: {} })
+    );
+    for (const row of model.rows) {
+      expect(row.nineTotals).toHaveLength(model.nines.length);
+    }
   });
 });

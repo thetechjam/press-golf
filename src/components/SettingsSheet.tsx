@@ -83,6 +83,7 @@ export function SettingsSheet({ onClose, screen, round, initialView = 'settings'
               <span className="set-hint">Max contrast for direct sun</span>
             </span>
             <input
+              className="switch"
               type="checkbox"
               checked={s.glare}
               onChange={(e) => set({ glare: e.target.checked })}
@@ -95,6 +96,7 @@ export function SettingsSheet({ onClose, screen, round, initialView = 'settings'
               <span className="set-hint">While scoring a round</span>
             </span>
             <input
+              className="switch"
               type="checkbox"
               checked={s.keepAwake}
               onChange={(e) => set({ keepAwake: e.target.checked })}
