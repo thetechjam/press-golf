@@ -3099,3 +3099,68 @@ select:focus {
     grid-column: 1 / -1;
   }
 }
+
+/* ---- New Round collapsible rows -------------------------------------------
+   Each row names its own current value so the screen reads as settled facts
+   rather than unanswered questions. Grouped into one card so four rows read
+   as a short list, not four separate panels. */
+.setup-rows {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.setup-row + .setup-row {
+  border-top: 1px solid var(--line);
+}
+.setup-row-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 14px;
+  text-align: left;
+}
+.setup-row-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.setup-row-summary {
+  color: var(--muted);
+  font-size: 0.88rem;
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.setup-row-chevron {
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: transform 0.16s ease;
+}
+.setup-row.open .setup-row-chevron {
+  transform: rotate(90deg);
+}
+.setup-row-body {
+  padding: 0 14px 14px;
+}
+/* The row's own card supplies the frame, so nested sections must not draw a
+   second one inside it. */
+.setup-row-body .card {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .setup-row-chevron {
+    transition: none;
+  }
+}
