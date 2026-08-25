@@ -5,7 +5,10 @@ import { GAMES } from '../games';
 import { GAME_RULES } from '../games/rules';
 import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
-import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
+import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
+import { SetupRow } from '../components/SetupRow';
+import { courseSummary, holesSummary, gamesSummary, stakesSummary } from '../setupSummary';
+import { isFirstEverRound } from '../roster';
 import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
 import { PlayerAvatar } from '../components/PlayerAvatar';
@@ -48,6 +51,19 @@ export function Setup({ onCancel, onStart }: Props) {
   const [matchAssign, setMatchAssign] = useState<Assign>({});
   const [showSettings, setShowSettings] = useState(false);
   const [expandedGame, setExpandedGame] = useState<GameType | null>(null);
+
+  // Which rows are expanded. Independent flags, not an accordion.
+  // Games opens on a first-ever round: collapsing it is the one part of this
+  // design that costs something real — a newcomer never learning Wolf or Nassau
+  // exist — and this buys that back for the only person who needs it, at no
+  // cost to every round after. Read once on mount; a round saved later in this
+  // session must not reshuffle the screen underneath the user.
+  const [openRows, setOpenRows] = useState<Record<string, boolean>>(() => ({
+    games: isFirstEverRound(listRounds()),
+  }));
+
+  const toggleRow = (key: string) =>
+    setOpenRows((rows) => ({ ...rows, [key]: !rows[key] }));
 
   const loadCourse = (c: SavedCourse) => {
     setCourse(c.name);
@@ -237,34 +253,6 @@ export function Setup({ onCancel, onStart }: Props) {
         </button>
       </header>
 
-      <CourseSearch value={course} onChange={setCourse} onPick={loadFromApi} />
-
-      {courses.length > 0 && (
-        <section className="card course-picker">
-          <h2>Load a saved course</h2>
-          <div className="saved-course-list">
-            {courses.map((c) => (
-              <div key={c.id} className="saved-course-row">
-                <button className="saved-course-load" onClick={() => loadCourse(c)}>
-                  <span className="saved-course-name">{c.name}</span>
-                  <span className="saved-course-meta">
-                    {c.holes.length} holes · par {c.holes.reduce((s, h) => s + h.par, 0)}
-                    {c.holes.some((h) => h.strokeIndex) ? ' · SI set' : ''}
-                  </span>
-                </button>
-                <DeleteButton
-                  className="saved-course-del"
-                  label={`saved course ${c.name}`}
-                  onDelete={() => removeCourse(c.id)}
-                >
-                  <XIcon />
-                </DeleteButton>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
       <section className="card">
         <h2>Players</h2>
         {players.map((p, i) => (
@@ -310,212 +298,265 @@ export function Setup({ onCancel, onStart }: Props) {
         )}
       </section>
 
-      <section className="card">
-        <h2>Holes</h2>
-        <div className="seg">
-          {[9, 18].map((n) => (
-            <button
-              key={n}
-              className={`seg-btn${holeCount === n ? ' active' : ''}`}
-              onClick={() => setHoleCountAndPars(n)}
-            >
-              {n} holes
-            </button>
-          ))}
-        </div>
-        <div className="preset-row">
-          <span>Quick set:</span>
-          <button className="chip" onClick={() => applyPreset('standard')}>
-            Standard par {holeCount === 9 ? 36 : 72}
-          </button>
-          <button className="chip" onClick={() => applyPreset('par4')}>
-            All par 4
-          </button>
-        </div>
-        <div className="par-grid">
-          {holes.map((h) => (
-            <label key={h.number} className="par-cell">
-              <span>{h.number}</span>
-              <select value={h.par} onChange={(e) => setPar(h.number, Number(e.target.value))}>
-                {[3, 4, 5, 6].map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-              {advancedHoles && (
-                <input
-                  className="si-input"
-                  type="number"
-                  min={1}
-                  max={holes.length}
-                  value={h.strokeIndex ?? ''}
-                  onChange={(e) =>
-                    setStrokeIndex(
-                      h.number,
-                      e.target.value === '' ? undefined : Number(e.target.value)
-                    )
-                  }
-                  aria-label={`Stroke index for hole ${h.number}`}
-                />
-              )}
-            </label>
-          ))}
-        </div>
-        <button className="btn-ghost add" onClick={toggleAdvanced}>
-          {advancedHoles ? '− Hide hole difficulty' : '+ Set hole difficulty (stroke index)'}
-        </button>
-        {advancedHoles && (
-          <p className="hint-inline">
-            Stroke index ranks hole difficulty (1 = hardest). Used to allocate handicap
-            strokes in net games.
-          </p>
-        )}
-        <button className="btn-ghost add" onClick={saveFavorite}>
-          <StarIcon size={16} /> Save this course for next time
-        </button>
-        {savedNote && <p className="hint-inline">{savedNote}</p>}
-      </section>
+      <div className="setup-rows">
+        <SetupRow
+          label="Course"
+          summary={courseSummary(course)}
+          open={!!openRows.course}
+          onToggle={() => toggleRow('course')}
+        >
+          <CourseSearch value={course} onChange={setCourse} onPick={loadFromApi} />
 
-      <section className="card">
-        <h2>Side games</h2>
-        <div className="game-list">
-          {GAMES.map((g) => (
-            <div
-              key={g.id}
-              role="button"
-              tabIndex={0}
-              className={`game-card${games.includes(g.id) ? ' active' : ''}`}
-              onClick={() => toggleGame(g.id)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  toggleGame(g.id);
-                }
-              }}
-            >
-              <div className="game-card-row">
-                <span className="game-check">{games.includes(g.id) ? '✓' : ''}</span>
-                <span className="game-text">
-                  <strong>{g.label}</strong>
-                  <small>{g.blurb}</small>
-                </span>
-                <button
-                  type="button"
-                  className="game-info-btn"
-                  aria-label={`${g.label} rules`}
-                  aria-expanded={expandedGame === g.id}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setExpandedGame((cur) => (cur === g.id ? null : g.id));
+          {courses.length > 0 && (
+            <section className="card course-picker">
+              <h2>Load a saved course</h2>
+              <div className="saved-course-list">
+                {courses.map((c) => (
+                  <div key={c.id} className="saved-course-row">
+                    <button className="saved-course-load" onClick={() => loadCourse(c)}>
+                      <span className="saved-course-name">{c.name}</span>
+                      <span className="saved-course-meta">
+                        {c.holes.length} holes · par {c.holes.reduce((s, h) => s + h.par, 0)}
+                        {c.holes.some((h) => h.strokeIndex) ? ' · SI set' : ''}
+                      </span>
+                    </button>
+                    <DeleteButton
+                      className="saved-course-del"
+                      label={`saved course ${c.name}`}
+                      onDelete={() => removeCourse(c.id)}
+                    >
+                      <XIcon />
+                    </DeleteButton>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </SetupRow>
+
+        <SetupRow
+          label="Games"
+          summary={gamesSummary(games)}
+          open={!!openRows.games}
+          onToggle={() => toggleRow('games')}
+        >
+          <section className="card">
+            <div className="game-list">
+              {GAMES.map((g) => (
+                <div
+                  key={g.id}
+                  role="button"
+                  tabIndex={0}
+                  className={`game-card${games.includes(g.id) ? ' active' : ''}`}
+                  onClick={() => toggleGame(g.id)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      toggleGame(g.id);
+                    }
                   }}
                 >
-                  ⓘ
-                </button>
-              </div>
-              {expandedGame === g.id && (
-                <p className="game-info-text">{GAME_RULES[g.id]}</p>
+                  <div className="game-card-row">
+                    <span className="game-check">{games.includes(g.id) ? '✓' : ''}</span>
+                    <span className="game-text">
+                      <strong>{g.label}</strong>
+                      <small>{g.blurb}</small>
+                    </span>
+                    <button
+                      type="button"
+                      className="game-info-btn"
+                      aria-label={`${g.label} rules`}
+                      aria-expanded={expandedGame === g.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExpandedGame((cur) => (cur === g.id ? null : g.id));
+                      }}
+                    >
+                      ⓘ
+                    </button>
+                  </div>
+                  {expandedGame === g.id && (
+                    <p className="game-info-text">{GAME_RULES[g.id]}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {showMatchPlay && (
+            <TeamPicker
+              label="Match Play teams"
+              players={namedPlayers}
+              canTeams={canTeams}
+              mode={matchMode}
+              onMode={setMatchMode}
+              sideA={matchSideA}
+              sideB={matchSideB}
+              onSideA={setMatchSideA}
+              onSideB={setMatchSideB}
+              assign={matchAssign}
+              onAssign={(id, v) => setMatchAssign((a) => ({ ...a, [id]: v }))}
+            />
+          )}
+
+          {showNassau && (
+            <TeamPicker
+              label="Nassau teams"
+              players={namedPlayers}
+              canTeams={canTeams}
+              mode={nassauMode}
+              onMode={setNassauMode}
+              sideA={nassauSideA}
+              sideB={nassauSideB}
+              onSideA={setNassauSideA}
+              onSideB={setNassauSideB}
+              assign={nassauAssign}
+              onAssign={(id, v) => setNassauAssign((a) => ({ ...a, [id]: v }))}
+            />
+          )}
+
+          {(showStableford || showWolf) && (
+            <section className="card">
+              <h2>Options</h2>
+              {showStableford && (
+                <label className="field">
+                  <span>Stableford scoring</span>
+                  <select
+                    value={options.stablefordMode}
+                    onChange={(e) =>
+                      setOptions({
+                        ...options,
+                        stablefordMode: e.target.value as 'standard' | 'modified',
+                      })
+                    }
+                  >
+                    <option value="standard">Standard (par = 2 pts)</option>
+                    <option value="modified">Modified (eagle = 5 pts)</option>
+                  </select>
+                </label>
               )}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {showMatchPlay && (
-        <TeamPicker
-          label="Match Play teams"
-          players={namedPlayers}
-          canTeams={canTeams}
-          mode={matchMode}
-          onMode={setMatchMode}
-          sideA={matchSideA}
-          sideB={matchSideB}
-          onSideA={setMatchSideA}
-          onSideB={setMatchSideB}
-          assign={matchAssign}
-          onAssign={(id, v) => setMatchAssign((a) => ({ ...a, [id]: v }))}
-        />
-      )}
-
-      {showNassau && (
-        <TeamPicker
-          label="Nassau teams"
-          players={namedPlayers}
-          canTeams={canTeams}
-          mode={nassauMode}
-          onMode={setNassauMode}
-          sideA={nassauSideA}
-          sideB={nassauSideB}
-          onSideA={setNassauSideA}
-          onSideB={setNassauSideB}
-          assign={nassauAssign}
-          onAssign={(id, v) => setNassauAssign((a) => ({ ...a, [id]: v }))}
-        />
-      )}
-
-      {(showStableford || showWolf) && (
-        <section className="card">
-          <h2>Options</h2>
-          {showStableford && (
-            <label className="field">
-              <span>Stableford scoring</span>
-              <select
-                value={options.stablefordMode}
-                onChange={(e) =>
-                  setOptions({
-                    ...options,
-                    stablefordMode: e.target.value as 'standard' | 'modified',
-                  })
-                }
-              >
-                <option value="standard">Standard (par = 2 pts)</option>
-                <option value="modified">Modified (eagle = 5 pts)</option>
-              </select>
-            </label>
+              {showWolf && (
+                <div className="wolf-opts">
+                  <label className="field small">
+                    <span>Lone Wolf ×</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={options.loneWolfMultiplier}
+                      onChange={(e) =>
+                        setOptions({ ...options, loneWolfMultiplier: Number(e.target.value) })
+                      }
+                    />
+                  </label>
+                  <label className="field small">
+                    <span>Blind Wolf ×</span>
+                    <input
+                      type="number"
+                      min={1}
+                      value={options.blindWolfMultiplier}
+                      onChange={(e) =>
+                        setOptions({ ...options, blindWolfMultiplier: Number(e.target.value) })
+                      }
+                    />
+                  </label>
+                </div>
+              )}
+            </section>
           )}
-          {showWolf && (
-            <div className="wolf-opts">
-              <label className="field small">
-                <span>Lone Wolf ×</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={options.loneWolfMultiplier}
-                  onChange={(e) =>
-                    setOptions({ ...options, loneWolfMultiplier: Number(e.target.value) })
-                  }
-                />
-              </label>
-              <label className="field small">
-                <span>Blind Wolf ×</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={options.blindWolfMultiplier}
-                  onChange={(e) =>
-                    setOptions({ ...options, blindWolfMultiplier: Number(e.target.value) })
-                  }
-                />
-              </label>
-            </div>
-          )}
-        </section>
-      )}
+        </SetupRow>
 
-      {games.length > 0 && (
-        <section className="card">
-          <h2>Money</h2>
-          <StakesEditor
-            games={games}
-            stakes={options.stakes}
-            onChange={(stakes) => setOptions({ ...options, stakes })}
-          />
-          <p className="hint">
-            Optional — leave blank to play for nothing. You can add or change stakes later from the
-            Board.
-          </p>
-        </section>
-      )}
+        <SetupRow
+          label="Holes & pars"
+          summary={holesSummary(holes)}
+          open={!!openRows.holes}
+          onToggle={() => toggleRow('holes')}
+        >
+          <section className="card">
+            <div className="seg">
+              {[9, 18].map((n) => (
+                <button
+                  key={n}
+                  className={`seg-btn${holeCount === n ? ' active' : ''}`}
+                  onClick={() => setHoleCountAndPars(n)}
+                >
+                  {n} holes
+                </button>
+              ))}
+            </div>
+            <div className="preset-row">
+              <span>Quick set:</span>
+              <button className="chip" onClick={() => applyPreset('standard')}>
+                Standard par {holeCount === 9 ? 36 : 72}
+              </button>
+              <button className="chip" onClick={() => applyPreset('par4')}>
+                All par 4
+              </button>
+            </div>
+            <div className="par-grid">
+              {holes.map((h) => (
+                <label key={h.number} className="par-cell">
+                  <span>{h.number}</span>
+                  <select value={h.par} onChange={(e) => setPar(h.number, Number(e.target.value))}>
+                    {[3, 4, 5, 6].map((p) => (
+                      <option key={p} value={p}>
+                        {p}
+                      </option>
+                    ))}
+                  </select>
+                  {advancedHoles && (
+                    <input
+                      className="si-input"
+                      type="number"
+                      min={1}
+                      max={holes.length}
+                      value={h.strokeIndex ?? ''}
+                      onChange={(e) =>
+                        setStrokeIndex(
+                          h.number,
+                          e.target.value === '' ? undefined : Number(e.target.value)
+                        )
+                      }
+                      aria-label={`Stroke index for hole ${h.number}`}
+                    />
+                  )}
+                </label>
+              ))}
+            </div>
+            <button className="btn-ghost add" onClick={toggleAdvanced}>
+              {advancedHoles ? '− Hide hole difficulty' : '+ Set hole difficulty (stroke index)'}
+            </button>
+            {advancedHoles && (
+              <p className="hint-inline">
+                Stroke index ranks hole difficulty (1 = hardest). Used to allocate handicap
+                strokes in net games.
+              </p>
+            )}
+            <button className="btn-ghost add" onClick={saveFavorite}>
+              <StarIcon size={16} /> Save this course for next time
+            </button>
+            {savedNote && <p className="hint-inline">{savedNote}</p>}
+          </section>
+        </SetupRow>
+
+        <SetupRow
+          label="Money"
+          summary={stakesSummary(games, options.stakes)}
+          open={!!openRows.money}
+          onToggle={() => toggleRow('money')}
+        >
+          <section className="card">
+            <StakesEditor
+              games={games}
+              stakes={options.stakes}
+              onChange={(stakes) => setOptions({ ...options, stakes })}
+            />
+            <p className="hint">
+              Optional — leave blank to play for nothing. You can add or change stakes later from the
+              Board.
+            </p>
+          </section>
+        </SetupRow>
+      </div>
 
       {error && <p className="error">{error}</p>}
 
