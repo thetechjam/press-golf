@@ -171,8 +171,8 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   return (
     <div className="screen play">
       <header className="bar">
-        <button className="btn-ghost" onClick={onExit}>
-          ‹ Rounds
+        <button className="btn-ghost icon back" onClick={onExit} aria-label="Back to rounds">
+          ‹
         </button>
         <h1>{round.course || 'Round'}</h1>
         <button className="btn-ghost" onClick={tryFinish}>

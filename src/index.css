@@ -432,14 +432,14 @@ button {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 .bar h1 {
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: 1rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   margin: 0;
   text-align: center;
   min-width: 0;
@@ -455,15 +455,33 @@ button {
    this paints the box that was always being occupied. */
 .bar .btn-ghost {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--card);
-  padding: 8px 14px;
+  /* Deliberately shorter than the 48px toolbar tabs directly beneath: these
+     are navigation, not the screen's primary controls, and two full-height
+     button rows stacked read as one crowded slab. */
+  min-height: 38px;
+  padding: 0 12px;
+  font-size: 0.85rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 4px;
   white-space: nowrap;
+  position: relative;
   transition: transform 0.08s ease, border-color 0.08s ease;
+}
+/* The visible pill is 38px so the header stays quiet, but a scorekeeper taps
+   one-handed — this grows the hit area around it without painting anything.
+   Measured 45px effective: the downward half is clipped by the screen
+   container rather than extending the full var(--tap). Deliberately not
+   given a z-index to win that — lifting it would let an invisible header
+   box steal taps from the toolbar tabs directly beneath, which is worse
+   than the 3px it recovers. */
+.bar .btn-ghost::after {
+  content: '';
+  position: absolute;
+  inset: calc((38px - var(--tap)) / 2) 0;
 }
 /* 1fr side columns would stretch a bordered button across the whole gutter. */
 .bar .btn-ghost:first-child {
@@ -479,9 +497,18 @@ button {
 /* Icon-only header buttons stay square, matching the toolbar toggles. */
 .bar .btn-ghost.icon,
 .hero-settings {
-  min-width: var(--tap);
+  min-width: 38px;
   padding: 0;
   color: var(--muted);
+}
+/* Back is the one action whose destination is obvious from context, so it
+   drops its label and gives the width to the course name. The destination
+   still rides in the accessible name. */
+.bar .btn-ghost.back {
+  font-size: 1.5rem;
+  line-height: 1;
+  padding-bottom: 3px;
+  color: var(--green-600);
 }
 .hero-settings {
   background: var(--card);
@@ -2597,7 +2624,7 @@ select:focus {
   position: absolute;
   top: 16px;
   right: 16px;
-  min-height: var(--tap);
+  min-height: 38px;
 }
 .home .hero {
   position: relative;

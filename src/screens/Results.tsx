@@ -193,8 +193,8 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       <header className="bar">
         {/* "Card" matches Play's tab name, and keeps this distinct from the
             Share scorecard button further down. */}
-        <button className="btn-ghost" onClick={onBackToPlay}>
-          ‹ Card
+        <button className="btn-ghost icon back" onClick={onBackToPlay} aria-label="Back to the scorecard">
+          ‹
         </button>
         <h1>Results</h1>
         <button className="btn-ghost" onClick={onHome}>
