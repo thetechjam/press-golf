@@ -2618,6 +2618,12 @@ select:focus {
   flex: 0 0 auto;
   width: 52px;
   height: 32px;
+  /* Both are load-bearing: the global `input, select` rule sets
+     `min-height: var(--tap)` and `padding: 12px`, and min-height beats height,
+     so without these the track rendered 52×48 — a circle at this radius, with
+     the knob stranded near the top. */
+  min-height: 0;
+  padding: 0;
   border-radius: 999px;
   background: var(--line);
   border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
@@ -2628,13 +2634,16 @@ select:focus {
 .switch::after {
   content: '';
   position: absolute;
-  top: 2px;
-  left: 2px;
+  /* Anchored to the midline, not a fixed top offset — the offset is what made
+     the misalignment visible rather than merely wrong. */
+  top: 50%;
+  left: 3px;
   width: 26px;
   height: 26px;
   border-radius: 999px;
   background: #fff;
   box-shadow: 0 1px 3px rgba(4, 17, 11, 0.35);
+  transform: translateY(-50%);
   transition: transform 0.18s ease;
 }
 .switch:checked {
@@ -2642,7 +2651,7 @@ select:focus {
   border-color: var(--green-700);
 }
 .switch:checked::after {
-  transform: translateX(20px);
+  transform: translate(20px, -50%);
 }
 .switch:focus-visible {
   outline: 2px solid var(--green-500);
