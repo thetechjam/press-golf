@@ -17,7 +17,9 @@
   --fairway: #2fbf86;
   --cream: #f4f7f2;
   --ink: #10231b;
-  --muted: #5f7068;
+  /* 4.72:1 on --card (#fff) — .board-hcp and .winner-sub are 11–14px, so
+     they need the 4.5:1 small-text ratio, which #5f7068 missed at 3.99. */
+  --muted: #56675e;
   --card: #ffffff;
   --line: #e3ebe5;
   --bg: #eef3ee;
@@ -33,9 +35,12 @@
   --gold: #e7b53c;
   /* Foreground-only gold. The base :root is a light theme, so dark ink is the
      default. Bright gold is restored only in dark mode where surfaces are dark. */
-  --gold-ink: #8a6410;
+  --gold-ink: #7d5a0c;
   --radius: 16px;
   --tap: 48px;
+  /* Width of each pinned scorecard total column (Tot, +/−). Fits "118" and
+     "+35" at 0.85rem tabular-nums with 4px side padding. */
+  --sc-total-w: 46px;
   /* Yardage-book contour lines, tiled behind everything. */
   --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(20,105,78,0.11)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
 }
@@ -75,6 +80,26 @@
   -webkit-tap-highlight-color: transparent;
 }
 
+/* A scorekeeper holds the phone one-handed and taps hard. Without this, a
+   long-press on a score chip pops iOS's selection handles and callout menu
+   over the control instead of entering a score. Inputs opt back in below. */
+button,
+[role='button'],
+[role='radio'],
+label,
+th,
+.tab,
+.chip {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+input,
+textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
 html,
 body,
 #root {
@@ -84,6 +109,9 @@ body,
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+  /* An overscroll at the top of the Hole tab would otherwise trigger the
+     browser's pull-to-refresh and reload the app mid-round. */
+  overscroll-behavior-y: contain;
   background-color: var(--bg);
   background-image: var(--topo);
   background-size: 420px 420px;
@@ -642,6 +670,20 @@ select:focus {
   padding: 9px 4px;
   letter-spacing: 0.03em;
 }
+/* The icon toggles beside these keep a fixed 48px slot, so at the 900px
+   landscape cap `flex: 1` blew each tab out to ~200px — three enormous slabs
+   next to three small squares. Capping the tab lets the row stay balanced and
+   pushes the toggles to the right edge where they belong. */
+.view-toggle .seg-btn {
+  max-width: 140px;
+}
+.view-toggle .awake-toggle {
+  margin-left: auto;
+}
+.view-toggle .awake-toggle ~ .awake-toggle,
+.view-toggle .awake-toggle ~ button {
+  margin-left: 0;
+}
 /* Wake-lock toggle: fixed slot beside the view toggle. */
 .awake-toggle {
   position: relative;
@@ -954,6 +996,9 @@ select:focus {
 
 /* Glanceable per-hole progress strip. Dots are small, but each button is a
    full 24px WCAG 2.5.8 tap target; the visual dot lives in ::before. */
+/* Both scrollers hide their scrollbar, so at 375px the 18th dot and the last
+   player's money were simply cut off with nothing to say more existed. The
+   mask fades the overflowing edge, which reads as "keep scrolling". */
 .hole-dots {
   display: flex;
   flex-wrap: nowrap;
@@ -1376,11 +1421,16 @@ select:focus {
   border-radius: var(--radius);
   padding: 12px 14px;
 }
+/* The status pill started life as a short flag ("LIVE" / "FINAL") but now
+   carries a full sentence from the engines — "Marcus leads · 67 net (71)".
+   Without wrap it steals width from the title and breaks both onto two lines,
+   so the pill drops to its own row once the pair no longer fits. */
 .board-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
-  gap: 8px;
+  gap: 4px 8px;
   margin-bottom: 8px;
 }
 .board-title {
@@ -1404,6 +1454,11 @@ select:focus {
   border-radius: 999px;
   padding: 3px 9px;
   align-self: center;
+  /* A pill is a pill only on one line — wrapping overruns the rounded border. */
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .board-list {
   list-style: none;
@@ -1413,9 +1468,13 @@ select:focus {
   flex-direction: column;
   gap: 2px;
 }
+/* The detail column used to be `auto` — it never shrank, so a long Nassau
+   detail ("Jesse & Marcus won 2&1") starved the 1fr name column and
+   ellipsized the bet label down to a bare "PRESS …". Flipping which column
+   is elastic lets the detail wrap and keeps every label whole. */
 .board-row {
   display: grid;
-  grid-template-columns: 24px 1fr auto;
+  grid-template-columns: 24px minmax(0, auto) minmax(0, 1fr);
   align-items: center;
   gap: 10px;
   padding: 7px 6px;
@@ -1426,7 +1485,7 @@ select:focus {
 }
 /* League rows have no rank/trophy gutter — names sit flush left. */
 .league-board .board-row {
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
 }
 .board-rank {
   font-size: 0.8rem;
@@ -1456,6 +1515,12 @@ select:focus {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   color: var(--muted);
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  /* Nassau details are prose, not numbers, and wrap to two lines on a phone.
+     Balancing splits them evenly instead of stranding one word on line two. */
+  text-wrap: balance;
 }
 .board-row.leader .board-detail {
   color: var(--ink);
@@ -1917,6 +1982,16 @@ select:focus {
 .mark-square {
   border-radius: 4px;
 }
+/* Bogey and double+ used to draw the same 2px square, separated only by the
+   outer ring — which made a high-handicap row read as an undifferentiated wall
+   of red and buried the blow-up holes. A hairline bogey box keeps the mark
+   (paper cards do box bogeys) while letting double+ carry the visual weight.
+   The box is softened via border-color rather than opacity, which would dim
+   the digit inside it too and drop the score below its contrast floor. */
+.mark-square:not(.mark-double) {
+  border-width: 1px;
+  border-color: color-mix(in srgb, currentColor 55%, transparent);
+}
 /* Second ring for eagle / double-bogey+ — gap drawn in the card color. */
 .mark-double {
   box-shadow: 0 0 0 2px var(--card), 0 0 0 4px currentColor;
@@ -2002,10 +2077,19 @@ select:focus {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 8px;
+  /* No right padding: a sticky `right: 0` is measured from the scrollport's
+     padding box, so 8px here would park the pinned totals 8px inland and let
+     hole cells scroll visibly through the strip beside them. The totals carry
+     their own side padding instead. */
+  padding: 8px 0 8px 8px;
 }
+/* `separate` with zero spacing, not `collapse`: a collapsed border is shared
+   between neighbouring cells and is not painted over by either cell's own
+   background, so scrolled hole cells showed through a 1px seam alongside the
+   pinned totals. With `separate` each cell paints its full box. */
 .scorecard {
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   width: 100%;
   font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
@@ -2062,16 +2146,58 @@ select:focus {
 .scorecard td.sc-cell {
   padding: 0;
 }
+/* --over and --under are accent-only (see the token comments); the scorecard
+   paints them as small text, where they measure ~4.1–4.4:1. The -ink / -strong
+   pair exists for exactly this and is identical in dark mode. */
 .sc-cell.under {
-  color: var(--under);
+  color: var(--under-ink);
   font-weight: 700;
 }
 .sc-cell.over {
-  color: var(--over);
+  color: var(--over-strong);
 }
-.sc-total {
+/* Tot and +/− are the two numbers anyone actually looks for, and they sat at
+   the far end of an 18-column scroll — the name column was pinned left while
+   the totals were not pinned at all. Pinning them right means a glance at any
+   row gives you the total without travelling to hole 18 and back.
+   Addressed by position rather than a class because they are always the last
+   two cells of every row, header rows included. */
+/* Selector must out-specify `.scorecard th, .scorecard td` (0,2,1) below, or
+   that rule's min-width and padding win and the widths here never apply —
+   which is exactly what left a gap between the two pinned columns. */
+.scorecard th.sc-total,
+.scorecard td.sc-total {
   font-weight: 700;
   border-left: 1px solid var(--line);
+  /* One source of truth: the pinned Tot column offsets itself by exactly the
+     width of the +/− column beside it. Hard-coding the two separately left a
+     gap the moment "+35" grew the last column past the assumed width, and
+     hole cells scrolled through it. */
+  width: var(--sc-total-w);
+  min-width: var(--sc-total-w);
+  max-width: var(--sc-total-w);
+  padding-left: 4px;
+  padding-right: 4px;
+  position: sticky;
+  right: 0;
+  background: var(--card);
+  z-index: 1;
+}
+.scorecard th.sc-total:nth-last-child(2),
+.scorecard td.sc-total:nth-last-child(2) {
+  right: var(--sc-total-w);
+  border-left: 1px solid var(--line);
+}
+/* The pinned pair needs an edge, or scrolled cells appear to slide out of
+   nowhere underneath them. */
+.scorecard th.sc-total:nth-last-child(2)::before,
+.scorecard td.sc-total:nth-last-child(2)::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 -9px;
+  width: 8px;
+  background: linear-gradient(to right, transparent, color-mix(in srgb, var(--ink) 10%, transparent));
+  pointer-events: none;
 }
 .sc-dots {
   position: absolute;
@@ -2304,9 +2430,16 @@ select:focus {
   align-items: center;
   justify-content: space-between;
 }
+/* Screen titles are Oswald 500 uppercase everywhere else; the sheet heading
+   sat at the default h2 weight of 700, outside the face's 500–600 range, and
+   in sentence case — so it read as a different typeface from the screen it
+   opened over. */
 .sheet-head h2 {
   margin: 0;
   font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .sheet-close {
   background: none;
@@ -2337,6 +2470,54 @@ select:focus {
 .set-hint {
   color: var(--muted);
   font-size: 0.85rem;
+}
+
+/* Bare `input[type=checkbox]` rendered as the OS control — on iOS that meant
+   a system-blue tick sitting in an otherwise all-green app, the loudest
+   off-brand element in the UI. Also 20px in a 48px row, well under a
+   comfortable target for a gloved hand. */
+.switch {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 32px;
+  border-radius: 999px;
+  background: var(--line);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.18s ease, border-color 0.18s ease;
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(4, 17, 11, 0.35);
+  transition: transform 0.18s ease;
+}
+.switch:checked {
+  background: var(--green-600);
+  border-color: var(--green-700);
+}
+.switch:checked::after {
+  transform: translateX(20px);
+}
+.switch:focus-visible {
+  outline: 2px solid var(--green-500);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .switch::after {
+    transition: none;
+  }
 }
 .set-override {
   background: none;
@@ -2581,12 +2762,14 @@ select:focus {
   flex-direction: column;
   min-width: 0;
 }
-/* Title and its stat share a row so the line below gets the full width —
-   at 375px a wrapped line squeezed against a nowrap stat reads badly. */
+/* The citation used to sit beside the title on a nowrap right-aligned edge.
+   With real award names ("WOLF'S GAMBLE") and real citations ("blind wolf ·
+   fed the pack") the title wrapped while the stat floated alongside it, and
+   in landscape the pair ended up ~600px apart. Stacking title → line →
+   citation keeps the joke and its evidence together at every width. */
 .award-head {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   gap: 10px;
 }
 .award-title {
@@ -2601,10 +2784,80 @@ select:focus {
   font-size: 0.92rem;
   color: var(--ink);
 }
+/* Was ui-monospace — the only mono in the app, which read as debug output
+   next to Oswald. The scoreboard face is the house voice for numbers. */
 .award-detail {
-  font-family: ui-monospace, Menlo, monospace;
-  font-size: 0.8rem;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--muted);
-  text-align: right;
-  white-space: nowrap;
+  margin-top: 2px;
+}
+
+
+/* ---- Edge fade for the horizontal strips (hole dots, money ticker) --------
+   `data-fade` is set by useEdgeFade, which measures real overflow — so a strip
+   that fits (landscape, or a two-player ticker) gets no mask at all and its
+   last item stays fully painted. */
+[data-fade='right'] {
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent 100%);
+}
+[data-fade='left'] {
+  mask-image: linear-gradient(to left, #000 calc(100% - 28px), transparent 100%);
+}
+[data-fade='both'] {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 28px,
+    #000 calc(100% - 28px),
+    transparent 100%
+  );
+}
+
+/* ---- Scorecard legend ----------------------------------------------------
+   Sits under the grid on the Card tab, where the marks are densest and where
+   the screen previously ran out of content halfway down. */
+.sc-legend {
+  list-style: none;
+  margin: 10px 2px 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  font-size: 0.76rem;
+  color: var(--muted);
+}
+.sc-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+/* The double ring is drawn with box-shadow, 4px outside the border box, so it
+   needs the extra room the layout does not know about. */
+.sc-legend .mark-double {
+  margin-right: 4px;
+}
+/* Empty marks at a size that reads as a key, not as a score. */
+.sc-legend .mark {
+  min-width: 15px;
+  width: 15px;
+  height: 15px;
+  padding: 0;
+  color: var(--muted);
+}
+.sc-legend .mark-circle {
+  color: var(--under-ink);
+}
+.sc-legend .mark-square {
+  color: var(--over-strong);
+}
+.sc-legend-dot {
+  color: var(--gold-ink);
+  font-size: 1.1rem;
+  line-height: 0.6;
+  width: 15px;
+  text-align: center;
 }

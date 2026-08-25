@@ -6,6 +6,14 @@ export function nassauTeams(round: Round): { a: Side; b: Side } {
   return resolveSides(round, round.options.nassau);
 }
 
+/**
+ * "Jesse & Marcus leads 4–0" is wrong — a 2v2 side is a plural subject. The
+ * singular-only phrasing shipped because the copy was written against 1v1.
+ */
+function leadVerb(side: Side): string {
+  return side.ids.length > 1 ? 'lead' : 'leads';
+}
+
 /** Holes belonging to the same nine as the given hole. */
 export function nineHolesFor(round: Round, holeNumber: number): Hole[] {
   const isFront = holeNumber <= 9;
@@ -43,7 +51,9 @@ export function nassauSegments(round: Round): NassauSegment[] {
 
   for (const start of [...(round.presses ?? [])].sort((a, b) => a - b)) {
     segments.push({
-      label: `Press h${start}–${endOfNine(round, start)}`,
+      // Dropped the `h` prefix: the board renders labels uppercase, where
+      // "PRESS H13–18" read as a typo.
+      label: `Press ${start}–${endOfNine(round, start)}`,
       holes: pressHoles(round, start),
       isPress: true,
     });
@@ -77,8 +87,8 @@ export function computeNassau(round: Round): GameResult {
 
   let status: string;
   if (aWins === 0 && bWins === 0) status = 'All bets open';
-  else if (aWins > bWins) status = `${a.label} leads ${aWins}–${bWins}`;
-  else if (bWins > aWins) status = `${b.label} leads ${bWins}–${aWins}`;
+  else if (aWins > bWins) status = `${a.label} ${leadVerb(a)} ${aWins}–${bWins}`;
+  else if (bWins > aWins) status = `${b.label} ${leadVerb(b)} ${bWins}–${aWins}`;
   else status = `Tied ${aWins}–${bWins}`;
 
   return {

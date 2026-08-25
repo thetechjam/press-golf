@@ -1,6 +1,7 @@
 import type { Round, Hole } from '../types';
 import { computeSettlement, formatMoney } from '../games/settlement';
 import { colorMap } from '../player';
+import { useEdgeFade } from '../useEdgeFade';
 
 /**
  * Glanceable money line for the Hole tab. Player order is fixed, never sorted,
@@ -8,12 +9,19 @@ import { colorMap } from '../player';
  * Renders nothing when no stake is set — a friendly round shows no dead $0 bar.
  */
 export function MoneyTicker({ round }: { round: Round }) {
+  const { ref, edge } = useEdgeFade<HTMLDivElement>();
   const settlement = computeSettlement(round);
-  if (!settlement.active) return null;
   const colors = colorMap(round);
+  if (!settlement.active) return null;
 
   return (
-    <div className="money-ticker" role="group" aria-label="Money so far">
+    <div
+      className="money-ticker"
+      ref={ref}
+      data-fade={edge}
+      role="group"
+      aria-label="Money so far"
+    >
       {round.players.map((p) => {
         const net = settlement.totals[p.id] ?? 0;
         return (
@@ -46,9 +54,12 @@ export function SwingTicker({
   hole: Hole;
   swing: Record<string, number>;
 }) {
+  const { ref, edge } = useEdgeFade<HTMLDivElement>();
   return (
     <div
       className="money-ticker"
+      ref={ref}
+      data-fade={edge}
       role="group"
       aria-label={`Money swing on hole ${hole.number}`}
     >

@@ -6,6 +6,7 @@ import { NassauControls } from '../components/NassauControls';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
 import { leagueStrokesOnHole } from '../games/league';
 import { playerColor } from '../player';
+import { useEdgeFade } from '../useEdgeFade';
 
 interface Props {
   round: Round;
@@ -24,7 +25,9 @@ export function HoleView({
   round, hole, idx, dir, highlightId, holeComplete, onGo, onScore, onWolf, onPresses,
 }: Props) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const dotsRef = useRef<HTMLDivElement>(null);
+  // One ref serves both jobs: keeping the current dot centred, and measuring
+  // which edge still hides holes.
+  const { ref: dotsRef, edge: dotsEdge } = useEdgeFade<HTMLDivElement>();
   const siMap = strokeIndexMap(round);
   const last = idx === round.holes.length - 1;
 
@@ -42,7 +45,10 @@ export function HoleView({
     const left = Math.max(0, Math.min(target, max));
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     container.scrollTo({ left, behavior: reduceMotion ? 'auto' : 'smooth' });
-  }, [idx]);
+    // dotsRef now comes from useEdgeFade rather than a local useRef, so the
+    // linter can no longer see that it's a stable ref object. Listing it is a
+    // no-op at runtime and keeps the rule honest.
+  }, [idx, dotsRef]);
 
   const onTouchStart = (e: React.TouchEvent) => {
     const t = e.changedTouches[0];
@@ -75,7 +81,7 @@ export function HoleView({
         <button className="nav-arrow" onClick={() => onGo(idx + 1)} disabled={last} aria-label="Next hole">›</button>
       </div>
 
-      <div className="hole-dots" ref={dotsRef} aria-label="Hole progress">
+      <div className="hole-dots" ref={dotsRef} data-fade={dotsEdge} aria-label="Hole progress">
         {round.holes.map((h, i) => (
           <button
             key={h.number}

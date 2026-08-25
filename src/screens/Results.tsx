@@ -14,6 +14,7 @@ import { renderShareCard } from '../shareCard';
 import { renderScorecardCard } from '../scorecardCard';
 import { EditHandicaps } from '../components/EditHandicaps';
 import { Awards } from '../components/Awards';
+import { formatRoundDate } from '../roundDate';
 
 interface Hero {
   players: { name: string; color: string }[];
@@ -204,7 +205,7 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       <div className="results-meta">
         <div className="results-course">{round.course || 'Golf round'}</div>
         <div className="results-sub">
-          {round.date} · {round.players.length} players · {round.holes.length} holes
+          {formatRoundDate(round.date)} · {round.players.length} players · {round.holes.length} holes
         </div>
       </div>
 

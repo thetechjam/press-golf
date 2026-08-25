@@ -39,6 +39,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
       : {};
 
   return (
+    <>
     <div className="card-scroll">
       <table className="scorecard">
         <thead>
@@ -169,5 +170,31 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
         </tbody>
       </table>
     </div>
+    {/* The circle/square convention and the gold stroke dot were drawn all
+        over this grid and explained nowhere — the aria-labels carried the
+        meaning for screen-reader users while sighted users had to guess. */}
+    <ul className="sc-legend">
+      <li>
+        <span className="mark mark-circle" aria-hidden="true" />
+        Under par
+      </li>
+      <li>
+        <span className="mark mark-square" aria-hidden="true" />
+        Over par
+      </li>
+      <li>
+        <span className="mark mark-square mark-double" aria-hidden="true" />
+        By two or more
+      </li>
+      {model.showHandicap && (
+        <li>
+          <span className="sc-legend-dot" aria-hidden="true">
+            •
+          </span>
+          Handicap stroke
+        </li>
+      )}
+    </ul>
+    </>
   );
 }
