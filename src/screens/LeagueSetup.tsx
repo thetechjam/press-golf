@@ -7,6 +7,8 @@ import { DeleteButton } from '../components/DeleteButton';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 import { StarIcon, XIcon, GearIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
+import { SetupRow } from '../components/SetupRow';
+import { leagueCourseSummary } from '../setupSummary';
 
 interface Props {
   onCancel: () => void;
@@ -43,6 +45,11 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   const [savedNote, setSavedNote] = useState('');
   const [error, setError] = useState('');
+  // The pars/stroke-index grid is the biggest block on this screen and is
+  // almost always left at its defaults, but the Front/Back toggle above it is
+  // the one control a league night genuinely changes. Collapsing the grid
+  // keeps that toggle reachable without scrolling past 200px of selects.
+  const [courseDetailOpen, setCourseDetailOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   const switchNine = (n: Nine) => {
@@ -245,33 +252,47 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
             </button>
           ))}
         </div>
-        <div className="par-grid">
-          {holes.map((h) => (
-            <div key={h.number} className="par-cell">
-              <span>{h.number}</span>
-              <select value={h.par} onChange={(e) => setPar(h.number, Number(e.target.value))}>
-                {[3, 4, 5, 6].map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-              <input
-                className="si-input"
-                type="number"
-                min={1}
-                max={9}
-                value={h.strokeIndex ?? ''}
-                onChange={(e) => setSI(h.number, e.target.value === '' ? undefined : Number(e.target.value))}
-                aria-label={`Stroke index for hole ${h.number}`}
-              />
-            </div>
-          ))}
-        </div>
-        <p className="hint-inline">Top box = par, bottom = stroke index (1 = hardest).</p>
-        <button className="btn-ghost add" onClick={saveFavorite}>
-          <StarIcon size={16} /> Save this course for next time
-        </button>
+        {/* "SI" rather than the full phrase: it is already this app's vocabulary
+            (the Card tab's SI row, the saved-course list's "SI set"), the row's
+            own hint spells it out when opened, and the shorter label leaves the
+            summary enough width that the "SI gaps" warning cannot truncate. */}
+        <SetupRow
+          label="Pars & SI"
+          summary={leagueCourseSummary(holes)}
+          open={courseDetailOpen}
+          onToggle={() => setCourseDetailOpen((o) => !o)}
+        >
+          <div className="par-grid">
+            {holes.map((h) => (
+              <div key={h.number} className="par-cell">
+                <span>{h.number}</span>
+                <select value={h.par} onChange={(e) => setPar(h.number, Number(e.target.value))}>
+                  {[3, 4, 5, 6].map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  className="si-input"
+                  type="number"
+                  min={1}
+                  max={9}
+                  value={h.strokeIndex ?? ''}
+                  onChange={(e) => setSI(h.number, e.target.value === '' ? undefined : Number(e.target.value))}
+                  aria-label={`Stroke index for hole ${h.number}`}
+                />
+              </div>
+            ))}
+          </div>
+          <p className="hint-inline">Top box = par, bottom = stroke index (1 = hardest).</p>
+          <button className="btn-ghost add" onClick={saveFavorite}>
+            <StarIcon size={16} /> Save this course for next time
+          </button>
+        </SetupRow>
+        {/* Outside the row on purpose: loading a course from the search at the
+            top of the screen writes this note, so hiding it inside a collapsed
+            row would swallow the confirmation for an action taken elsewhere. */}
         {savedNote && <p className="hint-inline">{savedNote}</p>}
       </section>
 

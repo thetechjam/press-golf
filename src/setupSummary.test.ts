@@ -4,6 +4,7 @@ import {
   holesSummary,
   gamesSummary,
   stakesSummary,
+  leagueCourseSummary,
 } from './setupSummary';
 import { holes, holes18 } from './games/testFixtures';
 
@@ -78,5 +79,45 @@ describe('stakesSummary', () => {
 
   it('keeps a decimal stake readable', () => {
     expect(stakesSummary(['skins'], { skins: 2.5 })).toBe('$2.50 Skins');
+  });
+});
+
+describe('leagueCourseSummary', () => {
+  const nine = (overrides: Partial<Record<number, Partial<{ par: number; strokeIndex?: number }>>> = {}) =>
+    Array.from({ length: 9 }, (_, i) => ({
+      number: i + 1,
+      par: 4,
+      strokeIndex: i + 1,
+      ...(overrides[i + 1] ?? {}),
+    }));
+
+  it('shows par and stays silent when every hole has a stroke index', () => {
+    // League holes are seeded with an index, so the complete case is the norm;
+    // saying "SI set" every round would train the eye to skip the line.
+    expect(leagueCourseSummary(nine())).toBe('Par 36');
+  });
+
+  it('flags an incomplete stroke index, which changes how strokes fall', () => {
+    expect(leagueCourseSummary(nine({ 4: { strokeIndex: undefined } }))).toBe('Par 36 · SI gaps');
+  });
+
+  it('keeps the summary short enough to survive the row header', () => {
+    // The header gives the summary ~110px beside a long label. An earlier
+    // wording ("SI incomplete") truncated to "SI inco…", cutting off the one
+    // word the line exists to deliver.
+    expect(leagueCourseSummary(nine({ 4: { strokeIndex: undefined } })).length).toBeLessThanOrEqual(18);
+  });
+
+  it('totals real pars rather than assuming all fours', () => {
+    expect(leagueCourseSummary(nine({ 3: { par: 3 }, 8: { par: 5 } }))).toBe('Par 36');
+    expect(leagueCourseSummary(nine({ 3: { par: 3 } }))).toBe('Par 35');
+  });
+
+  it('omits the hole count, since a league nine is always nine', () => {
+    expect(leagueCourseSummary(nine())).not.toMatch(/hole/i);
+  });
+
+  it('reports no holes rather than an empty string', () => {
+    expect(leagueCourseSummary([])).toBe('No holes');
   });
 });
