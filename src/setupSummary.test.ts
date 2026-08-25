@@ -98,14 +98,18 @@ describe('leagueCourseSummary', () => {
   });
 
   it('flags an incomplete stroke index, which changes how strokes fall', () => {
-    expect(leagueCourseSummary(nine({ 4: { strokeIndex: undefined } }))).toBe('Par 36 · SI gaps');
+    expect(leagueCourseSummary(nine({ 4: { strokeIndex: undefined } }))).toBe('Par 36 · gaps');
   });
 
   it('keeps the summary short enough to survive the row header', () => {
-    // The header gives the summary ~110px beside a long label. An earlier
-    // wording ("SI incomplete") truncated to "SI inco…", cutting off the one
-    // word the line exists to deliver.
-    expect(leagueCourseSummary(nine({ 4: { strokeIndex: undefined } })).length).toBeLessThanOrEqual(18);
+    // Measured at 375px: the label takes 143px of a 309px header, leaving the
+    // summary ~110px. Both "SI gaps" and "incomplete" overran it and truncated
+    // mid-word. 14 characters is what actually fits.
+    expect(leagueCourseSummary(nine({ 4: { strokeIndex: undefined } })).length).toBeLessThanOrEqual(14);
+  });
+
+  it('does not repeat the noun its row label already carries', () => {
+    expect(leagueCourseSummary(nine({ 4: { strokeIndex: undefined } }))).not.toMatch(/stroke|SI/i);
   });
 
   it('totals real pars rather than assuming all fours', () => {

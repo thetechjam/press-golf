@@ -371,7 +371,7 @@ export function Setup({ onCancel, onStart }: Props) {
                       <span className="saved-course-name">{c.name}</span>
                       <span className="saved-course-meta">
                         {c.holes.length} holes · par {c.holes.reduce((s, h) => s + h.par, 0)}
-                        {c.holes.some((h) => h.strokeIndex) ? ' · SI set' : ''}
+                        {c.holes.some((h) => h.strokeIndex) ? ' · stroke index set' : ''}
                       </span>
                     </button>
                     <DeleteButton

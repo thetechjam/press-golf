@@ -76,7 +76,7 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
     gridX + model.holes.length * holeW + model.nines.length * NINE_W + TOTAL_W / 2;
   const parX = totX + TOTAL_W;
 
-  // ---- Header rows: Hole, Par, SI ----
+  // ---- Header rows: Hole, Par, Stroke Index ----
   y += HEAD_ROW_H;
   ctx.font = disp(600, 30);
   ctx.fillStyle = GOLD;
@@ -102,7 +102,7 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
   ctx.font = disp(500, 24);
   ctx.fillStyle = MUTED;
   setLS(ctx, 2);
-  ctx.fillText('SI', PAD, y);
+  ctx.fillText('STROKE INDEX', PAD, y);
   model.holes.forEach((h, i) => center(ctx, `${h.strokeIndex}`, colX(i), y));
   setLS(ctx, 0);
 

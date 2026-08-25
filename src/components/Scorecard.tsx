@@ -76,7 +76,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
           {/* Stroke index is a fact about the course, so it shows in gross play too. */}
           <tr className="sc-si-row">
             <th className="sc-corner" title="Stroke index — hole difficulty rank">
-              SI
+              Stroke Index
             </th>
             {model.holes.map((h, i) => (
               <Fragment key={h.number}>

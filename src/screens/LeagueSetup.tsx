@@ -194,7 +194,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
                   <span className="saved-course-name">{c.name}</span>
                   <span className="saved-course-meta">
                     {c.holes.length} holes · par {c.holes.reduce((s, h) => s + h.par, 0)}
-                    {c.holes.some((h) => h.strokeIndex) ? ' · SI set' : ''}
+                    {c.holes.some((h) => h.strokeIndex) ? ' · stroke index set' : ''}
                   </span>
                 </button>
                 <DeleteButton
@@ -252,12 +252,8 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
             </button>
           ))}
         </div>
-        {/* "SI" rather than the full phrase: it is already this app's vocabulary
-            (the Card tab's SI row, the saved-course list's "SI set"), the row's
-            own hint spells it out when opened, and the shorter label leaves the
-            summary enough width that the "SI gaps" warning cannot truncate. */}
         <SetupRow
-          label="Pars & SI"
+          label="Pars & Stroke Index"
           summary={leagueCourseSummary(holes)}
           open={courseDetailOpen}
           onToggle={() => setCourseDetailOpen((o) => !o)}
