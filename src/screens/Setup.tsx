@@ -91,7 +91,7 @@ export function Setup({ onCancel, onStart }: Props) {
   const saveFavorite = () => {
     const name = course.trim();
     if (!name) {
-      setError('Add a course name (top field) before saving.');
+      setError('Add a course name (in the Course row) before saving.');
       return;
     }
     const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
@@ -534,7 +534,6 @@ export function Setup({ onCancel, onStart }: Props) {
             <button className="btn-ghost add" onClick={saveFavorite}>
               <StarIcon size={16} /> Save this course for next time
             </button>
-            {savedNote && <p className="hint-inline">{savedNote}</p>}
           </section>
         </SetupRow>
 
@@ -557,6 +556,11 @@ export function Setup({ onCancel, onStart }: Props) {
           </section>
         </SetupRow>
       </div>
+
+      {/* Outside every row: it confirms an action, and that action can originate
+          in either the Course row (loading a course) or the Holes row (saving
+          one), so it cannot live inside either. */}
+      {savedNote && <p className="hint-inline">{savedNote}</p>}
 
       {error && <p className="error">{error}</p>}
 
