@@ -8,7 +8,7 @@ import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../compone
 import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
 import { SetupRow } from '../components/SetupRow';
 import { courseSummary, holesSummary, gamesSummary, stakesSummary } from '../setupSummary';
-import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry } from '../roster';
+import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry, placePlayer } from '../roster';
 import { CrewChip, RecentChips } from '../components/RosterChips';
 import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
@@ -189,7 +189,7 @@ export function Setup({ onCancel, onStart }: Props) {
     setPlayers(crew.map((e) => ({ id: uid(), name: e.name, handicap: e.handicap })));
 
   const addFromRoster = (e: RosterEntry) =>
-    setPlayers((ps) => [...ps, { id: uid(), name: e.name, handicap: e.handicap }]);
+    setPlayers((ps) => placePlayer(ps, { id: uid(), name: e.name, handicap: e.handicap }));
 
   const setPar = (number: number, par: number) => {
     setHoles((hs) => hs.map((h) => (h.number === number ? { ...h, par } : h)));

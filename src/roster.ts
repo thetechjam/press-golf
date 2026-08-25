@@ -1,4 +1,4 @@
-import type { Round } from './types';
+import type { Round, Player } from './types';
 
 /** A remembered player, derived from saved rounds rather than stored. */
 export interface RosterEntry {
@@ -70,4 +70,23 @@ export function lastCrew(rounds: Round[]): RosterEntry[] {
 /** True when this user has never saved a round — drives first-run affordances. */
 export function isFirstEverRound(rounds: Round[]): boolean {
   return rounds.length === 0;
+}
+
+/**
+ * Places a recalled player into the roster of a round being set up: into the
+ * first empty slot if there is one, appended otherwise.
+ *
+ * Setup seeds every new round with two blank players, so a plain append left
+ * those blanks stranded above the people just picked — two taps produced four
+ * rows, two of them empty. `start()` filters blanks out, so the round created
+ * was correct while the screen said otherwise, which is the worse of the two
+ * failures: nothing looked broken until you counted the rows.
+ *
+ * Fills the first blank wherever it sits, not only a trailing one — a slot
+ * cleared in the middle is still a slot the user expects to be used.
+ */
+export function placePlayer(players: Player[], entry: Player): Player[] {
+  const blank = players.findIndex((p) => !p.name.trim());
+  if (blank === -1) return [...players, entry];
+  return players.map((p, i) => (i === blank ? entry : p));
 }
