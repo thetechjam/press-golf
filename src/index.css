@@ -3164,3 +3164,59 @@ select:focus {
     transition: none;
   }
 }
+
+/* ---- Player recall chips -------------------------------------------------- */
+.crew-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--tap);
+  margin-bottom: 10px;
+  padding: 8px 14px;
+  border: 1px dashed var(--green-600);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--fairway) 10%, transparent);
+  text-align: left;
+}
+.crew-chip-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--green-700);
+  flex: 0 0 auto;
+}
+:root.dark .crew-chip-title {
+  color: var(--fairway);
+}
+.crew-chip-names {
+  color: var(--muted);
+  font-size: 0.88rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.recent-chips-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.recent-chip {
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 0.88rem;
+}

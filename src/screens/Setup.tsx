@@ -8,7 +8,8 @@ import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../compone
 import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
 import { SetupRow } from '../components/SetupRow';
 import { courseSummary, holesSummary, gamesSummary, stakesSummary } from '../setupSummary';
-import { isFirstEverRound } from '../roster';
+import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry } from '../roster';
+import { RosterChips } from '../components/RosterChips';
 import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
 import { PlayerAvatar } from '../components/PlayerAvatar';
@@ -52,14 +53,19 @@ export function Setup({ onCancel, onStart }: Props) {
   const [showSettings, setShowSettings] = useState(false);
   const [expandedGame, setExpandedGame] = useState<GameType | null>(null);
 
+  // One snapshot of saved history, read once on mount. Everything derived from
+  // past rounds — which rows open, the crew chip, the recent chips — reads this
+  // and not localStorage, so the screen cannot shift while the user is typing.
+  const [savedRounds] = useState(() => listRounds());
+
   // Which rows are expanded. Independent flags, not an accordion.
   // Games opens on a first-ever round: collapsing it is the one part of this
   // design that costs something real — a newcomer never learning Wolf or Nassau
   // exist — and this buys that back for the only person who needs it, at no
-  // cost to every round after. Read once on mount; a round saved later in this
-  // session must not reshuffle the screen underneath the user.
+  // cost to every round after. Off the mount snapshot; a round saved later in
+  // this session must not reshuffle the screen underneath the user.
   const [openRows, setOpenRows] = useState<Record<string, boolean>>(() => ({
-    games: isFirstEverRound(listRounds()),
+    games: isFirstEverRound(savedRounds),
   }));
 
   const toggleRow = (key: string) =>
@@ -159,6 +165,24 @@ export function Setup({ onCancel, onStart }: Props) {
   const addPlayer = () => setPlayers((ps) => [...ps, { id: uid(), name: '' }]);
   const removePlayer = (id: string) =>
     setPlayers((ps) => (ps.length > 1 ? ps.filter((p) => p.id !== id) : ps));
+
+  const crew = lastCrew(savedRounds);
+  const roster = buildRoster(savedRounds);
+
+  const inForm = new Set(players.map((p) => p.name.trim().toLowerCase()).filter(Boolean));
+  const recent = roster.filter((e) => !inForm.has(e.name.toLowerCase()));
+
+  // The crew chip is a shortcut, not a merge: replacing is predictable, merging
+  // is not. Hidden once the list already matches, so it never offers a no-op.
+  const crewMatches =
+    crew.length === players.length &&
+    crew.every((e, i) => e.name === players[i].name.trim());
+
+  const useCrew = () =>
+    setPlayers(crew.map((e) => ({ id: uid(), name: e.name, handicap: e.handicap })));
+
+  const addFromRoster = (e: RosterEntry) =>
+    setPlayers((ps) => [...ps, { id: uid(), name: e.name, handicap: e.handicap }]);
 
   const setPar = (number: number, par: number) =>
     setHoles((hs) => hs.map((h) => (h.number === number ? { ...h, par } : h)));
@@ -269,6 +293,12 @@ export function Setup({ onCancel, onStart }: Props) {
 
       <section className="card">
         <h2>Players</h2>
+        <RosterChips
+          crew={crewMatches ? [] : crew}
+          recent={recent}
+          onUseCrew={useCrew}
+          onAdd={addFromRoster}
+        />
         {players.map((p, i) => (
           <div key={p.id} className="player-row">
             <PlayerAvatar name={p.name || `${i + 1}`} color={playerColor(i)} />
