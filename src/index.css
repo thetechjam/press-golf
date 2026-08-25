@@ -3099,3 +3099,135 @@ select:focus {
     grid-column: 1 / -1;
   }
 }
+
+/* ---- New Round collapsible rows -------------------------------------------
+   Each row names its own current value so the screen reads as settled facts
+   rather than unanswered questions. Grouped into one card so four rows read
+   as a short list, not four separate panels. */
+.setup-rows {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.setup-row + .setup-row {
+  border-top: 1px solid var(--line);
+}
+.setup-row-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 14px;
+  text-align: left;
+}
+.setup-row-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.setup-row-summary {
+  color: var(--muted);
+  font-size: 0.88rem;
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.setup-row-chevron {
+  color: var(--muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  transition: transform 0.16s ease;
+}
+.setup-row.open .setup-row-chevron {
+  transform: rotate(90deg);
+}
+.setup-row-body {
+  padding: 0 14px 14px;
+}
+/* The row's own card supplies the frame, so nested sections must not draw a
+   second one inside it. */
+.setup-row-body .card {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .setup-row-chevron {
+    transition: none;
+  }
+}
+
+/* ---- Player recall chips -------------------------------------------------- */
+.crew-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--tap);
+  margin-bottom: 10px;
+  padding: 8px 14px;
+  border: 1px dashed var(--green-600);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--fairway) 10%, transparent);
+  text-align: left;
+}
+.crew-chip-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--green-700);
+  flex: 0 0 auto;
+}
+:root.dark .crew-chip-title {
+  color: var(--fairway);
+}
+.crew-chip-names {
+  color: var(--muted);
+  font-size: 0.88rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.recent-chips-label {
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.recent-chip {
+  min-height: 36px;
+  padding: 6px 12px;
+  /* Ink-derived, not --line: --line is tuned for dividers between large
+     surfaces, not for the outline of a small tappable control, and in glare
+     mode it measures 1.74:1 against the card — under WCAG 1.4.11's 3:1 for a
+     component boundary, in the very theme meant for direct sunlight. The
+     border carries the whole boundary here, since --bg resolves to the card's
+     own white in glare. The alpha is set so that the border, once composited
+     over the card, clears 3:1 in all three themes; deriving it from --ink
+     keeps it proportionate in dark mode with no per-theme override. It sits
+     deliberately above the threshold rather than on it, so that tuning a
+     palette token later does not silently drop it under. Measure the
+     composited colour against --card, not the alpha value, if you change it. */
+  border: 1px solid color-mix(in srgb, var(--ink) 52%, transparent);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--ink);
+  font-size: 0.88rem;
+}
