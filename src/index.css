@@ -2168,11 +2168,13 @@ select:focus {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  /* No right padding: a sticky `right: 0` is measured from the scrollport's
-     padding box, so 8px here would park the pinned totals 8px inland and let
-     hole cells scroll visibly through the strip beside them. The totals carry
-     their own side padding instead. */
-  padding: 8px 0 8px 8px;
+  /* No horizontal padding at all: a sticky `left`/`right` offset is measured
+     from the scrollport's padding box, so any padding here parks the frozen
+     columns inland and leaves a strip where scrolled cells show through. The
+     right side was fixed first; the left kept an 8px gutter that leaked the
+     edge of whatever hole was scrolled under the name column. The frozen
+     columns carry their own side padding instead. */
+  padding: 8px 0;
 }
 /* `separate` with zero spacing, not `collapse`: a collapsed border is shared
    between neighbouring cells and is not painted over by either cell's own
@@ -2202,8 +2204,29 @@ select:focus {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  z-index: 1;
+  /* Above .sc-cell, which is `position: relative` for the handicap dots and so
+     paints in the positioned layer. A double-bogey mark draws its outer ring
+     4px outside its own cell via box-shadow, and those rings were bleeding
+     over the frozen name column from holes scrolled underneath it. */
+  z-index: 3;
   min-width: 62px;
+  padding-left: 8px;
+}
+/* Matches the edge drawn beside the pinned totals: without it the sliver of
+   the hole scrolled under this column reads as a broken glyph rather than as
+   a cell passing behind. */
+.scorecard th.sc-name::after,
+.scorecard th.sc-corner::after {
+  content: '';
+  position: absolute;
+  inset: 0 -9px 0 auto;
+  width: 8px;
+  background: linear-gradient(
+    to left,
+    transparent,
+    color-mix(in srgb, var(--ink) 10%, transparent)
+  );
+  pointer-events: none;
 }
 .sc-hole {
   color: var(--muted);
@@ -2253,6 +2276,27 @@ select:focus {
    row gives you the total without travelling to hole 18 and back.
    Addressed by position rather than a class because they are always the last
    two cells of every row, header rows included. */
+/* Subtotal columns (OUT / IN). Quieter than the pinned TOT pair — they are a
+   waypoint inside the grid, not the headline — but separated from the holes
+   either side so the eye can find the break between nines. */
+.scorecard th.sc-nine,
+.scorecard td.sc-nine {
+  position: relative;
+  z-index: 2;
+  font-weight: 700;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--ink) 4%, var(--card));
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  min-width: 38px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.sc-par-row td.sc-nine,
+.sc-si-row td.sc-nine {
+  font-weight: 600;
+}
+
 /* Selector must out-specify `.scorecard th, .scorecard td` (0,2,1) below, or
    that rule's min-width and padding win and the widths here never apply —
    which is exactly what left a gap between the two pinned columns. */
@@ -2272,7 +2316,7 @@ select:focus {
   position: sticky;
   right: 0;
   background: var(--card);
-  z-index: 1;
+  z-index: 3;
 }
 .scorecard th.sc-total:nth-last-child(2),
 .scorecard td.sc-total:nth-last-child(2) {
