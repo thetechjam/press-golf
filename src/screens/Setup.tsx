@@ -9,7 +9,7 @@ import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../stora
 import { SetupRow } from '../components/SetupRow';
 import { courseSummary, holesSummary, gamesSummary, stakesSummary } from '../setupSummary';
 import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry } from '../roster';
-import { RosterChips } from '../components/RosterChips';
+import { CrewChip, RecentChips } from '../components/RosterChips';
 import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
 import { PlayerAvatar } from '../components/PlayerAvatar';
@@ -293,12 +293,7 @@ export function Setup({ onCancel, onStart }: Props) {
 
       <section className="card">
         <h2>Players</h2>
-        <RosterChips
-          crew={crewMatches ? [] : crew}
-          recent={recent}
-          onUseCrew={useCrew}
-          onAdd={addFromRoster}
-        />
+        <CrewChip crew={crewMatches ? [] : crew} onUseCrew={useCrew} />
         {players.map((p, i) => (
           <div key={p.id} className="player-row">
             <PlayerAvatar name={p.name || `${i + 1}`} color={playerColor(i)} />
@@ -334,6 +329,7 @@ export function Setup({ onCancel, onStart }: Props) {
         <button className="btn-ghost add" onClick={addPlayer}>
           + Add player
         </button>
+        <RecentChips recent={recent} onAdd={addFromRoster} />
         {showNet && (
           <p className="hint">
             Enter handicaps to score net — leave them all blank to score gross. A blank handicap

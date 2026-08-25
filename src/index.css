@@ -3214,7 +3214,14 @@ select:focus {
 .recent-chip {
   min-height: 36px;
   padding: 6px 12px;
-  border: 1px solid var(--line);
+  /* Ink-derived, not --line: --line is tuned for dividers between large
+     surfaces, not for the outline of a small tappable control, and in glare
+     mode it measures 1.74:1 against the card — under WCAG 1.4.11's 3:1 for a
+     component boundary, in the very theme meant for direct sunlight. 42% of
+     --ink lands near #969696 on white (~3:1) and stays proportionate in dark
+     mode without a per-theme override. The border carries the boundary here,
+     since --bg resolves to the card's own white in glare. */
+  border: 1px solid color-mix(in srgb, var(--ink) 42%, transparent);
   border-radius: 999px;
   background: var(--bg);
   color: var(--ink);
