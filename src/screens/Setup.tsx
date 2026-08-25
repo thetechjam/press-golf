@@ -133,10 +133,14 @@ export function Setup({ onCancel, onStart }: Props) {
   // A common par-72 layout, repeated for 9 or 18 holes.
   const STANDARD_PARS = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 4, 3, 5, 4, 4, 3, 4, 5];
 
-  const applyPreset = (kind: 'par4' | 'standard') =>
+  const applyPreset = (kind: 'par4' | 'standard') => {
     setHoles((hs) =>
       hs.map((h, i) => ({ ...h, par: kind === 'par4' ? 4 : STANDARD_PARS[i % 18] }))
     );
+    // Same reasoning as setHoleCountAndPars: a bulk par overwrite makes any
+    // loaded/saved note describe a course that no longer matches the holes.
+    setSavedNote('');
+  };
 
   const setStrokeIndex = (number: number, si: number | undefined) =>
     setHoles((hs) => hs.map((h) => (h.number === number ? { ...h, strokeIndex: si } : h)));
@@ -157,6 +161,9 @@ export function Setup({ onCancel, onStart }: Props) {
       // keep any pars the user already edited
       return next.map((h) => prev.find((p) => p.number === h.number) ?? h);
     });
+    // A loaded/saved note describes a specific hole count and par set; changing
+    // the count invalidates it before the user can act on stale information.
+    setSavedNote('');
   };
 
   const updatePlayer = (id: string, patch: Partial<Player>) =>
@@ -184,8 +191,12 @@ export function Setup({ onCancel, onStart }: Props) {
   const addFromRoster = (e: RosterEntry) =>
     setPlayers((ps) => [...ps, { id: uid(), name: e.name, handicap: e.handicap }]);
 
-  const setPar = (number: number, par: number) =>
+  const setPar = (number: number, par: number) => {
     setHoles((hs) => hs.map((h) => (h.number === number ? { ...h, par } : h)));
+    // A single hand-edited par is still enough to make the loaded/saved note
+    // describe a course the holes no longer match.
+    setSavedNote('');
+  };
 
   const toggleGame = (g: GameType) =>
     setGames((gs) => (gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g]));
@@ -276,6 +287,9 @@ export function Setup({ onCancel, onStart }: Props) {
       });
     }
 
+    // Clear so a later visit to this screen (e.g. after Undo) doesn't open on
+    // a note describing a course loaded during the round that just ended.
+    setSavedNote('');
     onStart(round);
   };
 
