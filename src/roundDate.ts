@@ -45,3 +45,6 @@ export function formatRoundDate(iso: string, now: Date = new Date()): string {
     ...(sameYear ? {} : { year: 'numeric' }),
   });
 }
+
+// CI GATE PROOF — deliberate type error. Reverted in the next commit.
+export const ciGateProof: number = 'this is not a number';
