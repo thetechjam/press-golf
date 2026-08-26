@@ -38,6 +38,21 @@
   --gold-ink: #7d5a0c;
   --radius: 16px;
   --tap: 48px;
+  /* Motion. Two curves and three durations, so every transition in the app
+     comes from the same small set instead of whatever `ease` was nearest.
+     --ease-out front-loads the movement (things entering, and press feedback,
+     should commit immediately); --ease-in-out is for things already on screen
+     moving from A to B. Keyframed set-pieces (flap, celebrate, winner-pop,
+     confetti-fall) keep their own bespoke curves on purpose — they are
+     choreography, not UI response. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --press: 140ms;
+  --swap: 180ms;
+  --sheet: 280ms;
+  /* Exit is deliberately quicker than --sheet: the enter is the system
+     presenting itself, the exit is the system answering the user. */
+  --sheet-exit: 200ms;
   /* Width of each pinned scorecard total column (Tot, +/−). Fits "118" and
      "+35" at 0.85rem tabular-nums with 4px side padding. */
   --sc-total-w: 46px;
@@ -197,7 +212,7 @@ button {
   font-weight: 700;
   padding: 14px 20px;
   box-shadow: 0 3px 12px rgba(26, 125, 94, 0.22);
-  transition: transform 0.08s ease;
+  transition: transform var(--press) var(--ease-out);
 }
 .btn-primary:active {
   transform: scale(0.98);
@@ -246,7 +261,7 @@ button {
   font-weight: 700;
   padding: 14px 20px;
   cursor: pointer;
-  transition: transform 0.08s ease;
+  transition: transform var(--press) var(--ease-out);
 }
 .btn-secondary:active {
   transform: scale(0.98);
@@ -262,6 +277,99 @@ button {
 /* The light-mode drop shadow reads muddy on a dark bg — soften to a subtle glow. */
 :root.dark .btn-primary {
   box-shadow: 0 2px 12px rgba(47, 191, 134, 0.28);
+}
+
+/* Disabled primaries must stop looking tappable. Results' Share button flips
+   to `disabled` and relabels to "Building…" while it renders the card, and
+   until now it kept its full fill and drop shadow the whole time. */
+.btn-primary:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: default;
+}
+
+/* Keyboard focus ring. :focus-visible, never :focus — a plain :focus ring
+   sticks to the last-tapped button on touch, which is what made every prior
+   attempt at this get reverted. WCAG 2.4.7. */
+button:focus-visible {
+  outline: 2px solid var(--fairway);
+  outline-offset: 2px;
+}
+
+/* ---------- Press feedback for otherwise-unstyled pressables ----------
+   The global `-webkit-tap-highlight-color: transparent` removes the browser's
+   own flash, so anything without an :active rule acknowledges a tap with
+   nothing at all. These are all primary interactions and all had none.
+   Classes with a bespoke :active (.btn-primary, .btn-secondary,
+   .bar .btn-ghost, .cs-hit, .saved-course-load, .score-chip) keep theirs. */
+.seg-btn:active,
+.awake-toggle:active,
+.nav-arrow:active,
+.game-card:active,
+.round-main:active,
+.hole-dot:active,
+.round-del:active,
+.saved-course-del:active,
+.game-info-btn:active,
+.sheet-close:active {
+  transform: scale(0.97);
+}
+.awake-toggle,
+.nav-arrow,
+.round-main,
+.hole-dot,
+.round-del,
+.saved-course-del,
+.game-info-btn,
+.sheet-close {
+  transition: transform var(--press) var(--ease-out);
+}
+/* .seg-btn and .game-card also carry a selected state (.active) that was an
+   instant colour jump; --swap gives the fill somewhere to travel. Their press
+   transition lives here rather than in the list above so there is only ever
+   one `transition` declaration per selector. */
+.seg-btn,
+.game-card {
+  transition: transform var(--press) var(--ease-out),
+    background-color var(--swap) ease, border-color var(--swap) ease,
+    color var(--swap) ease;
+}
+/* A disabled arrow or tab is not a pressable — don't let it shrink. */
+.seg-btn:disabled:active,
+.nav-arrow:disabled:active {
+  transform: none;
+}
+/* Reduced motion: same stance the rest of this file already takes on press
+   feedback (see .score-chip:active below) — drop the movement, keep the
+   colour swap, which carries the state change and is not motion. */
+@media (prefers-reduced-motion: reduce) {
+  .awake-toggle,
+  .nav-arrow,
+  .round-main,
+  .hole-dot,
+  .round-del,
+  .saved-course-del,
+  .game-info-btn,
+  .sheet-close {
+    transition: none;
+  }
+  .seg-btn,
+  .game-card {
+    transition: background-color var(--swap) ease, border-color var(--swap) ease,
+      color var(--swap) ease;
+  }
+  .seg-btn:active,
+  .awake-toggle:active,
+  .nav-arrow:active,
+  .game-card:active,
+  .round-main:active,
+  .hole-dot:active,
+  .round-del:active,
+  .saved-course-del:active,
+  .game-info-btn:active,
+  .sheet-close:active {
+    transform: none;
+  }
 }
 
 .ab-badge {
@@ -469,7 +577,8 @@ button {
   gap: 4px;
   white-space: nowrap;
   position: relative;
-  transition: transform 0.08s ease, border-color 0.08s ease;
+  transition: transform var(--press) var(--ease-out),
+    border-color var(--press) var(--ease-out);
 }
 /* The visible pill is 38px so the header stays quiet, but a scorekeeper taps
    one-handed — this grows the hit area around it without painting anything.
@@ -649,7 +758,7 @@ select:focus {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--bg);
-  transition: transform 0.08s ease;
+  transition: transform var(--press) var(--ease-out);
 }
 .saved-course-load:active {
   transform: scale(0.99);
@@ -1121,7 +1230,7 @@ select:focus {
   border-radius: 50%;
   background: var(--bg);
   border: 1.5px solid var(--line);
-  transition: transform 0.08s ease;
+  transition: transform var(--press) var(--ease-out);
 }
 .hole-dot.done::before {
   background: var(--fairway);
@@ -1290,6 +1399,9 @@ select:focus {
   font-size: 1.15rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  /* The most-tapped control in the app — roughly 72 taps a round. Without
+     this the :active scale below snapped in and out with no ramp at all. */
+  transition: transform var(--press) var(--ease-out);
 }
 /* Par gets a quiet anchor so the row is readable without counting. */
 .score-chip.par {
@@ -1331,6 +1443,9 @@ select:focus {
   transform: scale(0.96);
 }
 @media (prefers-reduced-motion: reduce) {
+  .score-chip {
+    transition: none;
+  }
   .score-chip:active {
     transform: none;
   }
@@ -2026,12 +2141,20 @@ select:focus {
   }
 }
 .score-num {
-  animation: flap 0.26s cubic-bezier(0.3, 0.9, 0.4, 1);
   transform-origin: 50% 40%;
   backface-visibility: hidden;
 }
+/* Gated to .flap, set by PlayerScoreRow only on a real score commit. It used
+   to sit on .score-num itself and so fired on mount — and .hole-body is keyed
+   by hole number, so every swipe remounted every row and flipped all four
+   dashes down on top of the 0.2s slide. The flap now means one thing: a score
+   just landed. Precedence over .celebrate is decided in scoreNumClass(), which
+   never emits both. */
+.score-num.flap {
+  animation: flap 0.26s cubic-bezier(0.3, 0.9, 0.4, 1);
+}
 @media (prefers-reduced-motion: reduce) {
-  .score-num {
+  .score-num.flap {
     animation: none;
   }
 }
@@ -2537,6 +2660,7 @@ select:focus {
   align-items: flex-end;
   justify-content: center;
   z-index: 50;
+  animation: sheet-fade var(--sheet) var(--ease-out);
 }
 .sheet {
   background: var(--card);
@@ -2550,6 +2674,44 @@ select:focus {
   gap: 16px;
   max-height: 85vh;
   overflow-y: auto;
+  /* translateY(100%) rather than a pixel offset: it is height-agnostic, so the
+     tall Settings sheet and the short Help sheet both travel exactly their own
+     height with no per-sheet math. Bespoke curve — the iOS sheet ease, which
+     decelerates harder than --ease-out. */
+  animation: sheet-in var(--sheet) cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+/* Exit runs at --sheet-exit, faster than the enter, and Sheet.tsx holds the
+   component mounted for that long via its `closing` state. */
+.sheet-backdrop.closing {
+  animation: sheet-fade var(--sheet-exit) var(--ease-out) reverse forwards;
+}
+.sheet-backdrop.closing .sheet {
+  animation: sheet-in var(--sheet-exit) cubic-bezier(0.32, 0.72, 0, 1) reverse
+    forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-backdrop,
+  .sheet,
+  .sheet-backdrop.closing,
+  .sheet-backdrop.closing .sheet {
+    animation: none;
+  }
+  /* With the exit animation gone there is nothing to hold the sheet at
+     opacity 0, so it would sit there fully drawn for the unmount delay.
+     Hide it outright — the delay then happens off-screen. */
+  .sheet-backdrop.closing {
+    display: none;
+  }
 }
 
 /* Sheets carry their own cap and must track .app's, or they look pinched
@@ -2629,7 +2791,7 @@ select:focus {
   border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
   position: relative;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease;
+  transition: background var(--swap) ease, border-color var(--swap) ease;
 }
 .switch::after {
   content: '';
@@ -2644,7 +2806,7 @@ select:focus {
   background: #fff;
   box-shadow: 0 1px 3px rgba(4, 17, 11, 0.35);
   transform: translateY(-50%);
-  transition: transform 0.18s ease;
+  transition: transform var(--swap) ease;
 }
 .switch:checked {
   background: var(--green-600);

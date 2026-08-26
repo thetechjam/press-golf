@@ -27,3 +27,22 @@ export function scoreLabel(toPar: number): string {
   if (toPar === 2) return 'Double';
   return `+${toPar}`;
 }
+
+/**
+ * Class list for the big score readout. Two motions can want the same element:
+ * the split-flap (a score just landed) and the celebrate pulse (it landed
+ * under par). Under par is the rarer, better event, so celebrate wins — a
+ * birdie should celebrate, not flip. Encoded here rather than left to CSS
+ * source order, which is invisible from the component and easy to reorder.
+ */
+export function scoreNumClass({
+  celebrating,
+  flapping,
+}: {
+  celebrating: boolean;
+  flapping: boolean;
+}): string {
+  if (celebrating) return 'score-num celebrate';
+  if (flapping) return 'score-num flap';
+  return 'score-num';
+}
