@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { scoreLabel } from '../scoreMark';
+import { scoreLabel, scoreNumClass } from '../scoreMark';
 import { PlayerAvatar } from './PlayerAvatar';
 import { ScoreChips } from './ScoreChips';
 
@@ -46,7 +46,20 @@ export function PlayerScoreRow({
   const celebrateTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const celebrating = celebrateFor != null && celebrateFor === value && toPar < 0;
 
+  // Same scoping trick as celebrate, for the same reason. The split-flap used
+  // to fire on mount, and .hole-body is keyed by hole number — so every swipe
+  // remounted every row and flipped four dashes down on top of the slide. The
+  // flap now means one thing only: a score just landed on this row.
+  const [flapFor, setFlapFor] = useState<number | null>(null);
+  const flapTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const flapping = flapFor != null && flapFor === value;
+
   const commit = (next: number) => {
+    setFlapFor(next);
+    clearTimeout(flapTimer.current);
+    // Just past the 0.26s keyframe, so the class is gone before any unrelated
+    // re-render can remount the node and replay it.
+    flapTimer.current = setTimeout(() => setFlapFor(null), 320);
     if (next - par < 0) {
       buzz([12, 30, 18]);
       setCelebrateFor(next);
@@ -89,7 +102,7 @@ export function PlayerScoreRow({
         {/* Display only — the chips are the control. Must not be styled as one. */}
         <span className="stepper-value" aria-hidden="true">
           <span
-            className={`score-num${celebrating ? ' celebrate' : ''}`}
+            className={scoreNumClass({ celebrating, flapping })}
             key={value ?? 'empty'}
           >
             {value ?? '–'}

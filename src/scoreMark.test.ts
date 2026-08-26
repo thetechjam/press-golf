@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { scoreLabel, scoreMarkClass } from './scoreMark';
+import { scoreLabel, scoreMarkClass, scoreNumClass } from './scoreMark';
 
 describe('scoreLabel', () => {
   it('names the good ones', () => {
@@ -37,5 +37,29 @@ describe('scoreMarkClass', () => {
   it('doubles the ring at two or more either way', () => {
     expect(scoreMarkClass(-2)).toBe('mark mark-circle mark-double');
     expect(scoreMarkClass(2)).toBe('mark mark-square mark-double');
+  });
+});
+
+describe('scoreNumClass', () => {
+  it('is bare when nothing just happened', () => {
+    expect(scoreNumClass({ celebrating: false, flapping: false })).toBe('score-num');
+  });
+
+  it('flaps when a score just landed', () => {
+    expect(scoreNumClass({ celebrating: false, flapping: true })).toBe(
+      'score-num flap'
+    );
+  });
+
+  it('celebrates instead of flapping when both are true', () => {
+    expect(scoreNumClass({ celebrating: true, flapping: true })).toBe(
+      'score-num celebrate'
+    );
+  });
+
+  it('celebrates on its own', () => {
+    expect(scoreNumClass({ celebrating: true, flapping: false })).toBe(
+      'score-num celebrate'
+    );
   });
 });

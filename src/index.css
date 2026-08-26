@@ -38,6 +38,47 @@
   --gold-ink: #7d5a0c;
   --radius: 16px;
   --tap: 48px;
+  /* Motion. Every transition DURATION in this file comes from these three
+     tokens — no transition hardcodes a time. Timing functions are tokenized
+     for the two transform curves only: --ease-out front-loads the movement
+     (things entering, and press feedback, should commit immediately) and
+     --ease-in-out is for things already on screen moving from A to B.
+     The colour-swap transitions (.switch, and the .seg-btn / .game-card
+     fills) still write the bare keyword `ease`, deliberately: `ease` is the
+     initial value of transition-timing-function, so writing it is the same as
+     omitting it — there is no magic number to hoist, and giving those a curve
+     token would change how a selection feels, not just how it is spelled.
+     Keyframed set-pieces (flap, celebrate, winner-pop, confetti-fall) keep
+     their own bespoke curves on purpose — they are choreography, not UI
+     response. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --press: 140ms;
+  --swap: 180ms;
+  --sheet: 280ms;
+  /* The iOS sheet ease. Sheets get their own curve because they travel their
+     full height — --ease-out does not decelerate hard enough over that
+     distance to land softly. Used by both the enter and the exit.
+     The matching --sheet-exit duration is deliberately NOT here: Sheet.tsx
+     owns it and sets it inline, so its unmount timer is the single source of
+     truth and cannot drift from the animation. */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Focus ring colour. Its own token because outline-offset puts the ring on
+     the CONTAINER behind the button, not the button fill — so the ring must
+     clear 3:1 (WCAG 1.4.11) against --bg and --card, and the light themes
+     govern. --fairway measured 2.10:1 on light --bg and 2.35:1 in glare, the
+     theme built for direct daylight. --green-600 is the only palette colour
+     that clears 3:1 in every theme (4.52 light --bg / 5.07 light --card /
+     5.07 glare — glare sets --bg to #ffffff, so both its surfaces measure the
+     same); --green-500 passes on white but misses light --bg at 2.90.
+     Dark mode flips it back to --fairway, which has the headroom there.
+
+     The `outline-offset: 2px` at every use site is part of the contrast
+     result, not cosmetic spacing. --focus is the same colour as
+     .btn-primary's fill, so the offset is what puts a 2px gap of page
+     background between ring and button; remove it and the ring measures 1:1
+     against a primary button and disappears. Do not tidy it away. */
+  --focus: var(--green-600);
   /* Width of each pinned scorecard total column (Tot, +/−). Fits "118" and
      "+35" at 0.85rem tabular-nums with 4px side padding. */
   --sc-total-w: 46px;
@@ -48,6 +89,9 @@
 /* Dark palette. Applied by theme.ts as a class, not a media query, so an
    explicit Dark choice works on a light phone. */
 :root.dark {
+  /* Dark surfaces: --green-600 loses its headroom, --fairway gains it (7.90 on
+     --bg, 6.84 on --card). Same ring, opposite end of the ramp. */
+  --focus: var(--fairway);
   --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(234,243,238,0.045)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
   --cream: #0f1d18;
   --ink: #eaf3ee;
@@ -197,7 +241,7 @@ button {
   font-weight: 700;
   padding: 14px 20px;
   box-shadow: 0 3px 12px rgba(26, 125, 94, 0.22);
-  transition: transform 0.08s ease;
+  transition: transform var(--press) var(--ease-out);
 }
 .btn-primary:active {
   transform: scale(0.98);
@@ -246,7 +290,7 @@ button {
   font-weight: 700;
   padding: 14px 20px;
   cursor: pointer;
-  transition: transform 0.08s ease;
+  transition: transform var(--press) var(--ease-out);
 }
 .btn-secondary:active {
   transform: scale(0.98);
@@ -263,6 +307,73 @@ button {
 :root.dark .btn-primary {
   box-shadow: 0 2px 12px rgba(47, 191, 134, 0.28);
 }
+
+/* Disabled primaries must stop looking tappable. Results' Share buttons relabel
+   to "Building…" while they render the card, and until now kept their full fill
+   and drop shadow the whole time.
+   [aria-disabled] is matched alongside :disabled because those buttons now use
+   aria-disabled — `disabled` was dropping them out of the tab order mid-press.
+   Declarations unchanged; only the selector widened. */
+.btn-primary:disabled,
+.btn-primary[aria-disabled='true'] {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: default;
+}
+
+/* Keyboard focus ring. :focus-visible, never :focus — a plain :focus ring
+   sticks to the last-tapped button on touch, which is what made every prior
+   attempt at this get reverted. WCAG 2.4.7. */
+button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- Press feedback for otherwise-unstyled pressables ----------
+   The global `-webkit-tap-highlight-color: transparent` removes the browser's
+   own flash, so anything without an :active rule acknowledges a tap with
+   nothing at all. These are all primary interactions and all had none.
+   Classes with a bespoke :active (.btn-primary, .btn-secondary,
+   .bar .btn-ghost, .cs-hit, .saved-course-load, .score-chip) keep theirs. */
+.seg-btn:active,
+.awake-toggle:active,
+.nav-arrow:active,
+.game-card:active,
+.round-main:active,
+.hole-dot:active,
+.round-del:active,
+.saved-course-del:active,
+.game-info-btn:active,
+.sheet-close:active {
+  transform: scale(0.97);
+}
+.awake-toggle,
+.nav-arrow,
+.round-main,
+.hole-dot,
+.round-del,
+.saved-course-del,
+.game-info-btn,
+.sheet-close {
+  transition: transform var(--press) var(--ease-out);
+}
+/* .seg-btn and .game-card also carry a selected state (.active) that was an
+   instant colour jump; --swap gives the fill somewhere to travel. Their press
+   transition lives here rather than in the list above so there is only ever
+   one `transition` declaration per selector. */
+.seg-btn,
+.game-card {
+  transition: transform var(--press) var(--ease-out),
+    background-color var(--swap) ease, border-color var(--swap) ease,
+    color var(--swap) ease;
+}
+/* A disabled arrow or tab is not a pressable — don't let it shrink. */
+.seg-btn:disabled:active,
+.nav-arrow:disabled:active {
+  transform: none;
+}
+/* Reduced-motion suppression for all of the above lives in the block at the
+   very bottom of this file, not here — see the comment on it for why. */
 
 .ab-badge {
   width: 26px;
@@ -469,7 +580,8 @@ button {
   gap: 4px;
   white-space: nowrap;
   position: relative;
-  transition: transform 0.08s ease, border-color 0.08s ease;
+  transition: transform var(--press) var(--ease-out),
+    border-color var(--press) var(--ease-out);
 }
 /* The visible pill is 38px so the header stays quiet, but a scorekeeper taps
    one-handed — this grows the hit area around it without painting anything.
@@ -557,7 +669,7 @@ select {
 }
 input:focus,
 select:focus {
-  outline: 2px solid var(--fairway);
+  outline: 2px solid var(--focus);
 }
 
 /* ---------- Course search (OpenGolfAPI) ---------- */
@@ -649,7 +761,7 @@ select:focus {
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--bg);
-  transition: transform 0.08s ease;
+  transition: transform var(--press) var(--ease-out);
 }
 .saved-course-load:active {
   transform: scale(0.99);
@@ -1121,7 +1233,7 @@ select:focus {
   border-radius: 50%;
   background: var(--bg);
   border: 1.5px solid var(--line);
-  transition: transform 0.08s ease;
+  transition: transform var(--press) var(--ease-out);
 }
 .hole-dot.done::before {
   background: var(--fairway);
@@ -1290,6 +1402,9 @@ select:focus {
   font-size: 1.15rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  /* The most-tapped control in the app — roughly 72 taps a round. Without
+     this the :active scale below snapped in and out with no ramp at all. */
+  transition: transform var(--press) var(--ease-out);
 }
 /* Par gets a quiet anchor so the row is readable without counting. */
 .score-chip.par {
@@ -1331,6 +1446,9 @@ select:focus {
   transform: scale(0.96);
 }
 @media (prefers-reduced-motion: reduce) {
+  .score-chip {
+    transition: none;
+  }
   .score-chip:active {
     transform: none;
   }
@@ -2026,12 +2144,20 @@ select:focus {
   }
 }
 .score-num {
-  animation: flap 0.26s cubic-bezier(0.3, 0.9, 0.4, 1);
   transform-origin: 50% 40%;
   backface-visibility: hidden;
 }
+/* Gated to .flap, set by PlayerScoreRow only on a real score commit. It used
+   to sit on .score-num itself and so fired on mount — and .hole-body is keyed
+   by hole number, so every swipe remounted every row and flipped all four
+   dashes down on top of the 0.2s slide. The flap now means one thing: a score
+   just landed. Precedence over .celebrate is decided in scoreNumClass(), which
+   never emits both. */
+.score-num.flap {
+  animation: flap 0.26s cubic-bezier(0.3, 0.9, 0.4, 1);
+}
 @media (prefers-reduced-motion: reduce) {
-  .score-num {
+  .score-num.flap {
     animation: none;
   }
 }
@@ -2537,6 +2663,7 @@ select:focus {
   align-items: flex-end;
   justify-content: center;
   z-index: 50;
+  animation: sheet-fade var(--sheet) var(--ease-out);
 }
 .sheet {
   background: var(--card);
@@ -2550,6 +2677,73 @@ select:focus {
   gap: 16px;
   max-height: 85vh;
   overflow-y: auto;
+  /* translateY(100%) rather than a pixel offset: it is height-agnostic, so the
+     tall Settings sheet and the short Help sheet both travel exactly their own
+     height with no per-sheet math. --ease-sheet decelerates harder than
+     --ease-out; see its declaration in :root. */
+  animation: sheet-in var(--sheet) var(--ease-sheet);
+}
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+/* The exit gets its OWN keyframe names, and that is the whole point of it.
+   Per CSS Animations L1 an animation only restarts when `animation-name`
+   changes; every other longhand updates the running animation in place. The
+   first version of this reused `sheet-fade`/`sheet-in` and merely flipped
+   direction and duration — so on a sheet that had been open longer than
+   --sheet, the enter animation was already `finished` with currentTime pinned
+   past the new 200ms duration, the fill applied the reversed end value on the
+   very next frame, and the exit produced zero intermediate frames. It only
+   looked correct if you dismissed within 280ms of opening.
+
+   --sheet-exit is not declared in :root. Sheet.tsx sets it inline from its own
+   EXIT_MS, so the unmount timer and the animation duration cannot drift. The
+   fallback is not decoration: an undefined custom property in a shorthand
+   makes the whole declaration invalid at computed-value time, and
+   animation-duration lands on 0s — which reproduces the exact bug above,
+   silently. Anything that stops the inline style reaching .sheet-backdrop (a
+   wrapper, a portal, a props refactor) now degrades to the correct 200ms
+   instead of to an instant snap. */
+@keyframes sheet-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+.sheet-backdrop.closing {
+  animation: sheet-fade-out var(--sheet-exit, 200ms) var(--ease-out) forwards;
+  /* The node outlives the user's gesture by EXIT_MS. Without this it stays in
+     the hit-test tree the whole time, invisible, eating the next tap — a
+     dropped tap one-handed on a course. */
+  pointer-events: none;
+}
+.sheet-backdrop.closing .sheet {
+  animation: sheet-out var(--sheet-exit, 200ms) var(--ease-sheet) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-backdrop,
+  .sheet,
+  .sheet-backdrop.closing,
+  .sheet-backdrop.closing .sheet {
+    animation: none;
+  }
+  /* With the exit animation gone there is nothing to hold the sheet at
+     opacity 0, so it would sit there fully drawn for the unmount delay.
+     Hide it outright — the delay then happens off-screen. */
+  .sheet-backdrop.closing {
+    display: none;
+  }
 }
 
 /* Sheets carry their own cap and must track .app's, or they look pinched
@@ -2629,7 +2823,7 @@ select:focus {
   border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
   position: relative;
   cursor: pointer;
-  transition: background 0.18s ease, border-color 0.18s ease;
+  transition: background var(--swap) ease, border-color var(--swap) ease;
 }
 .switch::after {
   content: '';
@@ -2644,7 +2838,7 @@ select:focus {
   background: #fff;
   box-shadow: 0 1px 3px rgba(4, 17, 11, 0.35);
   transform: translateY(-50%);
-  transition: transform 0.18s ease;
+  transition: transform var(--swap) ease;
 }
 .switch:checked {
   background: var(--green-600);
@@ -2654,7 +2848,7 @@ select:focus {
   transform: translate(20px, -50%);
 }
 .switch:focus-visible {
-  outline: 2px solid var(--green-500);
+  outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2936,7 +3130,6 @@ select:focus {
   margin-top: 2px;
 }
 
-
 /* ---- Edge fade for the horizontal strips (hole dots, money ticker) --------
    `data-fade` is set by useEdgeFade, which measures real overflow — so a strip
    that fits (landscape, or a two-player ticker) gets no mask at all and its
@@ -3139,11 +3332,21 @@ select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* A disclosure chevron rotating 0 -> 90deg is on-screen movement, not press
+   feedback: it travels with the panel opening beneath it rather than
+   acknowledging a finger, so it takes --swap (the state-change duration the
+   .seg-btn and .game-card fills use) and --ease-in-out, which exists for
+   exactly this A-to-B case. The old 0.16s matched neither token and a seventh
+   token to preserve 160ms would defeat the point; +20ms is imperceptible on a
+   rotation this small.
+   Its reduced-motion rule stays local, a few lines below, rather than joining
+   the block at EOF — that block is specifically press-transform suppression,
+   and an adjacent override cannot be out-ordered by the rule it overrides. */
 .setup-row-chevron {
   color: var(--muted);
   font-size: 1.2rem;
   line-height: 1;
-  transition: transform 0.16s ease;
+  transition: transform var(--swap) var(--ease-in-out);
 }
 .setup-row.open .setup-row-chevron {
   transform: rotate(90deg);
@@ -3230,4 +3433,68 @@ select:focus {
   background: var(--bg);
   color: var(--ink);
   font-size: 0.88rem;
+}
+
+/* ---------- Reduced motion: every press transform in the app ----------
+   Deliberately the LAST rule in this file. It is cross-cutting, and several of
+   its targets (.bar .btn-ghost:active, .saved-course-load:active,
+   .hole-dot::before) are declared at equal specificity further up — at any
+   earlier position the later declaration wins and the suppression silently
+   does nothing. Anything added to this block must stay below its target.
+
+   Same stance the rest of this file already takes on press
+   feedback (see .score-chip:active) — drop the movement, keep the
+   colour swap, which carries the state change and is not motion.
+
+   This block covers EVERY press transform in the app, not only the ones added
+   alongside it. .btn-primary, .btn-secondary, .bar .btn-ghost and
+   .saved-course-load predate it, but retuning them from 0.08s to --press made
+   each one 75% longer, and a rule that suppresses press feedback everywhere
+   except the primary CTA is not a rule.
+
+   .hole-dot::before is listed separately and that is the trap: `transition`
+   does not inherit, so nulling .hole-dot leaves the pseudo-element — the thing
+   that actually scales to 1.3 — still animating. The 1.3 end state stays; it
+   marks the current hole and is information, not motion. */
+@media (prefers-reduced-motion: reduce) {
+  .awake-toggle,
+  .nav-arrow,
+  .round-main,
+  .hole-dot,
+  .hole-dot::before,
+  .round-del,
+  .saved-course-del,
+  .game-info-btn,
+  .sheet-close,
+  .btn-primary,
+  .btn-secondary,
+  .bar .btn-ghost,
+  .saved-course-load {
+    transition: none;
+  }
+  .seg-btn,
+  .game-card {
+    transition: background-color var(--swap) ease, border-color var(--swap) ease,
+      color var(--swap) ease;
+  }
+  .seg-btn:active,
+  .awake-toggle:active,
+  .nav-arrow:active,
+  .game-card:active,
+  .round-main:active,
+  .hole-dot:active,
+  .round-del:active,
+  .saved-course-del:active,
+  .game-info-btn:active,
+  .sheet-close:active,
+  .btn-primary:active,
+  .btn-secondary:active,
+  .saved-course-load:active {
+    transform: none;
+  }
+  /* Higher specificity than the .bar .btn-ghost:active rule it overrides;
+     that one also sets border-color, which is a state cue and stays. */
+  .bar .btn-ghost:active {
+    transform: none;
+  }
 }
