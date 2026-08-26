@@ -183,12 +183,20 @@ describe('reduced-motion suppression block position', () => {
    * this block inside another rule using CSS nesting, because that is where
    * the motion lives. Brace balance 0, `npm run build` succeeds, and every
    * ordering assertion passes — the `@media` text really does still follow
-   * every target. At parse time the suppression now applies only inside that
-   * wrapper, and `.btn-primary`, `.hole-dot`, `.hole-dot::before` and
-   * `.saved-course-load` all compute `transform / 0.14s` under reduce.
-   * Verified in a real build: that is the variant blockNestingDepth exists
-   * for, and the only assertion here that names the defect rather than a
-   * side effect of it.
+   * every target.
+   *
+   * It compiles to `.wrapper .awake-toggle, .wrapper .nav-arrow, …`: every
+   * selector descendant-scoped to a container that is an ancestor of none of
+   * them, so the block matches nothing at all. Measured against the built
+   * artifact on disk, ALL SIX targets lose suppression and compute
+   * `transform / 0.14s` under reduce — `.btn-primary`, `.btn-secondary`,
+   * `.hole-dot`, `.hole-dot::before`, `.saved-course-load` and
+   * `.bar .btn-ghost`. A correct merge loses none.
+   *
+   * That is the variant blockNestingDepth exists for, and the only assertion
+   * here that names the defect: `is the last rule` also fires on it, but only
+   * as a side effect of the wrapper's closing brace, which points at file
+   * position rather than at the nesting that actually broke it.
    */
   it('is brace-balanced, so no rule is left hanging open', () => {
     expect(braceBalance).toBe(0);
@@ -210,13 +218,21 @@ describe('reduced-motion suppression block position', () => {
   it('has not been superseded by @layer', () => {
     expect(
       css.includes('@layer'),
-      'index.css now uses @layer. This suite asserts source-order precedence, ' +
-        'which @layer supersedes: re-derive these checks against layer order ' +
-        'instead of byte offsets, and verify at runtime that the BASE press ' +
-        'rules are layered too — unlayered declarations beat layered ones, so ' +
-        'layering only the suppression silently inverts it and the transform ' +
-        'keeps animating under reduced motion. Do not delete this suite to go ' +
-        'green.'
+      'index.css now uses @layer. EXPECTED: a correct migration fails this ' +
+        'assertion too. It is a prompt to re-derive the suite, not evidence ' +
+        'you did something wrong. This suite asserts source-order precedence, ' +
+        'which @layer supersedes — re-derive the ordering checks against ' +
+        'layer order instead of byte offsets. Then confirm the migration is ' +
+        'the correct one, because a naive one fails this same single ' +
+        'assertion and nothing else: unlayered declarations beat layered ' +
+        'ones, so layering only the suppression while leaving the base press ' +
+        'rules unlayered silently inverts it. The tell is at runtime, not in ' +
+        'the source — do not settle for confirming the @media block is still ' +
+        'present, it is present in the broken case too. With reduce active, ' +
+        'getComputedStyle(el).transitionProperty must read `none` and ' +
+        'transitionDuration `0s` for this block\'s targets; if it reads ' +
+        '`transform` / `0.14s`, the base rules were not layered and the ' +
+        'migration is the broken one. Do not delete this suite to go green.'
     ).toBe(false);
   });
 
