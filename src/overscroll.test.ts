@@ -210,29 +210,39 @@ describe('reduced-motion suppression block position', () => {
 
   /**
    * If this file ever adopts @layer, this whole suite is asking the wrong
-   * question — layer order supersedes source order, and a correct migration
-   * produces the same single red assertion as a botched one, so the suite can
-   * gate the change but cannot validate it. Fail loudly with directions rather
-   * than leaving someone an ambiguous red they are tempted to delete.
+   * question — layer order supersedes source order. Measured against three
+   * reconstructed migrations (base rules unlayered, partially layered, fully
+   * layered): every one fails the same three assertions, and the failure sets
+   * are byte-identical, while at runtime they lose 6, 5 and 0 of this block's
+   * six targets respectively. So the suite can gate the change and cannot
+   * validate it. Fail loudly with directions rather than leaving someone an
+   * ambiguous red they are tempted to delete.
    */
   it('has not been superseded by @layer', () => {
     expect(
       css.includes('@layer'),
       'index.css now uses @layer. EXPECTED: a correct migration fails this ' +
-        'assertion too. It is a prompt to re-derive the suite, not evidence ' +
-        'you did something wrong. This suite asserts source-order precedence, ' +
-        'which @layer supersedes — re-derive the ordering checks against ' +
-        'layer order instead of byte offsets. Then confirm the migration is ' +
-        'the correct one, because a naive one fails this same single ' +
-        'assertion and nothing else: unlayered declarations beat layered ' +
-        'ones, so layering only the suppression while leaving the base press ' +
-        'rules unlayered silently inverts it. The tell is at runtime, not in ' +
-        'the source — do not settle for confirming the @media block is still ' +
-        'present, it is present in the broken case too. With reduce active, ' +
+        'assertion too, and two others with it. That is a prompt to re-derive ' +
+        'the suite, not evidence you did something wrong. A naive migration ' +
+        'fails exactly the same three — this one, `sits at the top level`, ' +
+        'and `is the last rule in the file` — and nothing else. The failure ' +
+        'sets are byte-identical, so this suite gates the migration but ' +
+        'cannot tell you which one you performed. All three are artifacts of ' +
+        'the layer wrapper\'s braces, not three separate defects: do not fix ' +
+        'them individually, and above all do not un-nest the block from its ' +
+        'layer to clear `sits at the top level` — that reverts the migration ' +
+        'into the state this suite exists to prevent. Re-derive the ordering ' +
+        'checks against layer order instead of byte offsets. Then check ' +
+        'correctness at RUNTIME, not in the source: the @media block is ' +
+        'present in the broken case too. With reduce active, ' +
         'getComputedStyle(el).transitionProperty must read `none` and ' +
-        'transitionDuration `0s` for this block\'s targets; if it reads ' +
-        '`transform` / `0.14s`, the base rules were not layered and the ' +
-        'migration is the broken one. Do not delete this suite to go green.'
+        'transitionDuration `0s` for this block\'s targets; `transform` / ' +
+        '`0.14s` means base press rules were left unlayered, and unlayered ' +
+        'declarations beat layered ones. Layering the pressables section ' +
+        'alone is NOT enough — base press transitions are declared at eight ' +
+        'separate places in this file, and a migration that catches only two ' +
+        'of them still loses five of six targets. Do not delete this suite ' +
+        'to go green.'
     ).toBe(false);
   });
 
