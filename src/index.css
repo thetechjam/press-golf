@@ -62,9 +62,16 @@
      clear 3:1 (WCAG 1.4.11) against --bg and --card, and the light themes
      govern. --fairway measured 2.10:1 on light --bg and 2.35:1 in glare, the
      theme built for direct daylight. --green-600 is the only palette colour
-     that clears 3:1 in every theme (4.52 light --bg / 5.07 --card /
-     3.67 glare); --green-500 passes on white but misses light --bg at 2.90.
-     Dark mode flips it back to --fairway, which has the headroom there. */
+     that clears 3:1 in every theme (4.52 light --bg / 5.07 light --card /
+     5.07 glare — glare sets --bg to #ffffff, so both its surfaces measure the
+     same); --green-500 passes on white but misses light --bg at 2.90.
+     Dark mode flips it back to --fairway, which has the headroom there.
+
+     The `outline-offset: 2px` at every use site is part of the contrast
+     result, not cosmetic spacing. --focus is the same colour as
+     .btn-primary's fill, so the offset is what puts a 2px gap of page
+     background between ring and button; remove it and the ring measures 1:1
+     against a primary button and disappears. Do not tidy it away. */
   --focus: var(--green-600);
   /* Width of each pinned scorecard total column (Tot, +/−). Fits "118" and
      "+35" at 0.85rem tabular-nums with 4px side padding. */
@@ -2691,7 +2698,13 @@ select:focus {
    looked correct if you dismissed within 280ms of opening.
 
    --sheet-exit is not declared in :root. Sheet.tsx sets it inline from its own
-   EXIT_MS, so the unmount timer and the animation duration cannot drift. */
+   EXIT_MS, so the unmount timer and the animation duration cannot drift. The
+   fallback is not decoration: an undefined custom property in a shorthand
+   makes the whole declaration invalid at computed-value time, and
+   animation-duration lands on 0s — which reproduces the exact bug above,
+   silently. Anything that stops the inline style reaching .sheet-backdrop (a
+   wrapper, a portal, a props refactor) now degrades to the correct 200ms
+   instead of to an instant snap. */
 @keyframes sheet-fade-out {
   to {
     opacity: 0;
@@ -2703,14 +2716,14 @@ select:focus {
   }
 }
 .sheet-backdrop.closing {
-  animation: sheet-fade-out var(--sheet-exit) var(--ease-out) forwards;
+  animation: sheet-fade-out var(--sheet-exit, 200ms) var(--ease-out) forwards;
   /* The node outlives the user's gesture by EXIT_MS. Without this it stays in
      the hit-test tree the whole time, invisible, eating the next tap — a
      dropped tap one-handed on a course. */
   pointer-events: none;
 }
 .sheet-backdrop.closing .sheet {
-  animation: sheet-out var(--sheet-exit) var(--ease-sheet) forwards;
+  animation: sheet-out var(--sheet-exit, 200ms) var(--ease-sheet) forwards;
 }
 @media (prefers-reduced-motion: reduce) {
   .sheet-backdrop,
@@ -3313,11 +3326,21 @@ select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* A disclosure chevron rotating 0 -> 90deg is on-screen movement, not press
+   feedback: it travels with the panel opening beneath it rather than
+   acknowledging a finger, so it takes --swap (the state-change duration the
+   .seg-btn and .game-card fills use) and --ease-in-out, which exists for
+   exactly this A-to-B case. The old 0.16s matched neither token and a seventh
+   token to preserve 160ms would defeat the point; +20ms is imperceptible on a
+   rotation this small.
+   Its reduced-motion rule stays local, a few lines below, rather than joining
+   the block at EOF — that block is specifically press-transform suppression,
+   and an adjacent override cannot be out-ordered by the rule it overrides. */
 .setup-row-chevron {
   color: var(--muted);
   font-size: 1.2rem;
   line-height: 1;
-  transition: transform 0.16s ease;
+  transition: transform var(--swap) var(--ease-in-out);
 }
 .setup-row.open .setup-row-chevron {
   transform: rotate(90deg);

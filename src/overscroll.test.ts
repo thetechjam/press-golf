@@ -65,3 +65,102 @@ describe('pull-to-refresh guard', () => {
     expect(bodyRule).not.toMatch(/overscroll-behavior/);
   });
 });
+
+/**
+ * The reduced-motion suppression block is the last rule in this stylesheet and
+ * that position is load-bearing, not tidiness. Media queries add no
+ * specificity, so where two rules tie the later one wins — and three of the
+ * block's targets (`.hole-dot::before`, `.bar .btn-ghost`, `.saved-course-load`)
+ * are declared at equal specificity further up the file. Move the block above
+ * them and their press transforms quietly start animating again for people who
+ * asked them not to. Nothing errors, no computed-style check in the app fails,
+ * and the only symptom is motion on someone else's phone.
+ *
+ * Appending a rule at the end of a 3,000-line stylesheet is the most natural
+ * edit anyone will ever make to it, so the guard cannot be a comment.
+ *
+ * The first draft of this suite passed against a deliberately broken file. It
+ * derived the target list from everything after the block and compared each
+ * selector only against the text *preceding* the block, so relocating the block
+ * produced a garbage target list, no prior matches, and 423 green assertions.
+ * Hence the two rules below: the block's extent is brace-matched rather than
+ * assumed to run to EOF, and every selector is searched across the whole file
+ * with the block blanked out — never against a prefix.
+ */
+describe('reduced-motion suppression block position', () => {
+  // Comments are stripped first: the block's own prose names several of the
+  // selectors it targets, and a scan over raw text would match those.
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+  const MARKER = 'Reduced motion: every press transform in the app';
+  const markerAt = css.indexOf(MARKER);
+  const blockStart = bare.indexOf('@media', markerAt);
+
+  /** Brace-match to the block's real end. Assuming EOF is what made the first
+   *  draft's "nothing follows the block" check a tautology. */
+  const blockEnd = (() => {
+    let depth = 0;
+    for (let i = bare.indexOf('{', blockStart); i < bare.length; i++) {
+      if (bare[i] === '{') depth++;
+      else if (bare[i] === '}' && --depth === 0) return i + 1;
+    }
+    return -1;
+  })();
+
+  const blockBody = bare.slice(blockStart, blockEnd);
+  /** The whole file with the block blanked, offsets preserved. Searching this
+   *  rather than a prefix is what makes a relocated block fail instead of
+   *  silently matching nothing. */
+  const outsideBlock =
+    bare.slice(0, blockStart) + ' '.repeat(blockEnd - blockStart) + bare.slice(blockEnd);
+
+  /** Every selector the block suppresses, read out of the block's own rules, so
+   *  adding a selector to the block automatically extends the check. */
+  const targets = [
+    ...new Set(
+      [...blockBody.matchAll(/([^{}]+)\{[^{}]*\}/g)]
+        .flatMap((m) => m[1].split(','))
+        .map((sel) => sel.trim())
+        .filter((sel) => sel.startsWith('.'))
+    ),
+  ];
+
+  /** Last declaration of `sel` anywhere outside the block, or -1. Requiring a
+   *  `,` or `{` to follow stops `.hole-dot` matching inside `.hole-dot::before`
+   *  or `.hole-dot.done`. */
+  const lastDeclarationOf = (sel: string) => {
+    const head = sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*[,{]';
+    const all = [...outsideBlock.matchAll(new RegExp(head, 'g'))];
+    return all.length ? (all[all.length - 1].index ?? -1) : -1;
+  };
+
+  it('locates the block and the selectors it covers', () => {
+    // Guards the guard: a reworded marker or a deleted block would otherwise
+    // make every check below pass on an empty list.
+    expect(markerAt).toBeGreaterThan(-1);
+    expect(blockStart).toBeGreaterThan(-1);
+    expect(blockEnd).toBeGreaterThan(blockStart);
+    expect(targets.length).toBeGreaterThanOrEqual(15);
+  });
+
+  it('covers the three selectors that provably leak when the block moves up', () => {
+    // Reconstructing the file with the block at its old position leaks exactly
+    // these three and no others. Each must be declared outside the block, or
+    // the ordering assertion below has nothing to compare and passes vacuously.
+    for (const sel of ['.hole-dot::before', '.bar .btn-ghost', '.saved-course-load']) {
+      expect(targets).toContain(sel);
+      expect(lastDeclarationOf(sel)).toBeGreaterThan(-1);
+    }
+  });
+
+  it.each(targets.map((sel) => [sel, lastDeclarationOf(sel)] as const))(
+    '%s is declared above the block, so the block still wins the tie',
+    (_sel, lastAt) => {
+      // -1 means the selector appears only inside the block: nothing to lose to.
+      expect(lastAt).toBeLessThan(blockStart);
+    }
+  );
+
+  it('is the last rule in the file, with nothing appended below it', () => {
+    expect(bare.slice(blockEnd).trim()).toBe('');
+  });
+});
