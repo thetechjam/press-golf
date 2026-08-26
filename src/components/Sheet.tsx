@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { XIcon } from '../icons';
 
 interface Props {
@@ -8,9 +9,12 @@ interface Props {
 }
 
 /**
- * Exit duration. Must stay in step with --sheet-exit in index.css: the CSS
- * plays the animation, this timer decides when the node leaves the tree, and
- * if the timer is the shorter of the two the sheet vanishes mid-slide.
+ * Exit duration, and the only place it is written down. It is handed to CSS as
+ * an inline --sheet-exit below rather than declared in :root, because the same
+ * number has to drive two things — the exit animation and the unmount timer —
+ * and if they drift the sheet either vanishes mid-slide or leaves a dead node
+ * on screen. Deliberately shorter than --sheet (280ms): the enter is the
+ * system presenting itself, the exit is the system answering the user.
  */
 const EXIT_MS = 200;
 
@@ -52,6 +56,7 @@ export function Sheet({ title, onClose, children }: Props) {
   return (
     <div
       className={`sheet-backdrop${closing ? ' closing' : ''}`}
+      style={{ '--sheet-exit': `${EXIT_MS}ms` } as CSSProperties}
       onClick={close}
     >
       <div

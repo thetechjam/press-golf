@@ -253,11 +253,20 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       )}
 
       <div className="share-row">
+        {/* aria-disabled, not disabled: `disabled` drops the button out of the
+            tab order mid-interaction, so a keyboard user's focus falls to
+            <body> the moment they activate it. The onClick guard is what
+            actually prevents a second canvas render. aria-label tracks the
+            visible label (WCAG 2.5.3 Label in Name) and aria-busy announces
+            the wait (4.1.3 Status Messages). */}
         <button
           className="btn-primary big"
-          onClick={shareResults}
-          disabled={rendering}
-          aria-label="Share results"
+          onClick={() => {
+            if (!rendering) shareResults();
+          }}
+          aria-disabled={rendering}
+          aria-busy={rendering}
+          aria-label={rendering ? 'Building results…' : 'Share results'}
         >
           {rendering ? (
             'Building…'
@@ -269,9 +278,12 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
         </button>
         <button
           className="btn-primary big"
-          onClick={shareScorecard}
-          disabled={renderingCard}
-          aria-label="Share scorecard"
+          onClick={() => {
+            if (!renderingCard) shareScorecard();
+          }}
+          aria-disabled={renderingCard}
+          aria-busy={renderingCard}
+          aria-label={renderingCard ? 'Building scorecard…' : 'Share scorecard'}
         >
           {renderingCard ? (
             'Building…'
