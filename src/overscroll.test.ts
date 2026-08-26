@@ -96,8 +96,9 @@ describe('reduced-motion suppression block position', () => {
   const blockStart = bare.indexOf('@media', markerAt);
 
   /** Brace-match to the block's real end. Assuming EOF is what made the first
-   *  draft's "nothing follows the block" check a tautology. */
-  const blockEnd = (() => {
+   *  draft's "nothing follows the block" check a tautology. -1 means the block
+   *  never closes — a real merge-resolution shape, not a hypothetical. */
+  const rawBlockEnd = (() => {
     let depth = 0;
     for (let i = bare.indexOf('{', blockStart); i < bare.length; i++) {
       if (bare[i] === '{') depth++;
@@ -106,12 +107,34 @@ describe('reduced-motion suppression block position', () => {
     return -1;
   })();
 
+  /** The honest value is asserted below; this one only keeps the derived
+   *  constants from throwing during collection, so an unclosed block reports
+   *  as a failed assertion rather than a RangeError from `.repeat(-88993)`
+   *  that takes the whole file down with it. */
+  const blockEnd = rawBlockEnd > blockStart ? rawBlockEnd : bare.length;
+
   const blockBody = bare.slice(blockStart, blockEnd);
   /** The whole file with the block blanked, offsets preserved. Searching this
    *  rather than a prefix is what makes a relocated block fail instead of
    *  silently matching nothing. */
   const outsideBlock =
     bare.slice(0, blockStart) + ' '.repeat(blockEnd - blockStart) + bare.slice(blockEnd);
+
+  /** Unclosed `{` before the block. Non-zero means the block is nested inside
+   *  some other rule rather than sitting at the top level. */
+  const blockNestingDepth = (() => {
+    let depth = 0;
+    for (let i = 0; i < blockStart; i++) {
+      if (bare[i] === '{') depth++;
+      else if (bare[i] === '}') depth--;
+    }
+    return depth;
+  })();
+
+  const braceBalance = [...bare].reduce(
+    (n, ch) => (ch === '{' ? n + 1 : ch === '}' ? n - 1 : n),
+    0
+  );
 
   /** Every selector the block suppresses, read out of the block's own rules, so
    *  adding a selector to the block automatically extends the check. */
@@ -138,8 +161,63 @@ describe('reduced-motion suppression block position', () => {
     // make every check below pass on an empty list.
     expect(markerAt).toBeGreaterThan(-1);
     expect(blockStart).toBeGreaterThan(-1);
-    expect(blockEnd).toBeGreaterThan(blockStart);
+    // rawBlockEnd, not the clamped blockEnd: this is the honest value, and a
+    // -1 here is the "block never closes" shape rather than a parse quirk.
+    expect(rawBlockEnd).toBeGreaterThan(blockStart);
     expect(targets.length).toBeGreaterThanOrEqual(15);
+  });
+
+  /**
+   * Everything above reasons about byte offsets in text. That catches a block
+   * that moved. It does not catch a block that is still textually last but is
+   * no longer a top-level rule — and that case both builds and ships.
+   *
+   * Measured, not assumed. Two unbalanced merge resolutions (block left
+   * unclosed; an incoming rule left unclosed so it swallows the block) are
+   * already stopped by `npm run build`: postcss rejects both with
+   * `CssSyntaxError: Unclosed block`. They cannot deploy, so brace balance
+   * here is an earlier and far more legible signal than that error, not a
+   * unique gate.
+   *
+   * The case that genuinely gets through is balanced and valid: someone tucks
+   * this block inside another rule using CSS nesting, because that is where
+   * the motion lives. Brace balance 0, `npm run build` succeeds, and every
+   * ordering assertion passes — the `@media` text really does still follow
+   * every target. At parse time the suppression now applies only inside that
+   * wrapper, and `.btn-primary`, `.hole-dot`, `.hole-dot::before` and
+   * `.saved-course-load` all compute `transform / 0.14s` under reduce.
+   * Verified in a real build: that is the variant blockNestingDepth exists
+   * for, and the only assertion here that names the defect rather than a
+   * side effect of it.
+   */
+  it('is brace-balanced, so no rule is left hanging open', () => {
+    expect(braceBalance).toBe(0);
+  });
+
+  it('sits at the top level, not nested inside a rule that swallowed it', () => {
+    // The assertion that specifically separates resolution B from a correct
+    // merge: both are textually last, only one is a top-level rule.
+    expect(blockNestingDepth).toBe(0);
+  });
+
+  /**
+   * If this file ever adopts @layer, this whole suite is asking the wrong
+   * question — layer order supersedes source order, and a correct migration
+   * produces the same single red assertion as a botched one, so the suite can
+   * gate the change but cannot validate it. Fail loudly with directions rather
+   * than leaving someone an ambiguous red they are tempted to delete.
+   */
+  it('has not been superseded by @layer', () => {
+    expect(
+      css.includes('@layer'),
+      'index.css now uses @layer. This suite asserts source-order precedence, ' +
+        'which @layer supersedes: re-derive these checks against layer order ' +
+        'instead of byte offsets, and verify at runtime that the BASE press ' +
+        'rules are layered too — unlayered declarations beat layered ones, so ' +
+        'layering only the suppression silently inverts it and the transform ' +
+        'keeps animating under reduced motion. Do not delete this suite to go ' +
+        'green.'
+    ).toBe(false);
   });
 
   it('covers the three selectors that provably leak when the block moves up', () => {

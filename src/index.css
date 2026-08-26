@@ -38,13 +38,19 @@
   --gold-ink: #7d5a0c;
   --radius: 16px;
   --tap: 48px;
-  /* Motion. Two curves and three durations, so every transition in the app
-     comes from the same small set instead of whatever `ease` was nearest.
-     --ease-out front-loads the movement (things entering, and press feedback,
-     should commit immediately); --ease-in-out is for things already on screen
-     moving from A to B. Keyframed set-pieces (flap, celebrate, winner-pop,
-     confetti-fall) keep their own bespoke curves on purpose — they are
-     choreography, not UI response. */
+  /* Motion. Every transition DURATION in this file comes from these three
+     tokens — no transition hardcodes a time. Timing functions are tokenized
+     for the two transform curves only: --ease-out front-loads the movement
+     (things entering, and press feedback, should commit immediately) and
+     --ease-in-out is for things already on screen moving from A to B.
+     The colour-swap transitions (.switch, and the .seg-btn / .game-card
+     fills) still write the bare keyword `ease`, deliberately: `ease` is the
+     initial value of transition-timing-function, so writing it is the same as
+     omitting it — there is no magic number to hoist, and giving those a curve
+     token would change how a selection feels, not just how it is spelled.
+     Keyframed set-pieces (flap, celebrate, winner-pop, confetti-fall) keep
+     their own bespoke curves on purpose — they are choreography, not UI
+     response. */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --press: 140ms;
