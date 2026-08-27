@@ -223,3 +223,65 @@ Listed so a future pass doesn't "correct" deliberate, correct decisions:
 
 Items 1–4 are roughly 35 minutes of CSS and would move the app's tactile
 quality more than anything else on the list.
+
+---
+
+## Outcome — 2026-08-26
+
+Executed. Shipped in `a9d6c9e` (items 1–6, 10-partial) and `1ab8081`.
+Release records live in the vault at `Deliverables/2026-08-26-press-release-*.md`;
+the gate ledger is `Deliverables/press-gate-ledger.md`.
+
+The numbers above are as measured on 2026-08-24 and have not been updated —
+`index.css` was 2,610 lines then and is ~3,470 now. They are left as written.
+
+### What shipped
+
+Items 1–6 landed as specified: motion tokens (`--ease-out`, `--ease-in-out`,
+`--press`, `--swap`, `--sheet`, `--sheet-exit`), the `.score-chip` transition,
+a shared `:active` rule across all ten pressables, `button:focus-visible`,
+`.btn-primary:disabled`, the sheet enter/exit, and `flap` gated to real commits.
+
+Item 10 landed in part: `theme-color` work was folded into the token pass.
+
+### What did not
+
+- **Item 7** (splash fade-out) and **item 9** (ticker / armed-delete crossfades) —
+  deferred, not attempted.
+- **Item 8** (sheet focus trap, restore, scroll lock) — deferred. `aria-modal="true"`
+  still asserts containment the sheet does not provide. Worse than omitting it:
+  a screen-reader user gets a background hidden from the virtual cursor but still
+  reachable by Tab. The recommendation for that pass is `<dialog>` + `showModal()`,
+  which supplies trap, inertness, Escape and backdrop, and would delete most of
+  `Sheet.tsx`.
+- **Drag-to-dismiss** — declined as out of scope.
+
+### What this review did not catch
+
+Four defects surfaced during execution rather than during the review. Recorded
+because the review's blind spots are more useful than its hits:
+
+1. **A tap-swallowing regression introduced by item 5.** Holding the sheet mounted
+   for its exit left an invisible backdrop owning hit-testing for 200ms after
+   every dismissal. Taps 60ms after close registered zero clicks.
+2. **The item-3 focus ring failed WCAG 1.4.11 in two of three themes.** With
+   `outline-offset: 2px` the ring's adjacent colour is the container, not the
+   button fill, so light themes govern: 2.10:1 on light `--bg`, 2.35:1 in glare —
+   the theme built for direct sunlight. Fixed with a theme-aware `--focus`.
+3. **`registerType: 'autoUpdate'` with no reload handler.** Every release served
+   the *previous* build on first launch. Unrelated to polish, found while
+   verifying it. Fixed in `1ab8081` with a prompt-to-refresh banner suppressed
+   during scoring.
+4. **That banner then covered the "Start Round" CTA at 100% overlap**, turning
+   the primary action into a page reload. Fixed structurally — the banner is a
+   flow element that reserves space, not an overlay that dodges known screens.
+
+### Guard left behind
+
+`src/overscroll.test.ts` gained a source-order suite. The reduced-motion
+suppression block's correctness is load-bearing on its position as the last
+top-level rule, and appending at EOF is the most natural edit anyone will make
+to a 3,470-line stylesheet. The failure is silent: no error, no runtime signal,
+the app simply animates for people who asked it not to. Read the docblock before
+attempting an `@layer` migration — a naive one inverts the precedence and ships
+broken, and the base press rules are declared in eight separate places.
