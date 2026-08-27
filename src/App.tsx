@@ -6,6 +6,7 @@ import { LeagueSetup } from './screens/LeagueSetup';
 import { Play } from './screens/Play';
 import { Results } from './screens/Results';
 import { saveRound } from './storage';
+import { UpdatePrompt } from './components/UpdatePrompt';
 
 const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results'] as const;
 type View = (typeof VIEWS)[number];
@@ -95,6 +96,10 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* Mounted on every view so the service worker registers on every load;
+          the prompt itself stays hidden while a round is being scored. */}
+      <UpdatePrompt suppressed={view === 'play'} />
+
       {view === 'home' && (
         <Home
           onNew={() => {

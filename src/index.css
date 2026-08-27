@@ -3435,6 +3435,65 @@ select:focus {
   font-size: 0.88rem;
 }
 
+/* The update prompt declares no transition, animation or transform, and is
+   deliberately kept that way: it is the one control that can reload the app,
+   and it must read identically whether or not the user has reduced motion on.
+   That is why it has no entry in the suppression block below. If motion is
+   ever added here, it has to be added there too — and this block must stay
+   ABOVE that one, which is required to remain the last rule in the file.
+
+   A banner in normal flow, NOT a floating toast. The first version was
+   `position: fixed` anchored to `calc(12px + env(safe-area-inset-bottom))` —
+   the exact anchor .btn-primary.sticky uses — at z-index 60 against its 2, so
+   it covered "Start Round" completely and a tap meant to start a round
+   reloaded the app instead. Suppressing it per-view was the wrong repair: the
+   property wanted is "never overlaps a primary action", and a list of
+   suppressed views only approximates that until someone adds a screen.
+   Reserving space cannot be got wrong. It also means the fixed sheet backdrop
+   (z-index 50) paints over this rather than under it, so the banner cannot be
+   tapped through an open sheet either. */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: calc(8px + env(safe-area-inset-top)) 12px 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+}
+
+.update-msg {
+  flex: 1;
+  font-size: 0.92rem;
+}
+
+.update-banner button {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.update-btn {
+  border: none;
+  background: var(--green-600);
+  color: #fff;
+}
+
+/* .update-later is `background: transparent`, so this border is the only thing
+   marking it as a control and must clear 3:1 as a component boundary
+   (WCAG 1.4.11). A flat --line measures 1.22:1 on light / 1.32:1 dark /
+   1.74:1 glare against the card behind it. Same derivation, and the same
+   reasoning, as .recent-chip above. */
+.update-later {
+  border: 1px solid color-mix(in srgb, var(--ink) 52%, transparent);
+  background: transparent;
+  color: var(--muted);
+}
+
 /* ---------- Reduced motion: every press transform in the app ----------
    Deliberately the LAST rule in this file. It is cross-cutting, and several of
    its targets (.bar .btn-ghost:active, .saved-course-load:active,

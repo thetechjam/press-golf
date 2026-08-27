@@ -24,7 +24,24 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      // 'prompt', not 'autoUpdate'. autoUpdate bakes skipWaiting() into the
+      // generated worker, so a new build takes over the moment it installs —
+      // but nothing reloads the open page, and the navigation route below
+      // serves the *precached* index.html. The result was a release that
+      // showed the previous build on first launch, every time, with no signal.
+      //
+      // 'prompt' holds the new worker in `waiting` until the user accepts.
+      // Press is a scorekeeper used mid-round with no signal; a silent reload
+      // while someone is entering a score on the 14th is worse than the
+      // staleness it fixes. App.tsx starts at view 'home' with round null and
+      // has no restore-on-mount, so any reload bounces the user to Home, and
+      // an in-progress Setup (component state, never persisted) is lost
+      // outright. So the refresh is always the user's tap, never ours.
+      registerType: 'prompt',
+      // We register from UpdatePrompt.tsx via virtual:pwa-register/react.
+      // Leaving this at its 'auto' default would ALSO emit registerSW.js and
+      // register a second time.
+      injectRegister: null,
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
         // A build artifact for Netlify's form scanner, not an app asset.
