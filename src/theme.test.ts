@@ -7,6 +7,22 @@ const style: Record<string, string> = {};
 let systemDark = false;
 let changeCallback: (() => void) | null = null;
 
+/** Stand-in for <meta name="theme-color">, holding whatever was last painted. */
+const themeColor = {
+  content: 'untouched',
+  setAttribute: (_name: string, value: string) => {
+    themeColor.content = value;
+  },
+};
+
+/**
+ * Stand-in for the cascade. Values are arbitrary markers, NOT the real palette:
+ * what is under test is that the meta tag follows whatever --bg resolved to,
+ * not that index.css holds any particular hex. `null` models the stylesheet
+ * not being applied yet, where getPropertyValue returns an empty string.
+ */
+let resolvedBg: string | null = 'bg-light';
+
 vi.stubGlobal('document', {
   documentElement: {
     classList: {
@@ -17,7 +33,11 @@ vi.stubGlobal('document', {
     },
     style,
   },
+  querySelector: (sel: string) => (sel === 'meta[name="theme-color"]' ? themeColor : null),
 });
+vi.stubGlobal('getComputedStyle', () => ({
+  getPropertyValue: (prop: string) => (prop === '--bg' && resolvedBg ? resolvedBg : ''),
+}));
 vi.stubGlobal('matchMedia', () => ({
   matches: systemDark,
   addEventListener: (_event: string, callback: () => void) => {
@@ -74,6 +94,36 @@ describe('applyTheme', () => {
     applyTheme('dark', false);
     applyTheme('light', false);
     expect(classes.has('dark')).toBe(false);
+  });
+});
+
+describe('browser chrome colour', () => {
+  beforeEach(() => {
+    classes.clear();
+    systemDark = false;
+    resolvedBg = 'bg-light';
+    themeColor.content = 'untouched';
+  });
+
+  it('repaints the meta tag from the palette on every apply', () => {
+    applyTheme('light', false);
+    expect(themeColor.content).toBe('bg-light');
+
+    resolvedBg = 'bg-dark';
+    applyTheme('dark', false);
+    expect(themeColor.content).toBe('bg-dark');
+
+    resolvedBg = 'bg-glare';
+    applyTheme('dark', true);
+    expect(themeColor.content).toBe('bg-glare');
+  });
+
+  it('leaves the markup value standing when the stylesheet has not applied yet', () => {
+    // applyTheme runs at module load, before a <link> stylesheet is guaranteed
+    // to have resolved. An empty read must not paint the chrome transparent.
+    resolvedBg = null;
+    applyTheme('dark', false);
+    expect(themeColor.content).toBe('untouched');
   });
 });
 

@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { Round, Hole } from '../types';
 import { computeSettlement, formatMoney } from '../games/settlement';
 import { colorMap } from '../player';
@@ -72,6 +73,54 @@ export function SwingTicker({
           </span>
         );
       })}
+    </div>
+  );
+}
+
+/**
+ * The Hole tab's money line, and the crossfade between its two faces.
+ *
+ * MoneyTicker and SwingTicker are mutually exclusive per hole and share one
+ * box by design, but swapping them was a hard cut between two entirely
+ * different sets of text in the same rectangle — the eye read two lists rather
+ * than one line updating. Both faces are kept mounted in a single grid cell so
+ * the swap can be a blur-masked crossfade instead.
+ *
+ * The last swing is held in a ref because the outgoing face needs content: by
+ * the frame `swing` goes null, the numbers that produced it are gone, and a
+ * face with nothing in it fades out as an empty box rather than as the hole
+ * the user just finished.
+ */
+export function HoleTicker({
+  round,
+  hole,
+  swing,
+}: {
+  round: Round;
+  hole: Hole;
+  swing: Record<string, number> | null;
+}) {
+  const last = useRef<{ hole: Hole; swing: Record<string, number> } | null>(null);
+  if (swing) last.current = { hole, swing };
+  const shown = last.current;
+
+  // Same "no stake, no dead $0 bar" rule MoneyTicker applies to itself — but
+  // it has to be decided here too, because an empty stack is still a flex
+  // child of .screen and would hold that row's 8px gap open on a friendly
+  // round. visibleSwing already implies an active settlement, so this cannot
+  // suppress a face that had something to show.
+  if (!computeSettlement(round).active) return null;
+
+  return (
+    <div className="ticker-stack">
+      <div className={`ticker-face${swing ? ' out' : ''}`} aria-hidden={!!swing}>
+        <MoneyTicker round={round} />
+      </div>
+      {shown && (
+        <div className={`ticker-face${swing ? '' : ' out'}`} aria-hidden={!swing}>
+          <SwingTicker round={round} hole={shown.hole} swing={shown.swing} />
+        </div>
+      )}
     </div>
   );
 }

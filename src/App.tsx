@@ -7,6 +7,7 @@ import { Play } from './screens/Play';
 import { Results } from './screens/Results';
 import { saveRound } from './storage';
 import { UpdatePrompt } from './components/UpdatePrompt';
+import { dismissSplash } from './splash';
 
 const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results'] as const;
 type View = (typeof VIEWS)[number];
@@ -33,6 +34,11 @@ export default function App() {
   // exit/cancel control issuing a second, overshooting go() before the first
   // one lands.
   const homeCollapsePendingRef = useRef(false);
+
+  // Fade out index.html's splash now that there is an app painted under it.
+  // It runs from here rather than main.tsx so it cannot outrun React's initial
+  // commit — see splash.ts.
+  useEffect(dismissSplash, []);
 
   // Without this, the Android back gesture exits an installed PWA mid-round.
   useEffect(() => {

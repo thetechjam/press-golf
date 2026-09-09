@@ -32,6 +32,29 @@ export function applyTheme(theme: Theme, glare: boolean): void {
   root.classList.toggle('dark', resolved === 'dark');
   root.classList.toggle('glare', glare);
   root.style.colorScheme = resolved;
+  paintBrowserChrome(root);
+}
+
+/**
+ * Point <meta name="theme-color"> at whatever --bg just resolved to.
+ *
+ * It shipped as one fixed brand green, so on Android the address bar stayed
+ * that green while the app itself sat at near-black in dark mode — the one
+ * strip of the screen the palette did not reach. A
+ * `media="(prefers-color-scheme: dark)"` variant could not fix it either: it
+ * cannot see an explicit Dark choice on a light phone, which is the same
+ * reason resolution happens here rather than in CSS.
+ *
+ * The value is READ from the cascade rather than restated as a hex triple, so
+ * a palette edit in index.css can never leave this behind. An empty read means
+ * the stylesheet is not applied yet; the markup's own value stands until the
+ * next call, which is better than painting the chrome transparent.
+ */
+function paintBrowserChrome(root: HTMLElement): void {
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (!meta) return;
+  const bg = getComputedStyle(root).getPropertyValue('--bg').trim();
+  if (bg) meta.setAttribute('content', bg);
 }
 
 /**

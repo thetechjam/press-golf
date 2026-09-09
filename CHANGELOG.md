@@ -94,6 +94,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.nvmrc` and a `node` engines constraint pinning the Node major version.
 
 ### Changed
+- **The splash now hands over to the app instead of cutting to it.** The
+  loading splash used to live inside `#root`, so React deleted it the instant
+  it mounted: deep green felt became the app background in a single frame,
+  and the app's own entrance animation then started independently of it. It
+  now sits outside `#root` and fades over 260ms while that entrance plays, so
+  the two read as one arrival. Reduced motion removes it outright.
+- **Sheets are real modal dialogs.** Settings, How to Play, Send feedback and
+  Edit handicaps are now `<dialog>` elements opened with `showModal()`. What
+  changes for a keyboard or screen-reader user: Tab is genuinely trapped in
+  the sheet (it previously walked out into the screen behind, which the
+  sheet's own `aria-modal="true"` had been promising it would not), closing a
+  sheet returns focus to the control that opened it rather than dropping it at
+  the top of the page, and the page behind no longer scrolls under an open
+  sheet. Escape, the scrim tap and the X are unchanged, exit animation and all.
+- **The money line cross-fades between the running total and a hole's swing**
+  rather than cutting between two different sets of text in the same box, and
+  the armed Delete button now grows into "Delete?" instead of shoving the row
+  sideways in a single frame.
+- **The browser's own chrome now follows the theme.** `theme-color` was one
+  fixed brand green, so on Android the address bar stayed green while the app
+  sat at near-black in dark mode. It is now repainted from the palette
+  whenever the theme resolves — including an explicit Dark choice on a light
+  phone, which a media-query variant could not have covered.
 - `computeWolf` now tallies its points from a new exported `wolfOutcomes`,
   which resolves each Wolf hole's sides, result, and multiplier. Same scoring,
   one copy of the rules — the awards engine reads the same outcomes to find
@@ -144,6 +167,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   course name, with disclosure text under the field.
 
 ### Fixed
+- **Pinch-zoom works again on Android.** The viewport meta carried
+  `maximum-scale=1.0`, which blocks zoom on Android (iOS has ignored it since
+  iOS 10) and is a WCAG 1.4.4 failure. Nothing in the layout needed it.
 - **The Play screen double-counted the bottom safe-area inset**: `.screen`'s
   base padding already adds `env(safe-area-inset-bottom)`, and `.play-foot` —
   the last child on the Play screen — separately adds its own

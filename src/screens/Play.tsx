@@ -4,7 +4,7 @@ import { Leaderboard } from '../components/Leaderboard';
 import { Scorecard } from '../components/Scorecard';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { MoneyBoard } from '../components/MoneyBoard';
-import { MoneyTicker, SwingTicker } from '../components/MoneyTicker';
+import { HoleTicker } from '../components/MoneyTicker';
 import { HoleView } from './HoleView';
 import { activeResults } from '../games';
 import { firstIncompleteHole } from '../games/util';
@@ -221,11 +221,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       </div>
 
       {mode === 'hole' && !round.options.league && (
-        swing ? (
-          <SwingTicker round={round} hole={hole} swing={swing} />
-        ) : (
-          <MoneyTicker round={round} />
-        )
+        <HoleTicker round={round} hole={hole} swing={swing} />
       )}
 
       {mode === 'hole' && (
