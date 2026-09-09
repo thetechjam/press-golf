@@ -109,9 +109,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the top of the page, and the page behind no longer scrolls under an open
   sheet. Escape, the scrim tap and the X are unchanged, exit animation and all.
 - **The money line cross-fades between the running total and a hole's swing**
-  rather than cutting between two different sets of text in the same box, and
-  the armed Delete button now grows into "Delete?" instead of shoving the row
-  sideways in a single frame.
+  rather than cutting between two different sets of text in the same box, the
+  armed Delete button now grows into "Delete?" instead of shoving the row
+  sideways in a single frame, and a share button fades into "Building…" rather
+  than swapping its icon and label out in one. That last one only shows on a
+  card big enough to take a moment to draw — a small round renders in under a
+  frame, and the button rightly does nothing visible at all.
 - **The browser's own chrome now follows the theme.** `theme-color` was one
   fixed brand green, so on Android the address bar stayed green while the app
   sat at near-black in dark mode. It is now repainted from the palette

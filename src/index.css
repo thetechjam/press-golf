@@ -2547,6 +2547,32 @@ select:focus {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
+  /* Containing block for the busy label stacked on top of the idle one. */
+  position: relative;
+}
+/* The two labels of a share CTA. The idle one stays in flow and goes on
+   setting the button's height; taking BOTH out of it would collapse the
+   button to its padding and min-height the moment a render started. Width is
+   never at stake here — `flex: 1` on two buttons splits the row evenly
+   whatever they say — so this is a pure cross-fade with no geometry in it. */
+.share-face {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity var(--swap) ease, filter var(--swap) ease;
+}
+.share-busy {
+  position: absolute;
+  inset: 0;
+  justify-content: center;
+}
+/* Blur, not opacity alone: an icon-plus-noun dissolving into a bare gerund is
+   two different shapes, and dimming one while the other brightens still reads
+   as two objects. Blurring across the swap bridges them into one thing
+   changing. 2px, well under the ~20px where Safari's blur cost shows. */
+.share-face.out {
+  opacity: 0;
+  filter: blur(2px);
 }
 
 /* Secondary text-share under the scoreboard share CTA. */
@@ -3642,6 +3668,7 @@ select:focus {
 @media (prefers-reduced-motion: reduce) {
   .ticker-face,
   .del-face,
+  .share-face,
   .awake-toggle,
   .nav-arrow,
   .round-main,

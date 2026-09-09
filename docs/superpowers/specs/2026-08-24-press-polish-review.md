@@ -338,8 +338,21 @@ regardless of specificity — hoisting it out of the `[open]` / `.closing` scopi
 paints every dismissed sheet permanently over the app. `src/overscroll.test.ts`
 gained a suite for that, confirmed to fail against a file broken exactly that way.
 
+- **Tier 3's last item — the Share button label.** Both labels are now stacked
+  in the button and blur-cross-fade, the idle one staying in flow so the button
+  keeps its height when the render starts. Width was never at stake: `flex: 1`
+  on the two CTAs splits the row evenly whatever they say.
+
+  Worth recording, because it bounds what this change can be worth: measured
+  frame by frame, a two-player 18-hole card renders in **under one frame**, so
+  `aria-busy` goes true and false again before the cross-fade gets past ~0.2px
+  of blur. On a card that small the transition is invisible, and correctly so —
+  it is there for the big card on the slow phone, which is the only time the
+  app actually asks anyone to wait. Deliberately *not* addressed with a minimum
+  visible duration for the busy state: holding a wait state open past the work
+  it describes is a slower app pretending to be a smoother one.
+
 ### Still not done
 
-**Drag-to-dismiss** (declined again — same reasoning) and **item 4's cross-fade
-of the Share button label**, which is the one recommendation from the original
-review that no pass has attempted.
+**Drag-to-dismiss**, declined a third time on the same reasoning. Every other
+recommendation in this review has now shipped.
