@@ -285,3 +285,74 @@ to a 3,470-line stylesheet. The failure is silent: no error, no runtime signal,
 the app simply animates for people who asked it not to. Read the docblock before
 attempting an `@layer` migration — a naive one inverts the precedence and ships
 broken, and the base press rules are declared in eight separate places.
+
+---
+
+## Outcome — 2026-09-09
+
+Second pass. Everything the 2026-08-26 execution deferred is now done: items 7
+(splash handoff), 8 (sheet modality) and 9 (the two hard cuts), plus the rest of
+item 10.
+
+### What shipped
+
+- **Item 7 — the splash handoff.** `#splash` moved out of `#root` (as a child,
+  `createRoot().render()` deleted it on mount, which is what made the handoff a
+  one-frame cut), and `src/splash.ts` fades it over 260ms from a mount effect in
+  `App.tsx` — from an effect, not straight after `render()`, so it cannot outrun
+  React's initial commit. Reduced motion removes the node outright rather than
+  fading it. A 1s backstop timer covers a `transitionend` that never fires, which
+  would otherwise leave an invisible splash in the accessibility tree.
+- **Item 8 — the sheet is a real `<dialog>`.** `showModal()` supplies the trap,
+  the background inertness and the focus restore that `aria-modal="true"` had
+  been asserting without providing, and deletes the document `keydown` listener
+  (Escape arrives as `cancel`, which is cancelled so the exit still animates).
+  Two things it does not supply, added here: a page scroll lock (`html.sheet-open`,
+  refcounted in `Sheet.tsx`) — measured, the page behind a modal dialog scrolls
+  freely in Chromium without it — and focus moved to the panel rather than to the
+  first focusable descendant, which is the X.
+- **Item 9.** The ticker's two faces now live in one grid cell and blur-cross-fade
+  (`HoleTicker`), which also fixes the box height at the taller of the two rather
+  than at whichever is mounted. The armed delete travels its width between two
+  fixed values — `auto` cannot be interpolated, which is why it used to shove the
+  row in a single frame — and cross-fades the glyph against the word.
+- **Item 10, the rest of it.** `maximum-scale=1.0` is gone (WCAG 1.4.4), and
+  `theme-color` is repainted from the resolved `--bg` on every `applyTheme`. It
+  reads the value out of the cascade rather than restating hexes, so a palette
+  edit cannot leave it behind.
+
+### What the first execution's notes got wrong, and one thing this pass nearly did
+
+The 2026-08-26 defect list records the exiting sheet eating taps for 200ms,
+fixed with `pointer-events: none`. That fix does not survive the move to
+`<dialog>` on its own: a modal dialog makes the whole document inert, and
+inertness is not hit-testing, so `pointer-events` cannot reach it. `Sheet.tsx`
+closes the dialog as the exit *begins* — dropping it out of the top layer to an
+ordinary `z-index: 50` overlay for the slide — and keeps the `pointer-events`
+rule for the scrim itself. Verified in Chromium: a button behind the sheet is
+hit-testable 60ms into the exit, and a real tap 60ms after a dismissal lands.
+
+`display` on the dialog cannot be written the obvious way, because an author
+`display: flex` beats the UA's `dialog:not([open]) { display: none }` on origin
+regardless of specificity — hoisting it out of the `[open]` / `.closing` scoping
+paints every dismissed sheet permanently over the app. `src/overscroll.test.ts`
+gained a suite for that, confirmed to fail against a file broken exactly that way.
+
+- **Tier 3's last item — the Share button label.** Both labels are now stacked
+  in the button and blur-cross-fade, the idle one staying in flow so the button
+  keeps its height when the render starts. Width was never at stake: `flex: 1`
+  on the two CTAs splits the row evenly whatever they say.
+
+  Worth recording, because it bounds what this change can be worth: measured
+  frame by frame, a two-player 18-hole card renders in **under one frame**, so
+  `aria-busy` goes true and false again before the cross-fade gets past ~0.2px
+  of blur. On a card that small the transition is invisible, and correctly so —
+  it is there for the big card on the slow phone, which is the only time the
+  app actually asks anyone to wait. Deliberately *not* addressed with a minimum
+  visible duration for the busy state: holding a wait state open past the work
+  it describes is a slower app pretending to be a smoother one.
+
+### Still not done
+
+**Drag-to-dismiss**, declined a third time on the same reasoning. Every other
+recommendation in this review has now shipped.

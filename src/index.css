@@ -168,6 +168,16 @@ html {
   overscroll-behavior-y: none;
 }
 
+/* Held by Sheet.tsx for as long as any sheet is on screen. showModal() does
+   not reliably stop the page behind a modal dialog from scrolling, so without
+   this a short sheet over a long Setup screen lets a drag scroll the page
+   under it — the sheet sits still while the world moves. On html, not body:
+   html is the scrolling element here (see the height: 100% chain above), and
+   locking it leaves the scroll position exactly where it was for the unlock. */
+html.sheet-open {
+  overflow: hidden;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
   background-color: var(--bg);
@@ -351,12 +361,14 @@ button:focus-visible {
 .nav-arrow,
 .round-main,
 .hole-dot,
-.round-del,
-.saved-course-del,
 .game-info-btn,
 .sheet-close {
   transition: transform var(--press) var(--ease-out);
 }
+/* .round-del and .saved-course-del are absent above for the same reason
+   .seg-btn and .game-card are below: arming them animates more than the press,
+   and the file keeps one `transition` declaration per selector. Theirs is in
+   the armed-delete rule. */
 /* .seg-btn and .game-card also carry a selected state (.active) that was an
    instant colour jump; --swap gives the fill somewhere to travel. Their press
    transition lives here rather than in the list above so there is only ever
@@ -798,17 +810,52 @@ select:focus {
   cursor: pointer;
 }
 
-/* Armed two-tap delete: first tap arms this state, second tap commits. */
+/* ---- Armed two-tap delete: first tap arms this state, second tap commits ----
+   Both hosts are stretch rows (.round-card, .saved-course-row), so the button
+   takes its height from the row and nothing here can change it. */
+.round-del,
+.saved-course-del {
+  position: relative;
+  transition: transform var(--press) var(--ease-out), width var(--swap) var(--ease-in-out),
+    background-color var(--swap) ease, border-color var(--swap) ease;
+}
+/* Both faces sit on top of each other so arming can cross-fade them. Absolute,
+   not stacked in flow: in flow the glyph and the word would each claim their
+   own line box and the button would size to both at once. */
+.del-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition: opacity var(--swap) ease;
+}
+/* The word is styled here rather than on .armed, and that is what keeps the
+   glyph's size out of the transition: setting font-size on the button itself
+   would resize the outgoing glyph mid-fade. */
+.del-word {
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+}
+.armed .del-glyph {
+  opacity: 0;
+}
+.armed .del-word {
+  opacity: 1;
+}
 .round-del.armed,
 .saved-course-del.armed {
-  width: auto;
-  min-width: 44px;
-  padding: 0 12px;
+  /* A FIXED width, where this was `auto`: `auto` cannot be interpolated, so
+     the row was shoved sideways in a single frame. Sized to clear "Delete?"
+     at 0.85rem/700 with room to spare — the label is centred by the grid
+     above, so an unusually large root font-size overflows the button rather
+     than being clipped by it. Both rows are built to absorb the growth (see
+     the min-width: 0 notes on .round-main and .saved-course-load). */
+  width: 82px;
   background: var(--over-strong);
   border-color: var(--over-strong);
   color: #fff;
-  font-size: 0.85rem;
-  font-weight: 700;
 }
 /* White on the dark-mode --over fails contrast; the near-black bg clears it. */
 :root.dark .round-del.armed,
@@ -2500,6 +2547,32 @@ select:focus {
   flex: 1;
   min-width: 0;
   white-space: nowrap;
+  /* Containing block for the busy label stacked on top of the idle one. */
+  position: relative;
+}
+/* The two labels of a share CTA. The idle one stays in flow and goes on
+   setting the button's height; taking BOTH out of it would collapse the
+   button to its padding and min-height the moment a render started. Width is
+   never at stake here — `flex: 1` on two buttons splits the row evenly
+   whatever they say — so this is a pure cross-fade with no geometry in it. */
+.share-face {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity var(--swap) ease, filter var(--swap) ease;
+}
+.share-busy {
+  position: absolute;
+  inset: 0;
+  justify-content: center;
+}
+/* Blur, not opacity alone: an icon-plus-noun dissolving into a bare gerund is
+   two different shapes, and dimming one while the other brightens still reads
+   as two objects. Blurring across the swap bridges them into one thing
+   changing. 2px, well under the ~20px where Safari's blur cost shows. */
+.share-face.out {
+  opacity: 0;
+  filter: blur(2px);
 }
 
 /* Secondary text-share under the scoreboard share CTA. */
@@ -2557,6 +2630,41 @@ select:focus {
 }
 
 /* ---- Money ticker (Play → Hole tab) ---- */
+/* Both faces of the ticker occupy ONE grid cell, so the running total and a
+   hole's swing can cross-fade instead of hard-cutting between two unrelated
+   sets of text in the same rectangle. Stacking them also fixes the box height
+   at the taller of the two rather than at whichever is currently mounted, so
+   the swap cannot move the steppers below it even by a pixel. */
+.ticker-stack {
+  display: grid;
+}
+.ticker-face {
+  grid-area: 1 / 1;
+  /* Both faces are horizontal scrollers; without this the wider one sets the
+     grid column's min-content width and pushes the stack past the screen. */
+  min-width: 0;
+  transition: opacity var(--swap) ease, filter var(--swap) ease;
+}
+/* The blur is what makes this read as one line updating rather than two lists
+   swapping: it dissolves the outgoing glyphs instead of dimming them, so the
+   eye never resolves the two as separate objects. 2px — far under the ~20px
+   where Safari's blur cost starts to show. */
+.ticker-face.out {
+  opacity: 0;
+  filter: blur(2px);
+  pointer-events: none;
+}
+/* The swing face is only mounted once a hole has actually been completed, so
+   the first swing of a round would otherwise appear at full opacity with no
+   transition to run — a half crossfade, money fading out under a face that
+   snapped in. Where @starting-style is unsupported that is exactly what still
+   happens; it degrades to today's behaviour rather than to anything broken. */
+@starting-style {
+  .ticker-face {
+    opacity: 0;
+    filter: blur(2px);
+  }
+}
 .money-ticker {
   display: flex;
   gap: 14px;
@@ -2654,18 +2762,57 @@ select:focus {
   font-size: 0.7rem;
 }
 
-/* ---------- Sheet ---------- */
+/* ---------- Sheet ----------
+   .sheet-backdrop is a <dialog> (see Sheet.tsx), so the first half of this
+   rule is undoing the UA's box for it: a dialog defaults to fit-content
+   sized, auto-margined, bordered and Canvas-filled, none of which survives
+   being a full-viewport scrim. */
 .sheet-backdrop {
   position: fixed;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  /* The panel is the only scroller; without this the dialog itself scrolls
+     behind it and the scrim can be dragged off the top of the screen. */
+  overflow: hidden;
   background: rgba(4, 17, 11, 0.5);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
+  color: inherit;
+  /* Irrelevant while modal — the top layer paints above every z-index — and
+     load-bearing for the 200ms after Sheet.tsx closes the dialog to end its
+     inertness, when the exiting node is an ordinary positioned element again.
+     50 is the value .update-banner is documented against; see its rule. */
   z-index: 50;
   animation: sheet-fade var(--sheet) var(--ease-out);
 }
+/* Scoped to the states where the dialog should be visible, and it has to be:
+   an author `display` beats the UA's `dialog:not([open]) { display: none }`
+   whatever the specificity, because author origin wins — so declaring
+   `display: flex` on .sheet-backdrop alone would paint every closed sheet
+   over the app forever. .closing is the deliberate exception: the exit runs
+   on a dialog that is already closed. */
+.sheet-backdrop[open],
+.sheet-backdrop.closing {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+/* The scrim is painted by the element itself rather than by ::backdrop,
+   because ::backdrop exists only while the dialog is modal — and the exit
+   deliberately is not. Chrome's UA ::backdrop is a 10% black wash, so left
+   alone it would double the scrim for the enter and then drop away at the
+   exact moment the sheet starts sliding out. */
+.sheet-backdrop::backdrop {
+  background: transparent;
+}
 .sheet {
+  /* A long Settings sheet scrolls itself; `contain` stops that scroll chaining
+     to the page behind once it hits either end. */
+  overscroll-behavior: contain;
   background: var(--card);
   border-radius: var(--radius) var(--radius) 0 0;
   width: 100%;
@@ -2725,7 +2872,10 @@ select:focus {
   animation: sheet-fade-out var(--sheet-exit, 200ms) var(--ease-out) forwards;
   /* The node outlives the user's gesture by EXIT_MS. Without this it stays in
      the hit-test tree the whole time, invisible, eating the next tap — a
-     dropped tap one-handed on a course. */
+     dropped tap one-handed on a course. Sheet.tsx closing the dialog at the
+     start of the exit is the other half of the same fix and does not replace
+     this one: that ends the document's inertness, which pointer-events cannot
+     touch, while this one gets the exiting scrim itself out of the way. */
   pointer-events: none;
 }
 .sheet-backdrop.closing .sheet {
@@ -3516,6 +3666,9 @@ select:focus {
    that actually scales to 1.3 — still animating. The 1.3 end state stays; it
    marks the current hole and is information, not motion. */
 @media (prefers-reduced-motion: reduce) {
+  .ticker-face,
+  .del-face,
+  .share-face,
   .awake-toggle,
   .nav-arrow,
   .round-main,

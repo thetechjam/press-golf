@@ -115,6 +115,50 @@ function buildSummary(round: Round): string {
   return lines.join('\n');
 }
 
+/**
+ * One of the two share CTAs on Results, and the app's only wait state.
+ *
+ * aria-disabled, not disabled: `disabled` drops the button out of the tab order
+ * mid-interaction, so a keyboard user's focus falls to <body> the moment they
+ * activate it. The onClick guard is what actually prevents a second canvas
+ * render. aria-label tracks the visible label (WCAG 2.5.3 Label in Name) and
+ * aria-busy announces the wait (4.1.3 Status Messages).
+ *
+ * Both labels are always rendered, stacked, so "Building…" can cross-fade with
+ * the idle icon-and-word rather than replacing it in one frame: an icon plus a
+ * noun and a bare gerund are two visibly different objects, and swapping them
+ * outright reads as the button being replaced rather than as one button
+ * changing state. Only the busy label leaves the flow — the idle one stays and
+ * keeps setting the button's height, so nothing moves when the render starts.
+ */
+function ShareButton({
+  label,
+  busy,
+  onShare,
+}: {
+  label: string;
+  busy: boolean;
+  onShare: () => void;
+}) {
+  const what = label.toLowerCase();
+  return (
+    <button
+      className="btn-primary big"
+      onClick={() => {
+        if (!busy) onShare();
+      }}
+      aria-disabled={busy}
+      aria-busy={busy}
+      aria-label={busy ? `Building ${what}…` : `Share ${what}`}
+    >
+      <span className={`share-face${busy ? ' out' : ''}`}>
+        <ShareIcon size={18} /> {label}
+      </span>
+      <span className={`share-face share-busy${busy ? '' : ' out'}`}>Building…</span>
+    </button>
+  );
+}
+
 export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
   const [copied, setCopied] = useState(false);
   const [rendering, setRendering] = useState(false);
@@ -253,46 +297,8 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       )}
 
       <div className="share-row">
-        {/* aria-disabled, not disabled: `disabled` drops the button out of the
-            tab order mid-interaction, so a keyboard user's focus falls to
-            <body> the moment they activate it. The onClick guard is what
-            actually prevents a second canvas render. aria-label tracks the
-            visible label (WCAG 2.5.3 Label in Name) and aria-busy announces
-            the wait (4.1.3 Status Messages). */}
-        <button
-          className="btn-primary big"
-          onClick={() => {
-            if (!rendering) shareResults();
-          }}
-          aria-disabled={rendering}
-          aria-busy={rendering}
-          aria-label={rendering ? 'Building results…' : 'Share results'}
-        >
-          {rendering ? (
-            'Building…'
-          ) : (
-            <>
-              <ShareIcon size={18} /> Results
-            </>
-          )}
-        </button>
-        <button
-          className="btn-primary big"
-          onClick={() => {
-            if (!renderingCard) shareScorecard();
-          }}
-          aria-disabled={renderingCard}
-          aria-busy={renderingCard}
-          aria-label={renderingCard ? 'Building scorecard…' : 'Share scorecard'}
-        >
-          {renderingCard ? (
-            'Building…'
-          ) : (
-            <>
-              <ShareIcon size={18} /> Scorecard
-            </>
-          )}
-        </button>
+        <ShareButton label="Results" busy={rendering} onShare={shareResults} />
+        <ShareButton label="Scorecard" busy={renderingCard} onShare={shareScorecard} />
       </div>
       <button className="btn-ghost share-text" onClick={shareText}>
         {copied ? 'Copied to clipboard' : 'Share as text instead'}

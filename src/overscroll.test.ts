@@ -44,6 +44,45 @@ describe('settings switch sizing', () => {
   });
 });
 
+/**
+ * The sheet is a <dialog>, and `display` is the one declaration on it that
+ * cannot be written the obvious way. A user-agent rule hides a closed dialog
+ * (`dialog:not([open]) { display: none }`), but author origin beats UA origin
+ * whatever the specificity — so hoisting `display: flex` onto the bare
+ * .sheet-backdrop rule, which is exactly the tidy-up the split invites, paints
+ * every sheet the app has ever rendered over the screen and leaves it there.
+ * The app still builds, the sheet still opens, and the failure only shows on
+ * the frame after the first dismissal.
+ *
+ * `.closing` shares the scoped rule deliberately: Sheet.tsx closes the dialog
+ * when the exit starts, to end the document's inertness, so the exit animation
+ * runs on a dialog that is already closed and would otherwise be display: none.
+ */
+describe('sheet dialog display scoping', () => {
+  // Stripped, because the rule's own comment discusses `display: none`.
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+  const unscoped = /(?:^|\})\s*\.sheet-backdrop\s*\{([^}]*)\}/m.exec(bare)?.[1] ?? '';
+  const scopedSelector =
+    /(?:^|\})\s*((?:\.sheet-backdrop(?:\[open\]|\.closing)\s*,?\s*)+)\{([^}]*)\}/m.exec(bare);
+
+  it('locates both halves of the split', () => {
+    expect(unscoped).toMatch(/position\s*:\s*fixed/);
+    expect(scopedSelector).not.toBeNull();
+  });
+
+  it('never declares display on the unscoped rule', () => {
+    expect(unscoped).not.toMatch(/display\s*:/);
+  });
+
+  it('declares it only for a dialog that is open or on its way out', () => {
+    const selector = scopedSelector?.[1] ?? '';
+    const body = scopedSelector?.[2] ?? '';
+    expect(body).toMatch(/display\s*:\s*flex/);
+    expect(selector).toMatch(/\.sheet-backdrop\[open\]/);
+    expect(selector).toMatch(/\.sheet-backdrop\.closing/);
+  });
+});
+
 describe('pull-to-refresh guard', () => {
   const rootRule = /(?:^|\})\s*html\s*\{([^}]*)\}/m.exec(css)?.[1] ?? '';
 
