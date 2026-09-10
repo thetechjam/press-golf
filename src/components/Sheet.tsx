@@ -19,6 +19,38 @@ interface Props {
 const EXIT_MS = 200;
 
 /**
+ * Drag-to-dismiss thresholds.
+ *
+ * SLOP is how far a finger travels before the gesture counts as a drag rather
+ * than a tap that wandered — below it the sheet does not move at all, so a tap
+ * on a control near the top of the panel is never stolen.
+ *
+ * A release dismisses on EITHER a distance or a flick, because they are two
+ * different intentions: DISMISS_RATIO is "I have pushed this most of the way
+ * down", measured against the panel's own height so a short Help sheet and a
+ * tall Settings sheet both need the same proportion of a push. FLICK is a
+ * velocity in px/ms — a fast, short throw is a dismissal too, and without it
+ * the only way to close a tall sheet is a long deliberate drag.
+ *
+ * FLICK is measured over the last VELOCITY_WINDOW of the gesture, not over the
+ * whole of it, and that distinction is what keeps the two tests meaning
+ * different things. Averaged from touchstart, a deliberate half-pull that the
+ * user stopped, thought better of, and released still carries the speed it had
+ * on the way down; over a trailing window a finger that has come to rest reads
+ * as ~0 whatever it did earlier.
+ *
+ * 0.5px/ms is 500px/s, and it is deliberately not the 0.11 the polish review
+ * proposed. Measured: an unremarkable 40px pull over 90ms is already 0.44px/ms,
+ * so at 0.11 essentially every drag qualifies as a throw, DISMISS_RATIO becomes
+ * unreachable, and a sheet the user nudged and let go of closes anyway. A flick
+ * has to be faster than a drag or it is not a separate gesture.
+ */
+const SLOP = 8;
+const DISMISS_RATIO = 0.25;
+const FLICK = 0.5;
+const VELOCITY_WINDOW = 100;
+
+/**
  * How many sheets currently hold the page scroll locked. A counter rather than
  * a boolean: the class is on a shared element, so the second sheet to unmount
  * would otherwise unlock the page while the first is still open. Only one
@@ -120,6 +152,82 @@ export function Sheet({ title, onClose, children }: Props) {
     if (closing) dialog.current?.close();
   }, [closing]);
 
+  /**
+   * Drag-to-dismiss.
+   *
+   * Touch events only, and deliberately: a mouse already has the scrim, the X
+   * and Escape, and doing this with pointer events means capture plus
+   * click-suppression to stop a drag from ending in a stray activation. The
+   * grabber in the panel is shown under `any-pointer: coarse` for the same
+   * reason — the affordance appears exactly where the gesture exists.
+   *
+   * The transform is written straight to the node rather than held in state.
+   * A drag produces a move event per frame, and re-rendering the whole sheet
+   * (Settings holds the theme picker, two switches and the About block) 60
+   * times a second to move one box is how a gesture ends up behind the finger.
+   */
+  const dragFrom = useRef<{ y: number; at: number } | null>(null);
+  const dragging = useRef(false);
+  /** How far the sheet is currently pulled down, in px. Read on release. */
+  const dragBy = useRef(0);
+  /** Trailing sample the release velocity is measured against — see FLICK. */
+  const recent = useRef({ by: 0, at: 0 });
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    // Not mid-exit, and not while the panel is scrolled: a Settings sheet
+    // taller than the screen scrolls itself, and pulling down from anywhere
+    // but its top has to keep meaning "scroll up".
+    if (closingRef.current || (panel.current?.scrollTop ?? 0) > 0) return;
+    const t = e.touches[0];
+    dragFrom.current = { y: t.clientY, at: performance.now() };
+    dragBy.current = 0;
+    recent.current = { by: 0, at: dragFrom.current.at };
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    const from = dragFrom.current;
+    if (!from || !panel.current) return;
+    const dy = e.touches[0].clientY - from.y;
+    // Downward only. An upward pull on a sheet that is already at its top
+    // means nothing, and rubber-banding it would imply there is more above.
+    if (!dragging.current) {
+      if (dy < SLOP) return;
+      dragging.current = true;
+      panel.current.classList.add('dragging');
+    }
+    // Retire the trailing sample only once it is older than the window, so at
+    // release it is always between 0 and VELOCITY_WINDOW ms old.
+    const now = performance.now();
+    if (now - recent.current.at > VELOCITY_WINDOW) {
+      recent.current = { by: dragBy.current, at: now };
+    }
+    dragBy.current = Math.max(0, dy);
+    panel.current.style.transform = `translateY(${dragBy.current}px)`;
+  };
+
+  const onTouchEnd = () => {
+    const from = dragFrom.current;
+    const el = panel.current;
+    dragFrom.current = null;
+    if (!from || !dragging.current || !el) return;
+    dragging.current = false;
+    el.classList.remove('dragging');
+
+    const travelled = dragBy.current;
+    const velocity =
+      (travelled - recent.current.by) / Math.max(1, performance.now() - recent.current.at);
+    if (velocity > FLICK || travelled > el.offsetHeight * DISMISS_RATIO) {
+      // The inline transform is left in place on purpose: the exit keyframe
+      // has no `from`, so it starts from wherever the finger left the sheet
+      // and carries it the rest of the way down rather than snapping to the
+      // top of the slide first. An animation outranks an inline style, so it
+      // wins for the duration and the node unmounts under it.
+      close();
+      return;
+    }
+    el.style.transform = '';
+  };
+
   return (
     <dialog
       className={`sheet-backdrop${closing ? ' closing' : ''}`}
@@ -141,7 +249,16 @@ export function Sheet({ title, onClose, children }: Props) {
         if (e.target === e.currentTarget) close();
       }}
     >
-      <div className="sheet" tabIndex={-1} ref={panel}>
+      <div
+        className="sheet"
+        tabIndex={-1}
+        ref={panel}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+        onTouchCancel={onTouchEnd}
+      >
+        <div className="sheet-grab" aria-hidden="true" />
         <div className="sheet-head">
           <h2>{title}</h2>
           <button className="sheet-close" onClick={close} aria-label="Close">

@@ -121,8 +121,21 @@ export function CourseSearch({ value, onChange, onPick, label = 'Course (optiona
         typing to use your own course name.
       </p>
 
-      {searching && <p className="cs-status">Searching…</p>}
-      {error && <p className="cs-status cs-error">{error}</p>}
+      {/* One always-mounted live region rather than three conditional lines:
+          inserting an element that already has text in it is missed by many
+          screen readers, so the node has to be there before the text changes.
+          The three states it carries are mutually exclusive anyway — the
+          no-matches line only exists when there is no result list to sit
+          under — so merging them costs nothing visually. */}
+      <p className={`cs-status${error ? ' cs-error' : ''}`} role="status">
+        {searching
+          ? 'Searching…'
+          : error
+            ? error
+            : open && hits.length === 0 && value.trim().length >= 3
+              ? 'No matches — your typed name will be used as-is.'
+              : ''}
+      </p>
 
       {open && hits.length > 0 && (
         <ul className="cs-results">
@@ -139,10 +152,6 @@ export function CourseSearch({ value, onChange, onPick, label = 'Course (optiona
             </li>
           ))}
         </ul>
-      )}
-
-      {open && !searching && !error && hits.length === 0 && value.trim().length >= 3 && (
-        <p className="cs-status">No matches — your typed name will be used as-is.</p>
       )}
 
       <p className="cs-attribution">Course data © OpenGolfAPI (ODbL)</p>

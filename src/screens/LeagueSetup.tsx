@@ -171,7 +171,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
         <button className="btn-ghost icon back" onClick={onCancel} aria-label="Back">
           ‹
         </button>
-        <h1>Golf League</h1>
+        <h1 tabIndex={-1}>Golf League</h1>
         <button className="btn-ghost icon" onClick={() => setShowSettings(true)} aria-label="Settings">
           <GearIcon size={20} />
         </button>

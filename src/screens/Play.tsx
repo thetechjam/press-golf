@@ -174,7 +174,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
         <button className="btn-ghost icon back" onClick={onExit} aria-label="Back to rounds">
           ‹
         </button>
-        <h1>{round.course || 'Round'}</h1>
+        <h1 tabIndex={-1}>{round.course || 'Round'}</h1>
         <button className="btn-ghost" onClick={tryFinish}>
           Finish
         </button>

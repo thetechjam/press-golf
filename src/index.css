@@ -338,6 +338,17 @@ button:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+/* The one place a ring is wrong. Each screen's <h1> carries tabIndex={-1}
+   purely so App.tsx can drop focus there on navigation (see the effect that
+   does it) — it is a landing pad, not a control, and nothing can Tab to it.
+   A ring there marks a place the user never went. Left alone it is also the
+   UA's own hairline rather than --focus, and on Home, where the heading is
+   the full-width flex wordmark, that draws a black box across the top of the
+   app after every back gesture. WCAG 2.4.7 governs keyboard-operable
+   components; a -1 heading is not one. */
+.screen h1:focus {
+  outline: none;
+}
 
 /* ---------- Press feedback for otherwise-unstyled pressables ----------
    The global `-webkit-tap-highlight-color: transparent` removes the browser's
@@ -422,6 +433,9 @@ button:focus-visible {
   padding: 24px 0 8px;
 }
 .logo {
+  /* An <h1> since it is Home's page title (see Home.tsx) — the UA margin that
+     comes with that has to go, the hero spaces itself. */
+  margin: 0;
   font-family: var(--font-display);
   font-size: 2.3rem;
   font-weight: 600;
@@ -694,6 +708,16 @@ select:focus {
   font-size: 0.8rem;
   color: var(--muted);
   margin: 0;
+}
+/* The status line is a live region, so it stays mounted with nothing to say
+   for most of the search's life (see CourseSearch.tsx). Out of flow while
+   empty, because .course-search is a flex column with a gap and an empty
+   child still claims one — 6px of dead space above every result list.
+   `display: none` would be the obvious fix and is the wrong one: it takes the
+   region out of the accessibility tree, so its first message arrives as an
+   insertion, which is the exact case the live region exists to avoid. */
+.cs-status:empty {
+  position: absolute;
 }
 .cs-error {
   color: var(--over-strong);
@@ -2829,6 +2853,39 @@ select:focus {
      height with no per-sheet math. --ease-sheet decelerates harder than
      --ease-out; see its declaration in :root. */
   animation: sheet-in var(--sheet) var(--ease-sheet);
+  /* The spring back from a drag that did not go far enough to dismiss (see
+     Sheet.tsx). Only ever animates the inline transform the drag leaves
+     behind: the enter and the exit are animations, which outrank a transition,
+     so neither is affected by this. --sheet-exit because a release is the
+     system answering the user, the same beat as a dismissal. */
+  transition: transform var(--sheet-exit, 200ms) var(--ease-sheet);
+}
+/* While a finger is on it the sheet must track that finger exactly — a
+   transition here would put the panel behind the drag by its own duration. */
+.sheet.dragging {
+  transition: none;
+}
+/* The grab handle, and the only thing that says the sheet can be pushed back
+   down. Shown under any-pointer: coarse rather than unconditionally, because
+   the gesture behind it is touch-only (Sheet.tsx says why) and an affordance
+   for something a mouse cannot do is a lie. A laptop with a touchscreen
+   reports a fine PRIMARY pointer and a coarse any-pointer, which is exactly
+   the case that should still get it. */
+.sheet-grab {
+  display: none;
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  /* Pulls up into the panel's own top padding so the handle costs no height
+     that the sheet's contents would otherwise have. */
+  margin: -6px auto -2px;
+  flex: 0 0 auto;
+}
+@media (any-pointer: coarse) {
+  .sheet-grab {
+    display: block;
+  }
 }
 @keyframes sheet-fade {
   from {
@@ -2887,6 +2944,12 @@ select:focus {
   .sheet-backdrop.closing,
   .sheet-backdrop.closing .sheet {
     animation: none;
+  }
+  /* The drag itself is direct manipulation and stays — the sheet follows the
+     finger either way. What goes is the spring back from a drag that did not
+     dismiss: with no transition the panel simply is where it belongs again. */
+  .sheet {
+    transition: none;
   }
   /* With the exit animation gone there is nothing to hold the sheet at
      opacity 0, so it would sit there fully drawn for the unmount delay.
@@ -3642,6 +3705,73 @@ select:focus {
   border: 1px solid color-mix(in srgb, var(--ink) 52%, transparent);
   background: transparent;
   color: var(--muted);
+}
+
+/* ---------- Pointer hover ----------
+   Everything here is behind `@media (hover: hover)` and that is the whole
+   reason this file had no hover rules for so long: an unguarded :hover sticks
+   to the last control a scorekeeper touched on a phone and sits there, lit,
+   until they tap something else. Under the query, no touch device sees any of
+   it.
+
+   Press already answers the finger (:active, everywhere) and the keyboard
+   (:focus-visible). This is the third input the app gets used with — it opens
+   at a URL on a laptop, and until now nothing on the page acknowledged a
+   cursor at all.
+
+   One tint, and it is the press colour at roughly half strength: hover says
+   "this is a thing you can hit", press says "you hit it", and the second has
+   to read as more than the first. Mixing into --card rather than --bg keeps a
+   single value working on both surfaces, which is what .game-card.active
+   already does from a --bg base.
+
+   No transitions are added for these. Hover tracks a cursor that is already on
+   the control, so an instant answer reads as responsiveness where a fade reads
+   as lag — and .seg-btn and .game-card, the two that already carry a
+   background-color transition for their selected state, quietly get one
+   anyway. The dot strip (.hole-dot) is deliberately left out: its visual is a
+   13px ::before, so a tint on the button box would paint a square behind a
+   circle, and the alternative is a scale — motion, needing its own
+   reduced-motion entry, for the app's smallest and least mouse-driven target. */
+@media (hover: hover) {
+  .btn-secondary:hover,
+  .btn-ghost:hover,
+  .cs-hit:hover:not(:disabled),
+  .saved-course-load:hover,
+  .round-main:hover,
+  .press-btn:hover:not(:disabled),
+  .set-action:hover,
+  .hero-settings:hover,
+  .sheet-close:hover,
+  .game-info-btn:hover,
+  .awake-toggle:hover,
+  .nav-arrow:hover:not(:disabled),
+  .seg-btn:hover:not(.active):not(:disabled),
+  .game-card:hover:not(.active),
+  .score-chip:hover:not([aria-checked='true']) {
+    background: color-mix(in srgb, var(--fairway) 7%, var(--card));
+  }
+  /* .btn-ghost is bare text with no box of its own, so the tint needs a shape
+     to land in. It only exists on hover, so nothing is rounded at rest. */
+  .btn-ghost:hover {
+    border-radius: 10px;
+  }
+  /* The primary CTA is the one filled control, so it darkens instead of
+     tinting — and darkens rather than lightens because its label is white:
+     --green-500 would put white text at 3.26:1, under the 4.5:1 floor, while
+     --green-700 lifts it from 5.07:1 to 6.65:1. Hover must never cost
+     contrast. */
+  .btn-primary:hover:not(:disabled):not([aria-disabled='true']) {
+    background: var(--green-700);
+  }
+  /* Destructive controls answer in their own colour rather than the fairway
+     tint — hovering the delete on a saved round should not feel like hovering
+     the round. Not while armed: that state is already solid --over-strong, and
+     there is nothing quieter to say once the button is asking. */
+  .round-del:hover:not(.armed),
+  .saved-course-del:hover:not(.armed) {
+    background: color-mix(in srgb, var(--over-strong) 10%, var(--card));
+  }
 }
 
 /* ---------- Reduced motion: every press transform in the app ----------

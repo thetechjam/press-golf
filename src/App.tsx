@@ -40,6 +40,31 @@ export default function App() {
   // commit — see splash.ts.
   useEffect(dismissSplash, []);
 
+  /**
+   * Move focus to the new screen's heading on every view change.
+   *
+   * A view swap unmounts the control that was just activated, so focus falls
+   * to <body>: the next Tab starts over from the top of the document, and a
+   * screen reader is told nothing at all about the screen that just arrived —
+   * the same defect Sheet.tsx fixes when its own contents are replaced around
+   * it, one level up. Each screen's <h1> carries tabIndex={-1} to receive this.
+   *
+   * Deliberately NOT preventScroll, unlike the sheet's: focus() scrolling the
+   * heading into view is what puts a new screen at its top, and a screen
+   * change is the one moment where inheriting the previous screen's scroll
+   * position is wrong.
+   */
+  const navigated = useRef(false);
+  useEffect(() => {
+    // Not on first paint — nothing has been navigated away from yet, and
+    // taking focus on load only fights whatever the user is already doing.
+    if (!navigated.current) {
+      navigated.current = true;
+      return;
+    }
+    document.querySelector<HTMLElement>('.screen h1')?.focus();
+  }, [view]);
+
   // Without this, the Android back gesture exits an installed PWA mid-round.
   useEffect(() => {
     // Seed the initial entry so the bottom-of-stack entry carries a view.

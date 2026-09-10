@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The app answers a mouse.** Every pressable surface now has a hover state —
+  a faint fairway tint at roughly half the strength of its press, so hover
+  reads as "you can hit this" and the press still reads as more. The primary
+  CTA darkens rather than tints, because its label is white and lightening it
+  would have cost contrast. All of it sits behind `@media (hover: hover)`: a
+  phone reports hover support for the emulated mouse behind a tap, so without
+  that guard the last control you touched stays lit until you touch something
+  else. Press had answered the finger and the keyboard for a while; this is the
+  third input it gets used with, and the one it had been ignoring.
+- **Sheets can be pushed back down.** Settings, How to Play, Send feedback and
+  Edit handicaps now follow a downward drag and dismiss on release — either
+  from distance (a quarter of the sheet's own height, so a short sheet and a
+  tall one ask for the same proportion of a pull) or from a flick, measured
+  over the last 100ms of the gesture so a drag you stopped and thought better
+  of springs back instead. A drag that starts while a long sheet is scrolled
+  still scrolls it. A grab handle appears wherever a finger is available to use
+  it, and not on mouse-only machines, where the gesture does not exist.
 - **Round awards**: a finished round now hands out superlatives — Shot of the
   Day, Bounce Back, The Snowman, Sandbagger, The ATM, Highway Robbery, Skin
   Thief, Wolf's Gamble, and Shut Out. They appear as a card under the winner
@@ -170,6 +187,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   course name, with disclosure text under the field.
 
 ### Fixed
+- **Changing screens no longer drops keyboard focus on the floor.** A view swap
+  unmounts the control that was just activated, so focus fell to the page
+  body: a keyboard user started every screen over from the top of the
+  document, and a screen reader was told nothing at all about the screen that
+  had just arrived. Focus now moves to the new screen's heading, which also
+  puts the screen at its top rather than inheriting the last one's scroll
+  position. Home gained a real `<h1>` in the process — its outline used to
+  open at `<h2>`, alone among the screens.
+- **Course search now says "Searching…" out loud.** Its searching, error and
+  no-matches lines were plain text, so a screen-reader user got silence while
+  a lookup ran and silence when it failed. They are one live region now,
+  mounted before it has anything to say — announcing from an element that is
+  inserted with its text already in place is missed by many screen readers.
 - **Pinch-zoom works again on Android.** The viewport meta carried
   `maximum-scale=1.0`, which blocks zoom on Android (iOS has ignored it since
   iOS 10) and is a WCAG 1.4.4 failure. Nothing in the layout needed it.
