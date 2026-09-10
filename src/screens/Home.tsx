@@ -68,10 +68,17 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
         >
           <GearIcon size={20} />
         </button>
-        <div className="logo" role="img" aria-label="Press">
+        {/* The wordmark is Home's page title, so it is the <h1> — every other
+            screen has one, and without this Home's outline opened at <h2>.
+            aria-label carries the name because the visible text is a mark
+            standing in for the P plus the letters "ress"; role="img" would
+            have said the same thing but at the cost of the heading semantics
+            a screen reader navigates by. tabIndex so App can move focus here
+            on navigation. */}
+        <h1 className="logo" aria-label="Press" tabIndex={-1}>
           <PressMark size={34} />
           <span aria-hidden="true">ress</span>
-        </div>
+        </h1>
         <p className="tagline">Track golf side games — the fun way.</p>
       </header>
 

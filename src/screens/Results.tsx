@@ -240,7 +240,7 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
         <button className="btn-ghost icon back" onClick={onBackToPlay} aria-label="Back to the scorecard">
           ‹
         </button>
-        <h1>Results</h1>
+        <h1 tabIndex={-1}>Results</h1>
         <button className="btn-ghost" onClick={onHome}>
           Home
         </button>

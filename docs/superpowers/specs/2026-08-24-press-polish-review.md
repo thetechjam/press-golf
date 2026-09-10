@@ -356,3 +356,65 @@ gained a suite for that, confirmed to fail against a file broken exactly that wa
 
 **Drag-to-dismiss**, declined a third time on the same reasoning. Every other
 recommendation in this review has now shipped.
+
+---
+
+## Outcome — 2026-09-10
+
+Third pass, and the one that closes the review. Drag-to-dismiss — declined
+twice — is in, and so is the one gap this document diagnosed but never wrote a
+recommendation for.
+
+### Hover, which this review measured and then forgot
+
+The opening section counted "**0 `:hover` rules**" and never returned to it:
+every recommendation that followed addressed `:active` or `:focus-visible`. So
+three passes later the count was still zero. There is now one `@media (hover:
+hover)` block, and the query is the whole reason the gap lasted — an unguarded
+`:hover` sticks to the last control a scorekeeper touched on a phone and sits
+there, lit, until they tap something else, which is a worse bug than having no
+hover at all.
+
+The tint is the press colour at roughly half strength (`--fairway` at 7% into
+`--card`, against the 12% the press already uses), so the two states stay
+ordered. `.btn-primary` darkens to `--green-700` instead: it is the one filled
+control, its label is white, and `--green-500` would have taken that label to
+3.26:1, under the floor. Hover must not cost contrast.
+
+### Drag-to-dismiss
+
+Touch only, and the grab handle is shown under `any-pointer: coarse` so the
+affordance exists exactly where the gesture does. A drag beginning while a
+tall sheet is scrolled still scrolls it. On release the panel keeps its inline
+transform and the exit keyframe — which has no `from` — carries it the rest of
+the way down from wherever the finger left it.
+
+**The review's velocity number is wrong and this pass does not use it.** The
+suggestion was `|dy| / elapsed > 0.11`; measured, an unremarkable 40px pull
+over 90ms is already 0.44px/ms, so at that threshold every drag is a throw,
+the distance test is unreachable, and a sheet the user nudged and released
+closes anyway. Two changes: the threshold is 0.5px/ms, and velocity is
+measured over a trailing 100ms window rather than from touchstart, so a finger
+that has come to rest reads as ~0 whatever it did on the way there.
+
+### Focus on navigation, which is the sheet's bug one level up
+
+`Sheet.tsx` was taught to move focus when its contents are replaced around it.
+Screens had the same defect and nobody had looked: a view swap unmounts the
+control that was activated, focus falls to `<body>`, and every screen change
+started a keyboard user over from the top of the document with nothing
+announced. Focus now goes to the new screen's `<h1>` — Home needed one, having
+opened its outline at `<h2>`.
+
+The heading is the one place in this app where a focus ring is wrong, and it
+is suppressed: nothing can Tab to a `tabIndex={-1}` landing pad, so a ring
+there marks a place the user never went — and on Home, where the heading is
+the full-width flex wordmark, the UA's own hairline drew a black box across
+the top of the app after every back gesture.
+
+### Nothing left
+
+Every recommendation in this review has now shipped, including the two it
+argued against itself. The remaining known gap is the one deliberately left:
+`.hole-dot` has no hover state, because its visual is a 13px `::before` and
+the honest fix there is motion, not colour.
