@@ -2801,9 +2801,24 @@ select:focus {
   margin: 0;
   padding: 0;
   border: 0;
-  /* The panel is the only scroller; without this the dialog itself scrolls
-     behind it and the scrim can be dragged off the top of the screen. */
-  overflow: hidden;
+  /* `visible`, and it has to be spelled out because the UA gives a dialog
+     `overflow: auto`. Neither the default nor the `hidden` that replaced it
+     works here.
+
+     `auto` makes the dialog a scroll container, and the panel's own enter
+     animation is what fills it: this box is the viewport with the panel flush
+     at its bottom edge, so translateY(100%) puts the panel entirely below the
+     box and creates scrollable overflow the scrim could then be dragged
+     against. `hidden` stops that by CLIPPING the overflow — which is the same
+     region the enter and exit animations travel through, so the sheet stopped
+     rising altogether and simply faded into place with the scrim, the page
+     showing through it on the way. That shipped, and this is the fix.
+
+     `visible` is neither: no scroll container, so there is nothing to scroll,
+     and no clip, so the panel can travel the full height of its own box. The
+     panel is still the only scroller in here — it keeps its own overflow-y —
+     and nothing paints outside the viewport that was not already off-screen. */
+  overflow: visible;
   background: rgba(4, 17, 11, 0.5);
   color: inherit;
   /* Irrelevant while modal — the top layer paints above every z-index — and
