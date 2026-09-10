@@ -418,3 +418,40 @@ Every recommendation in this review has now shipped, including the two it
 argued against itself. The remaining known gap is the one deliberately left:
 `.hole-dot` has no hover state, because its visual is a 13px `::before` and
 the honest fix there is motion, not colour.
+
+---
+
+## Correction — 2026-09-10
+
+The `<dialog>` conversion recorded above shipped with the sheet's enter and
+exit animations **clipped away entirely**, and neither the pass that made the
+change nor the one after it caught it. Reported from use: "Settings has a weird
+animation when you go to open it."
+
+`overflow: hidden` on the dialog was the cause. That box is the viewport with
+the panel flush at its bottom edge, so `translateY(100%)` puts the panel
+entirely outside it — the exact region both animations travel through. Clipping
+it leaves the scrim's opacity fade as the only surviving motion, so the sheet
+ghosted into place with the page visible through it rather than rising.
+
+The line was not gratuitous: a dialog's UA `overflow` is `auto`, and the
+overflow the animation itself creates would otherwise make the scrim draggable.
+`hidden` was the wrong half of that fix. `visible` is neither a scroll container
+nor a clip, and the panel keeps its own `overflow-y` for its own scrolling.
+
+**Why the verification missed it.** The 2026-09-09 pass measured the enter and
+logged `panelY 300.36` at 50ms and `299.94` at 450ms, then wrote "Enter
+animates (opacity 0.63 mid, panel Y stable)". Panel Y being *stable* is the bug
+— an animation that travels 556px cannot hold position — and it was read as
+confirmation. A measurement only verifies what it is asked to prove.
+
+Finding it took work, because `getComputedStyle` reports an animated transform
+whether or not it lands: it advanced 544px → 40px on a panel that layout,
+hit-testing and pixels all agreed had never moved. A minimal repro cleared
+`<dialog>` itself, and neutralising declarations one at a time on the live page
+identified the clip.
+
+`src/overscroll.test.ts` gained a suite for it, confirmed to fail against a file
+with `overflow: hidden` restored. The failure mode is why it needs a test rather
+than a comment: nothing errors, the sheet still opens, closes, scrolls and
+drags, and every other assertion still passes. Only the motion is gone.

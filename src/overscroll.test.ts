@@ -58,6 +58,40 @@ describe('settings switch sizing', () => {
  * when the exit starts, to end the document's inertness, so the exit animation
  * runs on a dialog that is already closed and would otherwise be display: none.
  */
+/**
+ * The sheet's enter and exit are transforms that travel the panel's own height
+ * through the region just outside the dialog's box — it is the viewport with
+ * the panel flush at its bottom edge, so translateY(100%) puts the panel
+ * entirely below it. Any clipping on the dialog therefore clips the whole
+ * animation and nothing else: the sheet stops rising and fades into place
+ * instead, with the page showing through it on the way.
+ *
+ * `overflow: hidden` shipped here for a real reason — the UA gives a dialog
+ * `overflow: auto`, and the overflow the animation creates would otherwise make
+ * the scrim itself draggable. It is the wrong half of the fix, and the failure
+ * it causes is silent: no error, the sheet still opens, closes and drags, and
+ * every test still passes. Only the animation is gone. `visible` is neither a
+ * scroll container nor a clip, which is what this needs.
+ */
+describe('sheet dialog does not clip its own animation', () => {
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+  const rule = /(?:^|\})\s*\.sheet-backdrop\s*\{([^}]*)\}/m.exec(bare)?.[1] ?? '';
+
+  it('locates the rule', () => {
+    expect(rule).toMatch(/position\s*:\s*fixed/);
+  });
+
+  it('declares overflow: visible, overriding the UA dialog default', () => {
+    // Not merely "no overflow declaration": the UA's own `auto` is a scroll
+    // container, so leaving it unsaid is its own bug.
+    expect(rule).toMatch(/overflow\s*:\s*visible/);
+  });
+
+  it('never clips, by any spelling', () => {
+    expect(rule).not.toMatch(/overflow(-[xy])?\s*:\s*(hidden|clip|auto|scroll)/);
+  });
+});
+
 describe('sheet dialog display scoping', () => {
   // Stripped, because the rule's own comment discusses `display: none`.
   const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
