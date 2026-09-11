@@ -20,6 +20,12 @@ interface Props {
   canTeams: boolean;
   mode: '1v1' | '2v2';
   onMode: (m: '1v1' | '2v2') => void;
+  /**
+   * For a game that only exists as 2v2 — Vegas. The mode switch is dropped
+   * rather than shown disabled: a "1 v 1" tab that can never be chosen invites
+   * the question of what it would do, and the answer is nothing.
+   */
+  teamsOnly?: boolean;
   sideA: string;
   sideB: string;
   onSideA: (id: string) => void;
@@ -34,6 +40,7 @@ export function TeamPicker({
   canTeams,
   mode,
   onMode,
+  teamsOnly = false,
   sideA,
   sideB,
   onSideA,
@@ -47,23 +54,25 @@ export function TeamPicker({
   return (
     <section className="card">
       <h2>{label}</h2>
-      <div className="seg">
-        <button
-          className={`seg-btn${mode === '1v1' ? ' active' : ''}`}
-          onClick={() => onMode('1v1')}
-        >
-          1 v 1
-        </button>
-        <button
-          className={`seg-btn${mode === '2v2' ? ' active' : ''}`}
-          onClick={() => canTeams && onMode('2v2')}
-          disabled={!canTeams}
-        >
-          2 v 2
-        </button>
-      </div>
+      {!teamsOnly && (
+        <div className="seg">
+          <button
+            className={`seg-btn${mode === '1v1' ? ' active' : ''}`}
+            onClick={() => onMode('1v1')}
+          >
+            1 v 1
+          </button>
+          <button
+            className={`seg-btn${mode === '2v2' ? ' active' : ''}`}
+            onClick={() => canTeams && onMode('2v2')}
+            disabled={!canTeams}
+          >
+            2 v 2
+          </button>
+        </div>
+      )}
 
-      {mode === '1v1' ? (
+      {mode === '1v1' && !teamsOnly ? (
         <div className="nassau-1v1">
           <label className="field">
             <span>Side A</span>

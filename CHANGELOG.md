@@ -8,6 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Two more games: Vegas and Quota.** *Vegas* is the two-on-two game where a
+  team's scores are not added but written side by side, lowest first — a 4 and
+  a 5 is 45, not 9 — and the gap between the two sides' numbers is the points
+  swing. One blow-up hole costs a hundred rather than one, which is the whole
+  appeal. The number is built by running the digits together rather than by
+  arithmetic, so a 5 and a 10 is 510, the number a group would actually write
+  down, and not 105. The birdie flip — a birdie turning the other side's
+  number around, 45 becoming 54 — is a setup toggle, because plenty of groups
+  don't play it; left unset it is on, so a round saved before the option
+  existed still scores the way it was played. Vegas needs 2 v 2 teams, picked
+  at setup like Match Play's and Nassau's, with no 1 v 1 tab to wonder about.
+  *Quota* gives every player a target — 2 points a hole, less their handicap,
+  so 36 minus your handicap over 18 — and then plays for Stableford points
+  against it. Beat your number and you are plus. Its one trap is that the
+  handicap is spent entirely on the target, so the card is read **gross**;
+  taking strokes off as well would hand every stroke out twice. The target is
+  prorated to the holes actually scored, so mid-round the board asks whether
+  you're keeping pace instead of showing the whole field deep in the red — and,
+  more to the point, so money can't move between two different handicaps
+  before a ball is struck. Both games settle through the existing engine:
+  Vegas per point per player on each side, Quota on the difference in result.
 - **Stats.** A new screen, reachable from the "Your rounds" header on Home,
   showing what the rounds already on the device add up to: scoring average
   against par, best round, the scoring mix (eagles through doubles-and-worse),

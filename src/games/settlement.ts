@@ -4,6 +4,8 @@ import { computeStableford } from './stableford';
 import { computeWolf } from './wolf';
 import { matchSegmentSides, resolveSides } from './matchPlay';
 import { nassauSegments, nassauTeams } from './nassau';
+import { vegasHoles, vegasTeams } from './vegas';
+import { computeQuota } from './quota';
 import { totalStrokesReceived } from './handicap';
 
 export interface Transaction {
@@ -34,6 +36,8 @@ const LABEL: Record<GameType, string> = {
   stableford: 'Stableford',
   wolf: 'Wolf',
   nassau: 'Nassau',
+  vegas: 'Vegas',
+  quota: 'Quota',
 };
 
 export const STAKE_UNIT: Record<GameType, string> = {
@@ -43,6 +47,8 @@ export const STAKE_UNIT: Record<GameType, string> = {
   stableford: 'point',
   wolf: 'point',
   nassau: 'bet (×3)',
+  vegas: 'point',
+  quota: 'point',
 };
 
 export function formatMoney(n: number): string {
@@ -70,13 +76,20 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
   ids.forEach((id) => (net[id] = 0));
   if (stake <= 0) return net;
 
-  if (gameType === 'skins' || gameType === 'stableford' || gameType === 'wolf') {
+  if (
+    gameType === 'skins' ||
+    gameType === 'stableford' ||
+    gameType === 'wolf' ||
+    gameType === 'quota'
+  ) {
     const res =
       gameType === 'skins'
         ? computeSkins(round)
         : gameType === 'stableford'
           ? computeStableford(round)
-          : computeWolf(round);
+          : gameType === 'quota'
+            ? computeQuota(round)
+            : computeWolf(round);
     const valueById: Record<string, number> = {};
     res.standings.forEach((s) => {
       if (s.playerId) valueById[s.playerId] = s.value;
@@ -122,6 +135,19 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
       b.ids.forEach((id) => (net[id] += stake));
       a.ids.forEach((id) => (net[id] -= stake));
     }
+    return net;
+  }
+
+  if (gameType === 'vegas') {
+    // Points are a team figure, so every player on the side collects or pays
+    // the same — zero-sum across four players the way match play is across
+    // two. A side that is 60 points up at $1 a point is $60 a man, which is
+    // how Vegas actually gets settled and why the stake wants to be small.
+    const { a, b } = vegasTeams(round);
+    if (round.options.vegas?.mode !== '2v2' || a.ids.length < 2 || b.ids.length < 2) return net;
+    const { margin } = vegasHoles(round);
+    a.ids.forEach((id) => (net[id] += margin * stake));
+    b.ids.forEach((id) => (net[id] -= margin * stake));
     return net;
   }
 
