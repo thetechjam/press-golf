@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
-import type { Round } from '../types';
+import type { Round, SavedCourse } from '../types';
 import { Sheet } from './Sheet';
-import { encodeRound, shareUrl, shareUrlQR } from '../shareLink';
+import { COURSE_KEY, SHARE_KEY, encodeRound, shareUrl, shareUrlQR } from '../shareLink';
+import { encodeCourse } from '../shareCourse';
 import { encodeQR, qrPath } from '../qr';
 
 interface Props {
-  round: Round;
+  /** Exactly one of these. A round is handed over; a course is handed out. */
+  round?: Round;
+  course?: SavedCourse;
   onClose: () => void;
 }
 
@@ -16,7 +19,7 @@ type State =
   | { kind: 'failed' };
 
 /**
- * The sheet that hands a round to somebody else's phone.
+ * The sheet that hands a round — or a course — to somebody else's phone.
  *
  * The round travels inside the link, so this works with no signal and nothing
  * is uploaded anywhere — which is worth saying on the sheet, because "share a
@@ -26,38 +29,44 @@ type State =
  * A round too large for a QR code still gets a link: the code is the
  * convenience, the link is the feature.
  */
-export function SendRound({ round, onClose }: Props) {
+export function SendRound({ round, course, onClose }: Props) {
   const [state, setState] = useState<State>({ kind: 'working' });
   const [copied, setCopied] = useState(false);
   // A live round is being handed over to be carried on; a finished one is
   // being shown. Same link either way — but saying "they can carry on scoring"
   // about a card that is already settled would be nonsense.
-  const live = round.status !== 'finished';
+  const live = !!round && round.status !== 'finished';
+  const name = course?.name ?? round?.course ?? 'Golf round';
 
   useEffect(() => {
-    let live = true;
+    let alive = true;
     void (async () => {
-      const payload = await encodeRound(round);
-      if (!live) return;
+      const key = course ? COURSE_KEY : SHARE_KEY;
+      const payload = course ? await encodeCourse(course) : round ? await encodeRound(round) : null;
+      if (!alive) return;
       if (!payload) return setState({ kind: 'failed' });
 
-      const url = shareUrl(window.location.href, payload);
-      const code = encodeQR(shareUrlQR(window.location.href, payload));
+      const url = shareUrl(window.location.href, payload, key);
+      const code = encodeQR(shareUrlQR(window.location.href, payload, key));
       if (!code) return setState({ kind: 'ready', url, tooBig: true });
       const { path, side } = qrPath(code);
       setState({ kind: 'ready', url, path, side, tooBig: false });
     })();
     return () => {
-      live = false;
+      alive = false;
     };
-  }, [round]);
+  }, [round, course]);
 
   const send = async (url: string) => {
     // The share sheet first — on a phone this is the whole point, since the
     // link is going into a message thread and not a clipboard.
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'Golf round', text: `${round.course || 'Golf round'} — open in Press`, url });
+        await navigator.share({
+          title: course ? 'Golf course' : 'Golf round',
+          text: `${name} — open in Press`,
+          url,
+        });
         return;
       }
     } catch (err) {
@@ -74,12 +83,16 @@ export function SendRound({ round, onClose }: Props) {
   };
 
   return (
-    <Sheet title={live ? 'Hand over scoring' : 'Send this round'} onClose={onClose}>
+    <Sheet
+      title={course ? 'Send this course' : live ? 'Hand over scoring' : 'Send this round'}
+      onClose={onClose}
+    >
       {state.kind === 'working' && <p className="send-note">Building the link…</p>}
 
       {state.kind === 'failed' && (
         <p className="send-note">
-          This round can’t be sent as a link. Use Backup in Settings to move it instead.
+          This {course ? 'course' : 'round'} can’t be sent as a link. Use Backup in Settings to
+          move it instead.
         </p>
       )}
 
@@ -104,10 +117,12 @@ export function SendRound({ round, onClose }: Props) {
 
           <p className="send-note">
             {state.tooBig
-              ? 'This round is too big for a QR code, but the link still carries it.'
-              : live
-                ? 'Point their camera at this. They can take over scoring from here.'
-                : 'Point another phone’s camera at this to open the round in Press.'}
+              ? `This ${course ? 'course' : 'round'} is too big for a QR code, but the link still carries it.`
+              : course
+                ? 'Point their camera at this. They get the pars and stroke indexes you checked.'
+                : live
+                  ? 'Point their camera at this. They can take over scoring from here.'
+                  : 'Point another phone’s camera at this to open the round in Press.'}
           </p>
 
           <button className="btn-primary big" onClick={() => void send(state.url)}>
@@ -115,10 +130,11 @@ export function SendRound({ round, onClose }: Props) {
           </button>
 
           <p className="send-note quiet">
-            The whole round is inside the link — nothing is uploaded, and it opens
-            with no signal.
+            The whole {course ? 'scorecard' : 'round'} is inside the link — nothing is uploaded,
+            and it opens with no signal.
             {live &&
               ' Your copy stays as it is, so if you both keep scoring, Press will ask which card is the real one.'}
+            {course && ' They see the card before saving anything.'}
           </p>
         </>
       )}

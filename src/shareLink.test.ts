@@ -10,7 +10,7 @@ import {
   fromBase32,
   shareUrl,
   shareUrlQR,
-  payloadFromHash,
+  sharedFromHash,
 } from './shareLink';
 import { makeRound, player, holes18, scoresFrom } from './games/testFixtures';
 import { computeSettlement } from './games/settlement';
@@ -364,12 +364,29 @@ describe('the link itself', () => {
   });
 
   it('reads the payload back out of a fragment, in either case', () => {
-    expect(payloadFromHash('#r=ABC234')).toBe('ABC234');
-    expect(payloadFromHash('#R=ABC234')).toBe('ABC234');
-    expect(payloadFromHash('r=ABC234')).toBe('ABC234');
-    expect(payloadFromHash('')).toBeNull();
-    expect(payloadFromHash('#play')).toBeNull();
-    expect(payloadFromHash('#r=')).toBeNull();
+    expect(sharedFromHash('#r=ABC234')).toEqual({ kind: 'round', payload: 'ABC234' });
+    expect(sharedFromHash('#R=ABC234')).toEqual({ kind: 'round', payload: 'ABC234' });
+    expect(sharedFromHash('r=ABC234')).toEqual({ kind: 'round', payload: 'ABC234' });
+    expect(sharedFromHash('')).toBeNull();
+    expect(sharedFromHash('#play')).toBeNull();
+    expect(sharedFromHash('#r=')).toBeNull();
+  });
+
+  it('tells a course apart from a round by the key', () => {
+    expect(sharedFromHash('#c=ABC234')).toEqual({ kind: 'course', payload: 'ABC234' });
+    expect(sharedFromHash('#C=ABC234')).toEqual({ kind: 'course', payload: 'ABC234' });
+    // An unfamiliar key is not ours. Guessing at one would open a stranger's
+    // link as a round.
+    expect(sharedFromHash('#x=ABC234')).toBeNull();
+  });
+
+  it('writes a course link under its own key', () => {
+    expect(shareUrl('https://pressgolf.netlify.app/', 'ABC234', 'c')).toBe(
+      'https://pressgolf.netlify.app/#c=ABC234'
+    );
+    expect(shareUrlQR('https://pressgolf.netlify.app/', 'ABC234', 'c')).toBe(
+      'HTTPS://PRESSGOLF.NETLIFY.APP/#C=ABC234'
+    );
   });
 });
 

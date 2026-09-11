@@ -52,6 +52,10 @@ person's copy of Press and never touches a server: no account, no backend, and
 it opens with no signal. A round that arrives is held behind a "Keep it"
 button rather than being saved onto someone's device unasked.
 
+Saved courses can be sent the same way — the other phone gets the pars and
+stroke indexes you checked, sees the card laid out before saving anything, and
+is told if it differs from one they already have.
+
 Mid-round, the same link hands the card over: the other phone carries on
 scoring from where you left off. If both phones end up scoring the same round,
 Press compares the two and asks which card is the real one — or keeps both —

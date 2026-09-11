@@ -48,8 +48,13 @@ import { GAMES } from './games';
  */
 export const SHARE_FORMAT = 1;
 
-/** The fragment key, e.g. `#r=ABC234…`. Matched case-insensitively — see `shareUrlQR`. */
+/**
+ * The fragment keys: `#r=` for a round, `#c=` for a course. Matched
+ * case-insensitively, because the QR carries the whole URL in capitals — see
+ * `shareUrlQR`.
+ */
 export const SHARE_KEY = 'r';
+export const COURSE_KEY = 'c';
 
 /**
  * Scores are packed one base-36 character each, so the format can carry 0..35.
@@ -526,44 +531,61 @@ async function through(bytes: Uint8Array, stream: TransformStream): Promise<Uint
 }
 
 /**
- * The payload for a round's link, or null when the round holds something the
- * format cannot carry.
+ * Anything packed, deflated and written in base32 — what actually rides in a
+ * link, for a round or for a course.
  *
- * Deflate roughly halves it. `deflate-raw` rather than gzip because the
+ * Deflate roughly halves a round. `deflate-raw` rather than gzip because the
  * eighteen-byte header and checksum are pure cost here — the payload is
  * already inside a URL whose integrity the base32 decode and the shape check
  * establish more usefully than a CRC would.
  */
-export async function encodeRound(round: Round): Promise<string | null> {
-  const packed = packRound(round);
-  if (!packed) return null;
-  const json = new TextEncoder().encode(JSON.stringify(packed));
+export async function toPayload(value: unknown): Promise<string> {
+  const json = new TextEncoder().encode(JSON.stringify(value));
   const deflated = await through(json, new CompressionStream('deflate-raw'));
   return toBase32(deflated);
 }
 
-/** Reads a payload back. Never throws; a mangled link is a message, not a crash. */
-export async function decodeRound(payload: string): Promise<UnpackResult> {
-  const damaged: UnpackResult = { ok: false, error: 'That link is damaged or incomplete.' };
+/**
+ * A payload read back into whatever was packed, or null when it cannot be.
+ *
+ * Never throws. The usual way a link breaks is truncation — a messaging app
+ * wraps it across two lines and only the first gets copied — and that arrives
+ * here as a deflate error, which is a message for the user rather than a crash.
+ */
+export async function fromPayload(payload: string): Promise<unknown | null> {
   const bytes = fromBase32(payload.trim());
-  if (!bytes || bytes.length === 0) return damaged;
+  if (!bytes || bytes.length === 0) return null;
   try {
     const inflated = await through(bytes, new DecompressionStream('deflate-raw'));
-    return unpackRound(JSON.parse(new TextDecoder().decode(inflated)));
+    return JSON.parse(new TextDecoder().decode(inflated));
   } catch {
-    // Truncation — the usual way a link breaks, when a messaging app wraps it
-    // across two lines and only the first is copied.
-    return damaged;
+    return null;
   }
+}
+
+/**
+ * The payload for a round's link, or null when the round holds something the
+ * format cannot carry.
+ */
+export async function encodeRound(round: Round): Promise<string | null> {
+  const packed = packRound(round);
+  return packed ? toPayload(packed) : null;
+}
+
+/** Reads a round's payload back. Never throws. */
+export async function decodeRound(payload: string): Promise<UnpackResult> {
+  const raw = await fromPayload(payload);
+  if (raw === null) return { ok: false, error: 'That link is damaged or incomplete.' };
+  return unpackRound(raw);
 }
 
 /* ------------------------------------------------------------------ *
  * URLs
  * ------------------------------------------------------------------ */
 
-/** The link to send: `https://host/#r=PAYLOAD`. */
-export function shareUrl(base: string, payload: string): string {
-  return `${base.split('#')[0]}#${SHARE_KEY}=${payload}`;
+/** The link to send: `https://host/#r=PAYLOAD`, or `#c=` for a course. */
+export function shareUrl(base: string, payload: string, key: string = SHARE_KEY): string {
+  return `${base.split('#')[0]}#${key}=${payload}`;
 }
 
 /**
@@ -574,12 +596,23 @@ export function shareUrl(base: string, payload: string): string {
  * QR's alphanumeric set, which is what keeps the code a square you can scan
  * off a phone screen rather than one you have to email to yourself.
  */
-export function shareUrlQR(base: string, payload: string): string {
-  return shareUrl(base, payload).toUpperCase();
+export function shareUrlQR(base: string, payload: string, key: string = SHARE_KEY): string {
+  return shareUrl(base, payload, key).toUpperCase();
 }
 
-/** The payload in a URL's fragment, or null when there isn't one. */
-export function payloadFromHash(hash: string): string | null {
-  const match = /^#?r=([^&]+)$/i.exec(hash.trim());
-  return match ? match[1] : null;
+/** What a fragment turned out to be carrying. */
+export interface SharedThing {
+  kind: 'round' | 'course';
+  payload: string;
+}
+
+/**
+ * What a URL's fragment is carrying, or null when it is carrying nothing of
+ * ours. An unknown key is not ours: the app has other uses for a fragment,
+ * and guessing at one would open a stranger's link as a round.
+ */
+export function sharedFromHash(hash: string): SharedThing | null {
+  const match = /^#?([rc])=([^&]+)$/i.exec(hash.trim());
+  if (!match) return null;
+  return { kind: match[1].toLowerCase() === 'c' ? 'course' : 'round', payload: match[2] };
 }
