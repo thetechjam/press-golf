@@ -1,5 +1,6 @@
-import type { Round, Hole, Player, GameResult, GameStanding, TeamSetup } from '../types';
+import type { Round, Hole, Player, GameResult, GameStanding, TeamSetup, GameType } from '../types';
 import { holeScore } from './handicap';
+import { netFor } from './scoring';
 
 /** A side in a match: one player (1v1) or a team (2v2, best ball). */
 export interface Side {
@@ -80,14 +81,23 @@ export function runMatch(
   return { margin, holesPlayed: played, totalHoles: holes.length, decided: false, winner, status };
 }
 
-/** Plays out a match between two sides over a set of holes (best ball for teams). */
+/**
+ * Plays out a match between two sides over a set of holes (best ball for teams).
+ *
+ * `game` says whose gross/net setting to score by, because this routine serves
+ * two games that no longer have to agree: Match Play and each of Nassau's
+ * segments. Reading the round default here instead would quietly score a net
+ * Nassau off a gross Match Play's setting, and the two boards would disagree
+ * about who was up.
+ */
 export function matchSegmentSides(
   round: Round,
   holes: Hole[],
   a: Side,
-  b: Side
+  b: Side,
+  game: GameType = 'matchPlay'
 ): SegmentResult {
-  const useNet = round.options.useNet;
+  const useNet = netFor(round, game);
   return runMatch(
     holes,
     (h) => sideBest(round, a.ids, h, useNet),
@@ -161,7 +171,7 @@ export function computeMatchPlay(round: Round): GameResult {
 
   const title = twoTeams
     ? 'Match Play (2v2)'
-    : round.options.useNet
+    : netFor(round, 'matchPlay')
       ? 'Match Play (Net)'
       : 'Match Play';
 

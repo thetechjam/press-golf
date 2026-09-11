@@ -18,7 +18,10 @@ what's deferred, and how to expand without a rewrite.
   view, swipe between holes.
 - **Guardrails**: warns on unentered scores before advancing/finishing, with
   auto-jump to the first blank player.
-- **Handicaps**: net scoring, per-hole stroke index, par presets.
+- **Handicaps**: net scoring, per-hole stroke index, par presets. Gross/net is
+  **per game** (`games/scoring.ts`), so a gross skins game can run alongside a
+  net match on one card; the round default is still derived from whether
+  anybody entered a handicap, and `netByGame` records only explicit overrides.
 - **Favorite courses** (`storage.ts`, `press.courses.v1`): save pars + stroke
   indexes once, one-tap load later.
 - **Course search** (`courses/openGolfApi.ts`, `components/CourseSearch.tsx`):
@@ -55,7 +58,7 @@ Nothing is shared between people or synced across devices. This is by design
 | Accounts + cloud sync | History follows you across devices; enables everything below. |
 | Live multi-phone sync | Each player scores on their own phone; join a round via a game code; leaderboards sync in real time. |
 | ~~Cross-round stats / history~~ | **Shipped local-only** via the Stats screen (`stats.ts`) — scoring average, best round, skins, money, all derived from `press.rounds.v1`. *Cross-device* history still needs accounts + sync. |
-| Automatic Nassau presses | Setup toggle to auto-press when a side goes 2 down (plumbing already exists via the press segments in `nassau.ts`). |
+| ~~Automatic Nassau presses~~ | **Shipped** — setup toggle, with presses derived from the card by `autoPressStarts()` rather than stored, so correcting a score re-decides them. Presses cascade: a press that goes 2 down presses again. |
 | ~~Course database~~ | **Shipped** via OpenGolfAPI course search (keyless + CORS, so no backend needed; returns per-hole par and `handicap_index`). Coverage is US-strong; Favorite Courses covers gaps and offline use. |
 | Tagline refresh | Current line ("Track golf side games — the fun way.") kept for now. Parked candidates from the July 2026 brand pass (no ranking yet): "Settle it on 18." / "Nobody plays for free." / "Every hole's a bet." / "Keep your friends honest." See `BRAND.md`. |
 

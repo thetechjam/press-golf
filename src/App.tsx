@@ -9,6 +9,7 @@ import { Stats } from './screens/Stats';
 import { saveRound } from './storage';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { dismissSplash } from './splash';
+import { createNavigator } from './navigation';
 
 const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats'] as const;
 type View = (typeof VIEWS)[number];
@@ -19,22 +20,22 @@ const isView = (v: unknown): v is View =>
 export default function App() {
   const [view, setView] = useState<View>('home');
   const [round, setRound] = useState<Round | null>(null);
-  // Mirrors `view` synchronously for goTo's own guard check. React state is
-  // batched, so a rapid repeat call in the same tick would still see the
-  // pre-update value if we read `view` itself here — the ref can't lag.
-  const viewRef = useRef<View>('home');
-  // How many entries we've pushed above the seeded bottom entry (home, depth
-  // 0). Every pushed entry carries its own depth in its state object, so
-  // onPop can always resync exactly — including when goTo('home') collapses
-  // several entries in a single history.go() jump (confirmed empirically:
-  // that fires exactly one popstate, landing directly on the target entry,
-  // not once per skipped entry — so a blind decrement here would undercount).
-  const depthRef = useRef(0);
-  // True while a goTo('home') collapse is in flight (go() call issued, its
-  // popstate not yet observed) — guards against a rapid double-tap on an
-  // exit/cancel control issuing a second, overshooting go() before the first
-  // one lands.
-  const homeCollapsePendingRef = useRef(false);
+
+  // The history/back-gesture logic lives in navigation.ts, where it can be
+  // tested against a history double that models asynchronous traversal — a DOM
+  // test environment pops synchronously inside go() and so cannot reproduce
+  // the double-tap race the collapse guard exists for. Built once and kept in
+  // a ref: it owns mutable state that must not be rebuilt on a render.
+  const navRef = useRef<ReturnType<typeof createNavigator<View>> | null>(null);
+  if (navRef.current === null) {
+    navRef.current = createNavigator<View>({
+      history: window.history,
+      home: 'home',
+      isView,
+      onView: setView,
+    });
+  }
+  const nav = navRef.current;
 
   // Fade out index.html's splash now that there is an app painted under it.
   // It runs from here rather than main.tsx so it cannot outrun React's initial
@@ -68,52 +69,13 @@ export default function App() {
 
   // Without this, the Android back gesture exits an installed PWA mid-round.
   useEffect(() => {
-    // Seed the initial entry so the bottom-of-stack entry carries a view.
-    window.history.replaceState({ view: 'home', depth: 0 }, '');
-
-    const onPop = (e: PopStateEvent) => {
-      const state = e.state as { view?: unknown; depth?: unknown } | null;
-      const v = state?.view;
-      const d = state?.depth;
-      const next = isView(v) ? v : 'home';
-      viewRef.current = next;
-      setView(next);
-      depthRef.current = typeof d === 'number' ? d : 0;
-      homeCollapsePendingRef.current = false;
-    };
+    nav.start();
+    const onPop = (e: PopStateEvent) => nav.handlePop(e.state);
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, []);
+  }, [nav]);
 
-  const goTo = (next: View) => {
-    // Guard against double-push (or double-pop) on a repeated transition to
-    // the same view — e.g. a fast double-tap firing the handler twice.
-    if (next === viewRef.current) return;
-
-    if (next === 'home') {
-      if (homeCollapsePendingRef.current) return; // a collapse is already in flight
-      if (depthRef.current > 0) {
-        homeCollapsePendingRef.current = true;
-        // Let the popstate handler above land us on the seeded bottom entry
-        // and update `view` from there, instead of setting it directly here
-        // — that desync (view changes, history.state doesn't) is exactly
-        // what let a stale entry get resurrected by the back button before.
-        window.history.go(-depthRef.current);
-      } else {
-        // Nothing pushed above us (or state was corrupted) — already home,
-        // nothing to pop. Resync directly so state can't be left stale.
-        window.history.replaceState({ view: 'home', depth: 0 }, '');
-        viewRef.current = 'home';
-        setView('home');
-      }
-      return;
-    }
-
-    viewRef.current = next;
-    setView(next);
-    depthRef.current += 1;
-    window.history.pushState({ view: next, depth: depthRef.current }, '');
-  };
+  const goTo = (next: View) => nav.goTo(next);
 
   const update = (next: Round) => {
     setRound(next);

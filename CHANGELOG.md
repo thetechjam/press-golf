@@ -7,7 +7,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **The Nassau stake says how many bets are actually running.** The Money board
+  read "per bet (×3)", a fixed number that assumed front, back and total — so
+  it was already wrong on a nine, which has exactly one bet, and wronger with
+  every press on the card. It now counts the round's real bets, which on an
+  auto-pressed nine where one side never wins a hole reaches five. The setup
+  screen has no round to count yet and so says "per bet" without claiming a
+  number, rather than claiming the wrong one.
+
 ### Added
+- **Nassau auto-press.** A setup toggle: when a side goes 2 down, a press
+  starts by itself from the next hole, on top of anything pressed by hand. A
+  press is a bet like any other, so a press that goes 2 down presses again —
+  the cascade the rule is notorious for, and the reason a quiet round turns
+  into three bets at once. Each nine keeps its own presses, and nothing presses
+  onto the last hole of a nine, where there would be nothing left to play for.
+  The automatic presses are **derived from the card rather than stored**: a
+  press is a fact about the state of a bet at a moment, so writing one down
+  would leave it stranded the instant somebody corrected a score, with the
+  money still following the stale bet. Correct the score and the press it
+  earned simply isn't there any more. Evaluation stops at the first hole that
+  isn't fully scored, because "2 down after the 4th" means nothing while the
+  4th is blank. Automatic presses show on the Hole tab beside the called ones,
+  marked `auto` and with no remove button, and a hole that was pressed both by
+  hand and by the rule stays one bet rather than being paid twice.
+- **Each game can be gross or net on its own.** Until now a single player
+  entering a handicap flipped the whole round to net, so there was no way to
+  play gross skins alongside a net match — a combination groups play all the
+  time. A Scoring block on the New Round screen now lists every net-capable
+  game with a Gross/Net choice, appearing only once somebody actually has a
+  handicap, since until then the two are the same card. The round default is
+  still derived exactly as before and `netByGame` records only what you
+  changed, so a round saved before this scores the way it was played, and a
+  handicap added mid-round still switches the games you never touched. Quota is
+  deliberately absent from the list: it spends the handicap on your target and
+  reads the card gross, so "net Quota" would hand every stroke out twice.
+  Match Play and Nassau can now disagree, so the shared match evaluator takes
+  the game it is scoring for rather than reading the round default — otherwise
+  a net Nassau would have been scored off a gross Match Play's setting and the
+  two boards would have contradicted each other. The whole-round displays
+  follow suit: stroke dots and net figures appear when *any* game is net, while
+  the handicap badges appear whenever handicaps matter at all — which is why
+  those are two separate rules and not one, as a Quota round has handicaps
+  everywhere and no net card anywhere.
 - **Two more games: Vegas and Quota.** *Vegas* is the two-on-two game where a
   team's scores are not added but written side by side, lowest first — a 4 and
   a 5 is 45, not 9 — and the gap between the two sides' numbers is the points

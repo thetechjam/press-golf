@@ -1,5 +1,6 @@
 import type { Round, Hole, GameResult, GameStanding } from '../types';
 import { holeScore } from './handicap';
+import { netFor } from './scoring';
 import { rankStandings } from './util';
 
 /** Whose turn it is to be the Wolf on a given hole (rotates by tee order). */
@@ -40,7 +41,7 @@ export interface WolfOutcome {
  * awards engine reads it for the lone/blind gambles worth talking about.
  */
 export function wolfOutcomes(round: Round): WolfOutcome[] {
-  const useNet = round.options.useNet;
+  const useNet = netFor(round, 'wolf');
   const { loneWolfMultiplier, blindWolfMultiplier } = round.options;
   const out: WolfOutcome[] = [];
 

@@ -108,11 +108,42 @@ describe('totalStrokesReceived', () => {
 
 describe('usesHandicaps', () => {
   it('is false for a gross round', () => {
-    expect(usesHandicaps(makeRound({ options: { useNet: false } }))).toBe(false);
+    expect(
+      usesHandicaps(makeRound({ games: ['strokePlay'], options: { useNet: false } }))
+    ).toBe(false);
   });
 
   it('is true for a net round', () => {
-    expect(usesHandicaps(makeRound({ options: { useNet: true } }))).toBe(true);
+    expect(
+      usesHandicaps(makeRound({ games: ['strokePlay'], options: { useNet: true } }))
+    ).toBe(true);
+  });
+
+  // Since scoring went per-game, the answer is about the games in the round
+  // rather than the round default alone: one net game is enough, and a round
+  // whose only net-capable game was set to gross shows no handicaps.
+  it('is true when only one of several games is scored net', () => {
+    const round = makeRound({
+      games: ['strokePlay', 'skins'],
+      options: { useNet: true, netByGame: { skins: false } },
+    });
+    expect(usesHandicaps(round)).toBe(true);
+  });
+
+  it('is false when every net-capable game has been set to gross', () => {
+    const round = makeRound({
+      games: ['strokePlay', 'skins'],
+      options: { useNet: true, netByGame: { strokePlay: false, skins: false } },
+    });
+    expect(usesHandicaps(round)).toBe(false);
+  });
+
+  // Quota never scores a card net, but the handicap sets the target, so the
+  // badges belong on screen. This is the case that stops usesHandicaps from
+  // being a synonym for anyNetScoring.
+  it('is true for a Quota round, which uses handicaps without scoring net', () => {
+    const round = makeRound({ games: ['quota'], options: { useNet: false } });
+    expect(usesHandicaps(round)).toBe(true);
   });
 
   // The trap this predicate exists for: LeagueSetup spreads DEFAULT_OPTIONS and

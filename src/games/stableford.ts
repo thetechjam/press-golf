@@ -1,5 +1,6 @@
 import type { Round, GameResult, GameStanding } from '../types';
 import { holeScore } from './handicap';
+import { netFor } from './scoring';
 import { rankStandings } from './util';
 
 /** Points for a hole given score-relative-to-par (negative = under par). */
@@ -18,7 +19,8 @@ function pointsFor(scoreToPar: number, mode: 'standard' | 'modified'): number {
 }
 
 export function computeStableford(round: Round): GameResult {
-  const { useNet, stablefordMode } = round.options;
+  const { stablefordMode } = round.options;
+  const useNet = netFor(round, 'stableford');
 
   const standings: GameStanding[] = round.players.map((p) => {
     let points = 0;

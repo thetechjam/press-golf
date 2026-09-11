@@ -18,8 +18,13 @@ export default defineConfig({
   },
   test: {
     globals: true,
+    // The scoring engines are pure and run fastest with no DOM at all, so node
+    // stays the default. A suite that needs one opts in with a
+    // `// @vitest-environment happy-dom` docblock at the top of the file —
+    // Vitest 4 dropped environmentMatchGlobs, and the docblock says which
+    // environment a file runs in where somebody reading that file will see it.
     environment: 'node',
-    include: ['src/**/*.test.ts'],
+    include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
   },
   plugins: [
     react(),

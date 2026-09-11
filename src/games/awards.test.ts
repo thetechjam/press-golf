@@ -205,6 +205,7 @@ describe('Sandbagger', () => {
     const round = makeRound({
       players: [player('p1', 'Al', 10), player('p2', 'Bo', 0)],
       holes: hs,
+      games: ['strokePlay'],
       options: { useNet: true },
       scores: scoresFrom(hs, {
         // Al shoots 76 gross off a 10 — a 66 net, six under par.

@@ -71,10 +71,19 @@ export interface LeagueSetup {
 
 export interface GameOptions {
   /**
-   * Apply handicaps where a game supports net scoring.
-   * Derived at setup: true when any player entered a handicap (> 0), never set manually.
+   * The round's default for net scoring, still derived at setup: true when any
+   * player entered a handicap (> 0), never set manually. `netByGame` overrides
+   * it per game.
    */
   useNet: boolean;
+  /**
+   * Per-game gross/net, holding only the games the user explicitly chose for.
+   * An absent entry follows `useNet`, which is what keeps rounds saved before
+   * this existed scoring the way they were played — and what lets a handicap
+   * added mid-round still switch the untouched games over. Resolve it through
+   * `netFor()` in `games/scoring.ts`, never by reading this directly.
+   */
+  netByGame?: Partial<Record<GameType, boolean>>;
   stablefordMode: 'standard' | 'modified';
   loneWolfMultiplier: number;
   blindWolfMultiplier: number;
@@ -91,6 +100,13 @@ export interface GameOptions {
    * they were scored when they were played.
    */
   vegasFlip?: boolean;
+  /**
+   * Nassau presses itself whenever a side goes two down, on top of any pressed
+   * by hand. The automatic ones are derived from the card by
+   * `autoPressStarts()` rather than stored, so correcting a score re-decides
+   * them instead of leaving one stranded.
+   */
+  autoPress?: boolean;
   /** Present when this is a league-night round. */
   league?: LeagueSetup;
 }
