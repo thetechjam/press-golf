@@ -6,15 +6,17 @@ import { GAMES, activeResults } from '../games';
 import { computeLeague } from '../games/league';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { DeleteButton } from '../components/DeleteButton';
-import { FlagIcon, PressMark, TrophyIcon, XIcon, GearIcon } from '../icons';
+import { FlagIcon, PressMark, TrophyIcon, XIcon, GearIcon, ChartIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { formatRoundDate } from '../roundDate';
+import { countsForStats } from '../stats';
 
 interface Props {
   onNew: () => void;
   onNewLeague: () => void;
   onResume: (round: Round) => void;
   onViewResults: (round: Round) => void;
+  onStats: () => void;
 }
 
 const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
@@ -40,7 +42,7 @@ const resultLine = (r: Round): string | null => {
   return first ? `${first.title}: ${first.status}` : null;
 };
 
-export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
+export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats }: Props) {
   const [rounds, setRounds] = useState<Round[]>(listRounds());
   const [showSettings, setShowSettings] = useState(false);
   const [settingsView, setSettingsView] = useState<'settings' | 'help'>('settings');
@@ -107,7 +109,17 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults }: Props) {
 
       {rounds.length > 0 && (
         <section className="saved">
-          <h2>Your rounds</h2>
+          <div className="saved-head">
+            <h2>Your rounds</h2>
+            {/* Offered only once there is a round finished enough to count —
+                a Stats screen that can only say "nothing yet" is a dead end
+                dressed up as a destination. */}
+            {rounds.some(countsForStats) && (
+              <button className="btn-ghost saved-stats" onClick={onStats}>
+                <ChartIcon size={15} /> Stats
+              </button>
+            )}
+          </div>
           {rounds.map((r) => {
             const thru = completedHoleCount(r);
             const result = resultLine(r);

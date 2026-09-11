@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Stats.** A new screen, reachable from the "Your rounds" header on Home,
+  showing what the rounds already on the device add up to: scoring average
+  against par, best round, the scoring mix (eagles through doubles-and-worse),
+  skins won, and where each player stands on the money across every round with
+  stakes. Nothing new is stored — every figure is derived from
+  `press.rounds.v1` on demand, which is what keeps cross-round history on the
+  free side of the accounts-and-sync question rather than behind it. Averages
+  are quoted per 18 holes so a league nine and a full round compare honestly,
+  and each card says how many holes it counted. Only a fully scored round can
+  be somebody's best, so a card with three holes missing can't win on to-par
+  for the wrong reason. Net is shown as a second figure only when handicaps
+  actually moved the number. Players are matched across rounds by name — a
+  `Player.id` is minted per round, so name is the only thing that follows
+  somebody — using the same rule the setup screen already uses to recall
+  players. A round counts once it's finished, or once every hole is scored:
+  the round somebody forgot to tap Finish on is still a round they played, and
+  one abandoned after four holes is excluded from every average rather than
+  dragging it around.
 - **Back up and restore your rounds.** Settings now writes every saved round
   and favorite course to a single `press-backup-YYYY-MM-DD.json` file, and
   reads one back. Press keeps everything in `localStorage` and nowhere else —

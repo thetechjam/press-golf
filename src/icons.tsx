@@ -160,3 +160,13 @@ export const PawIcon = ({ size = 18, className }: IconProps) => (
     <path d="M12 11c-2.8 0-5.4 2.7-5.4 5.5 0 1.7 1.3 2.9 3 2.9 1 0 1.6-.4 2.4-.4s1.4.4 2.4.4c1.7 0 3-1.2 3-2.9C17.4 13.7 14.8 11 12 11z" />
   </svg>
 );
+
+/** Rising bars — the Stats screen's mark. */
+export const ChartIcon = ({ size = 18, className }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <path d="M5 20V13" />
+    <path d="M12 20V7" />
+    <path d="M19 20v-4" />
+    <path d="M3 20h18" />
+  </svg>
+);
