@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Course search data is flagged for checking.** Picking a course from search
+  now opens the Holes & pars row instead of filling eighteen pars and stroke
+  indexes in behind a collapsed section, and puts a note beside them: check
+  these against the card, because course search is open community data and is
+  sometimes wrong. It matters more than it looks — a par out by one is
+  invisible on the Hole tab and silently shifts every net score, Stableford
+  point and Quota target for the whole round. Loading a course you saved
+  yourself opens the row too, since it rewrites the same eighteen numbers, but
+  carries no warning: you entered those. The note clears once you overwrite the
+  pars with a preset or change the hole count, at which point they are your
+  numbers rather than the database's.
+- **The par and stroke index fields say which is which.** With hole difficulty
+  showing, a cell was a hole number above two unlabelled boxes — and because
+  stroke indexes default to the hole order, the lower box repeated the number
+  written above it, so hole 1 read "1" over "4" over "1". Each field now
+  carries a caption and its own accessible name. The captions appear only when
+  both boxes are on screen; with par alone there is nothing to tell apart.
+  Fixes an accessibility defect at the same time: the cell was a single
+  `<label>` wrapped around two controls, which can only name one of them.
+
 - **Awards for Vegas and Quota.** *The Wrecking Ball* names the hole where a
   side's number blew up and the player who blew it up — the higher score on the
   losing side, since a partner who played their part should not wear it — and

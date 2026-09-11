@@ -1027,6 +1027,20 @@ select:focus {
   font-variant-numeric: tabular-nums;
 }
 
+/* Course-search data needs checking, and the place to say so is beside the
+   numbers themselves — not in the status line at the foot of the screen, which
+   is nowhere near the fields it is talking about. Gold, matching warn-banner:
+   this is "look at this", not "something went wrong". */
+.check-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--gold) 16%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .par-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
@@ -1038,9 +1052,34 @@ select:focus {
   align-items: center;
   gap: 4px;
 }
-.par-cell > span {
+.par-cell > .par-hole {
   font-size: 0.72rem;
   color: var(--muted);
+}
+/* Only drawn when there are two boxes in the cell to tell apart. Sized down
+   hard and letter-spaced so it reads as a caption on the field below rather
+   than as another value in the column. */
+.par-cap {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  line-height: 1;
+  align-self: stretch;
+  text-align: center;
+}
+/* The hole number needs to separate from the first caption under it, which
+   the flex gap alone does not do once the captions are in. */
+.par-grid.with-si .par-hole {
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.par-grid.with-si .par-cell {
+  gap: 3px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
 }
 .par-cell select {
   padding: 8px;
@@ -2423,7 +2462,6 @@ select:focus {
   color: var(--green-700);
 }
 .si-input {
-  margin-top: 4px;
   padding: 6px;
   min-height: 34px;
   text-align: center;

@@ -40,6 +40,15 @@ export function Setup({ onCancel, onStart }: Props) {
   const [games, setGames] = useState<GameType[]>(['skins']);
   const [options, setOptions] = useState({ ...DEFAULT_OPTIONS });
   const [advancedHoles, setAdvancedHoles] = useState(false);
+  /**
+   * Where the pars and stroke indexes currently on screen came from.
+   *
+   * Only 'search' earns a warning. Course search is open community data and is
+   * sometimes wrong — a par off by one quietly changes every net score and
+   * every Stableford point for the whole round. A course the user saved
+   * themselves, or a preset they chose, needs no such caveat.
+   */
+  const [holesSource, setHolesSource] = useState<'manual' | 'search' | 'saved'>('manual');
   const [error, setError] = useState('');
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   const [savedNote, setSavedNote] = useState('');
@@ -91,11 +100,20 @@ export function Setup({ onCancel, onStart }: Props) {
     setError(message);
   };
 
+  /**
+   * Both course loaders open the Holes & pars row. Either one rewrites up to
+   * eighteen pars and stroke indexes at a stroke, and doing that behind a
+   * collapsed section is how a wrong number reaches the first tee unseen. What
+   * differs between them is the warning, not whether the numbers are shown:
+   * only search data is second-guessed.
+   */
   const loadCourse = (c: SavedCourse) => {
     setCourse(c.name);
     setHoleCount(c.holes.length);
     setHoles(c.holes.map((h) => ({ ...h })));
     setAdvancedHoles(c.holes.some((h) => h.strokeIndex));
+    setHolesSource('saved');
+    openRow('holes');
     setSavedNote(`Loaded "${c.name}"`);
   };
 
@@ -106,6 +124,8 @@ export function Setup({ onCancel, onStart }: Props) {
     setHoleCount(count);
     setHoles(applied);
     setAdvancedHoles(applied.some((h) => h.strokeIndex));
+    setHolesSource('search');
+    openRow('holes');
     setError('');
     setSavedNote(
       applied.some((h) => h.strokeIndex)
@@ -145,8 +165,10 @@ export function Setup({ onCancel, onStart }: Props) {
       hs.map((h, i) => ({ ...h, par: kind === 'par4' ? 4 : STANDARD_PARS[i % 18] }))
     );
     // Same reasoning as setHoleCountAndPars: a bulk par overwrite makes any
-    // loaded/saved note describe a course that no longer matches the holes.
+    // loaded/saved note describe a course that no longer matches the holes —
+    // and these are the user's own pars now, not the database's.
     setSavedNote('');
+    setHolesSource('manual');
   };
 
   const setStrokeIndex = (number: number, si: number | undefined) =>
@@ -171,6 +193,7 @@ export function Setup({ onCancel, onStart }: Props) {
     // A loaded/saved note describes a specific hole count and par set; changing
     // the count invalidates it before the user can act on stale information.
     setSavedNote('');
+    setHolesSource('manual');
   };
 
   const updatePlayer = (id: string, patch: Partial<Player>) =>
@@ -633,6 +656,13 @@ export function Setup({ onCancel, onStart }: Props) {
                 </button>
               ))}
             </div>
+            {holesSource === 'search' && (
+              <p className="check-note" role="status">
+                <strong>Check these against the card.</strong> Pars and stroke indexes from
+                course search are open community data and are sometimes wrong — a par out by one
+                shifts every net score and Stableford point for the whole round.
+              </p>
+            )}
             <div className="preset-row">
               <span>Quick set:</span>
               <button className="chip" onClick={() => applyPreset('standard')}>
@@ -642,11 +672,23 @@ export function Setup({ onCancel, onStart }: Props) {
                 All par 4
               </button>
             </div>
-            <div className="par-grid">
+            {/* A div, not a label: with stroke index showing, a cell holds two
+                controls, and a <label> may only name one of them. Each field
+                carries its own accessible name instead, and — once there are
+                two boxes to tell apart — its own visible caption. Without them
+                the cell is a hole number over two bare boxes, and the default
+                stroke indexes make it worse by repeating the hole number
+                underneath itself. */}
+            <div className={`par-grid${advancedHoles ? ' with-si' : ''}`}>
               {holes.map((h) => (
-                <label key={h.number} className="par-cell">
-                  <span>{h.number}</span>
-                  <select value={h.par} onChange={(e) => setPar(h.number, Number(e.target.value))}>
+                <div key={h.number} className="par-cell">
+                  <span className="par-hole">{h.number}</span>
+                  {advancedHoles && <span className="par-cap">Par</span>}
+                  <select
+                    value={h.par}
+                    onChange={(e) => setPar(h.number, Number(e.target.value))}
+                    aria-label={`Par for hole ${h.number}`}
+                  >
                     {[3, 4, 5, 6].map((p) => (
                       <option key={p} value={p}>
                         {p}
@@ -654,22 +696,25 @@ export function Setup({ onCancel, onStart }: Props) {
                     ))}
                   </select>
                   {advancedHoles && (
-                    <input
-                      className="si-input"
-                      type="number"
-                      min={1}
-                      max={holes.length}
-                      value={h.strokeIndex ?? ''}
-                      onChange={(e) =>
-                        setStrokeIndex(
-                          h.number,
-                          e.target.value === '' ? undefined : Number(e.target.value)
-                        )
-                      }
-                      aria-label={`Stroke index for hole ${h.number}`}
-                    />
+                    <>
+                      <span className="par-cap">SI</span>
+                      <input
+                        className="si-input"
+                        type="number"
+                        min={1}
+                        max={holes.length}
+                        value={h.strokeIndex ?? ''}
+                        onChange={(e) =>
+                          setStrokeIndex(
+                            h.number,
+                            e.target.value === '' ? undefined : Number(e.target.value)
+                          )
+                        }
+                        aria-label={`Stroke index for hole ${h.number}`}
+                      />
+                    </>
                   )}
-                </label>
+                </div>
               ))}
             </div>
             <button className="btn-ghost add" onClick={toggleAdvanced}>
