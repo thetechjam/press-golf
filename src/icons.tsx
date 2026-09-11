@@ -170,3 +170,13 @@ export const ChartIcon = ({ size = 18, className }: IconProps) => (
     <path d="M3 20h18" />
   </svg>
 );
+
+/** A QR code's three finder squares — the mark for sending a round to a phone. */
+export const QrIcon = ({ size = 18, className }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <rect x="3.5" y="3.5" width="6" height="6" rx="1" />
+    <rect x="14.5" y="3.5" width="6" height="6" rx="1" />
+    <rect x="3.5" y="14.5" width="6" height="6" rx="1" />
+    <path d="M14.5 14.5h2M20.5 14.5v2M14.5 20.5h6M18 18h.01" />
+  </svg>
+);
