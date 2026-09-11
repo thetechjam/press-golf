@@ -17,10 +17,11 @@ import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry, placePlayer 
 import { CrewChip, RecentChips } from '../components/RosterChips';
 import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
+import { SendRound } from '../components/SendRound';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import { playerColor } from '../player';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
-import { StarIcon, XIcon, GearIcon } from '../icons';
+import { StarIcon, XIcon, GearIcon, QrIcon } from '../icons';
 import { StakesEditor } from '../components/StakesEditor';
 import { SettingsSheet } from '../components/SettingsSheet';
 
@@ -71,6 +72,8 @@ export function Setup({ onCancel, onStart }: Props) {
   const [imported, setImported] = useState<{ raw: Hole[]; expected: number } | null>(null);
   const [error, setError] = useState('');
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
+  // The saved course being handed out, if any — see the QR button on each row.
+  const [sendingCourse, setSendingCourse] = useState<SavedCourse | null>(null);
   const [savedNote, setSavedNote] = useState('');
   const [nassauMode, setNassauMode] = useState<'1v1' | '2v2'>('1v1');
   const [nassauSideA, setNassauSideA] = useState('');
@@ -534,6 +537,16 @@ export function Setup({ onCancel, onStart }: Props) {
                         {c.holes.some((h) => h.strokeIndex) ? ' · stroke index set' : ''}
                       </span>
                     </button>
+                    {/* Checking a scorecard is done once, by one person. This
+                        is how the other three get the checked one instead of
+                        each re-typing it, or not bothering. */}
+                    <button
+                      className="saved-course-send"
+                      onClick={() => setSendingCourse(c)}
+                      aria-label={`Send ${c.name} to another phone`}
+                    >
+                      <QrIcon size={16} />
+                    </button>
                     <DeleteButton
                       className="saved-course-del"
                       label={`saved course ${c.name}`}
@@ -973,6 +986,10 @@ export function Setup({ onCancel, onStart }: Props) {
       </button>
 
       {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} screen="setup" />}
+
+      {sendingCourse && (
+        <SendRound course={sendingCourse} onClose={() => setSendingCourse(null)} />
+      )}
     </div>
   );
 }

@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import type { Round } from './types';
+import type { Round, SavedCourse } from './types';
 import { Home } from './screens/Home';
 import { Setup } from './screens/Setup';
 import { LeagueSetup } from './screens/LeagueSetup';
 import { Play } from './screens/Play';
 import { Results } from './screens/Results';
 import { Stats } from './screens/Stats';
-import { saveRound, getRound } from './storage';
+import { saveRound, getRound, listCourses, saveCourse } from './storage';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { dismissSplash } from './splash';
 import { createNavigator } from './navigation';
-import { decodeRound, payloadFromHash } from './shareLink';
+import { decodeRound, sharedFromHash } from './shareLink';
+import { decodeCourse, courseClash, asSeparateCourse, type CourseClash } from './shareCourse';
+import { ArrivingCourse, type CourseChoice } from './screens/ArrivingCourse';
 import { compareRounds, forkRound, type Arrival as ArrivalState } from './handover';
 import { Arrival, type Resolution } from './screens/Arrival';
 
@@ -26,6 +28,8 @@ type Incoming =
   | { state: 'failed'; message: string }
   /** Decoded, but this device already has the round and someone has to choose. */
   | { state: 'deciding'; round: Round; arrival: ArrivalState }
+  /** A course arrived; it is previewed and saved only when asked for. */
+  | { state: 'course'; course: SavedCourse; clash: CourseClash }
   | null;
 
 export default function App() {
@@ -34,7 +38,7 @@ export default function App() {
   // Read synchronously so the first paint is the shared round opening rather
   // than the Home screen flashing up and being replaced a frame later.
   const [incoming, setIncoming] = useState<Incoming>(() =>
-    payloadFromHash(window.location.hash) ? { state: 'opening' } : null
+    sharedFromHash(window.location.hash) ? { state: 'opening' } : null
   );
   /**
    * True while the round on screen came from a link and has not been kept.
@@ -120,12 +124,25 @@ export default function App() {
     let live = true;
 
     const open = () => {
-      const payload = payloadFromHash(window.location.hash);
-      if (!payload) return;
+      const shared = sharedFromHash(window.location.hash);
+      if (!shared) return;
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
       setIncoming({ state: 'opening' });
 
-      void decodeRound(payload).then((result) => {
+      if (shared.kind === 'course') {
+        void decodeCourse(shared.payload).then((result) => {
+          if (!live) return;
+          if (!result.ok) return setIncoming({ state: 'failed', message: result.error });
+          setIncoming({
+            state: 'course',
+            course: result.course,
+            clash: courseClash(result.course, listCourses()),
+          });
+        });
+        return;
+      }
+
+      void decodeRound(shared.payload).then((result) => {
         if (!live) return;
         if (!result.ok) return setIncoming({ state: 'failed', message: result.error });
 
@@ -211,6 +228,34 @@ export default function App() {
     }
     nav.goTo('results');
   };
+
+  /** Applies what the user chose about a course that arrived by link. */
+  const resolveCourse = (course: SavedCourse, choice: CourseChoice) => {
+    setIncoming(null);
+    if (choice === 'skip') return;
+    // `saveCourse` upserts by id, so replacing means reusing the local record's
+    // id and saving separately means taking a fresh one — which is exactly
+    // what `asSeparateCourse` hands back.
+    const mine = listCourses();
+    const existing = mine.find(
+      (c) => c.name.trim().toLowerCase() === course.name.trim().toLowerCase()
+    );
+    if (choice === 'replace' && existing) saveCourse({ ...course, id: existing.id });
+    else if (choice === 'both') saveCourse(asSeparateCourse(course, mine));
+    else saveCourse(course);
+  };
+
+  if (incoming?.state === 'course') {
+    return (
+      <div className="app">
+        <ArrivingCourse
+          course={incoming.course}
+          clash={incoming.clash}
+          onChoose={(choice) => resolveCourse(incoming.course, choice)}
+        />
+      </div>
+    );
+  }
 
   if (incoming?.state === 'deciding') {
     return (

@@ -2870,6 +2870,92 @@ select:focus {
   padding: 8px 14px;
 }
 
+/* The QR button on a saved-course row, between loading it and deleting it. */
+.saved-course-send {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.saved-course-send:active {
+  background: var(--line);
+}
+
+/* The scorecard laid out on the arrival screen — the reason a course is worth
+   sending is that the numbers can be wrong, so they are shown before any
+   button is. Scrolls sideways rather than shrinking to illegibility. */
+.course-card-preview {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.course-card-preview + .course-card-preview {
+  margin-top: -8px;
+}
+.course-card-preview table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  margin: 0 auto;
+}
+.course-card-preview th,
+.course-card-preview td {
+  border: 1px solid var(--line);
+  padding: 5px 7px;
+  text-align: center;
+  min-width: 28px;
+}
+.course-card-preview th[scope='row'] {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  background: var(--card);
+}
+.course-card-preview thead th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.course-issues {
+  width: 100%;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.course-issues strong {
+  display: block;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+.course-issues ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+.course-issues li + li {
+  margin-top: 4px;
+}
+
+/* The course arrival needs the width a scorecard takes; the round one is a
+   short question and reads better narrow. */
+.screen.arriving.arriving-wide {
+  min-height: 0;
+  padding-top: 24px;
+  justify-content: flex-start;
+}
+
 /* The whole screen while a link is being opened, or when it cannot be. */
 .screen.arriving {
   display: flex;
