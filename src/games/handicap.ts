@@ -1,19 +1,29 @@
 import type { Round, Hole } from '../types';
+import { strokeIndexesUsable } from './strokeIndex';
 
 /**
- * Stroke index per hole. Uses the values the user entered when every hole has
- * one; otherwise falls back to sequential indexing by ascending hole number
- * so net games allocate strokes the same way regardless of which hole the
- * round started on (league rounds rotate holes into play order).
+ * Stroke index per hole. Uses the values the round carries when they form a
+ * usable 1..N ranking; otherwise falls back to sequential indexing by
+ * ascending hole number, so net games allocate strokes the same way regardless
+ * of which hole the round started on (league rounds rotate holes into play
+ * order).
+ *
+ * "Usable" is the load-bearing word, and it means more than "present". A
+ * stroke index is a ranking, and allocation reads it as one — a shot wherever
+ * the index is at or below the handicap. Feed it a set that repeats a rank or
+ * strays outside 1..N and it hands out the wrong *number* of shots, silently:
+ * eighteen holes all indexed 5 give a 4-handicap nothing at all and a
+ * 6-handicap a shot a hole. Falling back is not a guess at the real course —
+ * it is the same thing the app does when nobody set an index, and at least it
+ * gives every player the shots their handicap is owed. The setup screens warn
+ * so the numbers can be fixed; this is the floor under that.
  */
 export function strokeIndexMap(round: Round): Record<number, number> {
-  const allProvided = round.holes.every(
-    (h) => typeof h.strokeIndex === 'number' && h.strokeIndex > 0
-  );
+  const usable = strokeIndexesUsable(round.holes);
   const byNumber = [...round.holes].sort((a, b) => a.number - b.number);
   const map: Record<number, number> = {};
   byNumber.forEach((h, i) => {
-    map[h.number] = allProvided ? (h.strokeIndex as number) : i + 1;
+    map[h.number] = usable ? (h.strokeIndex as number) : i + 1;
   });
   return map;
 }
