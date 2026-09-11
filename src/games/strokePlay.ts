@@ -1,9 +1,10 @@
 import type { Round, GameResult, GameStanding } from '../types';
 import { totalStrokesReceived } from './handicap';
+import { netFor } from './scoring';
 import { rankStandings } from './util';
 
 export function computeStrokePlay(round: Round): GameResult {
-  const useNet = round.options.useNet;
+  const useNet = netFor(round, 'strokePlay');
 
   const standings: GameStanding[] = round.players.map((p) => {
     let gross = 0;

@@ -1179,10 +1179,16 @@ select:focus {
   flex-direction: column;
   gap: 10px;
 }
-.assign-row {
+.assign-row,
+.score-mode-row {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.score-mode-name {
+  flex: 1;
+  font-weight: 600;
+  min-width: 0;
 }
 .assign-name {
   flex: 1;

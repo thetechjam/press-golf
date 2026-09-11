@@ -79,7 +79,7 @@ export function computeNassau(round: Round): GameResult {
   let bWins = 0;
 
   const standings: GameStanding[] = segments.map((seg, i) => {
-    const res = matchSegmentSides(round, seg.holes, a, b);
+    const res = matchSegmentSides(round, seg.holes, a, b, 'nassau');
     if (res.winner === 'A') aWins += 1;
     else if (res.winner === 'B') bWins += 1;
     return { label: seg.label, detail: res.status, value: i, rank: i + 1, isLeader: false };

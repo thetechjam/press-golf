@@ -1,5 +1,6 @@
 import type { Round } from './types';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from './games/handicap';
+import { anyNetScoring } from './games/scoring';
 import { leagueStrokesOnHole, type LeagueMatchKey } from './games/league';
 import { scoreMarkClass } from './scoreMark';
 
@@ -85,7 +86,9 @@ export const formatToPar = (n: number): string =>
 export function buildScorecard(round: Round): ScorecardModel {
   const siMap = strokeIndexMap(round);
   const isLeague = round.options.league != null;
-  const useNet = round.options.useNet;
+  // The stroke dots say "a stroke falls on this hole", which is true as soon as
+  // one game is scored net — not only when the whole round is.
+  const useNet = anyNetScoring(round);
   const total = round.holes.length;
 
   // League strokes come off three baselines, so a dot count would be ambiguous

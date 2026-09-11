@@ -1,5 +1,6 @@
 import type { Round, Hole, GameResult, GameStanding } from '../types';
 import { holeScore } from './handicap';
+import { netFor } from './scoring';
 import { resolveSides, type Side } from './matchPlay';
 
 /**
@@ -51,7 +52,7 @@ export interface VegasHole {
 /** Per-hole detail plus the running margin, shared by the board and the money. */
 export function vegasHoles(round: Round): { holes: VegasHole[]; margin: number } {
   const { a, b } = vegasTeams(round);
-  const useNet = round.options.useNet;
+  const useNet = netFor(round, 'vegas');
   const flipOn = round.options.vegasFlip !== false;
   const holes: VegasHole[] = [];
   let margin = 0;
@@ -125,7 +126,7 @@ export function computeVegas(round: Round): GameResult {
 
   return {
     gameType: 'vegas',
-    title: round.options.useNet ? 'Vegas (Net)' : 'Vegas',
+    title: netFor(round, 'vegas') ? 'Vegas (Net)' : 'Vegas',
     status,
     standings,
     note: last ? `Hole ${last.hole}: ${last.a} to ${last.b}` : undefined,

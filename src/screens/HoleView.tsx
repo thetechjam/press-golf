@@ -4,6 +4,7 @@ import { PlayerScoreRow } from '../components/PlayerScoreRow';
 import { WolfControls } from '../components/WolfControls';
 import { NassauControls } from '../components/NassauControls';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
+import { anyNetScoring } from '../games/scoring';
 import { leagueStrokesOnHole } from '../games/league';
 import { playerColor } from '../player';
 import { useEdgeFade } from '../useEdgeFade';
@@ -112,7 +113,7 @@ export function HoleView({
               value={round.scores[hole.number]?.[p.id] ?? null}
               handicap={usesHandicaps(round) ? (p.handicap ?? 0) : undefined}
               strokesReceived={
-                round.options.useNet
+                anyNetScoring(round)
                   ? strokesReceivedOnHole(p.handicap ?? 0, siMap[hole.number], round.holes.length)
                   : 0
               }

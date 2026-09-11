@@ -88,6 +88,7 @@ describe('buildScorecard — stroke markers', () => {
     const round = makeRound({
       players: [player('p1', 'Al', 9)],
       holes: hs,
+      games: ['strokePlay'],
       options: { useNet: true },
     });
     const row = buildScorecard(round).rows[0];
@@ -174,9 +175,9 @@ describe('buildScorecard — totals and header', () => {
   });
 
   it('shows handicaps for net and league rounds, not for gross', () => {
-    const net = makeRound({ options: { useNet: true } });
+    const net = makeRound({ games: ['strokePlay'], options: { useNet: true } });
     const lg = makeRound({ players: FOUR, options: { league: league() } });
-    const gross = makeRound({ options: { useNet: false } });
+    const gross = makeRound({ games: ['strokePlay'], options: { useNet: false } });
     expect(buildScorecard(net).showHandicap).toBe(true);
     expect(buildScorecard(lg).showHandicap).toBe(true);
     expect(buildScorecard(gross).showHandicap).toBe(false);

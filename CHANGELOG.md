@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Each game can be gross or net on its own.** Until now a single player
+  entering a handicap flipped the whole round to net, so there was no way to
+  play gross skins alongside a net match — a combination groups play all the
+  time. A Scoring block on the New Round screen now lists every net-capable
+  game with a Gross/Net choice, appearing only once somebody actually has a
+  handicap, since until then the two are the same card. The round default is
+  still derived exactly as before and `netByGame` records only what you
+  changed, so a round saved before this scores the way it was played, and a
+  handicap added mid-round still switches the games you never touched. Quota is
+  deliberately absent from the list: it spends the handicap on your target and
+  reads the card gross, so "net Quota" would hand every stroke out twice.
+  Match Play and Nassau can now disagree, so the shared match evaluator takes
+  the game it is scoring for rather than reading the round default — otherwise
+  a net Nassau would have been scored off a gross Match Play's setting and the
+  two boards would have contradicted each other. The whole-round displays
+  follow suit: stroke dots and net figures appear when *any* game is net, while
+  the handicap badges appear whenever handicaps matter at all — which is why
+  those are two separate rules and not one, as a Quota round has handicaps
+  everywhere and no net card anywhere.
 - **Two more games: Vegas and Quota.** *Vegas* is the two-on-two game where a
   team's scores are not added but written side by side, lowest first — a 4 and
   a 5 is 45, not 9 — and the gap between the two sides' numbers is the points

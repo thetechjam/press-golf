@@ -13,12 +13,6 @@ export interface GameMeta {
   label: string;
   blurb: string;
   minPlayers: number;
-  /**
-   * Whether handicaps matter to this game — the gate for the handicap fields
-   * at setup. Not the same as "scores net": Quota spends the handicap on the
-   * target and then plays the card gross, and still needs the number entered.
-   */
-  usesNet: boolean;
   compute: (round: Round) => GameResult;
 }
 
@@ -28,7 +22,6 @@ export const GAMES: GameMeta[] = [
     label: 'Stroke Play',
     blurb: 'Lowest total strokes wins. Net optional.',
     minPlayers: 1,
-    usesNet: true,
     compute: computeStrokePlay,
   },
   {
@@ -36,7 +29,6 @@ export const GAMES: GameMeta[] = [
     label: 'Match Play',
     blurb: 'Hole-by-hole duel. Win by "3&2".',
     minPlayers: 2,
-    usesNet: true,
     compute: computeMatchPlay,
   },
   {
@@ -44,7 +36,6 @@ export const GAMES: GameMeta[] = [
     label: 'Skins',
     blurb: 'Win a hole outright to take the skin. Ties carry over.',
     minPlayers: 2,
-    usesNet: true,
     compute: computeSkins,
   },
   {
@@ -52,7 +43,6 @@ export const GAMES: GameMeta[] = [
     label: 'Stableford',
     blurb: 'Points per hole vs par. Highest wins.',
     minPlayers: 1,
-    usesNet: true,
     compute: computeStableford,
   },
   {
@@ -60,7 +50,6 @@ export const GAMES: GameMeta[] = [
     label: 'Wolf',
     blurb: 'Rotating wolf picks a partner — or hunts alone.',
     minPlayers: 3,
-    usesNet: true,
     compute: computeWolf,
   },
   {
@@ -68,7 +57,6 @@ export const GAMES: GameMeta[] = [
     label: 'Vegas',
     blurb: '2v2. Your scores make a number — 4 and 5 is 45.',
     minPlayers: 4,
-    usesNet: true,
     compute: computeVegas,
   },
   {
@@ -76,7 +64,6 @@ export const GAMES: GameMeta[] = [
     label: 'Quota',
     blurb: 'Beat your own points target. Handicap sets the bar.',
     minPlayers: 1,
-    usesNet: true,
     compute: computeQuota,
   },
   {
@@ -84,7 +71,6 @@ export const GAMES: GameMeta[] = [
     label: 'Nassau',
     blurb: 'Three bets: front 9, back 9, and total.',
     minPlayers: 2,
-    usesNet: true,
     compute: computeNassau,
   },
 ];

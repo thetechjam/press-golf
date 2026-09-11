@@ -7,6 +7,7 @@ import { nassauSegments, nassauTeams } from './nassau';
 import { vegasHoles, vegasTeams } from './vegas';
 import { computeQuota } from './quota';
 import { totalStrokesReceived } from './handicap';
+import { netFor } from './scoring';
 
 export interface Transaction {
   from: string; // debtor name
@@ -98,7 +99,7 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
   }
 
   if (gameType === 'strokePlay') {
-    const useNet = round.options.useNet;
+    const useNet = netFor(round, 'strokePlay');
     const totals = ids
       .map((id) => {
         let gross = 0;
@@ -156,7 +157,7 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
     // Each bet is worth `stake` per player: winning side collects, losing side pays.
     const { a, b } = nassauTeams(round);
     for (const seg of nassauSegments(round)) {
-      const r = matchSegmentSides(round, seg.holes, a, b);
+      const r = matchSegmentSides(round, seg.holes, a, b, 'nassau');
       if (r.winner === 'A') {
         a.ids.forEach((id) => (net[id] += stake));
         b.ids.forEach((id) => (net[id] -= stake));

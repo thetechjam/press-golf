@@ -1,9 +1,10 @@
 import type { Round, GameResult, GameStanding } from '../types';
 import { holeScore } from './handicap';
+import { netFor } from './scoring';
 import { rankStandings } from './util';
 
 export function computeSkins(round: Round): GameResult {
-  const useNet = round.options.useNet;
+  const useNet = netFor(round, 'skins');
   const skinsWon: Record<string, number> = {};
   round.players.forEach((p) => (skinsWon[p.id] = 0));
 

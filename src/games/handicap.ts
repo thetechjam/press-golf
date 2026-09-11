@@ -64,9 +64,12 @@ export function totalStrokesReceived(round: Round, playerId: string): number {
 
 /**
  * Whether this round uses handicaps at all — the gate for every handicap
- * display. Not the same as `options.useNet`: league rounds ship `useNet: false`
- * (LeagueSetup spreads DEFAULT_OPTIONS) yet score net through computeLeague,
- * which reads `player.handicap` directly.
+ * display.
+ *
+ * Not the same as `options.useNet`, on two counts: league rounds ship
+ * `useNet: false` (LeagueSetup spreads DEFAULT_OPTIONS) yet score net through
+ * computeLeague, which reads `player.handicap` directly; and since scoring
+ * went per-game, the round default is no longer the whole answer — one game
+ * set to net is enough. Re-exported from `scoring.ts`, which owns that rule.
  */
-export const usesHandicaps = (round: Round): boolean =>
-  round.options.useNet || round.options.league != null;
+export { usesHandicaps } from './scoring';

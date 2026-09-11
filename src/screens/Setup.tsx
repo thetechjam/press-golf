@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import type { Round, Player, GameType, Hole, SavedCourse, TeamSetup } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
-import { GAMES } from '../games';
+import { GAMES, gameMeta } from '../games';
 import { GAME_RULES } from '../games/rules';
+import { usesHandicap, canScoreNet } from '../games/scoring';
 import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
@@ -52,6 +53,10 @@ export function Setup({ onCancel, onStart }: Props) {
   const [matchAssign, setMatchAssign] = useState<Assign>({});
   // Vegas is 2v2 only — there is no side to choose, just who is with whom.
   const [vegasAssign, setVegasAssign] = useState<Assign>({});
+  // Only the games the user actually changed. An absent entry follows the
+  // round default, so leaving this alone reproduces the old behaviour exactly
+  // — including a handicap added later switching the untouched games over.
+  const [netByGame, setNetByGame] = useState<Partial<Record<GameType, boolean>>>({});
   const [showSettings, setShowSettings] = useState(false);
   const [expandedGame, setExpandedGame] = useState<GameType | null>(null);
 
@@ -204,12 +209,17 @@ export function Setup({ onCancel, onStart }: Props) {
     setGames((gs) => (gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g]));
 
   const namedPlayers = players.filter((p) => p.name.trim());
-  const showNet = games.some((g) => GAMES.find((m) => m.id === g)?.usesNet);
+  const showNet = games.some(usesHandicap);
   const showStableford = games.includes('stableford');
   const showWolf = games.includes('wolf');
   const showNassau = games.includes('nassau');
   const showMatchPlay = games.includes('matchPlay');
   const showVegas = games.includes('vegas');
+  // Gross and net are the same card until somebody has a handicap, so the
+  // per-game picker stays out of the way until the choice means something.
+  const anyHandicap = namedPlayers.some((p) => (p.handicap ?? 0) > 0);
+  const netGames = games.filter(canScoreNet);
+  const showScoring = anyHandicap && netGames.length > 0;
   const canTeams = namedPlayers.length >= 4;
 
   const start = () => {
@@ -281,7 +291,7 @@ export function Setup({ onCancel, onStart }: Props) {
       players: cleanPlayers,
       holes,
       games,
-      options: { ...options, useNet, nassau, matchPlay, vegas },
+      options: { ...options, useNet, netByGame, nassau, matchPlay, vegas },
       scores: {},
       wolf: {},
       presses: [],
@@ -446,6 +456,37 @@ export function Setup({ onCancel, onStart }: Props) {
               ))}
             </div>
           </section>
+
+          {showScoring && (
+            <section className="card">
+              <h2>Scoring</h2>
+              <p className="hint-inline">
+                Handicaps apply everywhere by default. Set a game to gross to play it off the
+                card.
+              </p>
+              {netGames.map((g) => {
+                const net = netByGame[g] ?? true;
+                return (
+                  <div key={g} className="score-mode-row">
+                    <span className="score-mode-name">{gameMeta(g).label}</span>
+                    <div className="seg small">
+                      {([false, true] as const).map((v) => (
+                        <button
+                          key={String(v)}
+                          type="button"
+                          className={`seg-btn${net === v ? ' active' : ''}`}
+                          aria-pressed={net === v}
+                          onClick={() => setNetByGame((m) => ({ ...m, [g]: v }))}
+                        >
+                          {v ? 'Net' : 'Gross'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
+          )}
 
           {showMatchPlay && (
             <TeamPicker

@@ -18,7 +18,7 @@ export function NassauControls({ round, hole, onChange }: Props) {
   const nine = nineHolesFor(round, hole.number);
   const hasBackNine = round.holes.some((h) => h.number > 9);
   const nineLabel = !hasBackNine ? 'Match' : hole.number <= 9 ? 'Front' : 'Back';
-  const seg = matchSegmentSides(round, nine, a, b);
+  const seg = matchSegmentSides(round, nine, a, b, 'nassau');
   const end = endOfNine(round, hole.number);
   // A press starts even on the remaining holes of this nine, i.e. the next hole.
   const start = hole.number + 1;
