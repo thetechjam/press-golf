@@ -43,6 +43,20 @@ The ATM, Sandbagger, Wolf's Gamble — ranked by how notable they are and capped
 so no one player takes the whole card. They show on the Results screen and on
 the shared scoreboard image, and each one cites the number behind it.
 
+## Sharing a round
+
+Results can go out as a scoreboard image, a scorecard image, or plain text —
+and the round itself can be handed to another phone by link or QR code. The
+whole round is packed into the link's fragment, so it is decoded by the other
+person's copy of Press and never touches a server: no account, no backend, and
+it opens with no signal. A round that arrives is held behind a "Keep it"
+button rather than being saved onto someone's device unasked.
+
+Mid-round, the same link hands the card over: the other phone carries on
+scoring from where you left off. If both phones end up scoring the same round,
+Press compares the two and asks which card is the real one — or keeps both —
+rather than picking one on a timestamp.
+
 ## Getting started
 
 Requires [Node](https://nodejs.org) 24+ (see `.nvmrc`).

@@ -34,8 +34,26 @@ what's deferred, and how to expand without a rewrite.
   to one JSON file and reads one back, from the Settings sheet. A restore merges
   and never deletes — newest-wins by `updatedAt`, so it is safe to run at any
   time and idempotent when run twice. The answer to the one unrecoverable
-  failure of a localStorage-only app, and the only way to move a round between
+  failure of a localStorage-only app, and the way to move *everything* between
   two devices with no backend.
+- **Share a round by link or QR** (`src/shareLink.ts`, `src/qr.ts`,
+  `src/components/SendRound.tsx`): the round is packed, deflated and base32'd
+  into a URL *fragment*, so it is decoded by the recipient's copy of Press and
+  never reaches a server — no account, no backend, works with no signal. A
+  four-ball on eighteen holes is a 535-character payload, which the hand-rolled
+  encoder draws as a 69-module QR code. A round that arrives is held unsaved
+  behind a "Keep it" button: being shown a round is not the same as having
+  played one. The QR encoder is verified by decoding its own output with a real
+  scanner (`jsqr`, a devDependency — nothing is shipped).
+- **Mid-round handover** (`src/handover.ts`, `src/screens/Arrival.tsx`): the
+  same link, sent from Settings during a round, hands the card to another phone
+  to carry on. Both phones then hold the round, so an arriving copy is compared
+  against the local one cell by cell (by player *position* — a decoded round
+  never carries the ids the phone that scored it used) and the user is asked
+  only in the case that cannot be decided safely: both sides scored. "Keep
+  both" forks the arriving copy under a new id, so the two can never collide
+  again. This is what stops `mergeRounds`' newest-wins rule from quietly eating
+  a back nine.
 - **Stats** (`src/stats.ts`, `src/screens/Stats.tsx`): cross-round history
   derived from the saved rounds — scoring average against par, best round,
   scoring mix, skins won, money across rounds. Players are matched by name,
@@ -48,15 +66,19 @@ Everything is in **localStorage**, per browser, per device:
 - `press.rounds.v1` — saved/finished rounds
 - `press.courses.v1` — favorite courses
 
-Nothing is shared between people or synced across devices. This is by design
-(no backend, no cost, works with zero signal on the course).
+Nothing is *synced* between devices, and nothing is stored anywhere but the
+browser that wrote it. This is by design (no backend, no cost, works with zero
+signal on the course). A round can be handed to another phone as a snapshot —
+by backup file, or by the share link, which carries it in the URL fragment
+rather than through a server — but the two copies then go their own ways.
+Keeping them in step is what accounts and sync are for, below.
 
 ## Deferred features
 
 | Feature | Notes |
 |---|---|
 | Accounts + cloud sync | History follows you across devices; enables everything below. |
-| Live multi-phone sync | Each player scores on their own phone; join a round via a game code; leaderboards sync in real time. |
+| Live multi-phone sync | Each player scores on their own phone; join a round via a game code; leaderboards sync in real time. Sharing a round by link covers the snapshot and the handover; *simultaneous* scoring is the part that needs a server. |
 | ~~Cross-round stats / history~~ | **Shipped local-only** via the Stats screen (`stats.ts`) — scoring average, best round, skins, money, all derived from `press.rounds.v1`. *Cross-device* history still needs accounts + sync. |
 | ~~Automatic Nassau presses~~ | **Shipped** — setup toggle, with presses derived from the card by `autoPressStarts()` rather than stored, so correcting a score re-decides them. Presses cascade: a press that goes 2 down presses again. |
 | ~~Course database~~ | **Shipped** via OpenGolfAPI course search (keyless + CORS, so no backend needed; returns per-hole par and `handicap_index`). Coverage is US-strong; Favorite Courses covers gaps and offline use. |

@@ -8,6 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Send a round to another phone, by link or QR code.** The Results screen
+  gains "Send the round to a phone": a sheet with a QR code the person beside
+  you can point a camera at, and a link for everyone else. The whole round
+  travels inside the link — nothing is uploaded, there is no account and no
+  server, and it opens with no signal, which matters when the settling-up
+  happens in a car park. Until now the only way to move a round between two
+  devices was the backup file.
+
+  The round is not written onto the receiving device until they ask for it.
+  It opens on the Results with a banner and a "Keep it" button, and even
+  correcting a score first does not save it: being shown a round is not the
+  same as having played one, and there is no undo for a history full of other
+  people's golf. A link that arrives damaged — the usual cause is a messaging
+  app wrapping it and only the first line being copied — says so plainly
+  instead of showing a blank screen, and a round naming a game the receiving
+  copy of Press is too old to score is refused outright rather than settled
+  for less money than it was played for.
+- **Hand the card to another phone mid-round.** Settings during a round offers
+  "Hand over scoring". The other phone gets the whole card and carries on from
+  where you left off — the closest thing to everyone scoring on their own phone
+  that works with no server and no signal.
+
+  Both phones then hold the same round, so Press asks about it rather than
+  guessing. If the copy coming back is simply further along, it offers to bring
+  yours up to date. If both phones have scored — including the same hole
+  entered differently on each — it says so and offers to keep both, because
+  that is the only answer that loses nothing. Nothing is written either way
+  until you pick. Left to the backup merge's newest-wins rule, one of the two
+  back nines would have disappeared on a timestamp with nothing on screen to
+  say so.
+
+### Fixed
+- A share link tapped while Press was already open did nothing. Following a
+  link with the app open changes only the URL fragment, which reloads nothing;
+  Press now notices.
 - **Handicap Index, slope and rating.** Give a course its slope and rating —
   once, on the Holes & pars row, saved with the course — and the players list
   asks for each person's Handicap Index instead of the strokes they worked out

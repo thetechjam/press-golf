@@ -9,10 +9,11 @@ import { computeSettlement, formatMoney } from '../games/settlement';
 import { computeLeague } from '../games/league';
 import { colorMap } from '../player';
 import { usesHandicaps } from '../games/handicap';
-import { TrophyIcon, ShareIcon, PencilIcon } from '../icons';
+import { TrophyIcon, ShareIcon, PencilIcon, QrIcon } from '../icons';
 import { renderShareCard } from '../shareCard';
 import { renderScorecardCard } from '../scorecardCard';
 import { EditHandicaps } from '../components/EditHandicaps';
+import { SendRound } from '../components/SendRound';
 import { Awards } from '../components/Awards';
 import { formatRoundDate } from '../roundDate';
 
@@ -63,6 +64,9 @@ interface Props {
   onChange: (round: Round) => void;
   onHome: () => void;
   onBackToPlay: () => void;
+  /** True when this round arrived by link and is not on this device yet. */
+  unkept?: boolean;
+  onKeep?: () => void;
 }
 
 function buildSummary(round: Round): string {
@@ -159,11 +163,12 @@ function ShareButton({
   );
 }
 
-export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
+export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep }: Props) {
   const [copied, setCopied] = useState(false);
   const [rendering, setRendering] = useState(false);
   const [renderingCard, setRenderingCard] = useState(false);
   const [showHcp, setShowHcp] = useState(false);
+  const [sending, setSending] = useState(false);
   const results = activeResults(round);
   const hero = round.options.league ? null : winnerHero(round);
   const colors = colorMap(round);
@@ -246,6 +251,22 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
         </button>
       </header>
 
+      {unkept && (
+        <div className="unkept" role="status">
+          <div className="unkept-text">
+            <strong>Sent to you</strong>
+            <span>
+              {round.status === 'finished'
+                ? 'Not saved on this phone yet.'
+                : 'Still being played. Take it on to keep scoring.'}
+            </span>
+          </div>
+          <button className="btn-secondary" onClick={onKeep}>
+            {round.status === 'finished' ? 'Keep it' : 'Take it on'}
+          </button>
+        </div>
+      )}
+
       <div className="results-meta">
         <div className="results-course">{round.course || 'Golf round'}</div>
         <div className="results-sub">
@@ -303,6 +324,12 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       <button className="btn-ghost share-text" onClick={shareText}>
         {copied ? 'Copied to clipboard' : 'Share as text instead'}
       </button>
+      {/* A different thing from the two above, and worth its own row: those
+          send a picture of the result, this sends the round itself, so the
+          person on the other end can open it, keep it, and settle from it. */}
+      <button className="btn-ghost send-round" onClick={() => setSending(true)}>
+        <QrIcon size={16} /> Send the round to a phone
+      </button>
       <button className="btn-ghost edit-hcp" onClick={() => setShowHcp(true)}>
         <PencilIcon size={16} /> Edit handicaps
       </button>
@@ -310,6 +337,8 @@ export function Results({ round, onChange, onHome, onBackToPlay }: Props) {
       {showHcp && (
         <EditHandicaps round={round} onChange={onChange} onClose={() => setShowHcp(false)} />
       )}
+
+      {sending && <SendRound round={round} onClose={() => setSending(false)} />}
     </div>
   );
 }
