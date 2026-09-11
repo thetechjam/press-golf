@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Awards for Vegas and Quota.** *The Wrecking Ball* names the hole where a
+  side's number blew up and the player who blew it up — the higher score on the
+  losing side, since a partner who played their part should not wear it — and
+  cites what it cost: "9 on a par 4 · 45 points". Twenty points is the bar,
+  because ordinary holes swing single figures and reaching twenty takes a real
+  wreck. *Short of the Mark* goes to whoever finished furthest below the target
+  Quota set them, deliberately the miss rather than the beat: Sandbagger
+  already rewards playing under your handicap, and a Quota round uses
+  handicaps, so an award for clearing the number would land on the same player
+  twice for the same reason.
+- **An award never reports the same hole twice.** A blow-up that also wrecked a
+  Vegas number is one hole, and naming it in two awards read as a bug rather
+  than as two jokes. Awards that report a score now say which hole it was, and
+  only the better-ranked telling survives — which frees the slot for somebody
+  else on the card, the whole point of the per-player cap.
 - **Vegas on the Hole tab.** Wolf and Nassau have always had a presence where
   the scoring actually happens; Vegas did not, which left its whole point — the
   two scores written side by side — on the Board, one tab away from the person

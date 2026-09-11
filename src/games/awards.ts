@@ -3,6 +3,8 @@ import { computeSettlement, formatMoney } from './settlement';
 import { totalStrokesReceived, usesHandicaps } from './handicap';
 import { computeSkins } from './skins';
 import { wolfOutcomes } from './wolf';
+import { vegasHoles, vegasTeams, vegasReady } from './vegas';
+import { computeQuota } from './quota';
 
 /**
  * Round awards — the ribbing layer over a finished round.
@@ -19,6 +21,16 @@ export interface Award {
   detail: string;
   playerIds: string[];
   score: number;
+  /**
+   * The hole this award reports a score on, where it reports one.
+   *
+   * Set it on any award that is fundamentally "this player wrote this number
+   * on this hole" — two of those about the same player and hole are the same
+   * fact told twice, and `computeAwards` keeps only the better-ranked one. An
+   * award about a hole for a different reason (what the hole paid, say) can
+   * leave it unset and sit happily beside the score that earned it.
+   */
+  hole?: number;
 }
 
 /** How many awards a round shows, and how many any one player may take. */
@@ -109,6 +121,7 @@ function snowman(round: Round): Award | null {
     detail: `${worst.strokes} on a par ${worst.par} · +${worst.over}`,
     playerIds: [worst.playerId],
     score: 30 + worst.over * 8,
+    hole: worst.hole,
   };
 }
 
@@ -306,6 +319,86 @@ function wolfsGamble(round: Round): Award | null {
 }
 
 /**
+ * The hole where one side's number blew up, and the player who blew it up.
+ *
+ * Vegas's whole character is that a bad hole costs a hundred rather than one,
+ * so the biggest single swing is the story of the round — and it belongs to a
+ * person, not a team: the higher score on the losing side is the one that made
+ * their number enormous. A partner who played their part gets left out of it.
+ *
+ * Twenty points is the threshold because ordinary holes swing single figures:
+ * 45 against 56 is 11. Reaching twenty takes a genuine wreck.
+ */
+function wreckingBall(round: Round): Award | null {
+  if (!round.games.includes('vegas') || !vegasReady(round)) return null;
+
+  const worst = [...vegasHoles(round).holes].sort(
+    (x, y) => Math.abs(y.swing) - Math.abs(x.swing)
+  )[0];
+  if (!worst || Math.abs(worst.swing) < 20) return null;
+
+  const { a, b } = vegasTeams(round);
+  const losers = worst.swing > 0 ? b : a;
+  const hole = round.holes.find((h) => h.number === worst.hole);
+  if (!hole) return null;
+
+  // The bigger score is the one that made the number what it is.
+  const culprit = losers.ids
+    .map((id) => ({ id, strokes: round.scores[worst.hole]?.[id] }))
+    .filter((x): x is { id: string; strokes: number } => x.strokes != null)
+    .sort((x, y) => y.strokes - x.strokes)[0];
+  if (!culprit) return null;
+
+  const cost = Math.abs(worst.swing);
+
+  return {
+    id: 'wrecking-ball',
+    title: 'The Wrecking Ball',
+    line: `${nameOf(round, culprit.id)} turned ${worst.hole} into a phone number`,
+    detail: `${culprit.strokes} on a par ${hole.par} · ${cost} points`,
+    playerIds: [culprit.id],
+    // Ranked on what the hole cost, because in Vegas that *is* the severity —
+    // it already encodes how bad the score was. Allowed to run above The
+    // Snowman's range on purpose: when both describe the same hole only one
+    // survives, and this one says everything that one says plus the damage.
+    score: Math.min(35 + cost, 85),
+    hole: worst.hole,
+  };
+}
+
+/**
+ * Whoever finished furthest below the target Quota set them.
+ *
+ * Deliberately the miss rather than the beat: Sandbagger already rewards
+ * someone for playing under their handicap, and a Quota round uses handicaps,
+ * so an award for clearing the number would land on the same player twice for
+ * the same reason.
+ */
+function shortOfTheMark(round: Round): Award | null {
+  if (!round.games.includes('quota')) return null;
+
+  const standings = computeQuota(round)
+    .standings.filter((s) => s.playerId)
+    .sort((x, y) => x.value - y.value);
+
+  const worst = standings[0];
+  if (!worst || worst.value > -6) return null;
+  // A shared low is nobody's in particular.
+  if (standings[1] && standings[1].value === worst.value) return null;
+
+  const short = Math.abs(worst.value);
+
+  return {
+    id: 'short-of-the-mark',
+    title: 'Short of the Mark',
+    line: `${worst.label} never got near the number`,
+    detail: `${worst.detail} · ${short} short`,
+    playerIds: [worst.playerId!],
+    score: Math.min(30 + short * 2, 60),
+  };
+}
+
+/**
  * Someone who never won a single hole's money. `excludeId` is the ATM, kept
  * out so the two money roasts land on different people rather than piling
  * onto whoever already paid for everyone's round.
@@ -349,6 +442,8 @@ export function computeAwards(round: Round): Award[] {
     sandbagger(round),
     skinThief(round),
     wolfsGamble(round),
+    wreckingBall(round),
+    shortOfTheMark(round),
     shutOut(round, theAtm?.playerIds[0]),
   ];
   const ranked = candidates
@@ -359,10 +454,19 @@ export function computeAwards(round: Round): Award[] {
   // the card — the point is that the whole group gets ribbed.
   const taken: Award[] = [];
   const perPlayer: Record<string, number> = {};
+  // Holes already reported as somebody's score. A blow-up that also wrecked a
+  // Vegas number is one hole, and naming it twice reads as a bug rather than
+  // as two jokes — the better-ranked telling wins.
+  const reported = new Set<string>();
 
   for (const award of ranked) {
     if (taken.length === MAX_AWARDS) break;
     if (award.playerIds.some((id) => (perPlayer[id] ?? 0) >= MAX_PER_PLAYER)) continue;
+
+    const keys = award.hole == null ? [] : award.playerIds.map((id) => `${id}@${award.hole}`);
+    if (keys.some((k) => reported.has(k))) continue;
+    keys.forEach((k) => reported.add(k));
+
     award.playerIds.forEach((id) => (perPlayer[id] = (perPlayer[id] ?? 0) + 1));
     taken.push(award);
   }
