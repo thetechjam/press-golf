@@ -3238,6 +3238,15 @@ select:focus {
   color: var(--under-ink);
   font-size: 0.9rem;
 }
+/* A backup or restore that failed has to read differently from one that
+   worked, and Press has no red anywhere — the warning gold `warn-banner`
+   already uses is the app's established "this needs your attention" color.
+   Mixed toward the ink because flat gold on the card is unreadable at
+   0.9rem. */
+.fb-status.bad {
+  color: color-mix(in srgb, var(--gold) 55%, var(--ink));
+  font-weight: 600;
+}
 .set-action {
   width: 100%;
   background: none;

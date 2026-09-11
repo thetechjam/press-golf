@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Back up and restore your rounds.** Settings now writes every saved round
+  and favorite course to a single `press-backup-YYYY-MM-DD.json` file, and
+  reads one back. Press keeps everything in `localStorage` and nowhere else —
+  that is what lets it work with no account and no signal, and it also meant
+  clearing site data, switching phones, or reinstalling took every round with
+  it, permanently and without warning. This is the way out, and incidentally
+  the only way to move a round between two devices without a backend. On a
+  phone the file goes through the share sheet (Files, iCloud, a message —
+  somewhere that outlives the browser) and falls back to a download
+  everywhere else. A restore **merges and never deletes**: rounds the device
+  has never seen are added, a round in the file replaces the local copy only
+  when it is genuinely newer, and a tie keeps what is already here. So
+  restoring last week's backup onto a phone that has since played three more
+  holes leaves those holes alone, and restoring the same file twice does
+  nothing the second time. A saved course is never overwritten, since it
+  carries no timestamp to judge by and the local copy may be the corrected
+  one. A damaged entry is dropped and counted rather than costing the user
+  the rest of the file, and a round naming a game this build has no engine
+  for is dropped too — a backup from a newer Press would otherwise crash the
+  Home screen. Both stores are written together and rolled back if either
+  write fails, so a restore that runs out of room leaves the device exactly
+  as it was.
 - **The app answers a mouse.** Every pressable surface now has a hover state —
   a faint fairway tint at roughly half the strength of its press, so hover
   reads as "you can hit this" and the press still reads as more. The primary
