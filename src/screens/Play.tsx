@@ -18,6 +18,7 @@ import { useWakeLock, wakeLockSupported } from '../useWakeLock';
 import { EyeIcon, ContrastIcon, GearIcon, PencilIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { EditHandicaps } from '../components/EditHandicaps';
+import { SendRound } from '../components/SendRound';
 
 type PlayMode = 'hole' | 'board' | 'card';
 
@@ -50,6 +51,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
 
   const [showSettings, setShowSettings] = useState(false);
   const [showHcp, setShowHcp] = useState(false);
+  const [handingOver, setHandingOver] = useState(false);
   const [glare, setGlare] = useState(() => getSettings().glare);
   const toggleGlare = () => {
     const next = !glare;
@@ -305,7 +307,25 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
         )}
       </div>
 
-      {showSettings && <SettingsSheet onClose={closeSettings} screen="play" round={round} />}
+      {showSettings && (
+        <SettingsSheet
+          onClose={closeSettings}
+          screen="play"
+          round={round}
+          // Only while the round is live: handing over a finished card is what
+          // the Send button on Results is for, and it says something different.
+          onHandOver={
+            round.status === 'finished'
+              ? undefined
+              : () => {
+                  closeSettings();
+                  setHandingOver(true);
+                }
+          }
+        />
+      )}
+
+      {handingOver && <SendRound round={round} onClose={() => setHandingOver(false)} />}
       {showHcp && (
         <EditHandicaps round={round} onChange={onChange} onClose={() => setShowHcp(false)} />
       )}

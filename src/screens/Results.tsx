@@ -255,10 +255,14 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep 
         <div className="unkept" role="status">
           <div className="unkept-text">
             <strong>Sent to you</strong>
-            <span>Not saved on this phone yet.</span>
+            <span>
+              {round.status === 'finished'
+                ? 'Not saved on this phone yet.'
+                : 'Still being played. Take it on to keep scoring.'}
+            </span>
           </div>
           <button className="btn-secondary" onClick={onKeep}>
-            Keep it
+            {round.status === 'finished' ? 'Keep it' : 'Take it on'}
           </button>
         </div>
       )}

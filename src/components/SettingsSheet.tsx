@@ -20,9 +20,17 @@ interface Props {
   screen: string;
   round?: Round;
   initialView?: 'settings' | 'help';
+  /** Offered only mid-round, and only when there is a round to hand over. */
+  onHandOver?: () => void;
 }
 
-export function SettingsSheet({ onClose, screen, round, initialView = 'settings' }: Props) {
+export function SettingsSheet({
+  onClose,
+  screen,
+  round,
+  initialView = 'settings',
+  onHandOver,
+}: Props) {
   const [view, setView] = useState<'settings' | 'feedback' | 'help'>(initialView);
   const [queued, setQueued] = useState(() => listQueue().length);
   const [s, setS] = useState(getSettings);
@@ -103,6 +111,18 @@ export function SettingsSheet({ onClose, screen, round, initialView = 'settings'
               onChange={(e) => set({ keepAwake: e.target.checked })}
             />
           </label>
+
+          {onHandOver && (
+            <button className="set-row set-action" onClick={onHandOver}>
+              <span>
+                <span className="set-label">Hand over scoring</span>
+                <span className="set-hint">
+                  Send the card to another phone so they can carry on
+                </span>
+              </span>
+              <span aria-hidden="true">›</span>
+            </button>
+          )}
 
           <BackupRows />
 

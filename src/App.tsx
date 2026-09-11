@@ -6,11 +6,13 @@ import { LeagueSetup } from './screens/LeagueSetup';
 import { Play } from './screens/Play';
 import { Results } from './screens/Results';
 import { Stats } from './screens/Stats';
-import { saveRound } from './storage';
+import { saveRound, getRound } from './storage';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { dismissSplash } from './splash';
 import { createNavigator } from './navigation';
 import { decodeRound, payloadFromHash } from './shareLink';
+import { compareRounds, forkRound, type Arrival as ArrivalState } from './handover';
+import { Arrival, type Resolution } from './screens/Arrival';
 
 const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats'] as const;
 type View = (typeof VIEWS)[number];
@@ -19,7 +21,12 @@ const isView = (v: unknown): v is View =>
   typeof v === 'string' && (VIEWS as readonly string[]).includes(v);
 
 /** What is happening with a round arriving in the address bar, if one is. */
-type Incoming = { state: 'opening' } | { state: 'failed'; message: string } | null;
+type Incoming =
+  | { state: 'opening' }
+  | { state: 'failed'; message: string }
+  /** Decoded, but this device already has the round and someone has to choose. */
+  | { state: 'deciding'; round: Round; arrival: ArrivalState }
+  | null;
 
 export default function App() {
   const [view, setView] = useState<View>('home');
@@ -96,6 +103,13 @@ export default function App() {
   /**
    * A round arriving in the address bar.
    *
+   * Handled on mount and again on `hashchange`, because those are two
+   * genuinely different arrivals. Following a link with Press closed loads the
+   * page; following one with Press already open on the same origin changes
+   * only the fragment, which is a same-document navigation — no reload, no
+   * remount, and without the listener, tapping a mate's link while looking at
+   * the app does nothing at all.
+   *
    * The payload is taken out of the URL before anything else happens: it is
    * hundreds of characters long, a refresh would re-open it over whatever the
    * user had moved on to, and it would otherwise be carried into the next link
@@ -103,21 +117,37 @@ export default function App() {
    * lands after the effect above has seeded the history stack.
    */
   useEffect(() => {
-    const payload = payloadFromHash(window.location.hash);
-    if (!payload) return;
-    window.history.replaceState(null, '', window.location.pathname + window.location.search);
-
     let live = true;
-    void decodeRound(payload).then((result) => {
-      if (!live) return;
-      if (!result.ok) return setIncoming({ state: 'failed', message: result.error });
-      setRound(result.round);
-      setUnkept(true);
-      setIncoming(null);
-      nav.goTo('results');
-    });
+
+    const open = () => {
+      const payload = payloadFromHash(window.location.hash);
+      if (!payload) return;
+      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      setIncoming({ state: 'opening' });
+
+      void decodeRound(payload).then((result) => {
+        if (!live) return;
+        if (!result.ok) return setIncoming({ state: 'failed', message: result.error });
+
+        // A round this device has never seen is simply shown, unkept. One it
+        // already has is a question about the user's own data, and gets asked
+        // before anything is written — see handover.ts.
+        const arrival = compareRounds(result.round, getRound(result.round.id));
+        if (arrival.kind !== 'new') {
+          return setIncoming({ state: 'deciding', round: result.round, arrival });
+        }
+        setRound(result.round);
+        setUnkept(true);
+        setIncoming(null);
+        nav.goTo('results');
+      });
+    };
+
+    open();
+    window.addEventListener('hashchange', open);
     return () => {
       live = false;
+      window.removeEventListener('hashchange', open);
     };
   }, [nav]);
 
@@ -143,11 +173,18 @@ export default function App() {
     if (!unkept) saveRound(next);
   };
 
-  /** Writes a round that arrived by link onto this device, once asked. */
+  /**
+   * Writes a round that arrived by link onto this device, once asked.
+   *
+   * A round still being played goes straight to the card, because taking one
+   * on is not filing it away — it is agreeing to keep score, and the next
+   * thing that happens is somebody hitting a shot.
+   */
   const keep = () => {
     if (!round) return;
     saveRound(round);
     setUnkept(false);
+    if (round.status !== 'finished') goTo('play');
   };
 
   const finish = () => {
@@ -155,6 +192,37 @@ export default function App() {
     update({ ...round, status: 'finished' });
     goTo('results');
   };
+
+  /** Applies what the user chose about a round that this device already had. */
+  const resolve = (incomingRound: Round, resolution: Resolution) => {
+    const mine = getRound(incomingRound.id);
+    setIncoming(null);
+
+    if (resolution.action === 'open-mine') {
+      // Nothing is written: the copy here is already the one being opened.
+      load(mine ?? incomingRound);
+    } else if (resolution.action === 'replace') {
+      saveRound(incomingRound);
+      load(incomingRound);
+    } else {
+      const fork = forkRound(incomingRound);
+      saveRound(fork);
+      load(fork);
+    }
+    nav.goTo('results');
+  };
+
+  if (incoming?.state === 'deciding') {
+    return (
+      <div className="app">
+        <Arrival
+          incoming={incoming.round}
+          arrival={incoming.arrival}
+          onResolve={(resolution) => resolve(incoming.round, resolution)}
+        />
+      </div>
+    );
+  }
 
   if (incoming) {
     return (

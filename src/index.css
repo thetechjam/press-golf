@@ -2882,8 +2882,29 @@ select:focus {
 }
 .arriving-note {
   color: var(--muted);
-  max-width: 30ch;
+  max-width: 34ch;
   margin: 0;
+}
+.arriving-round {
+  text-align: center;
+}
+.arriving-course {
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.arriving-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 2px;
+}
+/* The decision screen stacks two or three answers; they share a width so the
+   recommended one does not read as a different kind of control. */
+.screen.arriving .btn-primary,
+.screen.arriving .btn-secondary {
+  width: min(320px, 100%);
 }
 
 /* ---- Money board (Play → Board tab) ---- */

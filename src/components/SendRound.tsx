@@ -29,6 +29,10 @@ type State =
 export function SendRound({ round, onClose }: Props) {
   const [state, setState] = useState<State>({ kind: 'working' });
   const [copied, setCopied] = useState(false);
+  // A live round is being handed over to be carried on; a finished one is
+  // being shown. Same link either way — but saying "they can carry on scoring"
+  // about a card that is already settled would be nonsense.
+  const live = round.status !== 'finished';
 
   useEffect(() => {
     let live = true;
@@ -70,7 +74,7 @@ export function SendRound({ round, onClose }: Props) {
   };
 
   return (
-    <Sheet title="Send this round" onClose={onClose}>
+    <Sheet title={live ? 'Hand over scoring' : 'Send this round'} onClose={onClose}>
       {state.kind === 'working' && <p className="send-note">Building the link…</p>}
 
       {state.kind === 'failed' && (
@@ -101,7 +105,9 @@ export function SendRound({ round, onClose }: Props) {
           <p className="send-note">
             {state.tooBig
               ? 'This round is too big for a QR code, but the link still carries it.'
-              : 'Point another phone’s camera at this to open the round in Press.'}
+              : live
+                ? 'Point their camera at this. They can take over scoring from here.'
+                : 'Point another phone’s camera at this to open the round in Press.'}
           </p>
 
           <button className="btn-primary big" onClick={() => void send(state.url)}>
@@ -111,6 +117,8 @@ export function SendRound({ round, onClose }: Props) {
           <p className="send-note quiet">
             The whole round is inside the link — nothing is uploaded, and it opens
             with no signal.
+            {live &&
+              ' Your copy stays as it is, so if you both keep scoring, Press will ask which card is the real one.'}
           </p>
         </>
       )}
