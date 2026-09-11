@@ -131,3 +131,46 @@ describe('placePlayer', () => {
     expect(input[0].name).toBe('');
   });
 });
+
+describe('a Handicap Index on the roster', () => {
+  const round = (players: { id: string; name: string; handicap?: number; index?: number }[]) =>
+    makeRound({ players });
+
+  it('comes back with a recalled player', () => {
+    const roster = buildRoster([round([{ id: 'p1', name: 'Al', index: 12.4 }])]);
+    expect(roster[0]).toEqual({ name: 'Al', index: 12.4 });
+  });
+
+  it('travels alongside the strokes, not instead of them', () => {
+    const roster = buildRoster([round([{ id: 'p1', name: 'Al', handicap: 14, index: 12.4 }])]);
+    expect(roster[0]).toEqual({ name: 'Al', handicap: 14, index: 12.4 });
+  });
+
+  it('is filled from an older round when the newest one lacks it', () => {
+    // The newest round was played off a typed stroke count at an unrated
+    // course; the Index from an earlier one is still the number Al carries.
+    const roster = buildRoster([
+      round([{ id: 'p1', name: 'Al', handicap: 14 }]),
+      round([{ id: 'p9', name: 'Al', index: 12.4 }]),
+    ]);
+    expect(roster[0]).toEqual({ name: 'Al', handicap: 14, index: 12.4 });
+  });
+
+  it('keeps the most recent of each figure', () => {
+    const roster = buildRoster([
+      round([{ id: 'p1', name: 'Al', index: 11.1 }]),
+      round([{ id: 'p9', name: 'Al', index: 20.0 }]),
+    ]);
+    expect(roster[0].index).toBe(11.1);
+  });
+
+  it('comes back with the crew too', () => {
+    const crew = lastCrew([
+      round([
+        { id: 'p1', name: 'Al', index: 12.4 },
+        { id: 'p2', name: 'Bo', handicap: 8 },
+      ]),
+    ]);
+    expect(crew).toEqual([{ name: 'Al', index: 12.4 }, { name: 'Bo', handicap: 8 }]);
+  });
+});

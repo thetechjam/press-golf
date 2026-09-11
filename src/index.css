@@ -919,6 +919,49 @@ select:focus {
   width: 76px;
   text-align: center;
 }
+/* The Index field and what it is worth on these holes, as one unit — the
+   second number is an answer to the first, not another thing to fill in. */
+.player-index {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.player-index .player-hcp {
+  width: 68px;
+}
+.player-derived {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  min-width: 26px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--green-600);
+}
+.player-derived-arrow {
+  color: var(--muted);
+  font-weight: 400;
+}
+/* Slope and rating sit side by side: two short numbers off the same card. */
+.rating-row {
+  display: flex;
+  gap: 10px;
+}
+.rating-row .field {
+  flex: 1;
+  min-width: 0;
+}
+.allowance-select {
+  flex: 0 0 auto;
+  width: 84px;
+  min-height: 38px;
+  padding: 6px 8px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
 .player-del {
   width: 44px;
   flex-shrink: 0;

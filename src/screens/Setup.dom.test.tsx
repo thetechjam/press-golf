@@ -342,3 +342,146 @@ describe('keeping a course you have checked', () => {
     expect(saveButton().textContent).toMatch(/looks right/i);
   });
 });
+
+describe('a course with a slope and rating', () => {
+  const rate = async (
+    user: ReturnType<typeof userEvent.setup>,
+    slope: string,
+    rating: string
+  ) => {
+    await openRow(user, 'Holes & pars');
+    await user.type(screen.getByLabelText(/^Slope$/i), slope);
+    await user.type(screen.getByLabelText(/^Rating$/i), rating);
+  };
+
+  const named = async (user: ReturnType<typeof userEvent.setup>, name: string) => {
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(inputs[0], name);
+  };
+
+  it('asks players for an Index instead of working strokes out themselves', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await named(user, 'Al');
+    // Unrated: the screen asks for the stroke count, as it always has.
+    await user.type(screen.getByLabelText(/^Handicap for Al$/i), '14');
+
+    await rate(user, '131', '74.2');
+    await waitFor(() => expect(screen.getByLabelText(/Handicap Index for Al/i)).toBeTruthy());
+  });
+
+  it('shows what an Index is worth on these holes', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await named(user, 'Al');
+    await user.type(screen.getByLabelText(/^Handicap for Al$/i), '1');
+    await rate(user, '131', '74.2');
+
+    const index = await screen.findByLabelText(/Handicap Index for Al/i);
+    await user.clear(index);
+    await user.type(index, '14');
+
+    // 14 × (131/113) + (74.2 − 72) = 18 on a par-72 card. The accessible name
+    // says what the number is, rather than leaving a second figure beside the
+    // first with nothing to distinguish them.
+    await waitFor(() => expect(screen.getByLabelText(/Plays off 18 on these holes/i)).toBeTruthy());
+  });
+
+  it('says nothing until both figures are plausible', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await named(user, 'Al');
+    await user.type(screen.getByLabelText(/^Handicap for Al$/i), '14');
+
+    // A slope on its own cannot convert anything.
+    await openRow(user, 'Holes & pars');
+    await user.type(screen.getByLabelText(/^Slope$/i), '131');
+    expect(screen.queryByLabelText(/Handicap Index for Al/i)).toBeNull();
+  });
+
+  it('ignores a rating that belongs to a different number of holes', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await named(user, 'Al');
+    await user.type(screen.getByLabelText(/^Handicap for Al$/i), '14');
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: /^9 holes$/i }));
+    // An 18-hole rating left on a nine: close enough to look right, twice what
+    // it should be, and not used.
+    await user.type(screen.getByLabelText(/^Slope$/i), '131');
+    await user.type(screen.getByLabelText(/^Rating$/i), '74.2');
+
+    expect(screen.queryByLabelText(/Handicap Index for Al/i)).toBeNull();
+  });
+});
+
+describe('handicap allowances', () => {
+  it('are offered per game once somebody has a handicap', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(inputs[0], 'Al');
+    await user.type(screen.getByLabelText(/^Handicap for Al$/i), '14');
+
+    // Skins is on by default.
+    await waitFor(() =>
+      expect(screen.getByLabelText(/Handicap allowance for Skins/i)).toBeTruthy()
+    );
+  });
+
+  it('are not offered for a game being played off the card', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(inputs[0], 'Al');
+    await user.type(screen.getByLabelText(/^Handicap for Al$/i), '14');
+    await screen.findByLabelText(/Handicap allowance for Skins/i);
+
+    // There are no handicap strokes to cut in a gross game.
+    await user.click(screen.getByRole('button', { name: 'Gross' }));
+    await waitFor(() =>
+      expect(screen.queryByLabelText(/Handicap allowance for Skins/i)).toBeNull()
+    );
+  });
+});
+
+describe('telling the two handicap numbers apart', () => {
+  it('says which figure is entered and which is worked out', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(inputs[0], 'Al');
+    await user.type(screen.getByLabelText(/^Handicap for Al$/i), '1');
+
+    await openRow(user, 'Holes & pars');
+    await user.type(screen.getByLabelText(/^Slope$/i), '113');
+    await user.type(screen.getByLabelText(/^Rating$/i), '72');
+
+    const index = await screen.findByLabelText(/Handicap Index for Al/i);
+    await user.clear(index);
+    await user.type(index, '14');
+
+    // Two numbers sit side by side in the row. Each has to say what it is, or
+    // this is the par-over-stroke-index problem again in a different card.
+    await waitFor(() => expect(screen.getByLabelText(/Plays off 14/i)).toBeTruthy());
+    expect(screen.getByLabelText(/Handicap Index for Al/i)).toBeTruthy();
+  });
+
+  it('changes the hint to describe the field actually on screen', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(inputs[0], 'Al');
+    await user.type(screen.getByLabelText(/^Handicap for Al$/i), '14');
+    expect(document.body.textContent).toMatch(/Enter handicaps to score net/i);
+
+    await openRow(user, 'Holes & pars');
+    await user.type(screen.getByLabelText(/^Slope$/i), '113');
+    await user.type(screen.getByLabelText(/^Rating$/i), '72');
+
+    // The box is asking for an Index now, so the hint cannot go on calling it
+    // a handicap.
+    await waitFor(() => expect(document.body.textContent).toMatch(/Handicap Index/i));
+    expect(document.body.textContent).not.toMatch(/Enter handicaps to score net/i);
+  });
+});

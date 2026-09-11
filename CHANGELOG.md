@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Handicap Index, slope and rating.** Give a course its slope and rating —
+  once, on the Holes & pars row, saved with the course — and the players list
+  asks for each person's Handicap Index instead of the strokes they worked out
+  themselves, showing what that Index is worth here: `14 → 18`. An Index is
+  the number that travels between courses, so it is also what the roster now
+  recalls: bring somebody back at a course they have never played and their
+  strokes come out right, rather than carrying over a figure computed
+  somewhere else. Both figures are remembered and both keep working — a player
+  who has only ever typed a stroke count still comes back with it, and any
+  round without a rating is entered and scored exactly as before. Nothing
+  stored changed meaning and nothing needed migrating: `handicap` is still the
+  strokes a round is scored on, and the Index is an input to it. The screen
+  refuses to convert unless both figures are plausible, so a slope on its own,
+  or an 18-hole rating left on a nine, falls back to the typed number rather
+  than producing a confident wrong answer.
+- **Handicap allowances, per game.** Each game that uses handicaps can be cut
+  to the percentage its format asks for — 90% for a singles match, 85% for a
+  four-ball, 95% for Stableford — sitting beside the Gross/Net choice in the
+  Scoring block. Per game rather than per round because the handbook's
+  percentages are a property of the format, and a round playing several at
+  once needs several. Offered only where there are handicap strokes to cut: a
+  game set to gross has none, while Quota always asks, since it spends the
+  handicap on the target whatever else is happening.
+
 - **Keeping a course you've checked is now the obvious next step.** The
   course-search call-out ends with a save button — "Looks right — save this
   course" — so verifying a scorecard and keeping it are one action instead of

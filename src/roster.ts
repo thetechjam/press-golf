@@ -5,6 +5,16 @@ export interface RosterEntry {
   name: string;
   /** Most recent handicap seen for this name; absent if never set. */
   handicap?: number;
+  /**
+   * Most recent Handicap Index seen for this name.
+   *
+   * Worth more than the handicap when recalling somebody: a course handicap
+   * was worked out for the course it was played on and means nothing at the
+   * next one, while an Index is the same number wherever it is carried. Kept
+   * alongside rather than instead, because a player who has only ever entered
+   * strokes still has to come back with them.
+   */
+  index?: number;
 }
 
 /** The chip row is a shortcut, not a directory. */
@@ -12,6 +22,13 @@ export const ROSTER_LIMIT = 12;
 
 /** Trimmed name, or '' for a player who was never named. */
 const nameOf = (name: string): string => name.trim();
+
+/** A roster entry carrying only the figures this player actually has. */
+const entryFor = (name: string, p: Player): RosterEntry => ({
+  name,
+  ...(p.handicap == null ? {} : { handicap: p.handicap }),
+  ...(p.index == null ? {} : { index: p.index }),
+});
 
 /**
  * Distinct players across every saved round, most-recent-first.
@@ -35,12 +52,14 @@ export function buildRoster(rounds: Round[]): RosterEntry[] {
       const seen = byKey.get(key);
 
       if (!seen) {
-        byKey.set(key, p.handicap == null ? { name } : { name, handicap: p.handicap });
-      } else if (seen.handicap == null && p.handicap != null) {
-        // Keeps a handicap alive for someone whose recent rounds were gross,
+        byKey.set(key, entryFor(name, p));
+      } else {
+        // Keeps a figure alive for someone whose recent rounds were gross,
         // rather than dropping it because the newest round happened not to
-        // carry one.
-        seen.handicap = p.handicap;
+        // carry one. Each is filled independently: a player can have an Index
+        // from one round and strokes from another.
+        if (seen.handicap == null && p.handicap != null) seen.handicap = p.handicap;
+        if (seen.index == null && p.index != null) seen.index = p.index;
       }
     }
   }
@@ -60,7 +79,7 @@ export function lastCrew(rounds: Round[]): RosterEntry[] {
   for (const p of latest.players) {
     const name = nameOf(p.name);
     if (!name) continue;
-    named.push(p.handicap == null ? { name } : { name, handicap: p.handicap });
+    named.push(entryFor(name, p));
   }
 
   // One named player is a round someone abandoned during setup, not a crew.
