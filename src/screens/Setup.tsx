@@ -50,6 +50,8 @@ export function Setup({ onCancel, onStart }: Props) {
   const [matchSideA, setMatchSideA] = useState('');
   const [matchSideB, setMatchSideB] = useState('');
   const [matchAssign, setMatchAssign] = useState<Assign>({});
+  // Vegas is 2v2 only — there is no side to choose, just who is with whom.
+  const [vegasAssign, setVegasAssign] = useState<Assign>({});
   const [showSettings, setShowSettings] = useState(false);
   const [expandedGame, setExpandedGame] = useState<GameType | null>(null);
 
@@ -207,6 +209,7 @@ export function Setup({ onCancel, onStart }: Props) {
   const showWolf = games.includes('wolf');
   const showNassau = games.includes('nassau');
   const showMatchPlay = games.includes('matchPlay');
+  const showVegas = games.includes('vegas');
   const canTeams = namedPlayers.length >= 4;
 
   const start = () => {
@@ -262,6 +265,13 @@ export function Setup({ onCancel, onStart }: Props) {
       matchPlay = r;
     }
 
+    let vegas: TeamSetup | undefined;
+    if (games.includes('vegas')) {
+      const r = buildTeams('2v2', '', '', vegasAssign);
+      if (typeof r === 'string') return gamesError(`Vegas: ${r}`);
+      vegas = r;
+    }
+
     const round: Round = {
       id: uid(),
       course: course.trim() || undefined,
@@ -271,7 +281,7 @@ export function Setup({ onCancel, onStart }: Props) {
       players: cleanPlayers,
       holes,
       games,
-      options: { ...options, useNet, nassau, matchPlay },
+      options: { ...options, useNet, nassau, matchPlay, vegas },
       scores: {},
       wolf: {},
       presses: [],
@@ -453,6 +463,23 @@ export function Setup({ onCancel, onStart }: Props) {
             />
           )}
 
+          {showVegas && (
+            <TeamPicker
+              label="Vegas teams"
+              players={namedPlayers}
+              canTeams={canTeams}
+              teamsOnly
+              mode="2v2"
+              onMode={() => {}}
+              sideA=""
+              sideB=""
+              onSideA={() => {}}
+              onSideB={() => {}}
+              assign={vegasAssign}
+              onAssign={(id, v) => setVegasAssign((a) => ({ ...a, [id]: v }))}
+            />
+          )}
+
           {showNassau && (
             <TeamPicker
               label="Nassau teams"
@@ -469,7 +496,7 @@ export function Setup({ onCancel, onStart }: Props) {
             />
           )}
 
-          {(showStableford || showWolf) && (
+          {(showStableford || showWolf || showVegas) && (
             <section className="card">
               <h2>Options</h2>
               {showStableford && (
@@ -487,6 +514,20 @@ export function Setup({ onCancel, onStart }: Props) {
                     <option value="standard">Standard (par = 2 pts)</option>
                     <option value="modified">Modified (eagle = 5 pts)</option>
                   </select>
+                </label>
+              )}
+              {showVegas && (
+                <label className="set-row">
+                  <span>
+                    <span className="set-label">Vegas birdie flip</span>
+                    <span className="set-hint">A birdie turns the other side's number around</span>
+                  </span>
+                  <input
+                    className="switch"
+                    type="checkbox"
+                    checked={options.vegasFlip !== false}
+                    onChange={(e) => setOptions({ ...options, vegasFlip: e.target.checked })}
+                  />
                 </label>
               )}
               {showWolf && (

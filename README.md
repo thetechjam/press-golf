@@ -19,6 +19,8 @@ your browser, works offline, and keeps everything on your device.
 - **Skins**
 - **Stableford**
 - **Wolf**
+- **Vegas** — 2v2, scores written side by side, with an optional birdie flip
+- **Quota** — beat your own points target, set by your handicap
 - **Nassau** — 1v1 and 2v2, with manual presses
 - **Golf League** — Thursday-night format (A/B singles + combined team match, league points)
 

@@ -6,7 +6,9 @@ export type GameType =
   | 'skins'
   | 'stableford'
   | 'wolf'
-  | 'nassau';
+  | 'nassau'
+  | 'vegas'
+  | 'quota';
 
 export interface Player {
   id: string;
@@ -80,6 +82,15 @@ export interface GameOptions {
   /** Nassau / Match Play teams (default to 1v1 between the first two players). */
   nassau?: TeamSetup;
   matchPlay?: TeamSetup;
+  /** Vegas teams. Always 2v2 — the game has no 1v1 form. */
+  vegas?: TeamSetup;
+  /**
+   * Whether a birdie turns the other side's Vegas number around. Widely played
+   * but not universal, so it is a choice rather than a rule. Undefined counts
+   * as on, which keeps rounds saved before this option existed scoring the way
+   * they were scored when they were played.
+   */
+  vegasFlip?: boolean;
   /** Present when this is a league-night round. */
   league?: LeagueSetup;
 }

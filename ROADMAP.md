@@ -9,7 +9,8 @@ what's deferred, and how to expand without a rewrite.
 
 - **Games with correct scoring engines** (`src/games/*`): stroke play, match play,
   skins, Stableford (standard + modified), Wolf (partner / lone / blind), Nassau
-  (front/back/total) with a **manual press** button.
+  (front/back/total) with a **manual press** button, Vegas (2v2, optional birdie
+  flip), Quota (gross card against a handicap-set target).
 - **Money / settlement** (`src/games/settlement.ts`): per-game stakes → zero-sum
   net per player → fewest payments ("Bo pays Al $45"), editable on the results
   screen, included in the shared summary.
@@ -26,6 +27,16 @@ what's deferred, and how to expand without a rewrite.
   indexes are re-ranked 1–9 for League. Needs signal at setup; Favorite Courses
   is the offline fallback.
 - **PWA**: installable, offline, splash screen, install prompt.
+- **Backup / restore** (`src/backup.ts`): writes every round and favorite course
+  to one JSON file and reads one back, from the Settings sheet. A restore merges
+  and never deletes — newest-wins by `updatedAt`, so it is safe to run at any
+  time and idempotent when run twice. The answer to the one unrecoverable
+  failure of a localStorage-only app, and the only way to move a round between
+  two devices with no backend.
+- **Stats** (`src/stats.ts`, `src/screens/Stats.tsx`): cross-round history
+  derived from the saved rounds — scoring average against par, best round,
+  scoring mix, skins won, money across rounds. Players are matched by name,
+  since a `Player.id` is per-round. Local only; nothing new is stored.
 
 ## Where data lives today
 
@@ -43,7 +54,7 @@ Nothing is shared between people or synced across devices. This is by design
 |---|---|
 | Accounts + cloud sync | History follows you across devices; enables everything below. |
 | Live multi-phone sync | Each player scores on their own phone; join a round via a game code; leaderboards sync in real time. |
-| Cross-round stats / history | Trends over time (skins won, Wolf record, net scoring average). |
+| ~~Cross-round stats / history~~ | **Shipped local-only** via the Stats screen (`stats.ts`) — scoring average, best round, skins, money, all derived from `press.rounds.v1`. *Cross-device* history still needs accounts + sync. |
 | Automatic Nassau presses | Setup toggle to auto-press when a side goes 2 down (plumbing already exists via the press segments in `nassau.ts`). |
 | ~~Course database~~ | **Shipped** via OpenGolfAPI course search (keyless + CORS, so no backend needed; returns per-hole par and `handicap_index`). Coverage is US-strong; Favorite Courses covers gaps and offline use. |
 | Tagline refresh | Current line ("Track golf side games — the fun way.") kept for now. Parked candidates from the July 2026 brand pass (no ranking yet): "Settle it on 18." / "Nobody plays for free." / "Every hole's a bet." / "Keep your friends honest." See `BRAND.md`. |
@@ -100,7 +111,7 @@ Legend — **Lift**: 🟢 client-side only (ship this weekend) · 🟡 one integ
 | **Freemium hosted "Pro"** | Free core, paywall advanced games (Wolf/League), settlement export, extra course saves. | Moderate. | 🟢–🟡 | No, *if* the gate is client-side. A hosted checkout (Stripe/Gumroad/Lemon Squeezy) needs no backend of your own. |
 | **Subscription (monthly / season)** | Recurring access, ideally seasonal ("$X for the golf season"). | Highest per-user, but hardest to justify on a client-only app. | 🔴 | Effectively yes — recurring billing wants server-side entitlement checks + accounts, or you lean entirely on a store's subscription plumbing. |
 | **Cloud sync across a foursome** | Rounds follow you across devices; live multi-phone scoring via a join code. | Indirect (it's the feature that *justifies* a subscription). | 🔴 | **Yes.** This is the deferred "Accounts + cloud sync" work already scoped above (Supabase/Firebase). |
-| **Cross-round stats / history** | Trends over time (skins won, Wolf record, net average). | Indirect; strong retention/upsell hook. | 🟡–🔴 | Local-only history is 🟡 (already all in `localStorage`). *Cross-device* history is 🔴. |
+| **Cross-round stats / history** | Trends over time (skins won, Wolf record, net average). | Indirect; strong retention/upsell hook. | ~~🟡~~–🔴 | Local-only history **shipped** (it was 🟡, as predicted — a pure derivation over `localStorage`). *Cross-device* history is still 🔴. |
 | **Affiliate — gear & tee times** | Contextual links: tee-time booking, golf gear. | Low–moderate; scales with traffic, not features. | 🟢 | No — plain outbound links. |
 | **Sponsorship / local-course partnerships** | A course or local shop sponsors a branded round / league mode. | Lumpy but real for a niche league audience. | 🟢–🟡 | No — a config flag / themed build. |
 | **Ads** | Banner/interstitial ad network. | Low at this scale; hurts the clean, offline feel. | 🟢 | No. |

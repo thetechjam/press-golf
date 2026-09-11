@@ -460,6 +460,23 @@ button:focus-visible {
   margin: 4px 0 0;
 }
 
+/* The section label and its Stats link share a baseline row, so the link sits
+   with the heading rather than becoming a third full-width button under two
+   big CTAs. */
+.saved-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.saved-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.85rem;
+  color: var(--green-600);
+  padding: 0 4px;
+}
 .saved h2 {
   font-size: 0.85rem;
   text-transform: uppercase;
@@ -3238,6 +3255,15 @@ select:focus {
   color: var(--under-ink);
   font-size: 0.9rem;
 }
+/* A backup or restore that failed has to read differently from one that
+   worked, and Press has no red anywhere — the warning gold `warn-banner`
+   already uses is the app's established "this needs your attention" color.
+   Mixed toward the ink because flat gold on the card is unreadable at
+   0.9rem. */
+.fb-status.bad {
+  color: color-mix(in srgb, var(--gold) 55%, var(--ink));
+  font-weight: 600;
+}
 .set-action {
   width: 100%;
   background: none;
@@ -3719,6 +3745,145 @@ select:focus {
 .update-later {
   border: 1px solid color-mix(in srgb, var(--ink) 52%, transparent);
   background: transparent;
+  color: var(--muted);
+}
+
+/* ---------- Stats ---------- */
+
+/* .bar is a three-column grid with the title centered in the middle column.
+   A screen whose header has no trailing action leaves that column stretched
+   to the right, so the title sits visibly off-center under the back arrow.
+   This occupies the third cell at the same width the icon buttons use. */
+.bar-spacer {
+  min-width: 38px;
+}
+
+.stat-summary {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+.stat-sum {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Three tiles on a 320px screen with a dollar figure in one of them: let
+     the number shrink rather than push the row wider than the viewport. */
+  min-width: 0;
+}
+.stat-sum-n {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--green-600);
+  font-variant-numeric: tabular-nums;
+}
+.stat-sum-l {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.stat-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stat-name {
+  font-weight: 700;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stat-rounds {
+  color: var(--muted);
+  font-size: 0.8rem;
+  flex: 0 0 auto;
+}
+
+.stat-figures {
+  display: flex;
+  gap: 14px;
+  /* Four figures (gross, net, money, skins) do not fit one phone row, and a
+     horizontal scroller for four short numbers is worse than a second line. */
+  flex-wrap: wrap;
+}
+.stat-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.stat-big {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-big.up {
+  color: var(--under-ink);
+}
+.stat-big.down {
+  color: var(--over-strong);
+}
+.stat-cap {
+  font-size: 0.72rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-tally {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.stat-tally li {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  background: color-mix(in srgb, var(--green-600) 8%, transparent);
+  border-radius: 999px;
+  padding: 3px 9px;
+}
+.stat-tally-n {
+  font-weight: 700;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+.stat-tally-l {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+.stat-best {
+  font-size: 0.85rem;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.stat-foot {
+  font-size: 0.72rem;
   color: var(--muted);
 }
 

@@ -5,13 +5,19 @@ import { computeSkins } from './skins';
 import { computeStableford } from './stableford';
 import { computeWolf } from './wolf';
 import { computeNassau } from './nassau';
+import { computeVegas } from './vegas';
+import { computeQuota } from './quota';
 
 export interface GameMeta {
   id: GameType;
   label: string;
   blurb: string;
   minPlayers: number;
-  /** Whether the game can use handicaps / net scoring. */
+  /**
+   * Whether handicaps matter to this game — the gate for the handicap fields
+   * at setup. Not the same as "scores net": Quota spends the handicap on the
+   * target and then plays the card gross, and still needs the number entered.
+   */
   usesNet: boolean;
   compute: (round: Round) => GameResult;
 }
@@ -56,6 +62,22 @@ export const GAMES: GameMeta[] = [
     minPlayers: 3,
     usesNet: true,
     compute: computeWolf,
+  },
+  {
+    id: 'vegas',
+    label: 'Vegas',
+    blurb: '2v2. Your scores make a number — 4 and 5 is 45.',
+    minPlayers: 4,
+    usesNet: true,
+    compute: computeVegas,
+  },
+  {
+    id: 'quota',
+    label: 'Quota',
+    blurb: 'Beat your own points target. Handicap sets the bar.',
+    minPlayers: 1,
+    usesNet: true,
+    compute: computeQuota,
   },
   {
     id: 'nassau',

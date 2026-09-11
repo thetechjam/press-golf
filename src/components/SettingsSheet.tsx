@@ -6,6 +6,7 @@ import { applyTheme } from '../theme';
 import { Sheet } from './Sheet';
 import { FeedbackForm } from './FeedbackForm';
 import { HelpSheet } from './HelpSheet';
+import { BackupRows } from './BackupRows';
 import { clearQueue, listQueue } from '../feedback';
 
 const THEMES: { id: Theme; label: string }[] = [
@@ -102,6 +103,8 @@ export function SettingsSheet({ onClose, screen, round, initialView = 'settings'
               onChange={(e) => set({ keepAwake: e.target.checked })}
             />
           </label>
+
+          <BackupRows />
 
           <button className="set-row set-action" onClick={() => setView('help')}>
             <span>

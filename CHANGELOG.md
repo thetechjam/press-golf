@@ -8,6 +8,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Two more games: Vegas and Quota.** *Vegas* is the two-on-two game where a
+  team's scores are not added but written side by side, lowest first — a 4 and
+  a 5 is 45, not 9 — and the gap between the two sides' numbers is the points
+  swing. One blow-up hole costs a hundred rather than one, which is the whole
+  appeal. The number is built by running the digits together rather than by
+  arithmetic, so a 5 and a 10 is 510, the number a group would actually write
+  down, and not 105. The birdie flip — a birdie turning the other side's
+  number around, 45 becoming 54 — is a setup toggle, because plenty of groups
+  don't play it; left unset it is on, so a round saved before the option
+  existed still scores the way it was played. Vegas needs 2 v 2 teams, picked
+  at setup like Match Play's and Nassau's, with no 1 v 1 tab to wonder about.
+  *Quota* gives every player a target — 2 points a hole, less their handicap,
+  so 36 minus your handicap over 18 — and then plays for Stableford points
+  against it. Beat your number and you are plus. Its one trap is that the
+  handicap is spent entirely on the target, so the card is read **gross**;
+  taking strokes off as well would hand every stroke out twice. The target is
+  prorated to the holes actually scored, so mid-round the board asks whether
+  you're keeping pace instead of showing the whole field deep in the red — and,
+  more to the point, so money can't move between two different handicaps
+  before a ball is struck. Both games settle through the existing engine:
+  Vegas per point per player on each side, Quota on the difference in result.
+- **Stats.** A new screen, reachable from the "Your rounds" header on Home,
+  showing what the rounds already on the device add up to: scoring average
+  against par, best round, the scoring mix (eagles through doubles-and-worse),
+  skins won, and where each player stands on the money across every round with
+  stakes. Nothing new is stored — every figure is derived from
+  `press.rounds.v1` on demand, which is what keeps cross-round history on the
+  free side of the accounts-and-sync question rather than behind it. Averages
+  are quoted per 18 holes so a league nine and a full round compare honestly,
+  and each card says how many holes it counted. Only a fully scored round can
+  be somebody's best, so a card with three holes missing can't win on to-par
+  for the wrong reason. Net is shown as a second figure only when handicaps
+  actually moved the number. Players are matched across rounds by name — a
+  `Player.id` is minted per round, so name is the only thing that follows
+  somebody — using the same rule the setup screen already uses to recall
+  players. A round counts once it's finished, or once every hole is scored:
+  the round somebody forgot to tap Finish on is still a round they played, and
+  one abandoned after four holes is excluded from every average rather than
+  dragging it around.
+- **Back up and restore your rounds.** Settings now writes every saved round
+  and favorite course to a single `press-backup-YYYY-MM-DD.json` file, and
+  reads one back. Press keeps everything in `localStorage` and nowhere else —
+  that is what lets it work with no account and no signal, and it also meant
+  clearing site data, switching phones, or reinstalling took every round with
+  it, permanently and without warning. This is the way out, and incidentally
+  the only way to move a round between two devices without a backend. On a
+  phone the file goes through the share sheet (Files, iCloud, a message —
+  somewhere that outlives the browser) and falls back to a download
+  everywhere else. A restore **merges and never deletes**: rounds the device
+  has never seen are added, a round in the file replaces the local copy only
+  when it is genuinely newer, and a tie keeps what is already here. So
+  restoring last week's backup onto a phone that has since played three more
+  holes leaves those holes alone, and restoring the same file twice does
+  nothing the second time. A saved course is never overwritten, since it
+  carries no timestamp to judge by and the local copy may be the corrected
+  one. A damaged entry is dropped and counted rather than costing the user
+  the rest of the file, and a round naming a game this build has no engine
+  for is dropped too — a backup from a newer Press would otherwise crash the
+  Home screen. Both stores are written together and rolled back if either
+  write fails, so a restore that runs out of room leaves the device exactly
+  as it was.
 - **The app answers a mouse.** Every pressable surface now has a hover state —
   a faint fairway tint at roughly half the strength of its press, so hover
   reads as "you can hit this" and the press still reads as more. The primary

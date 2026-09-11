@@ -5,11 +5,12 @@ import { Setup } from './screens/Setup';
 import { LeagueSetup } from './screens/LeagueSetup';
 import { Play } from './screens/Play';
 import { Results } from './screens/Results';
+import { Stats } from './screens/Stats';
 import { saveRound } from './storage';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { dismissSplash } from './splash';
 
-const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results'] as const;
+const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats'] as const;
 type View = (typeof VIEWS)[number];
 
 const isView = (v: unknown): v is View =>
@@ -149,8 +150,11 @@ export default function App() {
             setRound(r);
             goTo('results');
           }}
+          onStats={() => goTo('stats')}
         />
       )}
+
+      {view === 'stats' && <Stats onBack={() => goTo('home')} />}
 
       {view === 'setup' && (
         <Setup

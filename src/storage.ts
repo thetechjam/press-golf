@@ -111,3 +111,31 @@ export function deleteCourse(id: string): void {
   const courses = listCourses().filter((c) => c.id !== id);
   localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
 }
+
+/**
+ * Bulk write of both stores at once, used by restore.
+ *
+ * Restoring writes two keys that have to agree — a round can name a course
+ * that only the courses key holds — and the realistic way a write fails here
+ * is `QuotaExceededError` on a large file, which would otherwise land the
+ * first key and reject the second. So both previous values are captured and
+ * put back if either write throws, leaving storage exactly as it was and
+ * letting the caller report one clean failure. The rollback writes only
+ * shrink what is stored, so they cannot fail for the same reason.
+ *
+ * Re-throws so the caller can tell a failed restore from a successful one.
+ */
+export function writeAll(rounds: Round[], courses: SavedCourse[]): void {
+  const prevRounds = localStorage.getItem(KEY);
+  const prevCourses = localStorage.getItem(COURSES_KEY);
+  const restore = (key: string, prev: string | null) =>
+    prev === null ? localStorage.removeItem(key) : localStorage.setItem(key, prev);
+  try {
+    localStorage.setItem(KEY, JSON.stringify(rounds));
+    localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
+  } catch (err) {
+    restore(KEY, prevRounds);
+    restore(COURSES_KEY, prevCourses);
+    throw err;
+  }
+}
