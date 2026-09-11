@@ -25,6 +25,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   instead of showing a blank screen, and a round naming a game the receiving
   copy of Press is too old to score is refused outright rather than settled
   for less money than it was played for.
+- **Hand the card to another phone mid-round.** Settings during a round offers
+  "Hand over scoring". The other phone gets the whole card and carries on from
+  where you left off — the closest thing to everyone scoring on their own phone
+  that works with no server and no signal.
+
+  Both phones then hold the same round, so Press asks about it rather than
+  guessing. If the copy coming back is simply further along, it offers to bring
+  yours up to date. If both phones have scored — including the same hole
+  entered differently on each — it says so and offers to keep both, because
+  that is the only answer that loses nothing. Nothing is written either way
+  until you pick. Left to the backup merge's newest-wins rule, one of the two
+  back nines would have disappeared on a timestamp with nothing on screen to
+  say so.
+
+### Fixed
+- A share link tapped while Press was already open did nothing. Following a
+  link with the app open changes only the URL fragment, which reloads nothing;
+  Press now notices.
 - **Handicap Index, slope and rating.** Give a course its slope and rating —
   once, on the Holes & pars row, saved with the course — and the players list
   asks for each person's Handicap Index instead of the strokes they worked out

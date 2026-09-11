@@ -52,6 +52,11 @@ person's copy of Press and never touches a server: no account, no backend, and
 it opens with no signal. A round that arrives is held behind a "Keep it"
 button rather than being saved onto someone's device unasked.
 
+Mid-round, the same link hands the card over: the other phone carries on
+scoring from where you left off. If both phones end up scoring the same round,
+Press compares the two and asks which card is the real one — or keeps both —
+rather than picking one on a timestamp.
+
 ## Getting started
 
 Requires [Node](https://nodejs.org) 24+ (see `.nvmrc`).
