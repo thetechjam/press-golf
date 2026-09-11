@@ -7,6 +7,12 @@ import type { Hole } from '../types';
 
 const BASE = 'https://api.opengolfapi.org';
 
+// The two calls below sit on different prefixes — search on `/v1`, the course
+// lookup on `/api/v1`. That reads like a typo and is not: both paths are what
+// the service answers on, and the pair is confirmed working against the live
+// API. Left alone deliberately; "tidying" them onto one prefix breaks
+// whichever one gets moved.
+
 export interface CourseHit {
   id: string;
   name: string;

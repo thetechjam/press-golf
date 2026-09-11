@@ -1044,6 +1044,24 @@ select:focus {
 .issue-list > span::before {
   content: '· ';
 }
+/* Sits inside the call-out, so it reads as the answer to it rather than as
+   another control that happens to be nearby. */
+.check-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  min-height: var(--tap);
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--green-600) 35%, var(--line));
+  background: var(--card);
+  color: var(--green-600);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
 .check-note.bad {
   background: color-mix(in srgb, var(--over-strong) 10%, var(--card));
   border-color: color-mix(in srgb, var(--over-strong) 40%, var(--line));

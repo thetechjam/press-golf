@@ -52,8 +52,17 @@ export function Setup({ onCancel, onStart }: Props) {
    * themselves, or a preset they chose, needs no such caveat.
    */
   const [holesSource, setHolesSource] = useState<'manual' | 'search' | 'saved'>('manual');
-  /** Anything that looked off in the scorecard search handed over, if anything. */
-  const [importIssues, setImportIssues] = useState<string[]>([]);
+  /**
+   * What course search handed over, kept so the problems with it can be
+   * re-read from the holes as they stand rather than reported once and left
+   * stale. Fixing a par should make the line about that par go away.
+   *
+   * `raw` is the unsliced response — see `scorecardIssues` for why the stroke
+   * index check needs it. `expected` is the hole count that was asked for,
+   * which the hole count itself no longer tells us: a short import sets the
+   * round to the number of holes that arrived.
+   */
+  const [imported, setImported] = useState<{ raw: Hole[]; expected: number } | null>(null);
   const [error, setError] = useState('');
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   const [savedNote, setSavedNote] = useState('');
@@ -118,7 +127,7 @@ export function Setup({ onCancel, onStart }: Props) {
     setHoles(c.holes.map((h) => ({ ...h })));
     setAdvancedHoles(c.holes.some((h) => h.strokeIndex));
     setHolesSource('saved');
-    setImportIssues([]);
+    setImported(null);
     openRow('holes');
     setSavedNote(`Loaded "${c.name}"`);
   };
@@ -131,7 +140,7 @@ export function Setup({ onCancel, onStart }: Props) {
     setHoles(applied);
     setAdvancedHoles(applied.some((h) => h.strokeIndex));
     setHolesSource('search');
-    setImportIssues(scorecardIssues(applied, count, c.holes));
+    setImported({ raw: c.holes, expected: count });
     openRow('holes');
     setError('');
     setSavedNote(
@@ -157,6 +166,11 @@ export function Setup({ onCancel, onStart }: Props) {
     setCourses(listCourses());
     setError('');
     setSavedNote(`Saved "${name}"`);
+    // Keeping a course is the user vouching for it, so the "check this against
+    // the card" caveat has served its purpose and goes. From here their copy
+    // is the one that loads, and search is only ever saving them the typing.
+    setHolesSource('saved');
+    setImported(null);
   };
 
   const removeCourse = (id: string) => {
@@ -201,7 +215,7 @@ export function Setup({ onCancel, onStart }: Props) {
     // the count invalidates it before the user can act on stale information.
     setSavedNote('');
     setHolesSource('manual');
-    setImportIssues([]);
+    setImported(null);
   };
 
   const updatePlayer = (id: string, patch: Partial<Player>) =>
@@ -254,6 +268,11 @@ export function Setup({ onCancel, onStart }: Props) {
   // Only surfaced while the stroke index editor is open: a user who never
   // opened it did not enter these and cannot act on the message.
   const siProblem = strokeIndexProblem(holes);
+  // Re-read every render, so correcting a hole clears the line about it.
+  const importIssues =
+    holesSource === 'search' && imported
+      ? scorecardIssues(holes, imported.expected, imported.raw)
+      : [];
   const canTeams = namedPlayers.length >= 4;
 
   const start = () => {
@@ -683,6 +702,17 @@ export function Setup({ onCancel, onStart }: Props) {
                     </span>
                   </>
                 )}
+                {/* The point of checking a course is not having to check it
+                    again. Offered here rather than only at the foot of the
+                    card, because this is where the checking happens — and
+                    saving is what turns a database guess into the copy that
+                    loads next time. */}
+                <button type="button" className="check-save" onClick={saveFavorite}>
+                  <StarIcon size={15} />
+                  {importIssues.length > 0
+                    ? 'Save this course anyway'
+                    : 'Looks right — save this course'}
+                </button>
               </p>
             )}
             <div className="preset-row">
@@ -756,9 +786,16 @@ export function Setup({ onCancel, onStart }: Props) {
                 strokes in net games.
               </p>
             )}
-            <button className="btn-ghost add" onClick={saveFavorite}>
-              <StarIcon size={16} /> Save this course for next time
-            </button>
+            {/* Stands down while the call-out above is offering the same
+                action: two identical buttons on one card is a question about
+                which one is the real one. This is the general path — a course
+                typed or preset by hand — and the call-out's is the prompt at
+                the moment it matters. */}
+            {holesSource !== 'search' && (
+              <button className="btn-ghost add" onClick={saveFavorite}>
+                <StarIcon size={16} /> Save this course for next time
+              </button>
+            )}
           </section>
         </SetupRow>
 

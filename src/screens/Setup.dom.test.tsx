@@ -254,3 +254,91 @@ describe('stroke indexes typed in by hand', () => {
     expect(document.querySelector('.check-note.bad')).toBeNull();
   });
 });
+
+describe('keeping a course you have checked', () => {
+  const saveButton = () => screen.getByRole('button', { name: /save this course/i });
+
+  it('is the only save button on the card while it is showing', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+    // Two buttons doing the same thing raises the question of which is real.
+    expect(screen.getAllByRole('button', { name: /save this course/i })).toHaveLength(1);
+  });
+
+  it('hands back to the general save button once the course is kept', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+    await user.click(saveButton());
+    await waitFor(() => expect(callOut()).toBeNull());
+    expect(screen.getByRole('button', { name: /save this course for next time/i })).toBeTruthy();
+  });
+
+  it('is offered right where the checking happens', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+
+    // Inside the call-out, not only at the foot of the card.
+    expect(callOut()!.querySelector('.check-save')).not.toBeNull();
+    expect(saveButton().textContent).toMatch(/looks right/i);
+  });
+
+  it('turns the imported course into the copy that loads next time', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+    await user.click(saveButton());
+
+    const saved = JSON.parse(localStorage.getItem('press.courses.v1') ?? '[]');
+    expect(saved).toHaveLength(1);
+    expect(saved[0].name).toBe('Bramble Ridge GC');
+    expect(saved[0].holes).toHaveLength(18);
+    // Par came through, so what is stored is the scorecard as checked.
+    expect(saved[0].holes[1].par).toBe(5);
+  });
+
+  it('drops the caveat once the course is kept — it has been vouched for', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+    await user.click(saveButton());
+
+    await waitFor(() => expect(callOut()).toBeNull());
+  });
+
+  it('does not pretend a damaged card looks right', async () => {
+    stubCourseApi({
+      id: 'c1',
+      name: COURSE.name,
+      holes_data: COURSE.holes_data.map((h, i) => ({ ...h, par: i === 2 ? 12 : h.par })),
+    });
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+
+    // Still savable — the user is holding the real card and may know better
+    // than the check — but not under a label claiming it looks fine.
+    expect(saveButton().textContent).toMatch(/anyway/i);
+  });
+
+  it('clears a reported problem as soon as it is fixed', async () => {
+    stubCourseApi({
+      id: 'c1',
+      name: COURSE.name,
+      holes_data: COURSE.holes_data.map((h, i) => ({ ...h, par: i === 2 ? 12 : h.par })),
+    });
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+    expect(callOut()!.textContent).toMatch(/par 12/);
+
+    await user.selectOptions(screen.getByLabelText('Par for hole 3'), '3');
+
+    // The report is re-read from the holes as they stand, not left as it was
+    // at import.
+    await waitFor(() => expect(callOut()!.textContent).not.toMatch(/par 12/));
+    expect(saveButton().textContent).toMatch(/looks right/i);
+  });
+});

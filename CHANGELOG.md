@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Keeping a course you've checked is now the obvious next step.** The
+  course-search call-out ends with a save button — "Looks right — save this
+  course" — so verifying a scorecard and keeping it are one action instead of
+  two screens apart. Saving is taken as vouching for it: the caveat goes, and
+  from then on your copy is what loads, with search reduced to saving you the
+  typing. The general save button at the foot of the card stands down while
+  this one is showing, since two identical buttons only raise the question of
+  which is real. What's reported is re-read from the holes as they stand, so
+  correcting a par clears the line about that par and the button stops saying
+  "anyway" and starts saying "looks right". A card that still looks off can be
+  saved regardless — you're holding the real one — just not under a label
+  claiming it's fine.
+
 ### Fixed
 - **Unusable stroke indexes no longer hand out the wrong number of shots.** A
   stroke index is a ranking — on 18 holes it has to be each of 1 to 18 exactly
