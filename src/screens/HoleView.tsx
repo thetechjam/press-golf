@@ -3,6 +3,7 @@ import type { Round, Hole, WolfChoice } from '../types';
 import { PlayerScoreRow } from '../components/PlayerScoreRow';
 import { WolfControls } from '../components/WolfControls';
 import { NassauControls } from '../components/NassauControls';
+import { VegasStrip } from '../components/VegasStrip';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
 import { anyNetScoring } from '../games/scoring';
 import { leagueStrokesOnHole } from '../games/league';
@@ -101,6 +102,7 @@ export function HoleView({
         {round.games.includes('nassau') && (
           <NassauControls round={round} hole={hole} onChange={onPresses} />
         )}
+        {round.games.includes('vegas') && <VegasStrip round={round} hole={hole} />}
         <section className="steppers">
           {round.players.map((p, i) => (
             <PlayerScoreRow

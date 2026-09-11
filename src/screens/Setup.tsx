@@ -4,6 +4,9 @@ import { DEFAULT_OPTIONS } from '../types';
 import { GAMES, gameMeta } from '../games';
 import { GAME_RULES } from '../games/rules';
 import { usesHandicap, canScoreNet } from '../games/scoring';
+import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
+import { parOptions } from '../courses/parOptions';
+import { scorecardIssues } from '../courses/validate';
 import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
@@ -40,6 +43,26 @@ export function Setup({ onCancel, onStart }: Props) {
   const [games, setGames] = useState<GameType[]>(['skins']);
   const [options, setOptions] = useState({ ...DEFAULT_OPTIONS });
   const [advancedHoles, setAdvancedHoles] = useState(false);
+  /**
+   * Where the pars and stroke indexes currently on screen came from.
+   *
+   * Only 'search' earns a warning. Course search is open community data and is
+   * sometimes wrong — a par off by one quietly changes every net score and
+   * every Stableford point for the whole round. A course the user saved
+   * themselves, or a preset they chose, needs no such caveat.
+   */
+  const [holesSource, setHolesSource] = useState<'manual' | 'search' | 'saved'>('manual');
+  /**
+   * What course search handed over, kept so the problems with it can be
+   * re-read from the holes as they stand rather than reported once and left
+   * stale. Fixing a par should make the line about that par go away.
+   *
+   * `raw` is the unsliced response — see `scorecardIssues` for why the stroke
+   * index check needs it. `expected` is the hole count that was asked for,
+   * which the hole count itself no longer tells us: a short import sets the
+   * round to the number of holes that arrived.
+   */
+  const [imported, setImported] = useState<{ raw: Hole[]; expected: number } | null>(null);
   const [error, setError] = useState('');
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   const [savedNote, setSavedNote] = useState('');
@@ -91,11 +114,21 @@ export function Setup({ onCancel, onStart }: Props) {
     setError(message);
   };
 
+  /**
+   * Both course loaders open the Holes & pars row. Either one rewrites up to
+   * eighteen pars and stroke indexes at a stroke, and doing that behind a
+   * collapsed section is how a wrong number reaches the first tee unseen. What
+   * differs between them is the warning, not whether the numbers are shown:
+   * only search data is second-guessed.
+   */
   const loadCourse = (c: SavedCourse) => {
     setCourse(c.name);
     setHoleCount(c.holes.length);
     setHoles(c.holes.map((h) => ({ ...h })));
     setAdvancedHoles(c.holes.some((h) => h.strokeIndex));
+    setHolesSource('saved');
+    setImported(null);
+    openRow('holes');
     setSavedNote(`Loaded "${c.name}"`);
   };
 
@@ -106,6 +139,9 @@ export function Setup({ onCancel, onStart }: Props) {
     setHoleCount(count);
     setHoles(applied);
     setAdvancedHoles(applied.some((h) => h.strokeIndex));
+    setHolesSource('search');
+    setImported({ raw: c.holes, expected: count });
+    openRow('holes');
     setError('');
     setSavedNote(
       applied.some((h) => h.strokeIndex)
@@ -130,6 +166,11 @@ export function Setup({ onCancel, onStart }: Props) {
     setCourses(listCourses());
     setError('');
     setSavedNote(`Saved "${name}"`);
+    // Keeping a course is the user vouching for it, so the "check this against
+    // the card" caveat has served its purpose and goes. From here their copy
+    // is the one that loads, and search is only ever saving them the typing.
+    setHolesSource('saved');
+    setImported(null);
   };
 
   const removeCourse = (id: string) => {
@@ -145,8 +186,10 @@ export function Setup({ onCancel, onStart }: Props) {
       hs.map((h, i) => ({ ...h, par: kind === 'par4' ? 4 : STANDARD_PARS[i % 18] }))
     );
     // Same reasoning as setHoleCountAndPars: a bulk par overwrite makes any
-    // loaded/saved note describe a course that no longer matches the holes.
+    // loaded/saved note describe a course that no longer matches the holes —
+    // and these are the user's own pars now, not the database's.
     setSavedNote('');
+    setHolesSource('manual');
   };
 
   const setStrokeIndex = (number: number, si: number | undefined) =>
@@ -171,6 +214,8 @@ export function Setup({ onCancel, onStart }: Props) {
     // A loaded/saved note describes a specific hole count and par set; changing
     // the count invalidates it before the user can act on stale information.
     setSavedNote('');
+    setHolesSource('manual');
+    setImported(null);
   };
 
   const updatePlayer = (id: string, patch: Partial<Player>) =>
@@ -220,6 +265,14 @@ export function Setup({ onCancel, onStart }: Props) {
   const anyHandicap = namedPlayers.some((p) => (p.handicap ?? 0) > 0);
   const netGames = games.filter(canScoreNet);
   const showScoring = anyHandicap && netGames.length > 0;
+  // Only surfaced while the stroke index editor is open: a user who never
+  // opened it did not enter these and cannot act on the message.
+  const siProblem = strokeIndexProblem(holes);
+  // Re-read every render, so correcting a hole clears the line about it.
+  const importIssues =
+    holesSource === 'search' && imported
+      ? scorecardIssues(holes, imported.expected, imported.raw)
+      : [];
   const canTeams = namedPlayers.length >= 4;
 
   const start = () => {
@@ -633,6 +686,35 @@ export function Setup({ onCancel, onStart }: Props) {
                 </button>
               ))}
             </div>
+            {holesSource === 'search' && (
+              <p className={`check-note${importIssues.length ? ' bad' : ''}`} role="status">
+                <strong>Check these against the card.</strong> Pars and stroke indexes from
+                course search are open community data and are sometimes wrong — a par out by one
+                shifts every net score and Stableford point for the whole round.
+                {importIssues.length > 0 && (
+                  <>
+                    {' '}
+                    Some of it already looks off:
+                    <span className="issue-list">
+                      {importIssues.map((issue) => (
+                        <span key={issue}>{issue}</span>
+                      ))}
+                    </span>
+                  </>
+                )}
+                {/* The point of checking a course is not having to check it
+                    again. Offered here rather than only at the foot of the
+                    card, because this is where the checking happens — and
+                    saving is what turns a database guess into the copy that
+                    loads next time. */}
+                <button type="button" className="check-save" onClick={saveFavorite}>
+                  <StarIcon size={15} />
+                  {importIssues.length > 0
+                    ? 'Save this course anyway'
+                    : 'Looks right — save this course'}
+                </button>
+              </p>
+            )}
             <div className="preset-row">
               <span>Quick set:</span>
               <button className="chip" onClick={() => applyPreset('standard')}>
@@ -642,36 +724,59 @@ export function Setup({ onCancel, onStart }: Props) {
                 All par 4
               </button>
             </div>
-            <div className="par-grid">
+            {/* A div, not a label: with stroke index showing, a cell holds two
+                controls, and a <label> may only name one of them. Each field
+                carries its own accessible name instead, and — once there are
+                two boxes to tell apart — its own visible caption. Without them
+                the cell is a hole number over two bare boxes, and the default
+                stroke indexes make it worse by repeating the hole number
+                underneath itself. */}
+            <div className={`par-grid${advancedHoles ? ' with-si' : ''}`}>
               {holes.map((h) => (
-                <label key={h.number} className="par-cell">
-                  <span>{h.number}</span>
-                  <select value={h.par} onChange={(e) => setPar(h.number, Number(e.target.value))}>
-                    {[3, 4, 5, 6].map((p) => (
+                <div key={h.number} className="par-cell">
+                  <span className="par-hole">{h.number}</span>
+                  {advancedHoles && <span className="par-cap">Par</span>}
+                  <select
+                    value={h.par}
+                    onChange={(e) => setPar(h.number, Number(e.target.value))}
+                    aria-label={`Par for hole ${h.number}`}
+                  >
+                    {parOptions(h.par).map((p) => (
                       <option key={p} value={p}>
                         {p}
                       </option>
                     ))}
                   </select>
                   {advancedHoles && (
-                    <input
-                      className="si-input"
-                      type="number"
-                      min={1}
-                      max={holes.length}
-                      value={h.strokeIndex ?? ''}
-                      onChange={(e) =>
-                        setStrokeIndex(
-                          h.number,
-                          e.target.value === '' ? undefined : Number(e.target.value)
-                        )
-                      }
-                      aria-label={`Stroke index for hole ${h.number}`}
-                    />
+                    <>
+                      <span className="par-cap">SI</span>
+                      <input
+                        className="si-input"
+                        type="number"
+                        min={1}
+                        max={holes.length}
+                        value={h.strokeIndex ?? ''}
+                        onChange={(e) =>
+                          setStrokeIndex(
+                            h.number,
+                            e.target.value === '' ? undefined : Number(e.target.value)
+                          )
+                        }
+                        aria-label={`Stroke index for hole ${h.number}`}
+                      />
+                    </>
                   )}
-                </label>
+                </div>
               ))}
             </div>
+            {advancedHoles && siProblem && (
+              <p className="check-note bad" role="status">
+                <strong>These stroke indexes can't be used.</strong>{' '}
+                {describeStrokeIndexProblem(siProblem, holes.length)} Until it's fixed, handicap
+                strokes fall in hole order instead — everyone still gets the right number of
+                shots, just not on the holes the course would pick.
+              </p>
+            )}
             <button className="btn-ghost add" onClick={toggleAdvanced}>
               {advancedHoles ? '− Hide hole difficulty' : '+ Set hole difficulty (stroke index)'}
             </button>
@@ -681,9 +786,16 @@ export function Setup({ onCancel, onStart }: Props) {
                 strokes in net games.
               </p>
             )}
-            <button className="btn-ghost add" onClick={saveFavorite}>
-              <StarIcon size={16} /> Save this course for next time
-            </button>
+            {/* Stands down while the call-out above is offering the same
+                action: two identical buttons on one card is a question about
+                which one is the real one. This is the general path — a course
+                typed or preset by hand — and the call-out's is the prompt at
+                the moment it matters. */}
+            {holesSource !== 'search' && (
+              <button className="btn-ghost add" onClick={saveFavorite}>
+                <StarIcon size={16} /> Save this course for next time
+              </button>
+            )}
           </section>
         </SetupRow>
 

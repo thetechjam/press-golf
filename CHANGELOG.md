@@ -7,6 +7,97 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Keeping a course you've checked is now the obvious next step.** The
+  course-search call-out ends with a save button — "Looks right — save this
+  course" — so verifying a scorecard and keeping it are one action instead of
+  two screens apart. Saving is taken as vouching for it: the caveat goes, and
+  from then on your copy is what loads, with search reduced to saving you the
+  typing. The general save button at the foot of the card stands down while
+  this one is showing, since two identical buttons only raise the question of
+  which is real. What's reported is re-read from the holes as they stand, so
+  correcting a par clears the line about that par and the button stops saying
+  "anyway" and starts saying "looks right". A card that still looks off can be
+  saved regardless — you're holding the real one — just not under a label
+  claiming it's fine.
+
+### Fixed
+- **Unusable stroke indexes no longer hand out the wrong number of shots.** A
+  stroke index is a ranking — on 18 holes it has to be each of 1 to 18 exactly
+  once — and handicap allocation reads it as one. Nothing checked that it was.
+  Eighteen holes all indexed 5 gave a 4-handicap **no shots at all** and a
+  6-handicap **one on every hole**, silently, and the round settled for the
+  wrong amount. A set that cannot rank the holes is now treated the way an
+  unset one already was, allocating in hole order: not a guess at the real
+  course, but a guarantee that everyone gets the shots their handicap is owed.
+  Both ways in are covered — a course from search and numbers typed by hand.
+  A round already in progress on a broken set will allocate differently from
+  here, which is the point.
+
+### Added
+- **The setup screens say when stroke indexes can't be used**, naming the
+  problem: a rank used twice, a hole left blank, a number outside the range.
+  The old league hint — "top box = par, bottom = stroke index" — is replaced by
+  captions on the fields themselves, which survive the cells wrapping.
+- **Imported scorecards are read before they're trusted.** Picking a course
+  from search now lists what looks wrong with it: holes that came back short,
+  a par that isn't golf, a stroke index used twice. Nothing is rejected or
+  quietly corrected — plenty of odd scorecards are merely unusual, and you are
+  the one holding the real card — but the holes worth a second look are named.
+  Duplicated stroke indexes are judged on the raw data on purpose: slicing
+  re-ranks a complete set to fit the round, which is right when a front nine is
+  lifted out of an 18-hole card and would otherwise turn genuinely broken data
+  into a tidy ranking that looks authoritative and is invented. A par outside
+  3–6 is now offered in the dropdown for that hole too, so an imported 12 can
+  be seen and corrected rather than displaying as something else entirely.
+
+- **Course search data is flagged for checking.** Picking a course from search
+  now opens the Holes & pars row instead of filling eighteen pars and stroke
+  indexes in behind a collapsed section, and puts a note beside them: check
+  these against the card, because course search is open community data and is
+  sometimes wrong. It matters more than it looks — a par out by one is
+  invisible on the Hole tab and silently shifts every net score, Stableford
+  point and Quota target for the whole round. Loading a course you saved
+  yourself opens the row too, since it rewrites the same eighteen numbers, but
+  carries no warning: you entered those. The note clears once you overwrite the
+  pars with a preset or change the hole count, at which point they are your
+  numbers rather than the database's.
+- **The par and stroke index fields say which is which.** With hole difficulty
+  showing, a cell was a hole number above two unlabelled boxes — and because
+  stroke indexes default to the hole order, the lower box repeated the number
+  written above it, so hole 1 read "1" over "4" over "1". Each field now
+  carries a caption and its own accessible name. The captions appear only when
+  both boxes are on screen; with par alone there is nothing to tell apart.
+  Fixes an accessibility defect at the same time: the cell was a single
+  `<label>` wrapped around two controls, which can only name one of them.
+
+- **Awards for Vegas and Quota.** *The Wrecking Ball* names the hole where a
+  side's number blew up and the player who blew it up — the higher score on the
+  losing side, since a partner who played their part should not wear it — and
+  cites what it cost: "9 on a par 4 · 45 points". Twenty points is the bar,
+  because ordinary holes swing single figures and reaching twenty takes a real
+  wreck. *Short of the Mark* goes to whoever finished furthest below the target
+  Quota set them, deliberately the miss rather than the beat: Sandbagger
+  already rewards playing under your handicap, and a Quota round uses
+  handicaps, so an award for clearing the number would land on the same player
+  twice for the same reason.
+- **An award never reports the same hole twice.** A blow-up that also wrecked a
+  Vegas number is one hole, and naming it in two awards read as a bug rather
+  than as two jokes. Awards that report a score now say which hole it was, and
+  only the better-ranked telling survives — which frees the slot for somebody
+  else on the card, the whole point of the per-player cap.
+- **Vegas on the Hole tab.** Wolf and Nassau have always had a presence where
+  the scoring actually happens; Vegas did not, which left its whole point — the
+  two scores written side by side — on the Board, one tab away from the person
+  entering them. A strip above the steppers now shows this hole's two numbers
+  with the lower one marked as the winner, and who is up overall. It reads out
+  rather than asks: Vegas needs no decision from the scorekeeper the way Wolf's
+  partner pick or Nassau's press do. A number turned round by the other side's
+  birdie is underlined and the line says "birdie flip" on that hole — without
+  it, writing down a 4 and a 5 and seeing 54 looks exactly like a bug. A hole
+  with a ball still out shows the standing and no numbers, since a side's
+  number does not exist until both its players are in.
+
 ### Fixed
 - **The Nassau stake says how many bets are actually running.** The Money board
   read "per bet (×3)", a fixed number that assumed front, back and total — so

@@ -47,6 +47,13 @@ export interface VegasHole {
   b: number;
   /** Points to side A on this hole; negative means side B took them. */
   swing: number;
+  /**
+   * Whether each side's number was turned around by the other side's birdie.
+   * Carried so the board can say so: a player who wrote down a 4 and a 5 and
+   * sees 54 has been handed what looks like a bug unless the flip is named.
+   */
+  aFlipped: boolean;
+  bFlipped: boolean;
 }
 
 /** Per-hole detail plus the running margin, shared by the board and the money. */
@@ -77,17 +84,32 @@ export function vegasHoles(round: Round): { holes: VegasHole[]; margin: number }
 
     const swing = bv - av; // + = side A won the hole by that many points
     margin += swing;
-    holes.push({ hole: h.number, a: av, b: bv, swing });
+    holes.push({ hole: h.number, a: av, b: bv, swing, aFlipped, bFlipped });
   }
 
   return { holes, margin };
 }
 
+/**
+ * This hole's numbers, or null while a ball is still out.
+ *
+ * The Hole tab needs one hole; everything else needs the whole run. Walking
+ * the round for one entry is nothing at this size, and keeps a single place
+ * where a hole is valued.
+ */
+export function vegasHoleFor(round: Round, holeNumber: number): VegasHole | null {
+  return vegasHoles(round).holes.find((h) => h.hole === holeNumber) ?? null;
+}
+
+/** True when this round is actually set up to play Vegas. */
+export function vegasReady(round: Round): boolean {
+  return round.players.length >= 4 && round.options.vegas?.mode === '2v2';
+}
+
 export function computeVegas(round: Round): GameResult {
   const { a, b } = vegasTeams(round);
-  const twoTeams = round.options.vegas?.mode === '2v2';
 
-  if (round.players.length < 4 || !twoTeams) {
+  if (!vegasReady(round)) {
     return {
       gameType: 'vegas',
       title: 'Vegas',

@@ -464,3 +464,222 @@ describe('notability balance', () => {
     expect(cheap).toEqual(rich);
   });
 });
+
+describe('The Wrecking Ball', () => {
+  const TEAMS = { mode: '2v2' as const, teamA: ['a1', 'a2'], teamB: ['b1', 'b2'] };
+  const four = [
+    player('a1', 'Al'),
+    player('a2', 'Ann'),
+    player('b1', 'Bo'),
+    player('b2', 'Bea'),
+  ];
+
+  /** A Vegas round where only the given holes are scored. */
+  const vegasRound = (
+    cards: Record<string, (number | null | undefined)[]>,
+    over: Record<string, unknown> = {}
+  ) => {
+    const hs = holes18();
+    return makeRound({
+      players: four,
+      holes: hs,
+      games: ['vegas'],
+      options: { vegas: TEAMS, ...over },
+      scores: scoresFrom(hs, cards),
+    });
+  };
+
+  /** Par golf from everybody, with one hole left for the test to ruin. */
+  const pars = (bad?: { at: number; score: number }) =>
+    Array.from({ length: 18 }, (_, i) => (bad && i === bad.at - 1 ? bad.score : 4));
+
+  test('names the player whose score blew the number up, and what it cost', () => {
+    // Hole 7: A is 4 and 4 = 44. Bea takes a 9, so B is 49 — a 5-point hole.
+    // Bo taking the 9 instead would be the same number, so the culprit is
+    // whoever actually holds the big score.
+    const round = vegasRound({
+      a1: pars(),
+      a2: pars(),
+      b1: pars(),
+      b2: pars({ at: 7, score: 9 }),
+    });
+    // 44 against 49 is only 5 — under the threshold, deliberately.
+    expect(find(round, 'wrecking-ball')).toBeUndefined();
+  });
+
+  test('fires when a side loses a hole by a phone number', () => {
+    // Hole 7: A pars for 44. Bo takes an 8 and Bea a 9, so B is 89 — 45 points.
+    const round = vegasRound({
+      a1: pars(),
+      a2: pars(),
+      b1: pars({ at: 7, score: 8 }),
+      b2: pars({ at: 7, score: 9 }),
+    });
+
+    const award = find(round, 'wrecking-ball');
+    expect(award?.playerIds).toEqual(['b2']); // the 9, not the 8
+    expect(award?.line).toContain('Bea');
+    expect(award?.line).toContain('7');
+    expect(award?.detail).toBe('9 on a par 4 · 45 points');
+  });
+
+  test('blames the bigger score on the losing side', () => {
+    const round = vegasRound({
+      a1: pars(),
+      a2: pars(),
+      b1: pars({ at: 3, score: 9 }),
+      b2: pars({ at: 3, score: 8 }),
+    });
+    expect(find(round, 'wrecking-ball')?.playerIds).toEqual(['b1']);
+  });
+
+  test('does not fire on a round with no teams picked', () => {
+    const hs = holes18();
+    const round = makeRound({
+      players: four,
+      holes: hs,
+      games: ['vegas'],
+      scores: scoresFrom(hs, {
+        a1: pars(),
+        a2: pars(),
+        b1: pars({ at: 7, score: 8 }),
+        b2: pars({ at: 7, score: 9 }),
+      }),
+    });
+    expect(find(round, 'wrecking-ball')).toBeUndefined();
+  });
+
+  test('does not fire when Vegas is not being played', () => {
+    const round = vegasRound(
+      { a1: pars(), a2: pars(), b1: pars({ at: 7, score: 8 }), b2: pars({ at: 7, score: 9 }) }
+    );
+    expect(find({ ...round, games: [] }, 'wrecking-ball')).toBeUndefined();
+  });
+});
+
+describe('Short of the Mark', () => {
+  /** A Quota round: Al plays off 0, Bo off `boHcp`. */
+  const quotaRound = (
+    cards: Record<string, number[]>,
+    boHcp?: number
+  ) => {
+    const hs = holes18();
+    return makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo', boHcp)],
+      holes: hs,
+      games: ['quota'],
+      scores: scoresFrom(hs, cards),
+    });
+  };
+
+  test('names whoever finished furthest below their target', () => {
+    // Al pars out: 36 points against a quota of 36, exactly level.
+    // Bo doubles every hole: 0 points against a quota of 36 — 36 short.
+    const round = quotaRound({
+      p1: Array(18).fill(4),
+      p2: Array(18).fill(6),
+    });
+
+    const award = find(round, 'short-of-the-mark');
+    expect(award?.playerIds).toEqual(['p2']);
+    expect(award?.line).toContain('Bo');
+    expect(award?.detail).toContain('quota 36');
+    expect(award?.detail).toContain('36 short');
+  });
+
+  test('does not fire when everybody got close', () => {
+    // Al is level; Bo drops two bogeys, so he is 2 short — not a story.
+    const round = quotaRound({
+      p1: Array(18).fill(4),
+      p2: [5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4],
+    });
+    expect(find(round, 'short-of-the-mark')).toBeUndefined();
+  });
+
+  test('does not fire when two players share the low mark', () => {
+    const card = Array(18).fill(6);
+    const round = quotaRound({ p1: card, p2: card });
+    expect(find(round, 'short-of-the-mark')).toBeUndefined();
+  });
+
+  test('does not fire when Quota is not being played', () => {
+    const round = quotaRound({ p1: Array(18).fill(4), p2: Array(18).fill(6) });
+    expect(find({ ...round, games: [] }, 'short-of-the-mark')).toBeUndefined();
+  });
+
+  test('measures against the target, so a handicap moves who it lands on', () => {
+    // Identical cards of straight bogeys: 18 points each. Al is off scratch,
+    // so his quota is 36 and he is 18 short. Bo is off 18, quota 18, and is
+    // exactly on it — the same round, a different verdict.
+    const card = Array(18).fill(5);
+    const round = quotaRound({ p1: card, p2: card }, 18);
+    expect(find(round, 'short-of-the-mark')?.playerIds).toEqual(['p1']);
+  });
+});
+
+describe('awards that report the same hole', () => {
+  const TEAMS = { mode: '2v2' as const, teamA: ['a1', 'a2'], teamB: ['b1', 'b2'] };
+  const pars = (bad?: { at: number; score: number }) =>
+    Array.from({ length: 18 }, (_, i) => (bad && i === bad.at - 1 ? bad.score : 4));
+
+  test('name it once, keeping the telling that says more', () => {
+    // Dana's 9 on hole 7 is both the round's worst hole and the hole that
+    // wrecked her side's Vegas number. Two awards for one number written on
+    // one card reads as a bug, not as two jokes.
+    const hs = holes18();
+    const round = makeRound({
+      players: [
+        player('a1', 'Al'),
+        player('a2', 'Ann'),
+        player('b1', 'Bo'),
+        player('b2', 'Dana'),
+      ],
+      holes: hs,
+      games: ['vegas'],
+      options: { vegas: TEAMS },
+      scores: scoresFrom(hs, {
+        a1: pars(),
+        a2: pars(),
+        b1: pars({ at: 7, score: 8 }),
+        b2: pars({ at: 7, score: 9 }),
+      }),
+    });
+
+    const awards = computeAwards(round);
+    const aboutDanasHole = awards.filter((a) => a.playerIds.includes('b2') && a.hole === 7);
+    expect(aboutDanasHole).toHaveLength(1);
+    // The Wrecking Ball survives: it carries the score and what it cost.
+    expect(aboutDanasHole[0].id).toBe('wrecking-ball');
+    expect(awards.find((a) => a.id === 'snowman')).toBeUndefined();
+  });
+
+  test('leaves two awards about different holes alone', () => {
+    const hs = holes18();
+    const round = makeRound({
+      players: [
+        player('a1', 'Al'),
+        player('a2', 'Ann'),
+        player('b1', 'Bo'),
+        player('b2', 'Dana'),
+      ],
+      holes: hs,
+      games: ['vegas'],
+      options: { vegas: TEAMS },
+      scores: scoresFrom(hs, {
+        // Hole 2 is the round's worst hole — but both sides take a 10 there,
+        // so each side's number is 410 and the hole swings nothing. (A double
+        // figure makes a huge Vegas number, which is why it takes a matching
+        // disaster on the other side to keep this hole off the wreck list.)
+        // The actual wreck is B's 89 against 44 on hole 7.
+        a1: [4, 10, ...Array(16).fill(4)],
+        a2: pars(),
+        b1: [4, 10, ...pars({ at: 7, score: 8 }).slice(2)],
+        b2: pars({ at: 7, score: 9 }),
+      }),
+    });
+
+    const awards = computeAwards(round);
+    expect(awards.find((a) => a.id === 'snowman')?.playerIds).toEqual(['a1']);
+    expect(awards.find((a) => a.id === 'wrecking-ball')?.playerIds).toEqual(['b2']);
+  });
+});

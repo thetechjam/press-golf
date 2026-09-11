@@ -12,13 +12,15 @@ import type { LeagueSetup } from '../types';
 describe('strokeIndexMap', () => {
   it('uses provided stroke indexes when every hole has one', () => {
     const round = makeRound({
+      // A ranking of these three holes, not hole-number order — so a
+      // sequential fallback would give {1:1, 2:2, 3:3} and be caught.
       holes: [
-        { number: 1, par: 4, strokeIndex: 5 },
+        { number: 1, par: 4, strokeIndex: 3 },
         { number: 2, par: 4, strokeIndex: 1 },
-        { number: 3, par: 4, strokeIndex: 9 },
+        { number: 3, par: 4, strokeIndex: 2 },
       ],
     });
-    expect(strokeIndexMap(round)).toEqual({ 1: 5, 2: 1, 3: 9 });
+    expect(strokeIndexMap(round)).toEqual({ 1: 3, 2: 1, 3: 2 });
   });
 
   it('falls back to sequential order when any stroke index is missing', () => {

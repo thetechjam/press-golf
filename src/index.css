@@ -1027,6 +1027,55 @@ select:focus {
   font-variant-numeric: tabular-nums;
 }
 
+/* Course-search data needs checking, and the place to say so is beside the
+   numbers themselves — not in the status line at the foot of the screen, which
+   is nowhere near the fields it is talking about. Gold, matching warn-banner:
+   this is "look at this", not "something went wrong". */
+/* The same shape as the course-search caveat, but this one is about numbers
+   that cannot be used rather than numbers worth double-checking. */
+/* Each named problem on its own line: run together they read as one long
+   sentence and the reader cannot tell how many things are wrong. */
+.issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+}
+.issue-list > span::before {
+  content: '· ';
+}
+/* Sits inside the call-out, so it reads as the answer to it rather than as
+   another control that happens to be nearby. */
+.check-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  min-height: var(--tap);
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--green-600) 35%, var(--line));
+  background: var(--card);
+  color: var(--green-600);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+.check-note.bad {
+  background: color-mix(in srgb, var(--over-strong) 10%, var(--card));
+  border-color: color-mix(in srgb, var(--over-strong) 40%, var(--line));
+}
+.check-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--gold) 16%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
 .par-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
@@ -1038,9 +1087,34 @@ select:focus {
   align-items: center;
   gap: 4px;
 }
-.par-cell > span {
+.par-cell > .par-hole {
   font-size: 0.72rem;
   color: var(--muted);
+}
+/* Only drawn when there are two boxes in the cell to tell apart. Sized down
+   hard and letter-spaced so it reads as a caption on the field below rather
+   than as another value in the column. */
+.par-cap {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  line-height: 1;
+  align-self: stretch;
+  text-align: center;
+}
+/* The hole number needs to separate from the first caption under it, which
+   the flex gap alone does not do once the captions are in. */
+.par-grid.with-si .par-hole {
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.par-grid.with-si .par-cell {
+  gap: 3px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
 }
 .par-cell select {
   padding: 8px;
@@ -1660,6 +1734,49 @@ select:focus {
   border-radius: var(--radius);
   padding: 12px 14px;
 }
+/* Vegas reads out rather than asks, so it borrows the Nassau strip's collapsed
+   shape without being a button. */
+.vegas-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+.vegas-nums {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.vegas-num {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+/* The lower number took the hole — the one fact worth colouring. */
+.vegas-num.won {
+  color: var(--under-ink);
+  font-weight: 700;
+}
+/* A flipped number is the one thing here that looks like a bug if unexplained:
+   you wrote a 4 and a 5 and the board says 54. The underline marks it, and the
+   accessible name on the pair says "flipped" outright. */
+.vegas-num.flipped {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.vegas-dash {
+  color: var(--muted);
+}
+
 .nassau-head {
   font-size: 0.92rem;
   margin-bottom: 10px;
@@ -2380,7 +2497,6 @@ select:focus {
   color: var(--green-700);
 }
 .si-input {
-  margin-top: 4px;
   padding: 6px;
   min-height: 34px;
   text-align: center;

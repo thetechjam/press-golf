@@ -24,12 +24,12 @@ describe('buildScorecard — stroke index row', () => {
   it('uses the real course stroke indexes when every hole has one', () => {
     const round = makeRound({
       holes: [
-        { number: 1, par: 4, strokeIndex: 7 },
+        { number: 1, par: 4, strokeIndex: 3 },
         { number: 2, par: 5, strokeIndex: 1 },
-        { number: 3, par: 3, strokeIndex: 15 },
+        { number: 3, par: 3, strokeIndex: 2 },
       ],
     });
-    expect(buildScorecard(round).holes.map((h) => h.strokeIndex)).toEqual([7, 1, 15]);
+    expect(buildScorecard(round).holes.map((h) => h.strokeIndex)).toEqual([3, 1, 2]);
   });
 
   it('falls back to sequential indexing by hole number when none are provided', () => {
@@ -57,14 +57,16 @@ describe('buildScorecard — stroke index row', () => {
   it('keeps play order, not hole-number order, for a rotated start', () => {
     const round = makeRound({
       holes: [
-        { number: 3, par: 4, strokeIndex: 15 },
-        { number: 1, par: 4, strokeIndex: 7 },
+        { number: 3, par: 4, strokeIndex: 3 },
+        { number: 1, par: 4, strokeIndex: 2 },
         { number: 2, par: 5, strokeIndex: 1 },
       ],
     });
     const model = buildScorecard(round);
     expect(model.holes.map((h) => h.number)).toEqual([3, 1, 2]);
-    expect(model.holes.map((h) => h.strokeIndex)).toEqual([15, 7, 1]);
+    // Each index travels with its own hole. A sequential fallback would read
+    // [3, 1, 2] here, so this still tells the two apart.
+    expect(model.holes.map((h) => h.strokeIndex)).toEqual([3, 2, 1]);
   });
 
   it('pairs the fallback index with the right hole when play order is rotated', () => {
