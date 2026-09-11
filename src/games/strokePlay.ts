@@ -16,7 +16,7 @@ export function computeStrokePlay(round: Round): GameResult {
         played += 1;
       }
     }
-    const received = useNet ? totalStrokesReceived(round, p.id) : 0;
+    const received = useNet ? totalStrokesReceived(round, p.id, 'strokePlay') : 0;
     const net = gross - received;
     return {
       playerId: p.id,

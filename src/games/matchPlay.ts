@@ -19,10 +19,22 @@ export interface SegmentResult {
   status: string;
 }
 
-/** Best (lowest) score for a side on a hole; null if no member has a score. */
-function sideBest(round: Round, ids: string[], hole: Hole, useNet: boolean): number | null {
+/**
+ * Best (lowest) score for a side on a hole; null if no member has a score.
+ *
+ * Takes the game for the same reason `matchSegmentSides` does: it serves both
+ * Match Play and Nassau, and those can be played off different allowances as
+ * well as different gross/net settings.
+ */
+function sideBest(
+  round: Round,
+  ids: string[],
+  hole: Hole,
+  useNet: boolean,
+  game: GameType
+): number | null {
   const scores = ids
-    .map((id) => holeScore(round, id, hole, useNet))
+    .map((id) => holeScore(round, id, hole, useNet, game))
     .filter((s): s is number => s != null);
   return scores.length ? Math.min(...scores) : null;
 }
@@ -100,8 +112,8 @@ export function matchSegmentSides(
   const useNet = netFor(round, game);
   return runMatch(
     holes,
-    (h) => sideBest(round, a.ids, h, useNet),
-    (h) => sideBest(round, b.ids, h, useNet),
+    (h) => sideBest(round, a.ids, h, useNet, game),
+    (h) => sideBest(round, b.ids, h, useNet, game),
     a.label,
     b.label
   );

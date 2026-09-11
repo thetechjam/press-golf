@@ -1,5 +1,7 @@
-import type { Round, Hole } from '../types';
+import type { Round, Player, GameType } from '../types';
+import type { Hole } from '../types';
 import { strokeIndexesUsable } from './strokeIndex';
+import { courseHandicap, withAllowance, validIndex, validSlope, validRating } from './courseHandicap';
 
 /**
  * Stroke index per hole. Uses the values the round carries when they form a
@@ -28,6 +30,65 @@ export function strokeIndexMap(round: Round): Record<number, number> {
   return map;
 }
 
+/**
+ * The allowance this game is played off, as a percentage. 100 when unset.
+ */
+export function allowanceFor(round: Round, game: GameType): number {
+  const pct = round.options.allowanceByGame?.[game];
+  return typeof pct === 'number' && pct > 0 && pct <= 100 ? pct : 100;
+}
+
+/**
+ * A player's course handicap for this round, before any allowance.
+ *
+ * Derived from their Handicap Index when the round carries a slope and rating
+ * to derive it with, and taken from the stored stroke count otherwise. That
+ * order matters: an Index plus a rated course is the more precise answer, but
+ * a number somebody typed on the first tee has to keep working, because most
+ * rounds will never have a rating attached and a few will have one that is
+ * wrong. `handicap` therefore remains what it always was — the strokes this
+ * round is scored on — and the Index is an input to it, not a replacement.
+ *
+ * `round.rating` covers the holes actually being played; Setup converts when
+ * it copies a rating off a course that spans more holes than the round does.
+ */
+export function courseHandicapFor(round: Round, player: Player): number {
+  const holes = round.holes.length;
+  if (
+    validIndex(player.index) &&
+    validSlope(round.slope) &&
+    validRating(round.rating, holes) &&
+    holes > 0
+  ) {
+    return courseHandicap({
+      index: player.index,
+      slope: round.slope,
+      rating: round.rating,
+      ratingHoles: holes,
+      playingHoles: holes,
+      playingPar: round.holes.reduce((sum, h) => sum + h.par, 0),
+    });
+  }
+  return player.handicap ?? 0;
+}
+
+/**
+ * The strokes a player actually plays off in a given game: their course
+ * handicap, cut by that game's allowance.
+ *
+ * `game` is optional because not every caller is scoring one — the stats
+ * screen and the Sandbagger award ask what a player's handicap is worth in
+ * general, and an allowance is a property of a format being played.
+ */
+export function playingHandicap(round: Round, playerId: string, game?: GameType): number {
+  const player = round.players.find((p) => p.id === playerId);
+  if (!player) return 0;
+  const base = courseHandicapFor(round, player);
+  if (!game) return base;
+  const allowance = allowanceFor(round, game);
+  return allowance === 100 ? base : withAllowance(base, allowance);
+}
+
 /** Strokes a player receives on a single hole given their course handicap. */
 export function strokesReceivedOnHole(
   courseHandicap: number,
@@ -49,21 +110,24 @@ export function holeScore(
   round: Round,
   playerId: string,
   hole: Hole,
-  useNet: boolean
+  useNet: boolean,
+  game?: GameType
 ): number | null {
   const raw = round.scores[hole.number]?.[playerId];
   if (raw == null) return null;
   if (!useNet) return raw;
-  const player = round.players.find((p) => p.id === playerId);
-  const hcp = player?.handicap ?? 0;
+  const hcp = playingHandicap(round, playerId, game);
   const si = strokeIndexMap(round)[hole.number];
   return raw - strokesReceivedOnHole(hcp, si, round.holes.length);
 }
 
 /** Total handicap strokes a player receives across the whole round. */
-export function totalStrokesReceived(round: Round, playerId: string): number {
-  const player = round.players.find((p) => p.id === playerId);
-  const hcp = player?.handicap ?? 0;
+export function totalStrokesReceived(
+  round: Round,
+  playerId: string,
+  game?: GameType
+): number {
+  const hcp = playingHandicap(round, playerId, game);
   if (hcp <= 0) return 0;
   const si = strokeIndexMap(round);
   return round.holes.reduce(

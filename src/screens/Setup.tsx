@@ -7,6 +7,7 @@ import { usesHandicap, canScoreNet } from '../games/scoring';
 import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
 import { parOptions } from '../courses/parOptions';
 import { scorecardIssues } from '../courses/validate';
+import { validSlope, validRating, courseHandicap } from '../games/courseHandicap';
 import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
@@ -40,6 +41,11 @@ export function Setup({ onCancel, onStart }: Props) {
   ]);
   const [holeCount, setHoleCount] = useState(18);
   const [holes, setHoles] = useState<Hole[]>(makeHoles(18));
+  /** Slope and rating of these holes, when the user knows them. */
+  const [slope, setSlope] = useState<number | undefined>();
+  const [rating, setRating] = useState<number | undefined>();
+  /** Handicap allowance per game, as a percentage. Absent entries are 100%. */
+  const [allowanceByGame, setAllowanceByGame] = useState<Partial<Record<GameType, number>>>({});
   const [games, setGames] = useState<GameType[]>(['skins']);
   const [options, setOptions] = useState({ ...DEFAULT_OPTIONS });
   const [advancedHoles, setAdvancedHoles] = useState(false);
@@ -128,6 +134,8 @@ export function Setup({ onCancel, onStart }: Props) {
     setAdvancedHoles(c.holes.some((h) => h.strokeIndex));
     setHolesSource('saved');
     setImported(null);
+    setSlope(c.slope);
+    setRating(c.rating);
     openRow('holes');
     setSavedNote(`Loaded "${c.name}"`);
   };
@@ -162,6 +170,8 @@ export function Setup({ onCancel, onStart }: Props) {
       id: existing?.id ?? uid(),
       name,
       holes: holes.map((h) => ({ number: h.number, par: h.par, strokeIndex: h.strokeIndex })),
+      slope,
+      rating,
     });
     setCourses(listCourses());
     setError('');
@@ -237,11 +247,22 @@ export function Setup({ onCancel, onStart }: Props) {
     crew.length === players.length &&
     crew.every((e, i) => e.name === players[i].name.trim());
 
-  const useCrew = () =>
-    setPlayers(crew.map((e) => ({ id: uid(), name: e.name, handicap: e.handicap })));
+  /**
+   * Both figures come back with a recalled player, and the screen shows
+   * whichever this course can use: the Index where there is a rating to
+   * convert it, the remembered strokes otherwise. Dropping either on recall
+   * would mean retyping it the next time the other one stopped applying.
+   */
+  const recalled = (e: RosterEntry): Player => ({
+    id: uid(),
+    name: e.name,
+    handicap: e.handicap,
+    index: e.index,
+  });
 
-  const addFromRoster = (e: RosterEntry) =>
-    setPlayers((ps) => placePlayer(ps, { id: uid(), name: e.name, handicap: e.handicap }));
+  const useCrew = () => setPlayers(crew.map(recalled));
+
+  const addFromRoster = (e: RosterEntry) => setPlayers((ps) => placePlayer(ps, recalled(e)));
 
   const setPar = (number: number, par: number) => {
     setHoles((hs) => hs.map((h) => (h.number === number ? { ...h, par } : h)));
@@ -262,12 +283,32 @@ export function Setup({ onCancel, onStart }: Props) {
   const showVegas = games.includes('vegas');
   // Gross and net are the same card until somebody has a handicap, so the
   // per-game picker stays out of the way until the choice means something.
-  const anyHandicap = namedPlayers.some((p) => (p.handicap ?? 0) > 0);
-  const netGames = games.filter(canScoreNet);
-  const showScoring = anyHandicap && netGames.length > 0;
+  // An Index counts: on a rated course it is what their strokes come from.
+  const anyHandicap = namedPlayers.some((p) => (p.handicap ?? 0) > 0 || p.index != null);
+  const allowanceGames = games.filter(usesHandicap);
+  const showScoring = anyHandicap && allowanceGames.length > 0;
   // Only surfaced while the stroke index editor is open: a user who never
   // opened it did not enter these and cannot act on the message.
   const siProblem = strokeIndexProblem(holes);
+  /**
+   * Whether these holes carry figures good enough to work a course handicap
+   * out from an Index. Both have to be plausible: a slope alone, or a rating
+   * left over from a different number of holes, would produce a confident
+   * wrong answer rather than no answer.
+   */
+  const rated = validSlope(slope) && validRating(rating, holes.length);
+  /** The course handicap an Index is worth here, for showing beside the field. */
+  const derivedHandicap = (index: number | undefined): number | null => {
+    if (!rated || index == null || Number.isNaN(index)) return null;
+    return courseHandicap({
+      index,
+      slope: slope as number,
+      rating: rating as number,
+      ratingHoles: holes.length,
+      playingHoles: holes.length,
+      playingPar: holes.reduce((sum, h) => sum + h.par, 0),
+    });
+  };
   // Re-read every render, so correcting a hole clears the line about it.
   const importIssues =
     holesSource === 'search' && imported
@@ -289,10 +330,14 @@ export function Setup({ onCancel, onStart }: Props) {
       ...p,
       name: p.name.trim(),
       handicap: showNet ? p.handicap : undefined,
+      index: showNet ? p.index : undefined,
     }));
 
-    // Net scoring is automatic: on when any player entered a handicap (> 0).
-    const useNet = cleanPlayers.some((p) => (p.handicap ?? 0) > 0);
+    // Net scoring is automatic: on when anybody brought a handicap, by either
+    // route — a stroke count typed in, or an Index the course can convert.
+    const useNet = cleanPlayers.some(
+      (p) => (p.handicap ?? 0) > 0 || (rated && p.index != null)
+    );
 
     // Builds a TeamSetup from picker state, or returns an error message.
     const buildTeams = (
@@ -344,7 +389,11 @@ export function Setup({ onCancel, onStart }: Props) {
       players: cleanPlayers,
       holes,
       games,
-      options: { ...options, useNet, netByGame, nassau, matchPlay, vegas },
+      options: { ...options, useNet, netByGame, allowanceByGame, nassau, matchPlay, vegas },
+      // Copied onto the round so it stays scoreable on its own terms: editing
+      // the saved course later must not re-handicap a round already played.
+      slope: rated ? slope : undefined,
+      rating: rated ? rating : undefined,
       scores: {},
       wolf: {},
       presses: [],
@@ -390,20 +439,57 @@ export function Setup({ onCancel, onStart }: Props) {
               onChange={(e) => updatePlayer(p.id, { name: e.target.value })}
               placeholder={`Player ${i + 1}`}
             />
-            {showNet && (
-              <input
-                className="player-hcp"
-                type="number"
-                inputMode="numeric"
-                value={p.handicap ?? ''}
-                onChange={(e) =>
-                  updatePlayer(p.id, {
-                    handicap: e.target.value === '' ? undefined : Number(e.target.value),
-                  })
-                }
-                placeholder="HCP"
-              />
-            )}
+            {showNet &&
+              (rated ? (
+                /* A rated course can work the strokes out, so the field asks
+                   for the number the player actually carries between courses
+                   and shows what it is worth here. Asking for both would be
+                   asking the same question twice. */
+                <span className="player-index">
+                  <input
+                    className="player-hcp"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.1"
+                    value={p.index ?? ''}
+                    onChange={(e) =>
+                      updatePlayer(p.id, {
+                        index: e.target.value === '' ? undefined : Number(e.target.value),
+                      })
+                    }
+                    placeholder="Index"
+                    aria-label={`Handicap Index for ${p.name || `player ${i + 1}`}`}
+                  />
+                  {derivedHandicap(p.index) != null && (
+                    <span
+                      className="player-derived"
+                      aria-label={`Plays off ${derivedHandicap(p.index)} on these holes`}
+                    >
+                      {/* The arrow is doing real work: without it this is a
+                          second number beside the first with nothing to say
+                          it is the answer rather than another question. */}
+                      <span aria-hidden="true" className="player-derived-arrow">
+                        →
+                      </span>
+                      {derivedHandicap(p.index)}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <input
+                  className="player-hcp"
+                  type="number"
+                  inputMode="numeric"
+                  value={p.handicap ?? ''}
+                  onChange={(e) =>
+                    updatePlayer(p.id, {
+                      handicap: e.target.value === '' ? undefined : Number(e.target.value),
+                    })
+                  }
+                  placeholder="HCP"
+                  aria-label={`Handicap for ${p.name || `player ${i + 1}`}`}
+                />
+              ))}
             <button
               className="player-del"
               onClick={() => removePlayer(p.id)}
@@ -419,8 +505,9 @@ export function Setup({ onCancel, onStart }: Props) {
         <RecentChips recent={recent} onAdd={addFromRoster} />
         {showNet && (
           <p className="hint">
-            Enter handicaps to score net — leave them all blank to score gross. A blank handicap
-            plays off 0.
+            {rated
+              ? 'Enter each player\u2019s Handicap Index \u2014 the number after the arrow is what they play off on these holes. Leave them all blank to score gross.'
+              : 'Enter handicaps to score net \u2014 leave them all blank to score gross. A blank handicap plays off 0.'}
           </p>
         )}
       </section>
@@ -514,27 +601,52 @@ export function Setup({ onCancel, onStart }: Props) {
             <section className="card">
               <h2>Scoring</h2>
               <p className="hint-inline">
-                Handicaps apply everywhere by default. Set a game to gross to play it off the
-                card.
+                Handicaps apply everywhere at full allowance by default. Set a game to gross to
+                play it off the card, or cut the allowance the way the format asks — 90% for a
+                singles match, 85% for a four-ball.
               </p>
-              {netGames.map((g) => {
-                const net = netByGame[g] ?? true;
+              {allowanceGames.map((g) => {
+                const canNet = canScoreNet(g);
+                const net = canNet ? (netByGame[g] ?? true) : false;
+                // An allowance cuts handicap strokes, so it only means
+                // anything where handicap strokes are being used: a game set
+                // to gross has none to cut. Quota has no gross/net choice at
+                // all and always spends the handicap, so it always asks.
+                const showAllowance = canNet ? net : true;
                 return (
                   <div key={g} className="score-mode-row">
                     <span className="score-mode-name">{gameMeta(g).label}</span>
-                    <div className="seg small">
-                      {([false, true] as const).map((v) => (
-                        <button
-                          key={String(v)}
-                          type="button"
-                          className={`seg-btn${net === v ? ' active' : ''}`}
-                          aria-pressed={net === v}
-                          onClick={() => setNetByGame((m) => ({ ...m, [g]: v }))}
-                        >
-                          {v ? 'Net' : 'Gross'}
-                        </button>
-                      ))}
-                    </div>
+                    {canNet && (
+                      <div className="seg small">
+                        {([false, true] as const).map((v) => (
+                          <button
+                            key={String(v)}
+                            type="button"
+                            className={`seg-btn${net === v ? ' active' : ''}`}
+                            aria-pressed={net === v}
+                            onClick={() => setNetByGame((m) => ({ ...m, [g]: v }))}
+                          >
+                            {v ? 'Net' : 'Gross'}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {showAllowance && (
+                      <select
+                        className="allowance-select"
+                        value={allowanceByGame[g] ?? 100}
+                        onChange={(e) =>
+                          setAllowanceByGame((m) => ({ ...m, [g]: Number(e.target.value) }))
+                        }
+                        aria-label={`Handicap allowance for ${gameMeta(g).label}`}
+                      >
+                        {[100, 95, 90, 85, 75, 50].map((pct) => (
+                          <option key={pct} value={pct}>
+                            {pct}%
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                 );
               })}
@@ -715,6 +827,36 @@ export function Setup({ onCancel, onStart }: Props) {
                 </button>
               </p>
             )}
+            <div className="rating-row">
+              <label className="field small">
+                <span>Slope</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={55}
+                  max={155}
+                  value={slope ?? ''}
+                  onChange={(e) => setSlope(e.target.value === '' ? undefined : Number(e.target.value))}
+                  placeholder="113"
+                />
+              </label>
+              <label className="field small">
+                <span>Rating</span>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.1"
+                  value={rating ?? ''}
+                  onChange={(e) => setRating(e.target.value === '' ? undefined : Number(e.target.value))}
+                  placeholder={`${holes.length * 4}.0`}
+                />
+              </label>
+            </div>
+            <p className="hint-inline">
+              {rated
+                ? `Handicap Index converts to strokes for these ${holes.length} holes.`
+                : `Optional — off the card, for these ${holes.length} holes. With both, players can enter a Handicap Index instead of working out their own strokes.`}
+            </p>
             <div className="preset-row">
               <span>Quick set:</span>
               <button className="chip" onClick={() => applyPreset('standard')}>

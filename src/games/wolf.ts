@@ -17,7 +17,7 @@ function teamBest(
   playerIds: string[],
   useNet: boolean
 ): number | null {
-  const scores = playerIds.map((id) => holeScore(round, id, hole, useNet));
+  const scores = playerIds.map((id) => holeScore(round, id, hole, useNet, 'wolf'));
   if (scores.some((s) => s == null)) return null;
   return Math.min(...(scores as number[]));
 }

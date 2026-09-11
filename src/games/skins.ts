@@ -17,7 +17,7 @@ export function computeSkins(round: Round): GameResult {
     // Only score a hole once every player has a score on it.
     const scores = round.players.map((p) => ({
       id: p.id,
-      score: holeScore(round, p.id, h, useNet),
+      score: holeScore(round, p.id, h, useNet, 'skins'),
     }));
     if (scores.some((s) => s.score == null)) continue;
 
