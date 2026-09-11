@@ -47,10 +47,27 @@ export const STAKE_UNIT: Record<GameType, string> = {
   skins: 'skin',
   stableford: 'point',
   wolf: 'point',
-  nassau: 'bet (×3)',
+  // No count here: Nassau's bet count depends on the round — see `unitFor`.
+  nassau: 'bet',
   vegas: 'point',
   quota: 'point',
 };
+
+/**
+ * The stake unit as it reads for a round in progress.
+ *
+ * Nassau is the one game whose number of bets isn't fixed. The static label
+ * used to read "bet (×3)", assuming front, back and total — already wrong on a
+ * nine, which has one bet, and wronger with every press running, called or
+ * automatic. Anywhere a round is in hand the real count can be shown; the
+ * static `STAKE_UNIT` stays for the setup screen, which has no round yet and
+ * so says "per bet" without claiming a number.
+ */
+export function unitFor(round: Round, game: GameType): string {
+  if (game !== 'nassau') return STAKE_UNIT[game];
+  const bets = nassauSegments(round).length;
+  return `bet (×${bets})`;
+}
 
 export function formatMoney(n: number): string {
   const abs = Math.abs(n);
@@ -217,7 +234,7 @@ export function computeSettlement(round: Round): Settlement {
     const stake = round.options.stakes?.[gt] ?? 0;
     if (stake <= 0) continue;
     const net = gameNet(round, gt, stake);
-    perGame.push({ gameType: gt, label: LABEL[gt], unit: STAKE_UNIT[gt], stake, net });
+    perGame.push({ gameType: gt, label: LABEL[gt], unit: unitFor(round, gt), stake, net });
     ids.forEach((id) => (totals[id] += net[id]));
   }
 

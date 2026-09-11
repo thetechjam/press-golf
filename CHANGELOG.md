@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **The Nassau stake says how many bets are actually running.** The Money board
+  read "per bet (×3)", a fixed number that assumed front, back and total — so
+  it was already wrong on a nine, which has exactly one bet, and wronger with
+  every press on the card. It now counts the round's real bets, which on an
+  auto-pressed nine where one side never wins a hole reaches five. The setup
+  screen has no round to count yet and so says "per bet" without claiming a
+  number, rather than claiming the wrong one.
+
 ### Added
 - **Nassau auto-press.** A setup toggle: when a side goes 2 down, a press
   starts by itself from the next hole, on top of anything pressed by hand. A

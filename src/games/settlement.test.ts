@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSettlement, formatMoney, type Transaction } from './settlement';
+import { computeSettlement, formatMoney, unitFor, type Transaction } from './settlement';
 import { makeRound, player, holes, holes18, scoresFrom } from './testFixtures';
 import type { Round } from '../types';
 
@@ -418,5 +418,44 @@ describe('settleTransactions — greedy minimum transactions', () => {
     });
     const s = computeSettlement(round);
     for (const t of s.transactions) expect(t.from).not.toBe(t.to);
+  });
+});
+
+describe('unitFor', () => {
+  const nassauRound = (holeCount: number, options: Partial<Round['options']> = {}): Round => {
+    const hs = holes(holeCount);
+    return makeRound({
+      holes: hs,
+      players: [player('p1', 'Al'), player('p2', 'Bo')],
+      games: ['nassau'],
+      options: { nassau: { mode: '1v1', teamA: ['p1'], teamB: ['p2'] }, ...options },
+      scores: scoresFrom(hs, {
+        p1: Array(holeCount).fill(4),
+        p2: Array(holeCount).fill(5),
+      }),
+    });
+  };
+
+  it('counts the three Nassau bets over eighteen holes', () => {
+    expect(unitFor(nassauRound(18), 'nassau')).toBe('bet (×3)');
+  });
+
+  it('counts one bet over a nine, not three', () => {
+    // The old static "(×3)" claimed three bets on a card that only ever has
+    // the one — the label overstated a league night's exposure threefold.
+    expect(unitFor(nassauRound(9), 'nassau')).toBe('bet (×1)');
+  });
+
+  it('counts the presses a round has actually run up', () => {
+    // Al wins every hole, so the two-down rule keeps firing: the nine presses
+    // at 3, that press presses at 5, and so on to 7 and 9 — five bets running
+    // off one $5 stake. Exactly the exposure the old fixed "(×3)" hid, and the
+    // reason this label is worth computing.
+    expect(unitFor(nassauRound(9, { autoPress: true }), 'nassau')).toBe('bet (×5)');
+  });
+
+  it('leaves the other games alone', () => {
+    expect(unitFor(nassauRound(18), 'skins')).toBe('skin');
+    expect(unitFor(nassauRound(18), 'matchPlay')).toBe('the match');
   });
 });
