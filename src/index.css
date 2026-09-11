@@ -1031,6 +1031,23 @@ select:focus {
    numbers themselves — not in the status line at the foot of the screen, which
    is nowhere near the fields it is talking about. Gold, matching warn-banner:
    this is "look at this", not "something went wrong". */
+/* The same shape as the course-search caveat, but this one is about numbers
+   that cannot be used rather than numbers worth double-checking. */
+/* Each named problem on its own line: run together they read as one long
+   sentence and the reader cannot tell how many things are wrong. */
+.issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+}
+.issue-list > span::before {
+  content: '· ';
+}
+.check-note.bad {
+  background: color-mix(in srgb, var(--over-strong) 10%, var(--card));
+  border-color: color-mix(in srgb, var(--over-strong) 40%, var(--line));
+}
 .check-note {
   margin: 0;
   padding: 10px 12px;

@@ -27,13 +27,13 @@ const COURSE = {
 };
 
 /** Answers the two OpenGolfAPI calls the search makes, and nothing else. */
-function stubCourseApi() {
+function stubCourseApi(course: unknown = COURSE) {
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => {
       const body = String(url).includes('/search')
         ? { courses: [{ id: 'c1', name: COURSE.name, city: 'Leeds', state: 'UK', par: 72 }] }
-        : COURSE;
+        : course;
       return { ok: true, json: async () => body } as Response;
     })
   );
@@ -175,5 +175,82 @@ describe('the par and stroke index fields', () => {
     for (const label of document.querySelectorAll('label')) {
       expect(label.querySelectorAll('input, select, textarea').length).toBeLessThan(2);
     }
+  });
+});
+
+describe('a scorecard that arrives damaged', () => {
+  it('names what looks wrong instead of importing it quietly', async () => {
+    // Hole 3 comes back as a par 12, and stroke index 1 is used twice.
+    stubCourseApi({
+      id: 'c1',
+      name: COURSE.name,
+      holes_data: COURSE.holes_data.map((h, i) => ({
+        ...h,
+        par: i === 2 ? 12 : h.par,
+        handicap_index: i === 5 ? 1 : h.handicap_index,
+      })),
+    });
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+
+    const text = callOut()!.textContent!;
+    expect(text).toMatch(/looks off/i);
+    expect(text).toMatch(/Hole 3 came back as par 12/);
+    expect(text).toMatch(/used more than once/);
+  });
+
+  it('lets the impossible par be seen and corrected', async () => {
+    stubCourseApi({
+      id: 'c1',
+      name: COURSE.name,
+      holes_data: COURSE.holes_data.map((h, i) => ({ ...h, par: i === 2 ? 12 : h.par })),
+    });
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+
+    // The select shows the par the round is actually using, not a nearby one
+    // it happens to have an option for.
+    const hole3 = screen.getByLabelText('Par for hole 3') as HTMLSelectElement;
+    expect(hole3.value).toBe('12');
+    await user.selectOptions(hole3, '3');
+    expect((screen.getByLabelText('Par for hole 3') as HTMLSelectElement).value).toBe('3');
+  });
+
+  it('says nothing extra when the scorecard is clean', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+    expect(callOut()!.textContent).not.toMatch(/looks off/i);
+  });
+});
+
+describe('stroke indexes typed in by hand', () => {
+  it('are called out when they cannot rank the holes', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: /Set hole difficulty/i }));
+
+    const hole2 = await screen.findByLabelText('Stroke index for hole 2');
+    await user.clear(hole2);
+    await user.type(hole2, '1'); // hole 1 already has index 1
+
+    await waitFor(() =>
+      expect(document.querySelector('.check-note.bad')?.textContent).toMatch(
+        /used more than once/
+      )
+    );
+  });
+
+  it('say nothing while the ranking is sound', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: /Set hole difficulty/i }));
+    await screen.findByLabelText('Stroke index for hole 2');
+
+    expect(document.querySelector('.check-note.bad')).toBeNull();
   });
 });

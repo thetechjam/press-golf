@@ -4,6 +4,9 @@ import { DEFAULT_OPTIONS } from '../types';
 import { GAMES, gameMeta } from '../games';
 import { GAME_RULES } from '../games/rules';
 import { usesHandicap, canScoreNet } from '../games/scoring';
+import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
+import { parOptions } from '../courses/parOptions';
+import { scorecardIssues } from '../courses/validate';
 import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
@@ -49,6 +52,8 @@ export function Setup({ onCancel, onStart }: Props) {
    * themselves, or a preset they chose, needs no such caveat.
    */
   const [holesSource, setHolesSource] = useState<'manual' | 'search' | 'saved'>('manual');
+  /** Anything that looked off in the scorecard search handed over, if anything. */
+  const [importIssues, setImportIssues] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   const [savedNote, setSavedNote] = useState('');
@@ -113,6 +118,7 @@ export function Setup({ onCancel, onStart }: Props) {
     setHoles(c.holes.map((h) => ({ ...h })));
     setAdvancedHoles(c.holes.some((h) => h.strokeIndex));
     setHolesSource('saved');
+    setImportIssues([]);
     openRow('holes');
     setSavedNote(`Loaded "${c.name}"`);
   };
@@ -125,6 +131,7 @@ export function Setup({ onCancel, onStart }: Props) {
     setHoles(applied);
     setAdvancedHoles(applied.some((h) => h.strokeIndex));
     setHolesSource('search');
+    setImportIssues(scorecardIssues(applied, count, c.holes));
     openRow('holes');
     setError('');
     setSavedNote(
@@ -194,6 +201,7 @@ export function Setup({ onCancel, onStart }: Props) {
     // the count invalidates it before the user can act on stale information.
     setSavedNote('');
     setHolesSource('manual');
+    setImportIssues([]);
   };
 
   const updatePlayer = (id: string, patch: Partial<Player>) =>
@@ -243,6 +251,9 @@ export function Setup({ onCancel, onStart }: Props) {
   const anyHandicap = namedPlayers.some((p) => (p.handicap ?? 0) > 0);
   const netGames = games.filter(canScoreNet);
   const showScoring = anyHandicap && netGames.length > 0;
+  // Only surfaced while the stroke index editor is open: a user who never
+  // opened it did not enter these and cannot act on the message.
+  const siProblem = strokeIndexProblem(holes);
   const canTeams = namedPlayers.length >= 4;
 
   const start = () => {
@@ -657,10 +668,21 @@ export function Setup({ onCancel, onStart }: Props) {
               ))}
             </div>
             {holesSource === 'search' && (
-              <p className="check-note" role="status">
+              <p className={`check-note${importIssues.length ? ' bad' : ''}`} role="status">
                 <strong>Check these against the card.</strong> Pars and stroke indexes from
                 course search are open community data and are sometimes wrong — a par out by one
                 shifts every net score and Stableford point for the whole round.
+                {importIssues.length > 0 && (
+                  <>
+                    {' '}
+                    Some of it already looks off:
+                    <span className="issue-list">
+                      {importIssues.map((issue) => (
+                        <span key={issue}>{issue}</span>
+                      ))}
+                    </span>
+                  </>
+                )}
               </p>
             )}
             <div className="preset-row">
@@ -689,7 +711,7 @@ export function Setup({ onCancel, onStart }: Props) {
                     onChange={(e) => setPar(h.number, Number(e.target.value))}
                     aria-label={`Par for hole ${h.number}`}
                   >
-                    {[3, 4, 5, 6].map((p) => (
+                    {parOptions(h.par).map((p) => (
                       <option key={p} value={p}>
                         {p}
                       </option>
@@ -717,6 +739,14 @@ export function Setup({ onCancel, onStart }: Props) {
                 </div>
               ))}
             </div>
+            {advancedHoles && siProblem && (
+              <p className="check-note bad" role="status">
+                <strong>These stroke indexes can't be used.</strong>{' '}
+                {describeStrokeIndexProblem(siProblem, holes.length)} Until it's fixed, handicap
+                strokes fall in hole order instead — everyone still gets the right number of
+                shots, just not on the holes the course would pick.
+              </p>
+            )}
             <button className="btn-ghost add" onClick={toggleAdvanced}>
               {advancedHoles ? '− Hide hole difficulty' : '+ Set hole difficulty (stroke index)'}
             </button>

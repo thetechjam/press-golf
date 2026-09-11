@@ -7,7 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Unusable stroke indexes no longer hand out the wrong number of shots.** A
+  stroke index is a ranking — on 18 holes it has to be each of 1 to 18 exactly
+  once — and handicap allocation reads it as one. Nothing checked that it was.
+  Eighteen holes all indexed 5 gave a 4-handicap **no shots at all** and a
+  6-handicap **one on every hole**, silently, and the round settled for the
+  wrong amount. A set that cannot rank the holes is now treated the way an
+  unset one already was, allocating in hole order: not a guess at the real
+  course, but a guarantee that everyone gets the shots their handicap is owed.
+  Both ways in are covered — a course from search and numbers typed by hand.
+  A round already in progress on a broken set will allocate differently from
+  here, which is the point.
+
 ### Added
+- **The setup screens say when stroke indexes can't be used**, naming the
+  problem: a rank used twice, a hole left blank, a number outside the range.
+  The old league hint — "top box = par, bottom = stroke index" — is replaced by
+  captions on the fields themselves, which survive the cells wrapping.
+- **Imported scorecards are read before they're trusted.** Picking a course
+  from search now lists what looks wrong with it: holes that came back short,
+  a par that isn't golf, a stroke index used twice. Nothing is rejected or
+  quietly corrected — plenty of odd scorecards are merely unusual, and you are
+  the one holding the real card — but the holes worth a second look are named.
+  Duplicated stroke indexes are judged on the raw data on purpose: slicing
+  re-ranks a complete set to fit the round, which is right when a front nine is
+  lifted out of an 18-hole card and would otherwise turn genuinely broken data
+  into a tidy ranking that looks authoritative and is invented. A par outside
+  3–6 is now offered in the dropdown for that hole too, so an imported 12 can
+  be seen and corrected rather than displaying as something else entirely.
+
 - **Course search data is flagged for checking.** Picking a course from search
   now opens the Holes & pars row instead of filling eighteen pars and stroke
   indexes in behind a collapsed section, and puts a note beside them: check

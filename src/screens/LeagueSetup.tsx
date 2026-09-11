@@ -5,6 +5,8 @@ import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
 import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
+import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
+import { parOptions } from '../courses/parOptions';
 import { StarIcon, XIcon, GearIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { SetupRow } from '../components/SetupRow';
@@ -165,6 +167,8 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
     onStart(round);
   };
 
+  const siProblem = strokeIndexProblem(holes);
+
   return (
     <div className="screen setup">
       <header className="bar">
@@ -258,17 +262,26 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
           open={courseDetailOpen}
           onToggle={() => setCourseDetailOpen((o) => !o)}
         >
-          <div className="par-grid">
+          {/* Always both boxes here, so always both captions. They replace a
+              "top box = par, bottom = stroke index" hint, which only held while
+              the two sat in that order — cells wrap, and the hint did not. */}
+          <div className="par-grid with-si">
             {holes.map((h) => (
               <div key={h.number} className="par-cell">
-                <span>{h.number}</span>
-                <select value={h.par} onChange={(e) => setPar(h.number, Number(e.target.value))}>
-                  {[3, 4, 5, 6].map((p) => (
+                <span className="par-hole">{h.number}</span>
+                <span className="par-cap">Par</span>
+                <select
+                  value={h.par}
+                  onChange={(e) => setPar(h.number, Number(e.target.value))}
+                  aria-label={`Par for hole ${h.number}`}
+                >
+                  {parOptions(h.par).map((p) => (
                     <option key={p} value={p}>
                       {p}
                     </option>
                   ))}
                 </select>
+                <span className="par-cap">SI</span>
                 <input
                   className="si-input"
                   type="number"
@@ -281,7 +294,15 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
               </div>
             ))}
           </div>
-          <p className="hint-inline">Top box = par, bottom = stroke index (1 = hardest).</p>
+          <p className="hint-inline">Stroke index ranks hole difficulty (1 = hardest).</p>
+          {siProblem && (
+            <p className="check-note bad" role="status">
+              <strong>These stroke indexes can't be used.</strong>{' '}
+              {describeStrokeIndexProblem(siProblem, holes.length)} Until it's fixed, handicap
+              strokes fall in hole order instead — everyone still gets the right number of shots,
+              just not on the holes the course would pick.
+            </p>
+          )}
           <button className="btn-ghost add" onClick={saveFavorite}>
             <StarIcon size={16} /> Save this course for next time
           </button>
