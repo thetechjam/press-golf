@@ -1660,6 +1660,49 @@ select:focus {
   border-radius: var(--radius);
   padding: 12px 14px;
 }
+/* Vegas reads out rather than asks, so it borrows the Nassau strip's collapsed
+   shape without being a button. */
+.vegas-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 0.82rem;
+}
+.vegas-nums {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.vegas-num {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+/* The lower number took the hole — the one fact worth colouring. */
+.vegas-num.won {
+  color: var(--under-ink);
+  font-weight: 700;
+}
+/* A flipped number is the one thing here that looks like a bug if unexplained:
+   you wrote a 4 and a 5 and the board says 54. The underline marks it, and the
+   accessible name on the pair says "flipped" outright. */
+.vegas-num.flipped {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.vegas-dash {
+  color: var(--muted);
+}
+
 .nassau-head {
   font-size: 0.92rem;
   margin-bottom: 10px;

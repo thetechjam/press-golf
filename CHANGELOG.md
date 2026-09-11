@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Vegas on the Hole tab.** Wolf and Nassau have always had a presence where
+  the scoring actually happens; Vegas did not, which left its whole point — the
+  two scores written side by side — on the Board, one tab away from the person
+  entering them. A strip above the steppers now shows this hole's two numbers
+  with the lower one marked as the winner, and who is up overall. It reads out
+  rather than asks: Vegas needs no decision from the scorekeeper the way Wolf's
+  partner pick or Nassau's press do. A number turned round by the other side's
+  birdie is underlined and the line says "birdie flip" on that hole — without
+  it, writing down a 4 and a 5 and seeing 54 looks exactly like a bug. A hole
+  with a ball still out shows the standing and no numbers, since a side's
+  number does not exist until both its players are in.
+
 ### Fixed
 - **The Nassau stake says how many bets are actually running.** The Money board
   read "per bet (×3)", a fixed number that assumed front, back and total — so

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeVegas, vegasHoles, vegasNumber } from './vegas';
+import { computeVegas, vegasHoles, vegasNumber, vegasHoleFor, vegasReady } from './vegas';
 import { computeSettlement } from './settlement';
 import { makeRound, player, holes, scoresFrom } from './testFixtures';
 import type { Round, TeamSetup } from '../types';
@@ -51,7 +51,14 @@ describe('vegasHoles', () => {
     // A: 4 and 5 = 45. B: 5 and 6 = 56. A wins 11.
     const r = v(1, { a1: [4], a2: [5], b1: [5], b2: [6] });
     const { holes: hs, margin } = vegasHoles(r);
-    expect(hs[0]).toEqual({ hole: 1, a: 45, b: 56, swing: 11 });
+    expect(hs[0]).toEqual({
+      hole: 1,
+      a: 45,
+      b: 56,
+      swing: 11,
+      aFlipped: false,
+      bFlipped: false,
+    });
     expect(margin).toBe(11);
   });
 
@@ -69,6 +76,9 @@ describe('vegasHoles', () => {
     expect(hs[0].a).toBe(54);
     expect(hs[0].b).toBe(34);
     expect(hs[0].swing).toBe(-20);
+    // Reported, so the board can say why a 4 and a 5 came out as 54.
+    expect(hs[0].aFlipped).toBe(true);
+    expect(hs[0].bFlipped).toBe(false);
   });
 
   it('leaves the numbers alone when the flip is turned off', () => {
@@ -88,6 +98,7 @@ describe('vegasHoles', () => {
     const { holes: hs } = vegasHoles(r);
     expect(hs[0].a).toBe(53);
     expect(hs[0].b).toBe(63);
+    expect([hs[0].aFlipped, hs[0].bFlipped]).toEqual([true, true]);
   });
 
   it('keeps the flip on for a round saved before the option existed', () => {
@@ -211,5 +222,46 @@ describe('computeVegas', () => {
     });
     const s = computeSettlement(r);
     expect(Object.values(s.totals).every((v) => v === 0)).toBe(true);
+  });
+});
+
+describe('vegasHoleFor', () => {
+  it('finds the hole asked for', () => {
+    const r = v(2, { a1: [4, 5], a2: [5, 6], b1: [5, 4], b2: [6, 4] });
+    expect(vegasHoleFor(r, 2)).toMatchObject({ hole: 2, a: 56, b: 44 });
+  });
+
+  it('is null while a ball is still out on that hole', () => {
+    const r = v(2, { a1: [4, 4], a2: [5, 5], b1: [5, 5], b2: [6, undefined] });
+    expect(vegasHoleFor(r, 1)).not.toBeNull();
+    expect(vegasHoleFor(r, 2)).toBeNull();
+  });
+
+  it('is null for a hole that is not in the round', () => {
+    const r = v(1, { a1: [4], a2: [5], b1: [5], b2: [6] });
+    expect(vegasHoleFor(r, 17)).toBeNull();
+  });
+});
+
+describe('vegasReady', () => {
+  it('wants four players and two teams', () => {
+    expect(vegasReady(v(1, {}))).toBe(true);
+  });
+
+  it('is false without teams picked', () => {
+    const hs = holes(1);
+    const r = makeRound({ holes: hs, players: four, games: ['vegas'] });
+    expect(vegasReady(r)).toBe(false);
+  });
+
+  it('is false with too few players', () => {
+    const hs = holes(1);
+    const r = makeRound({
+      holes: hs,
+      players: four.slice(0, 3),
+      games: ['vegas'],
+      options: { vegas: TEAMS },
+    });
+    expect(vegasReady(r)).toBe(false);
   });
 });
