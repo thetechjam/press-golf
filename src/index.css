@@ -1701,6 +1701,18 @@ select:focus {
   font-size: 0.8rem;
   font-weight: 600;
 }
+/* An automatic press has no × to press, so the chip closes up to where the
+   button's tap target used to end. Without this it sits with a hole in it. */
+.press-chip.auto {
+  padding-right: 12px;
+}
+.press-auto {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
 .press-chip button {
   width: 22px;
   height: 22px;

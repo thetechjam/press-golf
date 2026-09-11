@@ -100,6 +100,13 @@ export interface GameOptions {
    * they were scored when they were played.
    */
   vegasFlip?: boolean;
+  /**
+   * Nassau presses itself whenever a side goes two down, on top of any pressed
+   * by hand. The automatic ones are derived from the card by
+   * `autoPressStarts()` rather than stored, so correcting a score re-decides
+   * them instead of leaving one stranded.
+   */
+  autoPress?: boolean;
   /** Present when this is a league-night round. */
   league?: LeagueSetup;
 }

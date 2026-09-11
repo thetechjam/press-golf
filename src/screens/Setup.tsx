@@ -537,7 +537,7 @@ export function Setup({ onCancel, onStart }: Props) {
             />
           )}
 
-          {(showStableford || showWolf || showVegas) && (
+          {(showStableford || showWolf || showVegas || showNassau) && (
             <section className="card">
               <h2>Options</h2>
               {showStableford && (
@@ -555,6 +555,20 @@ export function Setup({ onCancel, onStart }: Props) {
                     <option value="standard">Standard (par = 2 pts)</option>
                     <option value="modified">Modified (eagle = 5 pts)</option>
                   </select>
+                </label>
+              )}
+              {showNassau && (
+                <label className="set-row">
+                  <span>
+                    <span className="set-label">Nassau auto-press</span>
+                    <span className="set-hint">Press automatically when a side goes 2 down</span>
+                  </span>
+                  <input
+                    className="switch"
+                    type="checkbox"
+                    checked={options.autoPress === true}
+                    onChange={(e) => setOptions({ ...options, autoPress: e.target.checked })}
+                  />
                 </label>
               )}
               {showVegas && (
