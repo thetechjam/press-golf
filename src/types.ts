@@ -12,9 +12,26 @@ export type GameType =
 
 export interface Player {
   id: string;
-  name: string;
-  /** Course handicap in whole strokes. Optional. */
+  /**
+   * Course handicap in whole strokes — what stroke allocation spends.
+   *
+   * Still the number the round is scored on, and still what is stored, so
+   * nothing saved before Handicap Index existed changed meaning. When the
+   * course carries a slope and rating and the player carries an `index`, this
+   * is derived from those; otherwise it is whatever was typed in.
+   */
   handicap?: number;
+  name: string;
+  /**
+   * The player's 18-hole Handicap Index, when they know it.
+   *
+   * Kept separately because it is the number that travels: a course handicap
+   * is only worth anything at the course it was worked out for, while an Index
+   * is the same figure wherever it is played. That is what lets the roster
+   * recall a player and get their strokes right at a course they have never
+   * been to.
+   */
+  index?: number;
 }
 
 export interface Hole {
@@ -28,6 +45,10 @@ export interface SavedCourse {
   id: string;
   name: string;
   holes: Hole[];
+  /** Slope of these holes, 55-155. Needed to turn an Index into strokes. */
+  slope?: number;
+  /** Course rating in strokes, covering the holes in this record. */
+  rating?: number;
 }
 
 /** playerId -> strokes taken (null = not yet entered). */
@@ -107,6 +128,15 @@ export interface GameOptions {
    * them instead of leaving one stranded.
    */
   autoPress?: boolean;
+  /**
+   * Handicap allowance per game, as a percentage. An absent entry is 100%.
+   *
+   * Per game rather than per round because the handbook's percentages are a
+   * property of the format — 90% for a singles match, 85% for a four-ball,
+   * 95% for Stableford — and a round playing several at once needs several.
+   * Resolved through `allowanceFor()`, never read directly.
+   */
+  allowanceByGame?: Partial<Record<GameType, number>>;
   /** Present when this is a league-night round. */
   league?: LeagueSetup;
 }
@@ -126,6 +156,13 @@ export interface Round {
   wolf: Record<number, WolfHole>;
   /** Hole numbers where a Nassau press was called (each starts a new bet). */
   presses?: number[];
+  /**
+   * Slope and rating of the holes being played, copied from the course at
+   * setup so a round stays scoreable on its own terms — editing the saved
+   * course afterwards must not re-handicap a round already in the book.
+   */
+  slope?: number;
+  rating?: number;
   status: 'in_progress' | 'finished';
 }
 

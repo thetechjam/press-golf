@@ -26,7 +26,7 @@ export function computeStableford(round: Round): GameResult {
     let points = 0;
     let played = 0;
     for (const h of round.holes) {
-      const score = holeScore(round, p.id, h, useNet);
+      const score = holeScore(round, p.id, h, useNet, 'stableford');
       if (score == null) continue;
       played += 1;
       points += pointsFor(score - h.par, stablefordMode);

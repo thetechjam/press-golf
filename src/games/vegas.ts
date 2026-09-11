@@ -65,7 +65,7 @@ export function vegasHoles(round: Round): { holes: VegasHole[]; margin: number }
   let margin = 0;
 
   const sideScores = (ids: string[], h: Hole): number[] | null => {
-    const s = ids.map((id) => holeScore(round, id, h, useNet));
+    const s = ids.map((id) => holeScore(round, id, h, useNet, 'vegas'));
     return s.every((v): v is number => v != null) ? s : null;
   };
 

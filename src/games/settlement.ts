@@ -128,7 +128,7 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
             played += 1;
           }
         }
-        const total = useNet ? gross - totalStrokesReceived(round, id) : gross;
+        const total = useNet ? gross - totalStrokesReceived(round, id, 'strokePlay') : gross;
         return { id, total, played };
       })
       .filter((t) => t.played > 0);
