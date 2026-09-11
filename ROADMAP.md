@@ -45,6 +45,14 @@ what's deferred, and how to expand without a rewrite.
   behind a "Keep it" button: being shown a round is not the same as having
   played one. The QR encoder is verified by decoding its own output with a real
   scanner (`jsqr`, a devDependency — nothing is shipped).
+- **Share a course** (`src/shareCourse.ts`, `src/screens/ArrivingCourse.tsx`):
+  the same link mechanism for a saved scorecard, under the `#c=` fragment key.
+  The point is the accuracy problem: checking an imported card is done once, by
+  one person, and this is how the other three get the checked one. Matched to
+  local courses by *name*, never by id — an id means "this record on this
+  phone", so carrying the sender's would let it overwrite a differently-edited
+  one of yours. `scorecardIssues` runs on arrival, so the card is read before
+  it is saved.
 - **Mid-round handover** (`src/handover.ts`, `src/screens/Arrival.tsx`): the
   same link, sent from Settings during a round, hands the card to another phone
   to carry on. Both phones then hold the round, so an arriving copy is compared

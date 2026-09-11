@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Send a course, not just a round.** Every saved course now has a QR button
+  next to it. The other phone gets the pars, stroke indexes, slope and rating
+  you already checked — so the person who verified the scorecard does it once,
+  instead of everyone in the group re-typing it or, more often, not checking at
+  all. A course is small enough that the code is noticeably chunkier than a
+  round's, which is the one you hold up on the first tee.
+
+  The card is laid out on screen before any save button is, in nines the way a
+  scorecard is printed, and anything odd about it — two holes ranked the same,
+  a par that looks wrong — is called out on arrival rather than discovered on
+  the sixteenth tee. Nothing is saved until you ask. If you already have a
+  course by that name, Press says exactly what differs ("par differs on hole
+  4") and lets you keep both or replace yours.
 - **Send a round to another phone, by link or QR code.** The Results screen
   gains "Send the round to a phone": a sheet with a QR code the person beside
   you can point a camera at, and a link for everyone else. The whole round
