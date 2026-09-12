@@ -74,7 +74,17 @@ export function Setup({ onCancel, onStart }: Props) {
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   // The saved course being handed out, if any — see the QR button on each row.
   const [sendingCourse, setSendingCourse] = useState<SavedCourse | null>(null);
-  const [savedNote, setSavedNote] = useState('');
+  /**
+   * A confirmation of something the user just did, and the row it happened in.
+   *
+   * The row matters: rendered once at the foot of the screen, as it was, the
+   * note appeared over a thousand pixels below the fold on a phone — a
+   * confirmation nobody could see is not a confirmation. It is shown beside
+   * the control that produced it instead.
+   */
+  const [savedNote, setSavedNote] = useState<{ text: string; row: 'course' | 'holes' } | null>(
+    null
+  );
   const [nassauMode, setNassauMode] = useState<'1v1' | '2v2'>('1v1');
   const [nassauSideA, setNassauSideA] = useState('');
   const [nassauSideB, setNassauSideB] = useState('');
@@ -140,7 +150,7 @@ export function Setup({ onCancel, onStart }: Props) {
     setSlope(c.slope);
     setRating(c.rating);
     openRow('holes');
-    setSavedNote(`Loaded "${c.name}"`);
+    setSavedNote({ text: `Loaded "${c.name}"`, row: 'course' });
   };
 
   const loadFromApi = (c: FetchedCourse) => {
@@ -154,11 +164,12 @@ export function Setup({ onCancel, onStart }: Props) {
     setImported({ raw: c.holes, expected: count });
     openRow('holes');
     setError('');
-    setSavedNote(
-      applied.some((h) => h.strokeIndex)
+    setSavedNote({
+      text: applied.some((h) => h.strokeIndex)
         ? `Loaded "${c.name}" — par + stroke index`
-        : `Loaded "${c.name}" — par only (no stroke index in database)`
-    );
+        : `Loaded "${c.name}" — par only (no stroke index in database)`,
+      row: 'course',
+    });
   };
 
   const saveFavorite = () => {
@@ -178,7 +189,7 @@ export function Setup({ onCancel, onStart }: Props) {
     });
     setCourses(listCourses());
     setError('');
-    setSavedNote(`Saved "${name}"`);
+    setSavedNote({ text: `Saved "${name}"`, row: 'holes' });
     // Keeping a course is the user vouching for it, so the "check this against
     // the card" caveat has served its purpose and goes. From here their copy
     // is the one that loads, and search is only ever saving them the typing.
@@ -201,7 +212,7 @@ export function Setup({ onCancel, onStart }: Props) {
     // Same reasoning as setHoleCountAndPars: a bulk par overwrite makes any
     // loaded/saved note describe a course that no longer matches the holes —
     // and these are the user's own pars now, not the database's.
-    setSavedNote('');
+    setSavedNote(null);
     setHolesSource('manual');
   };
 
@@ -226,7 +237,7 @@ export function Setup({ onCancel, onStart }: Props) {
     });
     // A loaded/saved note describes a specific hole count and par set; changing
     // the count invalidates it before the user can act on stale information.
-    setSavedNote('');
+    setSavedNote(null);
     setHolesSource('manual');
     setImported(null);
   };
@@ -271,7 +282,7 @@ export function Setup({ onCancel, onStart }: Props) {
     setHoles((hs) => hs.map((h) => (h.number === number ? { ...h, par } : h)));
     // A single hand-edited par is still enough to make the loaded/saved note
     // describe a course the holes no longer match.
-    setSavedNote('');
+    setSavedNote(null);
   };
 
   const toggleGame = (g: GameType) =>
@@ -414,7 +425,7 @@ export function Setup({ onCancel, onStart }: Props) {
 
     // Clear so a later visit to this screen (e.g. after Undo) doesn't open on
     // a note describing a course loaded during the round that just ended.
-    setSavedNote('');
+    setSavedNote(null);
     onStart(round);
   };
 
@@ -441,6 +452,7 @@ export function Setup({ onCancel, onStart }: Props) {
               value={p.name}
               onChange={(e) => updatePlayer(p.id, { name: e.target.value })}
               placeholder={`Player ${i + 1}`}
+              aria-label={`Name of player ${i + 1}`}
             />
             {showNet &&
               (rated ? (
@@ -558,6 +570,12 @@ export function Setup({ onCancel, onStart }: Props) {
                 ))}
               </div>
             </section>
+          )}
+
+          {savedNote?.row === 'course' && (
+            <p className="hint-inline" role="status">
+              {savedNote.text}
+            </p>
           )}
         </SetupRow>
 
@@ -951,6 +969,11 @@ export function Setup({ onCancel, onStart }: Props) {
                 <StarIcon size={16} /> Save this course for next time
               </button>
             )}
+            {savedNote?.row === 'holes' && (
+              <p className="hint-inline" role="status">
+                {savedNote.text}
+              </p>
+            )}
           </section>
         </SetupRow>
 
@@ -973,11 +996,6 @@ export function Setup({ onCancel, onStart }: Props) {
           </section>
         </SetupRow>
       </div>
-
-      {/* Outside every row: it confirms an action, and that action can originate
-          in either the Course row (loading a course) or the Holes row (saving
-          one), so it cannot live inside either. */}
-      {savedNote && <p className="hint-inline">{savedNote}</p>}
 
       {error && <p className="error">{error}</p>}
 

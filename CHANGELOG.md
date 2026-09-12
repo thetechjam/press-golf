@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **New Round screen polish.** The Handicap Index field was narrower than the
+  word "Index", so its own placeholder was cut off until you typed; slope and
+  rating clipped "129" and "74.6" at every phone width. The "Loaded …" and
+  "Saved …" confirmations rendered at the foot of the screen — over a thousand
+  pixels below the fold on a phone — and now appear beside the control that
+  produced them, and are announced to a screen reader. The player name fields
+  had no accessible name, only a placeholder. Stroke-index inputs, the par
+  presets and the send-course button were all smaller than the controls beside
+  them and are now the same size.
+
 ### Changed
 - **The foot of the Results screen is one button.** It had grown to five
   controls — two image buttons, a text fallback, the round's link, and Edit
