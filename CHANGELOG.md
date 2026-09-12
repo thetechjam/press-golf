@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **The foot of the Results screen is one button.** It had grown to five
+  controls — two image buttons, a text fallback, the round's link, and Edit
+  handicaps — stacked in a column that read as a list of equals. Now there is
+  one **Share**, and the sheet behind it groups what the stack could not: the
+  two pictures at the top, then a rule, then the round's own QR code. The rule
+  is the point — above it you send a picture of the result, below it you send
+  the round, which the other person can open, keep and settle from. Each
+  picture button now says what it actually produces.
+- **Edit handicaps sits next to Edit stakes**, in the Settlement card, since
+  both are fixing a number that decides the money. On a league night it moves
+  to the league board. It is offered even when nobody has a handicap yet —
+  which is exactly when you would want the way to add one.
+
+### Removed
+- **"Share as text instead."** Sharing as text still happens automatically
+  whenever a picture cannot be built or shared; the button was a manual copy of
+  a fallback that already fires on its own.
+
 ### Added
 - **Send a course, not just a round.** Every saved course now has a QR button
   next to it. The other phone gets the pars, stroke indexes, slope and rating

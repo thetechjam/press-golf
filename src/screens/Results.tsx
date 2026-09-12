@@ -9,11 +9,9 @@ import { computeSettlement, formatMoney } from '../games/settlement';
 import { computeLeague } from '../games/league';
 import { colorMap } from '../player';
 import { usesHandicaps } from '../games/handicap';
-import { TrophyIcon, ShareIcon, PencilIcon, QrIcon } from '../icons';
-import { renderShareCard } from '../shareCard';
-import { renderScorecardCard } from '../scorecardCard';
+import { TrophyIcon, ShareIcon } from '../icons';
 import { EditHandicaps } from '../components/EditHandicaps';
-import { SendRound } from '../components/SendRound';
+import { ShareSheet } from '../components/ShareSheet';
 import { Awards } from '../components/Awards';
 import { formatRoundDate } from '../roundDate';
 
@@ -119,123 +117,14 @@ function buildSummary(round: Round): string {
   return lines.join('\n');
 }
 
-/**
- * One of the two share CTAs on Results, and the app's only wait state.
- *
- * aria-disabled, not disabled: `disabled` drops the button out of the tab order
- * mid-interaction, so a keyboard user's focus falls to <body> the moment they
- * activate it. The onClick guard is what actually prevents a second canvas
- * render. aria-label tracks the visible label (WCAG 2.5.3 Label in Name) and
- * aria-busy announces the wait (4.1.3 Status Messages).
- *
- * Both labels are always rendered, stacked, so "Building…" can cross-fade with
- * the idle icon-and-word rather than replacing it in one frame: an icon plus a
- * noun and a bare gerund are two visibly different objects, and swapping them
- * outright reads as the button being replaced rather than as one button
- * changing state. Only the busy label leaves the flow — the idle one stays and
- * keeps setting the button's height, so nothing moves when the render starts.
- */
-function ShareButton({
-  label,
-  busy,
-  onShare,
-}: {
-  label: string;
-  busy: boolean;
-  onShare: () => void;
-}) {
-  const what = label.toLowerCase();
-  return (
-    <button
-      className="btn-primary big"
-      onClick={() => {
-        if (!busy) onShare();
-      }}
-      aria-disabled={busy}
-      aria-busy={busy}
-      aria-label={busy ? `Building ${what}…` : `Share ${what}`}
-    >
-      <span className={`share-face${busy ? ' out' : ''}`}>
-        <ShareIcon size={18} /> {label}
-      </span>
-      <span className={`share-face share-busy${busy ? '' : ' out'}`}>Building…</span>
-    </button>
-  );
-}
-
 export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep }: Props) {
-  const [copied, setCopied] = useState(false);
-  const [rendering, setRendering] = useState(false);
-  const [renderingCard, setRenderingCard] = useState(false);
   const [showHcp, setShowHcp] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const results = activeResults(round);
   const hero = round.options.league ? null : winnerHero(round);
   const colors = colorMap(round);
   const hcpOf = (id: string) =>
     usesHandicaps(round) ? (round.players.find((p) => p.id === id)?.handicap ?? 0) : undefined;
-
-  const shareText = async () => {
-    const text = buildSummary(round);
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: 'Golf round results', text });
-        return;
-      }
-    } catch {
-      /* fall through to clipboard */
-    }
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  };
-
-  // Scoreboard PNG first; falls back to a download, then to the text path.
-  // The busy state covers only the canvas render — the share sheet can stay
-  // open (or hang, on some desktop browsers) without freezing the button.
-  const shareImage = async (
-    render: () => Promise<Blob>,
-    filename: string,
-    setBusy: (v: boolean) => void
-  ) => {
-    setBusy(true);
-    let file: File;
-    let blobUrl: string;
-    try {
-      const blob = await render();
-      file = new File([blob], filename, { type: 'image/png' });
-      blobUrl = URL.createObjectURL(blob);
-    } catch {
-      setBusy(false);
-      await shareText();
-      return;
-    }
-    setBusy(false);
-    try {
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Golf round results' });
-      } else {
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = filename;
-        a.click();
-      }
-    } catch (err) {
-      // User closed the share sheet — not a failure, don't fall through.
-      if ((err as Error)?.name !== 'AbortError') await shareText();
-    } finally {
-      URL.revokeObjectURL(blobUrl);
-    }
-  };
-
-  const shareResults = () =>
-    shareImage(() => renderShareCard(round), 'press-results.png', setRendering);
-  const shareScorecard = () =>
-    shareImage(() => renderScorecardCard(round), 'press-scorecard.png', setRenderingCard);
 
   return (
     <div className="screen results">
@@ -299,11 +188,18 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep 
 
       {round.options.league ? (
         <section className="boards">
-          <LeagueBoard round={round} />
+          <LeagueBoard
+            round={round}
+            onEditHandicaps={() => setShowHcp(true)}
+          />
         </section>
       ) : (
         <>
-          <Settlement round={round} onChange={onChange} />
+          <Settlement
+            round={round}
+            onChange={onChange}
+            onEditHandicaps={() => setShowHcp(true)}
+          />
           <section className="boards">
             {results.map((r) => (
               <Leaderboard
@@ -317,28 +213,23 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep 
         </>
       )}
 
-      <div className="share-row">
-        <ShareButton label="Results" busy={rendering} onShare={shareResults} />
-        <ShareButton label="Scorecard" busy={renderingCard} onShare={shareScorecard} />
-      </div>
-      <button className="btn-ghost share-text" onClick={shareText}>
-        {copied ? 'Copied to clipboard' : 'Share as text instead'}
-      </button>
-      {/* A different thing from the two above, and worth its own row: those
-          send a picture of the result, this sends the round itself, so the
-          person on the other end can open it, keep it, and settle from it. */}
-      <button className="btn-ghost send-round" onClick={() => setSending(true)}>
-        <QrIcon size={16} /> Send the round to a phone
-      </button>
-      <button className="btn-ghost edit-hcp" onClick={() => setShowHcp(true)}>
-        <PencilIcon size={16} /> Edit handicaps
+      {/* One way out of this screen, not five. Everything that was stacked
+          here — two picture buttons, a text fallback and the round's own
+          link — is grouped in the sheet, where the difference between sending
+          a picture of the result and sending the round can actually be shown.
+          Editing handicaps was never sharing and has gone to sit beside
+          Edit stakes, which is the same kind of act. */}
+      <button className="btn-primary big share-open" onClick={() => setSharing(true)}>
+        <ShareIcon size={18} /> Share
       </button>
 
       {showHcp && (
         <EditHandicaps round={round} onChange={onChange} onClose={() => setShowHcp(false)} />
       )}
 
-      {sending && <SendRound round={round} onClose={() => setSending(false)} />}
+      {sharing && (
+        <ShareSheet round={round} summary={buildSummary(round)} onClose={() => setSharing(false)} />
+      )}
     </div>
   );
 }
