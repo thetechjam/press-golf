@@ -288,3 +288,140 @@ describe('leagueStrokesOnHole', () => {
     }
   });
 });
+
+describe('a league night off a Handicap Index', () => {
+  /**
+   * Nine holes, all par 4 — par 36. On a course of average difficulty rated at
+   * par, `Index × (slope ÷ 113) + (rating − par)` over nine holes is half the
+   * Index, so these four Indexes are worth 7, 3, 8 and 2 strokes here. Picked
+   * so the arithmetic is checkable by eye rather than by running the code.
+   */
+  const hs = holes(9);
+  const rated = { slope: 113, rating: 36 };
+  const INDEXED = [
+    { id: 'p1', name: 'Al', index: 14 },
+    { id: 'p2', name: 'Bo', index: 6 },
+    { id: 'p3', name: 'Cy', index: 16 },
+    { id: 'p4', name: 'Di', index: 4 },
+  ];
+  /** The same four, as the stroke counts somebody would otherwise have typed. */
+  const TYPED = [
+    player('p1', 'Al', 7),
+    player('p2', 'Bo', 3),
+    player('p3', 'Cy', 8),
+    player('p4', 'Di', 2),
+  ];
+  const scores = scoresFrom(hs, {
+    p1: [5, 4, 4, 5, 4, 4, 5, 4, 4],
+    p2: [4, 4, 5, 4, 4, 4, 4, 5, 4],
+    p3: [5, 5, 4, 4, 5, 4, 4, 4, 5],
+    p4: [4, 4, 4, 4, 4, 5, 4, 4, 4],
+  });
+
+  const indexed = makeRound({
+    players: INDEXED,
+    holes: hs,
+    options: { league: league() },
+    scores,
+    ...rated,
+  });
+  const typed = makeRound({ players: TYPED, holes: hs, options: { league: league() }, scores });
+
+  it('scores exactly as it would off the stroke counts those Indexes are worth', () => {
+    // The point of the change: league gains the Index route without its own
+    // rules — the low-man subtraction, the one-stroke cap, the allocation —
+    // being touched at all.
+    const fromIndex = computeLeague(indexed);
+    const fromTyped = computeLeague(typed);
+    expect(fromIndex.matches.map((m) => m.status)).toEqual(fromTyped.matches.map((m) => m.status));
+    expect(fromIndex.teams).toEqual(fromTyped.teams);
+    expect(fromIndex.matches.map((m) => m.strokes)).toEqual(
+      fromTyped.matches.map((m) => m.strokes)
+    );
+  });
+
+  it('still plays the singles off the low man of that match', () => {
+    // A is 7 v 8, so Cy gets 1. B is 3 v 2, so Bo gets 1. Neither is the
+    // player with the lowest Index overall, which is what makes this the
+    // league's rule rather than a plain handicap.
+    const byKey = Object.fromEntries(computeLeague(indexed).matches.map((m) => [m.key, m]));
+    expect(byKey.A.strokes).toEqual([{ name: 'Cy', strokes: 1 }]);
+    expect(byKey.B.strokes).toEqual([{ name: 'Bo', strokes: 1 }]);
+  });
+
+  it('still plays the team match off the low man of all four', () => {
+    // Di is off 2, so the other three get 5, 1 and 6 — derived, then adjusted.
+    const team = computeLeague(indexed).matches.find((m) => m.key === 'team')!;
+    expect(team.strokes).toEqual([
+      { name: 'Al', strokes: 5 },
+      { name: 'Bo', strokes: 1 },
+      { name: 'Cy', strokes: 6 },
+    ]);
+  });
+
+  it('still gives at most one stroke a hole, however big the Index', () => {
+    // An Index of 54 is worth 27 over nine holes, which is three times the
+    // holes available. The cap is what keeps a league night a league night.
+    const monster = makeRound({
+      players: [{ id: 'p1', name: 'Al', index: 54 }, ...INDEXED.slice(1)],
+      holes: hs,
+      options: { league: league() },
+      scores,
+      ...rated,
+    });
+    for (const h of hs) {
+      const chips = leagueStrokesOnHole(monster, h);
+      // One chip per match at most — 'A' for the singles, 'T' for the team.
+      expect(chips.p1.length).toBeLessThanOrEqual(2);
+      expect(new Set(chips.p1).size).toBe(chips.p1.length);
+    }
+  });
+
+  it('falls back to the typed count when the course carries no rating', () => {
+    // Every league round saved before this existed, and every one played
+    // somewhere nobody has looked the rating up.
+    const unrated = makeRound({
+      players: INDEXED.map((p, i) => ({ ...p, handicap: [7, 3, 8, 2][i] })),
+      holes: hs,
+      options: { league: league() },
+      scores,
+    });
+    expect(computeLeague(unrated).teams).toEqual(computeLeague(typed).teams);
+  });
+
+  it('halves an eighteen-hole rating when told that is what it covers', () => {
+    // The case a league night actually is: a course saved once with its
+    // eighteen-hole figures, the front nine played off it every week.
+    // `ratingHoles` is what lets the same 74.6 mean "for eighteen holes" here
+    // and be converted rather than rejected.
+    const fromEighteen = makeRound({
+      players: INDEXED,
+      holes: hs,
+      options: { league: league() },
+      scores,
+      slope: 113,
+      rating: 72,
+      ratingHoles: 18,
+    });
+    // 72 over eighteen is 36 over these nine, which is their par — so the same
+    // strokes as the nine-hole rating of 36 above.
+    expect(computeLeague(fromEighteen).matches.map((m) => m.strokes)).toEqual(
+      computeLeague(indexed).matches.map((m) => m.strokes)
+    );
+  });
+
+  it('refuses an eighteen-hole rating presented as a nine-hole one', () => {
+    // 74.6 on nine holes is not a rating, it is a rating for twice these
+    // holes. Better to fall back to the typed number than to halve it and
+    // look confident.
+    const wrong = makeRound({
+      players: INDEXED.map((p, i) => ({ ...p, handicap: [7, 3, 8, 2][i] })),
+      holes: hs,
+      options: { league: league() },
+      scores,
+      slope: 113,
+      rating: 74.6,
+    });
+    expect(computeLeague(wrong).teams).toEqual(computeLeague(typed).teams);
+  });
+});

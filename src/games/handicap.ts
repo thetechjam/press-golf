@@ -54,17 +54,22 @@ export function allowanceFor(round: Round, game: GameType): number {
  */
 export function courseHandicapFor(round: Round, player: Player): number {
   const holes = round.holes.length;
+  // The rating describes `ratingHoles` holes, which is not always the number
+  // being played — nine off an eighteen-hole card is the common case, and
+  // `courseHandicap` converts per hole precisely so it can be told apart.
+  const ratingHoles = round.ratingHoles ?? holes;
   if (
     validIndex(player.index) &&
     validSlope(round.slope) &&
-    validRating(round.rating, holes) &&
-    holes > 0
+    validRating(round.rating, ratingHoles) &&
+    holes > 0 &&
+    ratingHoles > 0
   ) {
     return courseHandicap({
       index: player.index,
       slope: round.slope,
       rating: round.rating,
-      ratingHoles: holes,
+      ratingHoles,
       playingHoles: holes,
       playingPar: round.holes.reduce((sum, h) => sum + h.par, 0),
     });

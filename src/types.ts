@@ -157,12 +157,26 @@ export interface Round {
   /** Hole numbers where a Nassau press was called (each starts a new bet). */
   presses?: number[];
   /**
-   * Slope and rating of the holes being played, copied from the course at
-   * setup so a round stays scoreable on its own terms — editing the saved
-   * course afterwards must not re-handicap a round already in the book.
+   * Slope and rating of the course, copied at setup so a round stays scoreable
+   * on its own terms — editing the saved course afterwards must not
+   * re-handicap a round already in the book.
    */
   slope?: number;
   rating?: number;
+  /**
+   * How many holes `rating` covers, when that is not the number being played.
+   *
+   * A rating is a property of a set of holes, and the set it describes is not
+   * always the set in front of you: a league night plays nine off a course
+   * rated over eighteen, and so does any nine-hole round loaded from a saved
+   * eighteen-hole card. Without this the eighteen-hole figure is judged
+   * against nine holes, fails as implausible — correctly — and the Index route
+   * silently stops working for every one of those rounds.
+   *
+   * Absent means "it covers the holes being played", which is what every round
+   * saved before this recorded and what a hand-typed rating means.
+   */
+  ratingHoles?: number;
   status: 'in_progress' | 'finished';
 }
 
