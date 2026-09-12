@@ -529,15 +529,21 @@ export function Setup({ onCancel, onStart }: Props) {
             </button>
           </div>
         ))}
-        <button className="btn-ghost add" onClick={addPlayer}>
-          + Add player
-        </button>
-        <RecentChips recent={recent} onAdd={addFromRoster} />
+        {/* One row. Both of these add a single player — which is why the
+            chips sit beside the button rather than under it — and stacked
+            they spent 50px of a screen that was already scrolling with every
+            row collapsed. */}
+        <div className="add-row">
+          <button className="btn-ghost add" onClick={addPlayer}>
+            + Add player
+          </button>
+          <RecentChips recent={recent} onAdd={addFromRoster} />
+        </div>
         {showNet && (
           <p className="hint">
             {rated
-              ? 'Enter each player\u2019s Handicap Index \u2014 the number after the arrow is what they play off on these holes. Leave them all blank to score gross.'
-              : 'Enter handicaps to score net \u2014 leave them all blank to score gross. A blank handicap plays off 0.'}
+              ? 'Enter each player’s Handicap Index — the number after the arrow is what they play off here. All blank scores gross.'
+              : 'Enter handicaps to score net — all blank scores gross, and a blank plays off 0.'}
           </p>
         )}
       </section>

@@ -53,8 +53,13 @@ export function RecentChips({ recent, onAdd }: RecentChipsProps) {
   if (recent.length === 0) return null;
 
   return (
-    <div className="recent-chips">
-      <span className="recent-chips-label">Recent</span>
+    /* The name is on the group rather than in a visible label beside it. The
+       chips sit next to "+ Add player", which already frames a pill with a
+       name on it as somebody to add — and the label was 55px of a row that
+       has to fit one line at 360px to be worth sharing at all. A group label
+       says the same thing to a screen reader, which a loose <span> never did.
+    */
+    <div className="recent-chips" role="group" aria-label="Recent players">
       {recent.map((e) => (
         <button
           key={e.name}

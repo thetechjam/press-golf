@@ -297,7 +297,9 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 4px;
+  /* No margin of its own: .screen's own 8px gap already sits above it, and
+     the extra 4px copied from .play-foot made this the one seam on the screen
+     spaced differently from every other. */
   padding-bottom: calc(12px + env(safe-area-inset-bottom));
   background: var(--bg);
 }
@@ -639,6 +641,12 @@ button:focus-visible {
   color: var(--muted);
   font-size: 0.8rem;
   margin-top: auto;
+}
+/* A trailing paragraph's own bottom margin is dead space: there is no sibling
+   below it to be separated from, and the card's padding is already the gap.
+   Worth 13px on the Players card, which is the tallest one in the app. */
+.card > .hint:last-child {
+  margin-bottom: 0;
 }
 
 /* ---------- Empty state (Home, no rounds) ---------- */
@@ -4164,7 +4172,8 @@ select:focus {
   gap: 8px;
   width: 100%;
   min-height: var(--tap);
-  margin-bottom: 10px;
+  /* 8px, the rhythm the player rows under it already use. */
+  margin-bottom: 8px;
   padding: 8px 14px;
   border: 1px dashed var(--green-600);
   border-radius: var(--radius);
@@ -4190,18 +4199,33 @@ select:focus {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+/* "+ Add player" and the recall chips share a row: both add one player, and
+   stacked they cost 50px on the one screen that has to fit above a pinned
+   button. Wraps when the chips outgrow the line, which is what they did on
+   their own row anyway. */
+.add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.add-row .add {
+  margin-top: 0;
+  /* No left padding, so the "+" starts on the same line as the PLAYERS
+     heading and the avatars rather than six pixels inside them — which also
+     happens to be the six pixels that keep the row unwrapped at 320px. The
+     target is unaffected: min-height carries the vertical, and the label is
+     still 120px wide. */
+  padding-left: 0;
+}
 .recent-chips {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  margin-top: 10px;
-}
-.recent-chips-label {
-  font-size: 0.78rem;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  /* No margin of its own inside .add-row — the row's gap spaces it. */
+  min-width: 0;
 }
 .recent-chip {
   /* 40px, matching .chip and the grid controls rather than sitting six pixels
