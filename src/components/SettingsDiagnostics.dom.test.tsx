@@ -31,6 +31,9 @@ function stage(over: number, extra?: { position: string; right: number }) {
     width: 393 - 16 + over,
     right: 393 - 16 + over,
   } as DOMRect);
+  // Boxes agree with themselves unless a test says otherwise.
+  Object.defineProperty(row, 'scrollWidth', { value: 0, configurable: true });
+  Object.defineProperty(row, 'clientWidth', { value: 0, configurable: true });
   let overlay: HTMLElement | null = null;
   if (extra) {
     overlay = document.createElement('div');
@@ -113,6 +116,29 @@ describe('what the layout number ignores', () => {
 
   it('still reports an in-flow row that overflows', () => {
     stage(30, { position: 'fixed', right: 393 });
+    render(<SettingsSheet onClose={() => {}} screen="play" />);
+    expect(line('Layout')).toBe('Layout 393 · 393 · 393 · +30');
+  });
+});
+
+describe('a row whose box hides its overflow', () => {
+  it('counts what was painted, not only what the rectangle promised', () => {
+    // The failure this exists for: `max-width: 100%` clamps a row's own box,
+    // and its buttons carry on overflowing that box. The rectangle then reads
+    // as a perfect fit while the last control sits off the side of the phone.
+    stage(0);
+    const row = document.querySelector('.row')!;
+    Object.defineProperty(row, 'scrollWidth', { value: 403, configurable: true });
+    Object.defineProperty(row, 'clientWidth', { value: 377, configurable: true });
+    render(<SettingsSheet onClose={() => {}} screen="play" />);
+    expect(line('Layout')).toBe('Layout 393 · 393 · 393 · +26');
+  });
+
+  it('reports whichever overflow is worse', () => {
+    stage(30);
+    const row = document.querySelector('.row')!;
+    Object.defineProperty(row, 'scrollWidth', { value: 387, configurable: true });
+    Object.defineProperty(row, 'clientWidth', { value: 377, configurable: true });
     render(<SettingsSheet onClose={() => {}} screen="play" />);
     expect(line('Layout')).toBe('Layout 393 · 393 · 393 · +30');
   });

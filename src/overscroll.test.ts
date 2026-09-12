@@ -506,16 +506,30 @@ describe('rows that have to fit a narrow phone', () => {
       bare
     )?.[1] ?? '';
 
-  it('gives the tab group a real width for the line break to land on', () => {
-    // The bug this replaces: `flex: 1` on each tab means a flex-basis of 0, and
-    // WebKit decides where to break a flex line from the basis — so three tabs
-    // that cannot actually shrink below "BOARD" never forced a wrap, and the
-    // Settings gear hung off the right edge of an iPhone. As one item with
-    // `flex-basis: auto` the group carries the width of all three.
-    const tabs = rule('.view-tabs');
-    expect(tabs).toMatch(/display\s*:\s*grid/);
-    expect(tabs).toMatch(/grid-template-columns\s*:\s*repeat\(3, 1fr\)/);
-    expect(tabs).toMatch(/flex\s*:\s*1 1 auto/);
+  it('lays the toolbar out as grid tracks, which cannot overflow', () => {
+    // Three attempts at this row failed through flex: the tabs would not go
+    // under "BOARD", the line never broke, and the last control ended up off
+    // the side of the phone. `max-width: 100%` clamped the row's box and the
+    // buttons overflowed the box instead. Two grid columns always sum to the
+    // element's width, whatever that width turns out to be.
+    const row = rule('.seg.view-toggle');
+    expect(row).toMatch(/display\s*:\s*grid/);
+    expect(row).toMatch(/grid-template-columns\s*:\s*minmax\(0, 1fr\) auto/);
+  });
+
+  it('lets both the tab group and each tab go under their own content', () => {
+    // A bare `1fr` is `minmax(auto, 1fr)`, which will not: that floor is the
+    // same one that kept the row from fitting, one level down.
+    expect(rule('.view-tabs')).toMatch(/grid-template-columns\s*:\s*repeat\(3, minmax\(0, 1fr\)\)/);
+    expect(rule('.view-tabs')).toMatch(/min-width\s*:\s*0/);
+  });
+
+  it('states the narrow-phone breakpoint instead of inferring it', () => {
+    // Under 360px the six controls genuinely do not fit a line. Said as a
+    // breakpoint, because leaving it to be inferred is what went wrong.
+    const media = /@media \(max-width: 359\.98px\) \{([\s\S]*?)\n\}/.exec(bare)?.[1] ?? '';
+    expect(media).toMatch(/\.seg\.view-toggle/);
+    expect(media).toMatch(/grid-template-columns\s*:\s*minmax\(0, 1fr\)/);
   });
 
   it('caps the tab group rather than each tab', () => {
@@ -525,11 +539,12 @@ describe('rows that have to fit a narrow phone', () => {
     expect(rule('.view-toggle .seg-btn')).not.toMatch(/max-width/);
   });
 
-  it('keeps Play’s icon toggles together and off the tabs’ flex', () => {
+  it('keeps Play’s icon toggles together, at their natural width', () => {
+    // The `auto` column: never squeezed, because these are 44px tap targets
+    // and the tabs are what gives way.
     const tools = rule('.view-tools');
     expect(tools).toMatch(/display\s*:\s*flex/);
-    expect(tools).toMatch(/flex\s*:\s*0 0 auto/);
-    expect(tools).toMatch(/margin-left\s*:\s*auto/);
+    expect(tools).not.toMatch(/flex-shrink\s*:\s*[1-9]/);
   });
 
   it('tightens the toolbar gap that buys the sixth control its place', () => {

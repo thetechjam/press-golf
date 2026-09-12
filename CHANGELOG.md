@@ -70,6 +70,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   390×844 phone has 63px to spare.
 
 ### Fixed
+- **The scoring toolbar is laid out as grid tracks, so it cannot run off the
+  side of a phone.** Three attempts at this row failed the same way, because
+  flex decides where to break a line, and whether a control may shrink, from
+  values that are not always the ones you mean: the tabs would not go under
+  "BOARD", the line never broke, and the Settings gear ended up past the right
+  edge of an iPhone. Clamping the row's width did not help either — it clamps
+  the row's own box while the buttons inside carry on overflowing it, which is
+  how a screenshot could show the gear 26pt past every other row while the new
+  layout readout, which measures boxes, reported nothing wrong. Two grid
+  columns always sum to the width of the element holding them, on any engine:
+  the icons take their natural 44px each and the tabs take what is left, going
+  under their own labels if they ever have to. Below 360px the six controls
+  genuinely do not fit a line, and that is now a stated breakpoint rather than
+  something inferred. The layout readout counts painted overflow now too, so it
+  can no longer miss the failure it was added to catch.
+
 - **The app looks for new versions instead of waiting to be reloaded.** It only
   ever checked on a page load — and an installed app is resumed far more often
   than it is loaded, because iOS suspends it rather than killing it. Tapping the
