@@ -147,3 +147,19 @@ describe('starting the night', () => {
     expect(started).toHaveLength(0);
   });
 });
+
+/** The same pinned bar as Setup, for the same reason — see `Setup.dom.test.tsx`. */
+describe('the pinned Start bar', () => {
+  it('keeps the button and any refusal in it, announced', async () => {
+    const user = userEvent.setup();
+    const started = show();
+    const cta = screen.getByRole('button', { name: /Start League Round/ });
+    expect(cta.closest('.screen-foot')).not.toBeNull();
+
+    await user.click(cta);
+    expect(started).toHaveLength(0);
+    const error = document.querySelector('.screen-foot .error')!;
+    expect(error).not.toBeNull();
+    expect(error.getAttribute('role')).toBe('alert');
+  });
+});

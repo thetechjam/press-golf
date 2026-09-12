@@ -29,6 +29,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   team match off the low of all four, and still at most one stroke a hole.
 
 ### Fixed
+- **The Start button no longer cuts the screen it is pinned to.** It stays put
+  at the bottom of New Round and Golf League, which is the point of it — but a
+  sticky button on its own is an opaque slab on the middle of a list. A course
+  search dropped four results behind it with a row sliced in half and nothing
+  to say there were more; tapping a field in the last open row left it 31px
+  under it; and a full-width green block hovering over the cards competed with
+  the selections it was waiting on. It sits in a pinned bar now, the way the
+  Play screen's controls do: the list fades into the bar instead of ending
+  mid-row, and anything the browser scrolls to — a field taking focus, most of
+  all — clears it. The reason a round will not start ("Add at least one
+  player") rides in the bar with the button, where before it could be scrolled
+  out of sight while the button that wrote it stayed in reach, and it is
+  announced now rather than only drawn.
+
 - **Two leftovers from resizing the header buttons.** Their invisible hit area
   was still drawn around the 38px pill they used to be, which put it 3px past
   the 48px it was meant to reach and further over the toolbar tabs directly

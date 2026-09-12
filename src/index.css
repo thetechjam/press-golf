@@ -279,10 +279,60 @@ button {
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
-.btn-primary.sticky {
+/* Setup's and Golf League's CTA is pinned so it is reachable from anywhere on
+   a long screen, and that part is right — but the button was doing it alone,
+   which made it an opaque slab dropped on the middle of a list. Course search
+   results were sliced in half by it with no sign there were four more below;
+   an expanded row's last field disappeared the same way; and a saturated
+   full-width green block floating over the cards competed for attention with
+   the selections it was asking to be made after.
+   So stick the footer instead, the way Play's does — an opaque bar the
+   content scrolls behind rather than a button that hovers over it. Same reason
+   .play-foot exists rather than a sticky button there: a button's own
+   containing block is only as tall as the button, so it has nowhere to move. */
+.screen-foot {
   position: sticky;
-  bottom: calc(12px + env(safe-area-inset-bottom));
-  z-index: 2;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+/* A fade above the bar, not a hairline. A rule drawn across the bottom of a
+   list says "the list ends here", which is the thing that was wrong: what the
+   edge has to say is "there is more of this, keep scrolling". Same sentence
+   the horizontal strips say with their mask, said the same way.
+   Deliberately outside the bar's own box (bottom: 100%) so it never tints the
+   button, and untappable so it never eats a press on the row beneath it. */
+.screen-foot::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  /* 28px, the same distance the horizontal strips fade over. */
+  height: 28px;
+  background: linear-gradient(to top, var(--bg), transparent);
+  pointer-events: none;
+}
+/* The screen's own bottom padding sits below the sticky bar, where it is dead
+   space no content can reach — the bar is the bottom of these screens now. */
+.screen:has(> .screen-foot) {
+  padding-bottom: 0;
+}
+/* Anything the browser scrolls into view of its own accord — a field taking
+   focus, most of all — is placed flush against the bottom of the scrollport,
+   which on these screens is behind the bar. Measured: tapping the last stakes
+   field left it 31px under the button. This reserves the bar's height for
+   every browser-driven scroll at once, which is the only kind that gets this
+   wrong; a person scrolling by hand can already see where they are going.
+   The number is the bar: a .btn-primary.big is 63px, plus 12px of bar padding,
+   plus the 28px fade above it, rounded up for air. */
+html:has(.screen-foot) {
+  scroll-padding-bottom: calc(112px + env(safe-area-inset-bottom));
 }
 
 .btn-ghost {

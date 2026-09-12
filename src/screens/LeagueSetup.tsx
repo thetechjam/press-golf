@@ -468,11 +468,22 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
         </p>
       </section>
 
-      {error && <p className="error">{error}</p>}
-
-      <button className="btn-primary big sticky" onClick={start}>
-        Start League Round →
-      </button>
+      <div className="screen-foot">
+        {/* Inside the pinned bar rather than above it, and an alert: this is
+            the answer to a press on the button. Left in the flow above the bar
+            it can be scrolled off screen while the button that wrote it stays
+            in reach, and without the role a screen-reader user gets silence
+            and a button that appeared to do nothing. Play's warning banner
+            lives in its own sticky foot for the same reasons. */}
+        {error && (
+          <p className="error" role="alert">
+            {error}
+          </p>
+        )}
+        <button className="btn-primary big" onClick={start}>
+          Start League Round →
+        </button>
+      </div>
 
       {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} screen="leagueSetup" />}
     </div>
