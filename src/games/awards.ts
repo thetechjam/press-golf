@@ -40,6 +40,31 @@ const MAX_PER_PLAYER = 2;
 const nameOf = (round: Round, id: string) =>
   round.players.find((p) => p.id === id)?.name ?? '';
 
+/**
+ * A hole as golfers name one: 1 -> 'the 1st', 12 -> 'the 12th'.
+ *
+ * The bare number was ambiguous in exactly the lines that had no preposition
+ * in front of it — "Jo birdied 1" reads as one birdie as easily as the first
+ * hole, and the detail line under it ("3 on a par 4") does nothing to settle
+ * it. Applied to every hole in these lines rather than only the two that were
+ * ambiguous, because half the awards speaking golf and half reading out
+ * coordinates is worse than either.
+ */
+export function holeName(n: number): string {
+  const teens = n % 100;
+  const suffix =
+    teens >= 11 && teens <= 13
+      ? 'th'
+      : n % 10 === 1
+        ? 'st'
+        : n % 10 === 2
+          ? 'nd'
+          : n % 10 === 3
+            ? 'rd'
+            : 'th';
+  return `the ${n}${suffix}`;
+}
+
 /** Verb for a score under par, e.g. -2 -> 'eagled'. */
 function underParVerb(under: number): string {
   if (under >= 3) return 'albatrossed';
@@ -89,7 +114,7 @@ function shotOfTheDay(round: Round): Award | null {
   return {
     id: 'shot-of-the-day',
     title: 'Shot of the Day',
-    line: `${nameOf(round, best.playerId)} ${underParVerb(best.under)} ${best.hole}`,
+    line: `${nameOf(round, best.playerId)} ${underParVerb(best.under)} ${holeName(best.hole)}`,
     detail: `${best.strokes} on a par ${best.par}`,
     playerIds: [best.playerId],
     score: 40 + best.under * 22,
@@ -117,7 +142,7 @@ function snowman(round: Round): Award | null {
   return {
     id: 'snowman',
     title: 'The Snowman',
-    line: `${nameOf(round, worst.playerId)} found trouble on ${worst.hole}`,
+    line: `${nameOf(round, worst.playerId)} found trouble on ${holeName(worst.hole)}`,
     detail: `${worst.strokes} on a par ${worst.par} · +${worst.over}`,
     playerIds: [worst.playerId],
     score: 30 + worst.over * 8,
@@ -157,7 +182,7 @@ function bounceBack(round: Round): Award | null {
   return {
     id: 'bounce-back',
     title: 'Bounce Back',
-    line: `${nameOf(round, best.playerId)} answered ${best.badHole} with ${underParNoun(best.under)}`,
+    line: `${nameOf(round, best.playerId)} answered ${holeName(best.badHole)} with ${underParNoun(best.under)}`,
     detail: `${best.bad} on ${best.badHole} · ${best.good} on ${best.goodHole}`,
     playerIds: [best.playerId],
     score: 45 + best.under * 10,
@@ -234,7 +259,7 @@ function highwayRobbery(round: Round): Award | null {
   return {
     id: 'highway-robbery',
     title: 'Highway Robbery',
-    line: `${nameOf(round, best.playerId)} cleaned up on ${best.hole}`,
+    line: `${nameOf(round, best.playerId)} cleaned up on ${holeName(best.hole)}`,
     detail: formatMoney(best.amount),
     playerIds: [best.playerId],
     score: 30 + 35 * Math.min(1, best.amount / moneySpread(round)),
@@ -309,7 +334,7 @@ function wolfsGamble(round: Round): Award | null {
   return {
     id: 'wolfs-gamble',
     title: "Wolf's Gamble",
-    line: `${nameOf(round, g.wolfId)} rolled the dice on ${g.hole} and ${
+    line: `${nameOf(round, g.wolfId)} rolled the dice on ${holeName(g.hole)} and ${
       won ? 'got away with it' : 'got eaten'
     }`,
     detail: won ? `${label} · +${g.multiplier} pts` : `${label} · fed the pack`,
@@ -354,7 +379,7 @@ function wreckingBall(round: Round): Award | null {
   return {
     id: 'wrecking-ball',
     title: 'The Wrecking Ball',
-    line: `${nameOf(round, culprit.id)} turned ${worst.hole} into a phone number`,
+    line: `${nameOf(round, culprit.id)} turned ${holeName(worst.hole)} into a phone number`,
     detail: `${culprit.strokes} on a par ${hole.par} · ${cost} points`,
     playerIds: [culprit.id],
     // Ranked on what the hole cost, because in Vegas that *is* the severity —

@@ -44,6 +44,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   640px of viewport.
 
 ### Fixed
+- **The Play screen's button now fills the bar it sits in.** It was sizing
+  itself to its own label — 183px of a 358px row, left-aligned — on the screen
+  whose button gets pressed eighteen times a round, and because it left the
+  rest of the row empty the Board tab's money rows were sliced through the
+  middle by an opaque edge with text peeking out beside it. Play's foot is the
+  same pinned bar Setup and Golf League use now, fade and all.
+
+- **Play's toolbar fits one line on a 360px phone.** Three tabs and three icon
+  toggles were tuned for 375px with a pixel to spare, so on the narrower
+  phones — 360px is one of the commonest widths there is — the settings gear
+  dropped to a second row on its own, and the tabs then expanded into the space
+  it left so it could never come back. The icons wrap as a group now, and a
+  tighter gap keeps all six on one line down to 360px.
+
+- **The pinned bar reaches the bottom of the phone.** On a screen short enough
+  not to scroll it stopped wherever the content did — "Next Hole" floating
+  180px above the bottom of an otherwise empty screen, which reads as a page
+  that failed to finish loading rather than as a footer.
+
+- **A settlement line no longer pushes the page sideways.** "Bartholomew pays
+  Christopher $55" is four pieces across a row, none of which could shrink, so
+  on a 320px phone the amount was shoved past the right edge and took the whole
+  page with it. The figure drops to its own line instead.
+
+- **The awards name a hole the way golfers do.** "Jo birdied 1" reads as one
+  birdie as easily as the first hole, and the line under it ("3 on a par 4")
+  settles nothing. It is "the 1st" now, in all six awards that name a hole.
+
 - **The Start button no longer cuts the screen it is pinned to.** It stays put
   at the bottom of New Round and Golf League, which is the point of it — but a
   sticky button on its own is an opaque slab on the middle of a list. A course
