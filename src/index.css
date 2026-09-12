@@ -4235,9 +4235,10 @@ select:focus {
 
    A banner in normal flow, NOT a floating toast. The first version was
    `position: fixed` anchored to `calc(12px + env(safe-area-inset-bottom))` —
-   the exact anchor .btn-primary.sticky uses — at z-index 60 against its 2, so
-   it covered "Start Round" completely and a tap meant to start a round
-   reloaded the app instead. Suppressing it per-view was the wrong repair: the
+   the exact anchor the pinned Start button used then (a sticky button; it is
+   .screen-foot's bar now) — at z-index 60 against its 2, so it covered
+   "Start Round" completely and a tap meant to start a round reloaded the app
+   instead. Suppressing it per-view was the wrong repair: the
    property wanted is "never overlaps a primary action", and a list of
    suppressed views only approximates that until someone adds a screen.
    Reserving space cannot be got wrong. It also means the fixed sheet backdrop
