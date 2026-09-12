@@ -652,10 +652,12 @@ button:focus-visible {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--card);
-  /* Deliberately shorter than the 48px toolbar tabs directly beneath: these
-     are navigation, not the screen's primary controls, and two full-height
-     button rows stacked read as one crowded slab. */
-  min-height: 38px;
+  /* 44px: a thumb's size, and the same as the icon buttons sitting next to
+     them in the same bar — 44 beside 38 was worse than either. Still short of
+     the 48px toolbar tabs directly beneath, which is what the original 38 was
+     avoiding: these are navigation, not the screen's primary controls, and two
+     button rows of equal height read as one crowded slab. */
+  min-height: 44px;
   padding: 0 12px;
   font-size: 0.85rem;
   display: inline-flex;
@@ -691,9 +693,16 @@ button:focus-visible {
   border-color: var(--green-600);
 }
 /* Icon-only header buttons stay square, matching the toolbar toggles. */
+/* 44px, the size a thumb is drawn for. These were 38 and passed WCAG 2.5.8 AA
+   (which asks 24x24) but were the smallest targets in the app, on every
+   screen's header, and a size nothing else here uses. */
 .bar .btn-ghost.icon,
 .hero-settings {
-  min-width: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   padding: 0;
   color: var(--muted);
 }
@@ -836,38 +845,49 @@ select:focus {
   flex-direction: column;
   gap: 8px;
 }
+/* The card is the row; the name is its first line and the whole tappable
+   width of it. Previously the name shared a line with the send and delete
+   buttons and truncated on a narrow phone — which is backwards, since the
+   name is the only part you read to decide whether this is the course. */
 .saved-course-row {
-  display: flex;
-  align-items: stretch;
-  gap: 8px;
-}
-.saved-course-load {
-  flex: 1;
-  /* Must shrink when the armed delete grows — text ellipsizes, row height stays put. */
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  text-align: left;
-  padding: 12px 14px;
-  min-height: var(--tap);
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--bg);
+  padding: 4px 6px 6px;
+  margin-bottom: 8px;
+}
+.saved-course-load {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 8px 4px;
+  min-height: 40px;
+  border: none;
+  background: none;
   transition: transform var(--press) var(--ease-out);
+}
+/* Name, meta and the two buttons on one line each — the meta shrinks, the
+   buttons never do. */
+.saved-course-foot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 8px;
+}
+.saved-course-foot .saved-course-meta {
+  flex: 1;
+  min-width: 0;
 }
 .saved-course-load:active {
   transform: scale(0.99);
-  background: color-mix(in srgb, var(--fairway) 12%, var(--card));
 }
 .saved-course-name {
+  display: block;
   font-weight: 700;
   color: var(--green-700);
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wraps rather than truncating: it has the width now, and a course name cut
+     off mid-word is the one thing this row must not do. */
+  overflow-wrap: anywhere;
 }
 :root.dark .saved-course-name {
   color: var(--fairway);
@@ -882,6 +902,9 @@ select:focus {
 }
 .saved-course-del {
   width: 44px;
+  /* Explicit, where it used to inherit its height from `align-items: stretch`
+     on a flex row that no longer exists — without this it rendered 4px tall. */
+  min-height: 44px;
   flex-shrink: 0;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -2151,11 +2174,18 @@ select:focus {
 .settlement {
   border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
 }
+/* "Edit stakes" and "Edit handicaps" are 13px of text, which was also the
+   whole height of the button: 17px measured, under WCAG 2.5.8 AA's 24x24 and
+   the only thing in the app actually below that bar. The padding is negative
+   on the sides so the words still line up with the card edge they sit against. */
 .link-btn {
   color: var(--green-600);
   font-weight: 700;
   font-size: 0.82rem;
   cursor: pointer;
+  min-height: 28px;
+  padding: 4px 6px;
+  margin: -4px -6px;
 }
 .stakes-editor {
   display: flex;
@@ -3573,7 +3603,6 @@ select:focus {
   position: absolute;
   top: 16px;
   right: 16px;
-  min-height: 38px;
 }
 .home .hero {
   position: relative;
@@ -4126,7 +4155,9 @@ select:focus {
   letter-spacing: 0.06em;
 }
 .recent-chip {
-  min-height: 36px;
+  /* 40px, matching .chip and the grid controls rather than sitting six pixels
+     under them. */
+  min-height: 40px;
   padding: 6px 12px;
   /* Ink-derived, not --line: --line is tuned for dividers between large
      surfaces, not for the outline of a small tappable control, and in glare

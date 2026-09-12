@@ -542,30 +542,35 @@ export function Setup({ onCancel, onStart }: Props) {
               <div className="saved-course-list">
                 {courses.map((c) => (
                   <div key={c.id} className="saved-course-row">
+                    {/* The name gets a line to itself. Sharing one with the
+                        two buttons truncated it on a narrow phone — and the
+                        name is the part you are reading to decide. */}
                     <button className="saved-course-load" onClick={() => loadCourse(c)}>
                       <span className="saved-course-name">{c.name}</span>
+                    </button>
+                    <div className="saved-course-foot">
                       <span className="saved-course-meta">
                         {c.holes.length} holes · par {c.holes.reduce((s, h) => s + h.par, 0)}
                         {c.holes.some((h) => h.strokeIndex) ? ' · stroke index set' : ''}
                       </span>
-                    </button>
-                    {/* Checking a scorecard is done once, by one person. This
-                        is how the other three get the checked one instead of
-                        each re-typing it, or not bothering. */}
-                    <button
-                      className="saved-course-send"
-                      onClick={() => setSendingCourse(c)}
-                      aria-label={`Send ${c.name} to another phone`}
-                    >
-                      <QrIcon size={16} />
-                    </button>
-                    <DeleteButton
-                      className="saved-course-del"
-                      label={`saved course ${c.name}`}
-                      onDelete={() => removeCourse(c.id)}
-                    >
-                      <XIcon />
-                    </DeleteButton>
+                      {/* Checking a scorecard is done once, by one person.
+                          This is how the other three get the checked one
+                          instead of each re-typing it, or not bothering. */}
+                      <button
+                        className="saved-course-send"
+                        onClick={() => setSendingCourse(c)}
+                        aria-label={`Send ${c.name} to another phone`}
+                      >
+                        <QrIcon size={16} />
+                      </button>
+                      <DeleteButton
+                        className="saved-course-del"
+                        label={`saved course ${c.name}`}
+                        onDelete={() => removeCourse(c.id)}
+                      >
+                        <XIcon />
+                      </DeleteButton>
+                    </div>
                   </div>
                 ))}
               </div>
