@@ -1,11 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { listRounds } from '../storage';
-import { computeStats, formatToPar, type PlayerStats } from '../stats';
+import { computeStats, countsForStats, formatToPar, type PlayerStats } from '../stats';
+import { searchRounds, roundYears, filterByYear, describeNoMatches } from '../history';
 import { formatMoney } from '../games/settlement';
 import { formatRoundDate } from '../roundDate';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import { playerColor } from '../player';
-import { ChartIcon } from '../icons';
+import { ChartIcon, XIcon } from '../icons';
 
 interface Props {
   onBack: () => void;
@@ -99,7 +100,25 @@ function PlayerCard({ p, color }: { p: PlayerStats; color: string }) {
 export function Stats({ onBack }: Props) {
   // Read storage once per mount. Nothing on this screen writes a round, so
   // there is nothing to invalidate while it is open.
-  const stats = useMemo(() => computeStats(listRounds()), []);
+  //
+  // Narrowed to the rounds that count for stats before anything is filtered,
+  // even though `computeStats` applies the same test itself: the search and
+  // the year have to work over the same population the numbers come from, or
+  // "4 of 31 rounds" counts rounds that contributed nothing to a single figure
+  // on screen.
+  const counted = useMemo(() => listRounds().filter(countsForStats), []);
+  const [query, setQuery] = useState('');
+  const [year, setYear] = useState<number | 'all'>('all');
+
+  // Years from the counted rounds rather than from everything on the device,
+  // so no segment on this row can be tapped into an empty screen.
+  const years = useMemo(() => roundYears(counted), [counted]);
+  const shown = useMemo(
+    () => filterByYear(searchRounds(counted, query), year),
+    [counted, query, year]
+  );
+  const stats = useMemo(() => computeStats(shown), [shown]);
+  const narrowed = shown.length !== counted.length;
 
   return (
     <div className="screen stats">
@@ -112,7 +131,7 @@ export function Stats({ onBack }: Props) {
         <span className="bar-spacer" aria-hidden="true" />
       </header>
 
-      {stats.players.length === 0 ? (
+      {counted.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon">
             <ChartIcon size={40} />
@@ -125,30 +144,98 @@ export function Stats({ onBack }: Props) {
         </div>
       ) : (
         <>
-          <div className="stat-summary">
-            <div className="stat-sum">
-              <span className="stat-sum-n">{stats.rounds}</span>
-              <span className="stat-sum-l">{stats.rounds === 1 ? 'Round' : 'Rounds'}</span>
-            </div>
-            <div className="stat-sum">
-              <span className="stat-sum-n">{stats.holes}</span>
-              <span className="stat-sum-l">Holes</span>
-            </div>
-            {stats.moneyMoved > 0 && (
-              <div className="stat-sum">
-                <span className="stat-sum-n">{formatMoney(stats.moneyMoved)}</span>
-                <span className="stat-sum-l">Changed hands</span>
+          {/* One round has nothing to be separated from, so the tools only
+              appear once there is a set to narrow. Round history uses the same
+              search markup and the same styles; the class names say history
+              because that is where they were written, not because the chrome
+              is specific to it. */}
+          {counted.length > 1 && (
+            <div className="history-tools">
+              <div className="history-search">
+                <input
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search course, player or game"
+                  aria-label="Search rounds"
+                />
+                {query && (
+                  <button
+                    className="history-clear"
+                    onClick={() => setQuery('')}
+                    aria-label="Clear search"
+                  >
+                    <XIcon size={14} />
+                  </button>
+                )}
               </div>
-            )}
-          </div>
 
-          {stats.players.map((p, i) => (
-            <PlayerCard key={p.key} p={p} color={playerColor(i)} />
-          ))}
+              {/* A lone year is not a choice. */}
+              {years.length > 1 && (
+                <div className="seg stat-years" role="group" aria-label="Filter by year">
+                  <button
+                    className={`seg-btn${year === 'all' ? ' active' : ''}`}
+                    aria-pressed={year === 'all'}
+                    onClick={() => setYear('all')}
+                  >
+                    All
+                  </button>
+                  {years.map((y) => (
+                    <button
+                      key={y}
+                      className={`seg-btn${year === y ? ' active' : ''}`}
+                      aria-pressed={year === y}
+                      onClick={() => setYear(y)}
+                    >
+                      {y}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-          <p className="hint">
-            Counted from finished rounds on this device. Players are matched by name.
-          </p>
+          {shown.length === 0 ? (
+            <p className="history-empty">{describeNoMatches(query, year)}</p>
+          ) : (
+            <>
+              {/* Only while something is filtered out: unfiltered, the summary
+                  tile below already says how many rounds these numbers came
+                  from, and saying it twice reads as two different counts. */}
+              {narrowed && (
+                <p className="history-count" role="status">
+                  {shown.length} of {counted.length} rounds
+                </p>
+              )}
+
+              <div className="stat-summary">
+                <div className="stat-sum">
+                  <span className="stat-sum-n">{stats.rounds}</span>
+                  <span className="stat-sum-l">{stats.rounds === 1 ? 'Round' : 'Rounds'}</span>
+                </div>
+                <div className="stat-sum">
+                  <span className="stat-sum-n">{stats.holes}</span>
+                  <span className="stat-sum-l">Holes</span>
+                </div>
+                {stats.moneyMoved > 0 && (
+                  <div className="stat-sum">
+                    <span className="stat-sum-n">{formatMoney(stats.moneyMoved)}</span>
+                    <span className="stat-sum-l">Changed hands</span>
+                  </div>
+                )}
+              </div>
+
+              {stats.players.map((p, i) => (
+                <PlayerCard key={p.key} p={p} color={playerColor(i)} />
+              ))}
+
+              <p className="hint">
+                {narrowed
+                  ? 'Counted from the rounds shown above. Players are matched by name.'
+                  : 'Counted from finished rounds on this device. Players are matched by name.'}
+              </p>
+            </>
+          )}
         </>
       )}
     </div>

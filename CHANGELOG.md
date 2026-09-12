@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Stats can be narrowed to the rounds you mean.** Every figure on the screen
+  was an all-time figure, which answers a question nobody asks twice — the
+  useful ones are "how do I score at Torrey", "how do we do when Sam is out",
+  "was last season better". The same search Round history uses (course, player
+  or game name) and a filter for each year actually played now sit above the
+  numbers, and everything below recomputes from what is left: the summary
+  tiles, each player's average and best round, the money, the skins. A line
+  says how much of the history is showing whenever some of it is hidden, and
+  emptying it with a search names the year still set rather than reporting no
+  rounds at all. Only the rounds the stats are drawn from can be filtered, so
+  the round you abandoned on the fourth tee is not in the denominator.
+
 - **Golf League takes a Handicap Index too.** It was the one format still
   asking everyone to type a stroke count — which is backwards, since a league
   group plays the same nine every week and is the most likely to know its
@@ -30,6 +42,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   player") rides in the bar with the button, where before it could be scrolled
   out of sight while the button that wrote it stayed in reach, and it is
   announced now rather than only drawn.
+
+- **Two leftovers from resizing the header buttons.** Their invisible hit area
+  was still drawn around the 38px pill they used to be, which put it 3px past
+  the 48px it was meant to reach and further over the toolbar tabs directly
+  beneath; and the spacer that balances the back arrow on Stats was still 38px
+  wide, so the title sat a few pixels off centre.
 
 - **A nine played off an eighteen-hole rating now converts instead of giving
   up.** A rating belongs to a set of holes, and that set is not always the set

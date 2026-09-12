@@ -127,6 +127,14 @@ const rounds = [
         updatedAt: Date.now() - (i + 2) * 1e6,
       })
   ),
+  // One from a previous season, so the Stats screen's year filter has more
+  // than one year to offer and its row gets measured like anything else.
+  round({
+    id: 'f5',
+    course: 'Shinnecock Hills',
+    date: '2025-09-10',
+    updatedAt: Date.now() - 8e6,
+  }),
 ];
 
 /* ------------------------------------------------------------------ *
