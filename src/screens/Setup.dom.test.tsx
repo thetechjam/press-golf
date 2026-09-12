@@ -600,3 +600,68 @@ describe('the pinned Start bar', () => {
     expect(error.getAttribute('role')).toBe('alert');
   });
 });
+
+/**
+ * How much of the screen the Players card spends.
+ *
+ * New Round scrolled with every row collapsed, which is the state a returning
+ * user lands on — so the shortcuts had to stop costing two rows to say one
+ * thing. "+ Add player" and the recall chips both add a single player and now
+ * share a line; the chips' visible "Recent" label is gone, which is 55px of
+ * the width that decides whether the line holds at 360px.
+ *
+ * Neither is visible to a unit test as pixels. What is testable is the markup
+ * that produces them, and the accessible name the dropped label took with it.
+ */
+describe('the players card shortcuts', () => {
+  const withRound = () => {
+    localStorage.setItem(
+      'press.rounds.v1',
+      JSON.stringify([
+        {
+          id: 'r0',
+          course: 'Torrey Pines South',
+          date: '2026-09-01',
+          createdAt: 1,
+          updatedAt: 1,
+          players: [{ id: 'p1', name: 'Alex' }],
+          holes: Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: 4, strokeIndex: i + 1 })),
+          games: ['skins'],
+          options: {
+            useNet: false,
+            stablefordMode: 'standard',
+            loneWolfMultiplier: 2,
+            blindWolfMultiplier: 3,
+            stakes: {},
+          },
+          scores: {},
+          wolf: {},
+          status: 'finished',
+        },
+      ])
+    );
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+  };
+
+  it('puts the recall chips on the same row as the button they belong beside', () => {
+    withRound();
+    const row = document.querySelector('.add-row')!;
+    expect(row).not.toBeNull();
+    expect(row.querySelector('.add')).not.toBeNull();
+    expect(row.querySelector('.recent-chips')).not.toBeNull();
+    expect(screen.getByRole('button', { name: 'Add Alex' }).closest('.add-row')).toBe(row);
+  });
+
+  it('names the chip group, now that nothing on screen labels it', () => {
+    withRound();
+    const group = screen.getByRole('group', { name: /recent/i });
+    expect(group.className).toContain('recent-chips');
+    // And no visible label left behind to say it twice.
+    expect(document.querySelector('.recent-chips-label')).toBeNull();
+  });
+
+  it('still opens with every row collapsed once a round has been played', () => {
+    withRound();
+    for (const row of ['Course', 'Games', 'Holes & pars', 'Money']) expect(rowOpen(row)).toBe(false);
+  });
+});

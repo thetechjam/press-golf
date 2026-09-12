@@ -312,6 +312,19 @@ for (const width of [390, 360]) {
 
   await step(at('Home'), home, audit);
 
+  /* The state a returning user actually lands on, which the every-row-open
+     step below never measures: four collapsed rows, the recall chips beside
+     "+ Add player", and nothing expanded. */
+  await step(
+    at('New Round (as opened)'),
+    async () => {
+      await home();
+      await page.getByRole('button', { name: /Start New Round/i }).click();
+      await page.waitForTimeout(500);
+    },
+    audit
+  );
+
   await step(
     at('New Round (every row open)'),
     async () => {

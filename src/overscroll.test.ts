@@ -395,3 +395,35 @@ describe('pinned CTA bar', () => {
     expect(rule('.screen:has(> .screen-foot)')).toMatch(/padding-bottom\s*:\s*0/);
   });
 });
+
+/**
+ * Two declarations that keep New Round from scrolling with everything
+ * collapsed, both of which look like tidying-up candidates.
+ *
+ * `.add-row` puts "+ Add player" and the recall chips on one line instead of
+ * two. Without `flex-wrap` that line cannot break, so a long roster runs
+ * sideways out of the card instead of stacking — the failure is invisible
+ * until someone has five remembered players.
+ *
+ * `.card > .hint:last-child` drops the trailing paragraph margin no card ever
+ * wanted: 13px of space under the last line of text, inside padding that was
+ * already the gap. It is worth the most on the Players card, which is the
+ * tallest in the app and the one that has to fit above a pinned button.
+ */
+describe('players card trim', () => {
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+  const rule = (selector: string) =>
+    new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(
+      bare
+    )?.[1] ?? '';
+
+  it('lets the shared row break rather than run out of the card', () => {
+    const row = rule('.add-row');
+    expect(row).toMatch(/display\s*:\s*flex/);
+    expect(row).toMatch(/flex-wrap\s*:\s*wrap/);
+  });
+
+  it('takes the dead margin off a card-closing hint', () => {
+    expect(rule('.card > .hint:last-child')).toMatch(/margin-bottom\s*:\s*0/);
+  });
+});

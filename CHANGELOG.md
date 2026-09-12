@@ -28,6 +28,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   unchanged: each singles match is still played off the low man of the two, the
   team match off the low of all four, and still at most one stroke a hole.
 
+### Changed
+- **New Round fits on a phone again.** With every row collapsed — what you see
+  from the second round on — the screen still scrolled, and most of the
+  overflow was the Players card spending two rows to offer one thing.
+  "+ Add player" and the recall chips both add a single player, so they share a
+  line now, and the chips' "Recent" label is gone: it was 55px of the width
+  that decides whether that line holds on a 360px phone, and a group label
+  reads the same to a screen reader, which a loose word beside the chips never
+  did. The handicap note says the same three things in fewer words, a trailing
+  paragraph no longer adds a margin under itself inside a card, and the "+"
+  starts on the same line as the heading above it. Together that is 83px at
+  390px wide and 98px at 360px — enough that the whole screen, all four rows
+  and the Start button, fits without scrolling on any phone taller than about
+  640px of viewport.
+
 ### Fixed
 - **The Start button no longer cuts the screen it is pinned to.** It stays put
   at the bottom of New Round and Golf League, which is the point of it — but a
