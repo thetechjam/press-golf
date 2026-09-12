@@ -1485,15 +1485,23 @@ select:focus {
 }
 
 /* ---------- Play ---------- */
+/* The Hole tab is a one-screen task: four players, six chips each, and a
+   button. What competes with it is everything above — bar, tabs, ticker, hole
+   nav, dots, and a strip per side game — which on a 360x780 phone with four
+   players and both strips added up to 57px more than the screen had, putting
+   the fourth player's chips under the bar on every one of eighteen holes.
+   Nothing here gives up a tap target or a number. What went is the spacing
+   that was wider than the rest of the app: these two gaps were 10 and 16 on a
+   screen whose own rhythm is 8. */
 .hole-view {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 .hole-body {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
 }
 @keyframes hole-in-next {
   from {
@@ -1538,8 +1546,15 @@ select:focus {
 .nav-arrow:disabled {
   opacity: 0.3;
 }
+/* One line, not two. Stacked, "Hole 18" over "Par 4" made a 52px block beside
+   44px arrows — taller than the controls it sits between, for six words. On
+   one line it also reads the way it is said. */
 .hole-head {
-  text-align: center;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
 }
 .hole-num {
   font-family: var(--font-display);
@@ -1551,6 +1566,7 @@ select:focus {
 .hole-par {
   font-size: 0.85rem;
   color: var(--muted);
+  white-space: nowrap;
 }
 .progress {
   text-align: center;
@@ -1618,13 +1634,17 @@ select:focus {
   border-radius: var(--radius);
   overflow: hidden;
 }
+/* 6px of padding and a 4px gap, against a 44px chip row and a 28px name row:
+   22px of air per player was 29% of a stepper, and four of them is most of a
+   fifth row. The rows are already separated by a hairline and a 5px colour
+   bar, so the air was not doing the separating. */
 .stepper {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 6px;
+  gap: 4px;
   border-left: 5px solid var(--line);
-  padding: 8px 14px 8px 11px;
+  padding: 6px 14px 6px 11px;
 }
 .stepper + .stepper {
   border-top: 1px solid var(--line);
@@ -1694,7 +1714,10 @@ select:focus {
 }
 .score-num {
   font-family: var(--font-display);
-  font-size: 1.9rem;
+  /* 1.75rem, so the number stands 28px tall and the name row is sized by the
+     avatar beside it rather than by the number overshooting it by three
+     pixels. Still nearly twice the name's 1rem, which is the job it does. */
+  font-size: 1.75rem;
   font-weight: 600;
   line-height: 1;
 }
@@ -1755,6 +1778,10 @@ select:focus {
 }
 .score-chip {
   min-width: 0;
+  /* 44px, and the floor of this screen's layout. The Hole tab is a vertical
+     budget with four players in it, so the next person who needs it to fit
+     will start here — and this is the one number that must not move. Take it
+     out of the spacing instead; see .stepper and .hole-view. */
   height: 44px;
   border-radius: 10px;
   border: 1.5px solid var(--line);
@@ -3288,7 +3315,9 @@ select:focus {
   gap: 14px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 6px 2px;
+  /* 4px around a 19px line of read-only text. Nothing in this strip is
+     tappable, so its height is type and air, and the air was the larger half. */
+  padding: 4px 2px;
   font-size: 0.8rem;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;

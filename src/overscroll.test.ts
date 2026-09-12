@@ -497,3 +497,43 @@ describe('rows that have to fit a narrow phone', () => {
     expect(rule('.payment strong')).toMatch(/min-width\s*:\s*0/);
   });
 });
+
+/**
+ * The Hole tab is a vertical budget: four players, six chips each, a strip per
+ * side game, and a button — on a 360x780 phone that came to 57px more than the
+ * screen had, so the fourth player's chips sat under the bar on every one of
+ * eighteen holes.
+ *
+ * It was paid for out of spacing, never out of a tap target. That distinction
+ * is the whole point, and it is exactly what the next round of "make it fit"
+ * will erode: the chips are the most-tapped control in the app, roughly 72
+ * presses a round, and 44px is the floor.
+ */
+describe('Hole tab vertical budget', () => {
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+  const rule = (selector: string) =>
+    new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(
+      bare
+    )?.[1] ?? '';
+
+  it('keeps the score chip at 44px', () => {
+    expect(rule('.score-chip')).toMatch(/height\s*:\s*44px/);
+  });
+
+  it('keeps the hole dots at their own 24px floor', () => {
+    // WCAG 2.5.8 AA asks 24x24, and these are already there — the strip is not
+    // somewhere to find more pixels either.
+    expect(rule('.hole-dot')).toMatch(/(width|height)\s*:\s*24px/);
+  });
+
+  it('spends the stepper’s own space on the row, not around it', () => {
+    const stepper = rule('.stepper');
+    expect(stepper).toMatch(/padding\s*:\s*6px/);
+    expect(stepper).toMatch(/gap\s*:\s*4px/);
+  });
+
+  it('keeps the hole head on one line', () => {
+    // Stacked, "Hole 18" over "Par 4" made a 52px block beside 44px arrows.
+    expect(rule('.hole-head')).toMatch(/display\s*:\s*flex/);
+  });
+});

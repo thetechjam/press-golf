@@ -43,6 +43,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and the Start button, fits without scrolling on any phone taller than about
   640px of viewport.
 
+### Changed
+- **The Hole tab fits four players on one screen.** It is the screen you use
+  eighteen times a round, and with four players and both the Wolf and Nassau
+  strips showing it wanted 57px more than a 360×780 phone had — so the fourth
+  player's chips sat under the button on every hole. All of it came out of
+  spacing: the two stacks inside the hole ran 10px and 16px apart on a screen
+  whose own rhythm is 8; each player's row spent 22px on padding and a gap
+  around 75px of content, when the rows are already separated by a hairline and
+  a colour bar; "Hole 18" and "Par 4" made a 52px block beside 44px arrows
+  instead of reading as one line; and the money ticker padded a line of
+  untappable text by more than the text. Nothing that can be tapped moved: the
+  score chips are still 44px and the hole dots still 24. Four players, both
+  strips and the ticker now fit a 780px screen with nothing hidden, and a
+  390×844 phone has 63px to spare.
+
 ### Fixed
 - **The Play screen's button now fills the bar it sits in.** It was sizing
   itself to its own label — 183px of a 358px row, left-aligned — on the screen
