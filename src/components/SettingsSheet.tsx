@@ -9,6 +9,47 @@ import { HelpSheet } from './HelpSheet';
 import { BackupRows } from './BackupRows';
 import { clearQueue, listQueue } from '../feedback';
 
+/**
+ * The two things a bug report from a phone needs and a screenshot cannot show.
+ *
+ * Which build is running, because on an installed app the version in
+ * package.json only moves when someone bumps it, and "did my phone take the
+ * update?" is the first question worth asking about any report.
+ *
+ * And whether anything on the screen behind this sheet is wider than the screen
+ * itself, because that is invisible in a screenshot unless you know the
+ * device's width and are willing to count pixels. A clipped toolbar was
+ * reported, fixed, and reported again from a screenshot byte-identical to the
+ * first — with no way to tell whether the fix had arrived or had not worked.
+ * One number settles it: 0 means the layout is sound and the clipping is
+ * something else; anything above 0 is the overflow, in CSS pixels.
+ */
+function readLayout(): string {
+  const app = document.querySelector('.app');
+  const screen = document.querySelector('.screen');
+  const vw = Math.round(window.innerWidth);
+  const appW = app ? Math.round(app.getBoundingClientRect().width) : 0;
+  if (!screen) return `${vw} · ${appW}`;
+
+  const box = screen.getBoundingClientRect();
+  // Against the content edge, not the border edge: a row that overflows into
+  // the screen's own padding is already wrong, and is the shape of the bug
+  // this is here to catch.
+  const contentRight = box.right - parseFloat(getComputedStyle(screen).paddingRight || '0');
+  let over = 0;
+  for (const child of screen.children) {
+    // In-flow rows only. This sheet is itself a child of the screen it is
+    // measuring, and it is a fixed, full-bleed dialog — counting it would
+    // report 16px of overflow on every healthy screen in the app, which is
+    // exactly the kind of number that gets ignored when it matters.
+    const position = getComputedStyle(child).position;
+    if (position === 'fixed' || position === 'absolute') continue;
+    over = Math.max(over, child.getBoundingClientRect().right - contentRight);
+  }
+  const rounded = Math.round(over);
+  return `${vw} · ${appW} · ${Math.round(box.width)}${rounded > 0 ? ` · +${rounded}` : ''}`;
+}
+
 const THEMES: { id: Theme; label: string }[] = [
   { id: 'system', label: 'System' },
   { id: 'light', label: 'Light' },
@@ -34,6 +75,9 @@ export function SettingsSheet({
   const [view, setView] = useState<'settings' | 'feedback' | 'help'>(initialView);
   const [queued, setQueued] = useState(() => listQueue().length);
   const [s, setS] = useState(getSettings);
+  // Read once the sheet is up, so the screen behind it is the one measured.
+  const [layout, setLayout] = useState('');
+  useEffect(() => setLayout(readLayout()), []);
 
   // Refresh the count whenever we land back on the settings list — e.g. after
   // sending (or failing to send) a report in the feedback view.
@@ -155,6 +199,8 @@ export function SettingsSheet({
             <div className="about-title">
               Press <span className="about-ver">v{__APP_VERSION__}</span>
             </div>
+            <div className="about-line">Build {__BUILD_STAMP__}</div>
+            <div className="about-line">Layout {layout}</div>
             <div className="about-line">Created by Jesse Morrison</div>
             <div className="about-line">PolyForm Noncommercial License 1.0.0</div>
           </div>

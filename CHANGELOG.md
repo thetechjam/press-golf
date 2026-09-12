@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Settings says which build you are running, and whether the layout fits.**
+  Two lines under the version: the build's date and time, and a layout
+  reading. The version alone cannot answer "did my phone take the update?" — it
+  only moves when someone bumps it — and on an installed app that is the first
+  question worth asking about any bug report. The layout line gives the
+  viewport, the app and the screen widths, and, when some row on the screen
+  behind Settings is wider than the screen itself, how far past it runs. A
+  clipped toolbar was reported, fixed, and reported again from a screenshot
+  byte-identical to the first, with no way to tell whether the fix had arrived
+  or had arrived and not worked. Now one screenshot of this sheet answers both.
+
 - **Stats can be narrowed to the rounds you mean.** Every figure on the screen
   was an all-time figure, which answers a question nobody asks twice — the
   useful ones are "how do I score at Torrey", "how do we do when Sam is out",
@@ -59,6 +70,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   390×844 phone has 63px to spare.
 
 ### Fixed
+- **The app looks for new versions instead of waiting to be reloaded.** It only
+  ever checked on a page load — and an installed app is resumed far more often
+  than it is loaded, because iOS suspends it rather than killing it. Tapping the
+  icon returns to the screen that was open, with no navigation and no check, so
+  a phone could sit on an old build indefinitely and say nothing about it. It
+  now asks whenever the app comes back to the foreground, and hourly while it
+  is left open. The check runs during a round too, even though the banner
+  offering the update still waits for the round to end — finding an update is
+  not the same as interrupting someone with it. Both are skipped with no
+  signal, which is where this app is usually used.
+
 - **The Settings gear is no longer cut off the side of the Play screen.** On an
   iPhone the scoring toolbar ran off the right edge, taking the gear — the only
   way into Settings mid-round — partly with it, and the money ticker above it

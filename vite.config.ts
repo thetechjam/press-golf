@@ -15,6 +15,12 @@ const pkg = JSON.parse(
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
+    // Which build, not which release. The version only moves when somebody
+    // bumps package.json, so it cannot answer "did my phone take the update?"
+    // — and on an installed app that is the first question worth asking about
+    // any bug report. Minutes, UTC: enough to tell two builds apart, short
+    // enough to read off a screenshot.
+    __BUILD_STAMP__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')),
   },
   test: {
     globals: true,
