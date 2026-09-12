@@ -928,7 +928,10 @@ select:focus {
   flex: 0 0 auto;
 }
 .player-index .player-hcp {
-  width: 68px;
+  /* Wide enough for its own placeholder. "Index" measures 45px in this face,
+     and 68px minus the input's padding did not give it that, so the field
+     asked a question it could not finish. */
+  width: 80px;
 }
 .player-derived {
   display: inline-flex;
@@ -953,6 +956,12 @@ select:focus {
 .rating-row .field {
   flex: 1;
   min-width: 0;
+}
+/* Slope and rating are three and four characters — "129" and "74.6" — where
+   the shared .field.small input is sized for the single digits the Wolf
+   multipliers hold. At 64px both were clipped at every width the app runs at. */
+.rating-row .field.small input {
+  width: 84px;
 }
 .allowance-select {
   flex: 0 0 auto;
@@ -2530,8 +2539,11 @@ select:focus {
   font-size: 0.82rem;
   color: var(--muted);
 }
+/* The two par presets. Only Setup uses these. */
 .chip {
   padding: 7px 12px;
+  /* 31px tall was the smallest thing on the screen you were meant to tap. */
+  min-height: 40px;
   border-radius: 999px;
   border: 1px solid var(--line);
   background: var(--bg);
@@ -2541,7 +2553,10 @@ select:focus {
 }
 .si-input {
   padding: 6px;
-  min-height: 34px;
+  /* Matches the par select above it. They are one control in the user's mind —
+     this hole's par, this hole's rank — and the smaller of the two was the
+     fiddlier to hit. */
+  min-height: 40px;
   text-align: center;
   font-size: 0.8rem;
   width: 100%;
@@ -2902,8 +2917,11 @@ select:focus {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  /* 40px, matching the par selects and stroke-index fields rather than the
+     44px guideline: this row already carries a course name that truncates on
+     a narrow phone, and four more pixels of button cost four more of name. */
+  width: 40px;
+  height: 40px;
   border: none;
   border-radius: 10px;
   background: none;

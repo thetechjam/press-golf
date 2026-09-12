@@ -485,3 +485,84 @@ describe('telling the two handicap numbers apart', () => {
     expect(document.body.textContent).not.toMatch(/Enter handicaps to score net/i);
   });
 });
+
+describe('telling you what just happened, where it happened', () => {
+  const saved: SavedCourse = {
+    id: 'c9',
+    name: 'Bramble Ridge GC',
+    holes: Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: 4, strokeIndex: i + 1 })),
+  };
+
+  it('confirms a loaded course inside the row you loaded it from', async () => {
+    // It used to render once at the foot of the screen, which on a phone put
+    // it over a thousand pixels below the fold — a confirmation nobody can see
+    // is not a confirmation.
+    localStorage.setItem('press.courses.v1', JSON.stringify([saved]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.click(document.querySelector('.saved-course-load')!);
+
+    const note = await screen.findByText('Loaded "Bramble Ridge GC"');
+    expect(note.closest('.setup-row')).not.toBeNull();
+    expect(
+      note.closest('.setup-row')?.querySelector('.setup-row-head')?.textContent
+    ).toContain('Course');
+  });
+
+  it('confirms a saved course inside the row you saved it from', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.type(document.querySelector('.course-search input')!, 'Muirfield');
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: /Save this course for next time/ }));
+
+    const note = await screen.findByText('Saved "Muirfield"');
+    expect(
+      note.closest('.setup-row')?.querySelector('.setup-row-head')?.textContent
+    ).toContain('Holes & pars');
+  });
+
+  it('announces the confirmation rather than only drawing it', async () => {
+    localStorage.setItem('press.courses.v1', JSON.stringify([saved]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.click(document.querySelector('.saved-course-load')!);
+
+    expect((await screen.findByText('Loaded "Bramble Ridge GC"')).getAttribute('role')).toBe(
+      'status'
+    );
+  });
+});
+
+describe('every field says what it is', () => {
+  it('names the player inputs, which a placeholder alone does not', async () => {
+    // A placeholder is not an accessible name, and it disappears the moment
+    // somebody types into the field. Every other input on this screen had an
+    // aria-label; the first one on it did not.
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+
+    expect(screen.getByRole('textbox', { name: 'Name of player 1' })).toBeTruthy();
+    expect(screen.getByRole('textbox', { name: 'Name of player 2' })).toBeTruthy();
+
+    await user.type(screen.getByRole('textbox', { name: 'Name of player 1' }), 'Alex');
+    // Still named after the placeholder has gone.
+    expect(screen.getByRole('textbox', { name: 'Name of player 1' })).toBeTruthy();
+  });
+
+  it('leaves no input on the screen without a name', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await openRow(user, 'Holes & pars');
+    await openRow(user, 'Money');
+
+    const unnamed = [...document.querySelectorAll('input, select')].filter(
+      (el) => !el.getAttribute('aria-label') && !el.closest('label')
+    );
+    expect(unnamed.map((el) => el.className)).toEqual([]);
+  });
+});
