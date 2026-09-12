@@ -183,15 +183,23 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       </header>
 
       <div className="seg view-toggle">
-        {(['hole', 'board', 'card'] as const).map((m) => (
-          <button
-            key={m}
-            className={`seg-btn${mode === m ? ' active' : ''}`}
-            onClick={() => setMode(m)}
-          >
-            {m === 'hole' ? 'Hole' : m === 'board' ? 'Board' : 'Card'}
-          </button>
-        ))}
+        {/* Grouped for the same reason the icons are, and for one more: a flex
+            item's line break is decided from its flex-basis, and `flex: 1`
+            makes that 0 — so three tabs that cannot actually shrink below
+            "BOARD" never force the row to wrap, and whatever is last in it
+            hangs off the edge of the phone instead. As one item the group
+            carries its real width, and a grid inside keeps the three equal. */}
+        <div className="view-tabs">
+          {(['hole', 'board', 'card'] as const).map((m) => (
+            <button
+              key={m}
+              className={`seg-btn${mode === m ? ' active' : ''}`}
+              onClick={() => setMode(m)}
+            >
+              {m === 'hole' ? 'Hole' : m === 'board' ? 'Board' : 'Card'}
+            </button>
+          ))}
+        </div>
         {/* Grouped, so the three of them wrap onto a second line together
             rather than one at a time. Stranded alone, the odd icon also let
             the tabs expand into the space it vacated, which pinned the wrap in

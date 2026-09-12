@@ -294,3 +294,31 @@ describe('Play chrome', () => {
     expect(screen.getByRole('button', { name: 'Board' }).closest('.view-tools')).toBeNull();
   });
 });
+
+/**
+ * The Play toolbar's two groups.
+ *
+ * Ungrouped, the three tabs were `flex: 1` — a flex-basis of 0 — and WebKit
+ * decides where to break a flex line from that basis, so three tabs that could
+ * not actually shrink below "BOARD" never forced a wrap and the Settings gear
+ * hung off the right edge of an iPhone. Grouping them gives the line a real
+ * width to break on; the CSS half of that is pinned in `overscroll.test.ts`.
+ */
+describe('Play toolbar groups', () => {
+  it('keeps the view tabs in one group and the toggles in the other', async () => {
+    const user = userEvent.setup();
+    seed([round()]);
+    render(<App />);
+    await user.click(screen.getByText('Test Links'));
+    await waitFor(() => expect(document.querySelector('.screen.play')).not.toBeNull());
+
+    const tabs = document.querySelector('.view-tabs')!;
+    expect(tabs).not.toBeNull();
+    for (const name of ['Hole', 'Board', 'Card']) {
+      expect(screen.getByRole('button', { name }).closest('.view-tabs')).toBe(tabs);
+    }
+    // And no tab is loose in the row, which is what made the row unbreakable.
+    expect(document.querySelectorAll('.view-toggle > .seg-btn')).toHaveLength(0);
+    expect(screen.getByRole('button', { name: 'Settings' }).closest('.view-tabs')).toBeNull();
+  });
+});

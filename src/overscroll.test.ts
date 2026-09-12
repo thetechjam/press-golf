@@ -117,6 +117,19 @@ describe('sheet dialog display scoping', () => {
   });
 });
 
+describe('text inflation guard', () => {
+  it('tells Safari not to resize text on its own', () => {
+    // Safari inflates text in some layouts unless told not to, which moves
+    // every width this stylesheet reasons about — and installed to a home
+    // screen there is no browser chrome to notice it against. The first sign
+    // is a row that no longer fits.
+    const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+    const root = /html\s*\{([^}]*)\}/.exec(bare)?.[1] ?? '';
+    expect(root).toMatch(/-webkit-text-size-adjust\s*:\s*100%/);
+    expect(root).toMatch(/[^-]text-size-adjust\s*:\s*100%/);
+  });
+});
+
 describe('pull-to-refresh guard', () => {
   const rootRule = /(?:^|\})\s*html\s*\{([^}]*)\}/m.exec(css)?.[1] ?? '';
 
@@ -480,6 +493,25 @@ describe('rows that have to fit a narrow phone', () => {
     new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(
       bare
     )?.[1] ?? '';
+
+  it('gives the tab group a real width for the line break to land on', () => {
+    // The bug this replaces: `flex: 1` on each tab means a flex-basis of 0, and
+    // WebKit decides where to break a flex line from the basis — so three tabs
+    // that cannot actually shrink below "BOARD" never forced a wrap, and the
+    // Settings gear hung off the right edge of an iPhone. As one item with
+    // `flex-basis: auto` the group carries the width of all three.
+    const tabs = rule('.view-tabs');
+    expect(tabs).toMatch(/display\s*:\s*grid/);
+    expect(tabs).toMatch(/grid-template-columns\s*:\s*repeat\(3, 1fr\)/);
+    expect(tabs).toMatch(/flex\s*:\s*1 1 auto/);
+  });
+
+  it('caps the tab group rather than each tab', () => {
+    // Capped individually, each button is stranded at the left of a grid column
+    // wider than itself — three scattered buttons instead of one control.
+    expect(rule('.view-tabs')).toMatch(/max-width\s*:\s*432px/);
+    expect(rule('.view-toggle .seg-btn')).not.toMatch(/max-width/);
+  });
 
   it('keeps Play’s icon toggles together and off the tabs’ flex', () => {
     const tools = rule('.view-tools');

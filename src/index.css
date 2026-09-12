@@ -166,6 +166,12 @@ body,
    and keep their own overscroll behaviour. */
 html {
   overscroll-behavior-y: none;
+  /* Safari inflates text in some layouts unless told not to, which moves every
+     width this file reasons about. Installed to a home screen there is no
+     browser chrome to notice it against — the first sign is a row that no
+     longer fits. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 /* Held by Sheet.tsx for as long as any sheet is on screen. showModal() does
@@ -1144,10 +1150,50 @@ select:focus {
    narrowest, so the row fits one line down to 360px: 158 + 6 + the 144px the
    icon group takes = 308, against 328px of content width. At 375px, where this
    was originally tuned, it had one pixel spare — which is how 360 came to
-   wrap. */
+   wrap.
+
+   `min-width: 0` is the load-bearing declaration, and it is here because of
+   what happens when that arithmetic is wrong on a phone I cannot measure.
+   These tabs are `flex: 1`, so their flex-basis is 0 — and WebKit decides
+   where to break a flex line from the basis, not from the text's real width.
+   With a basis of 0 nothing ever forces a wrap, the tabs then refuse to shrink
+   below "BOARD" (min-width: auto is min-content), and the row overflows: the
+   last control in it, Settings, hangs off the right edge of an iPhone.
+   Blink accounts for that automatic minimum when it breaks the line and wraps
+   instead, which is why every width I could measure looked fine.
+   The fix is .view-tabs below, not a minimum on the tabs themselves: an
+   explicit min-width *replaces* the content-based one, so any value small
+   enough to keep the row from overflowing is also small enough to cut "BOARD"
+   down to "BOAR…" on a 344px phone. Grouping them instead gives the flex line
+   a real width to break on and leaves each tab's own minimum alone. */
 .view-toggle .seg-btn {
-  padding: 9px 4px;
+  /* 2px of side padding, not 4. Equal columns cost width: the grid's minimum
+     is three times its widest label, so "BOARD" sets all three and the padding
+     is paid three times over. The box is still the tap target and the label is
+     still centred in it — what went is air beside the widest word. Those 12px
+     are what keep the row on one line at 360px. */
+  padding: 9px 2px;
   letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+/* The three tabs as one flex item, carrying the width of all three. A grid
+   rather than a nested flex row so the columns stay exactly equal however much
+   the group grows — which is what `flex: 1` on each tab used to do, at the
+   cost of telling the line-breaking algorithm they were zero wide. `1fr` is
+   `minmax(auto, 1fr)`, so a column still will not go under its label.
+
+   The max-width is the landscape cap: at the 900px layout width the tabs would
+   otherwise blow out to ~200px each, three enormous slabs next to three small
+   squares. It belongs on the group, not on each button — capping the buttons
+   inside equal columns leaves each stranded at the left of a column wider than
+   itself, which reads as three scattered buttons rather than one control.
+   3 x 140 plus the two gaps between them. */
+.view-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  flex: 1 1 auto;
+  max-width: 432px;
 }
 /* The three icon toggles as one flex item, so when the row does run out (320px
    and below) they wrap together instead of stranding whichever one happened to
@@ -1158,13 +1204,6 @@ select:focus {
   gap: 6px;
   flex: 0 0 auto;
   margin-left: auto;
-}
-/* The icon toggles beside these keep a fixed 48px slot, so at the 900px
-   landscape cap `flex: 1` blew each tab out to ~200px — three enormous slabs
-   next to three small squares. Capping the tab lets the row stay balanced and
-   pushes the toggles to the right edge where they belong. */
-.view-toggle .seg-btn {
-  max-width: 140px;
 }
 /* Wake-lock toggle: fixed slot beside the view toggle. 44px, the size the
    header icons settled on, not the 48px var(--tap) the tabs beside them use:
