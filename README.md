@@ -80,6 +80,28 @@ npm run lint       # oxlint
 npm run build      # production build
 ```
 
+### Auditing the rendered app
+
+`npm run audit:a11y` drives every screen in a real browser at 390px and 360px
+and reports what a diff cannot show: controls with no accessible name, controls
+whose name says nothing ("1, button"), text clipped by its own box, sideways
+overflow, tap targets under 24×24, skipped heading levels, duplicate ids. It
+exits non-zero on anything that is wrong at any size, and merely lists targets
+between 24 and 44px — some of those are justified, and a gate that cries wolf
+is a gate somebody turns off.
+
+Playwright is deliberately not a dependency; install it when you want to run
+this:
+
+```bash
+npm install --no-save playwright && npx playwright install chromium
+npm run preview        # in one terminal
+npm run audit:a11y    # in another
+```
+
+The accessible-name half of the same check runs in CI without a browser, in
+`src/a11y.dom.test.tsx`.
+
 ## How it's built
 
 Vite + React + TypeScript, shipped as an installable PWA. Each game is a
