@@ -62,6 +62,12 @@ what's deferred, and how to expand without a rewrite.
   both" forks the arriving copy under a new id, so the two can never collide
   again. This is what stops `mergeRounds`' newest-wins rule from quietly eating
   a back nine.
+- **Round history** (`src/history.ts`, `src/screens/History.tsx`): search over
+  course, player and game names (every word must match, substrings count, the
+  date deliberately does not), a status filter, month grouping, and a select
+  mode for bulk delete. Home keeps only the five most recent and links here —
+  a launcher with an unbounded archive under it pushes its own buttons further
+  from the thumb with every round played.
 - **Stats** (`src/stats.ts`, `src/screens/Stats.tsx`): cross-round history
   derived from the saved rounds — scoring average against par, best round,
   scoring mix, skins won, money across rounds. Players are matched by name,

@@ -6,6 +6,7 @@ import { LeagueSetup } from './screens/LeagueSetup';
 import { Play } from './screens/Play';
 import { Results } from './screens/Results';
 import { Stats } from './screens/Stats';
+import { History } from './screens/History';
 import { saveRound, getRound, listCourses, saveCourse } from './storage';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { dismissSplash } from './splash';
@@ -16,7 +17,7 @@ import { ArrivingCourse, type CourseChoice } from './screens/ArrivingCourse';
 import { compareRounds, forkRound, type Arrival as ArrivalState } from './handover';
 import { Arrival, type Resolution } from './screens/Arrival';
 
-const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats'] as const;
+const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats', 'history'] as const;
 type View = (typeof VIEWS)[number];
 
 const isView = (v: unknown): v is View =>
@@ -312,10 +313,25 @@ export default function App() {
             goTo('results');
           }}
           onStats={() => goTo('stats')}
+          onHistory={() => goTo('history')}
         />
       )}
 
       {view === 'stats' && <Stats onBack={() => goTo('home')} />}
+
+      {view === 'history' && (
+        <History
+          onBack={() => goTo('home')}
+          onResume={(r) => {
+            load(r);
+            goTo('play');
+          }}
+          onViewResults={(r) => {
+            load(r);
+            goTo('results');
+          }}
+        />
+      )}
 
       {view === 'setup' && (
         <Setup

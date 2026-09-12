@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **A screen for your rounds.** Home used to list every round ever played,
+  under the two buttons you came to press. It now shows the five most recent
+  and hands over to a Rounds screen built for finding one: search by course,
+  player or game — narrowing with each word, matching part of a word as you
+  type — filter to what's still unfinished, and grouped under the month it was
+  played. An empty result says which filter emptied it rather than claiming you
+  have no rounds.
+- **Clearing rounds out in bulk.** A select mode on the Rounds screen, with a
+  two-step delete that names the number before it commits. "Select all" takes
+  what the filter is showing, not everything behind it.
+
 ### Fixed
 - **New Round screen polish.** The Handicap Index field was narrower than the
   word "Index", so its own placeholder was cut off until you typed; slope and
