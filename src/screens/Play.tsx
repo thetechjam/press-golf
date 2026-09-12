@@ -192,34 +192,40 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             {m === 'hole' ? 'Hole' : m === 'board' ? 'Board' : 'Card'}
           </button>
         ))}
-        {wakeLockSupported && (
+        {/* Grouped, so the three of them wrap onto a second line together
+            rather than one at a time. Stranded alone, the odd icon also let
+            the tabs expand into the space it vacated, which pinned the wrap in
+            place. */}
+        <div className="view-tools">
+          {wakeLockSupported && (
+            <button
+              className={`awake-toggle${keepAwake ? ' on' : ''}`}
+              onClick={toggleKeepAwake}
+              aria-label="Keep screen awake"
+              aria-pressed={keepAwake}
+              title="Keep screen awake"
+            >
+              <EyeIcon size={20} />
+            </button>
+          )}
           <button
-            className={`awake-toggle${keepAwake ? ' on' : ''}`}
-            onClick={toggleKeepAwake}
-            aria-label="Keep screen awake"
-            aria-pressed={keepAwake}
-            title="Keep screen awake"
+            className={`awake-toggle${glare ? ' on' : ''}`}
+            onClick={toggleGlare}
+            aria-label="Glare mode"
+            aria-pressed={glare}
+            title="Glare mode — max contrast for direct sun"
           >
-            <EyeIcon size={20} />
+            <ContrastIcon size={20} />
           </button>
-        )}
-        <button
-          className={`awake-toggle${glare ? ' on' : ''}`}
-          onClick={toggleGlare}
-          aria-label="Glare mode"
-          aria-pressed={glare}
-          title="Glare mode — max contrast for direct sun"
-        >
-          <ContrastIcon size={20} />
-        </button>
-        <button
-          className="awake-toggle gear-btn"
-          onClick={() => setShowSettings(true)}
-          aria-label="Settings"
-          title="Settings"
-        >
-          <GearIcon size={20} />
-        </button>
+          <button
+            className="awake-toggle gear-btn"
+            onClick={() => setShowSettings(true)}
+            aria-label="Settings"
+            title="Settings"
+          >
+            <GearIcon size={20} />
+          </button>
+        </div>
       </div>
 
       {mode === 'hole' && !round.options.league && (
@@ -276,7 +282,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
         />
       )}
 
-      <div className="play-foot">
+      <div className="screen-foot play-foot">
         {warn && (
           <div className="warn-banner" role="alert">
             <p>

@@ -187,10 +187,21 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* A flex column so the screen inside it can be told to fill the viewport. It
+   already reserved the height with min-height; what it did not do was hand any
+   of it to the screen, so a short screen ended where its content did and a
+   pinned bar stopped wherever that was — "Next Hole" floating 180px above the
+   bottom of an otherwise empty phone, which reads as a page that failed to
+   finish loading rather than as a footer. */
 .app {
   max-width: 540px;
   margin: 0 auto;
   min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+.app > .screen {
+  flex: 1 0 auto;
 }
 
 /* A phone in landscape is ~874px wide. 900px is effectively full width there
@@ -210,14 +221,6 @@ body {
   flex-direction: column;
   gap: 8px;
   animation: screen-in 0.24s ease-out;
-}
-/* Play's .play-foot already pads itself for the home indicator (see .play-foot
-   below), so the base safe-area-inset-bottom above would be double-counted on
-   any notched/home-indicator device — Play is the only screen with a sticky
-   foot, so it's the only one that needs the base inset dropped. Home, Setup,
-   League Setup and Results have no .play-foot and still rely on the base rule. */
-.screen.play {
-  padding-bottom: 12px;
 }
 @keyframes screen-in {
   from {
@@ -297,9 +300,14 @@ button {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  /* No margin of its own: .screen's own 8px gap already sits above it, and
-     the extra 4px copied from .play-foot made this the one seam on the screen
-     spaced differently from every other. */
+  /* `auto`, not a length: .screen fills the viewport (see .app), so this takes
+     whatever height the content did not and puts the bar on the floor. On a
+     screen long enough to scroll there is no free space and it resolves to
+     nothing, leaving .screen's own 8px gap — so the bar sits at the bottom of
+     the phone whether the page scrolls or not, instead of wherever the content
+     happened to stop. Deliberately not the 4px copied from .play-foot, which
+     made this the one seam on the screen spaced unlike every other. */
+  margin-top: auto;
   padding-bottom: calc(12px + env(safe-area-inset-bottom));
   background: var(--bg);
 }
@@ -1128,11 +1136,28 @@ select:focus {
 .seg.view-toggle {
   margin-bottom: 0;
   flex-wrap: wrap;
+  /* 6px rather than the .seg default of 8. Five gaps across six controls, and
+     those 10px are the difference between one row and two at 360px. */
+  gap: 6px;
 }
-/* Three tabs + three icon toggles share 343px at 375px wide — ~53px per tab. */
+/* Three tabs + three icon toggles. The tabs need 158px between them at their
+   narrowest, so the row fits one line down to 360px: 158 + 6 + the 144px the
+   icon group takes = 308, against 328px of content width. At 375px, where this
+   was originally tuned, it had one pixel spare — which is how 360 came to
+   wrap. */
 .view-toggle .seg-btn {
   padding: 9px 4px;
   letter-spacing: 0.03em;
+}
+/* The three icon toggles as one flex item, so when the row does run out (320px
+   and below) they wrap together instead of stranding whichever one happened to
+   be last on a line of its own — and once one had wrapped, the three tabs
+   expanded to fill the line it left, so it could never wrap back. */
+.view-tools {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+  margin-left: auto;
 }
 /* The icon toggles beside these keep a fixed 48px slot, so at the 900px
    landscape cap `flex: 1` blew each tab out to ~200px — three enormous slabs
@@ -1141,18 +1166,14 @@ select:focus {
 .view-toggle .seg-btn {
   max-width: 140px;
 }
-.view-toggle .awake-toggle {
-  margin-left: auto;
-}
-.view-toggle .awake-toggle ~ .awake-toggle,
-.view-toggle .awake-toggle ~ button {
-  margin-left: 0;
-}
-/* Wake-lock toggle: fixed slot beside the view toggle. */
+/* Wake-lock toggle: fixed slot beside the view toggle. 44px, the size the
+   header icons settled on, not the 48px var(--tap) the tabs beside them use:
+   these are the row's secondary controls, and the 12px it returns is part of
+   what keeps all six on one line at 360px. */
 .awake-toggle {
   position: relative;
-  flex: 0 0 var(--tap);
-  min-height: var(--tap);
+  flex: 0 0 44px;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--bg);
@@ -2137,16 +2158,17 @@ select:focus {
   padding-top: 6px;
 }
 
-/* The CTA's own `position: sticky` cannot work here — its containing block is
-   this element, which is only as tall as the button, so it has no room to move.
-   Stick the footer itself instead; its containing block is the tall .screen. */
-.play-foot {
-  position: sticky;
-  bottom: 0;
-  z-index: 3;
-  margin-top: 4px;
-  padding-bottom: calc(8px + env(safe-area-inset-bottom));
-  background: var(--bg);
+/* Play's foot is .screen-foot now, the same bar Setup and Golf League use —
+   which is where the "stick the footer, not the button" reasoning lives. It
+   keeps this class as a hook for the landscape rule further down, and because
+   two screens' feet reading as one control is the point.
+   What it gained by joining: a CTA that fills the bar instead of sizing to its
+   own label (183px of a 358px row, left-aligned, on the screen whose button is
+   pressed eighteen times a round), and the fade, so the Board tab's money rows
+   stop being sliced through the middle by an opaque edge. */
+.screen-foot .warn-banner {
+  /* The bar's own 8px gap spaces this; its margin would stack on top. */
+  margin-bottom: 0;
 }
 .warn-banner {
   background: color-mix(in srgb, var(--gold) 18%, var(--card));
@@ -2338,11 +2360,22 @@ select:focus {
 .settlement .payments::after {
   right: -9px;
 }
+/* "Bartholomew pays Christopher  $55" is four flex items across, and nothing
+   in it could give: a flex item will not shrink below its own longest word, so
+   at 320px the amount was pushed past the right edge and took the whole page
+   sideways with it. Wrapping lets the figure drop to its own line — still
+   pushed right by its auto margin, which is where the eye looks for it — and
+   `anywhere` is the last resort for a name longer than the card. */
 .payment {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 6px;
   font-size: 0.95rem;
+}
+.payment strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .payment + .payment {
   margin-top: 6px;

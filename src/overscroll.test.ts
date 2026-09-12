@@ -427,3 +427,73 @@ describe('players card trim', () => {
     expect(rule('.card > .hint:last-child')).toMatch(/margin-bottom\s*:\s*0/);
   });
 });
+
+/**
+ * The pinned bar reaching the floor is a three-rule chain, and breaking any
+ * link leaves the bar sitting wherever the content happened to stop — which is
+ * what it did before: "Next Hole" floating 180px above the bottom of an
+ * otherwise empty phone, reading as a page that failed to finish loading.
+ *
+ * `.app` must be a flex column, `.screen` must be told to fill it, and the bar
+ * must claim the leftover with `margin-top: auto`. None of the three looks
+ * like it is doing anything on its own, and on a screen long enough to scroll
+ * none of them changes a pixel — so the failure only shows on a short one.
+ */
+describe('pinned bar reaches the bottom', () => {
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+  const rule = (selector: string) =>
+    new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(
+      bare
+    )?.[1] ?? '';
+
+  it('gives the app a column to distribute', () => {
+    const app = rule('.app');
+    expect(app).toMatch(/display\s*:\s*flex/);
+    expect(app).toMatch(/flex-direction\s*:\s*column/);
+    expect(app).toMatch(/min-height\s*:\s*100%/);
+  });
+
+  it('hands the height to the screen', () => {
+    expect(rule('.app > .screen')).toMatch(/flex\s*:\s*1/);
+  });
+
+  it('lets the bar take what the content did not', () => {
+    expect(rule('.screen-foot')).toMatch(/margin-top\s*:\s*auto/);
+  });
+});
+
+/**
+ * Two rows that have to survive a narrow phone.
+ *
+ * Play's toolbar is three tabs and three icon toggles. Grouped, the icons wrap
+ * together; ungrouped, whichever one fell off the line was stranded alone —
+ * and the tabs then expanded into the space it left, so it could never wrap
+ * back. The 6px gap is what keeps all six on one line at 360px at all.
+ *
+ * A settlement line is four flex items across, and a flex item will not shrink
+ * below its own longest word: "Bartholomew pays Christopher $55" pushed the
+ * amount past the right edge at 320px and took the whole page sideways.
+ */
+describe('rows that have to fit a narrow phone', () => {
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+  const rule = (selector: string) =>
+    new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(
+      bare
+    )?.[1] ?? '';
+
+  it('keeps Play’s icon toggles together and off the tabs’ flex', () => {
+    const tools = rule('.view-tools');
+    expect(tools).toMatch(/display\s*:\s*flex/);
+    expect(tools).toMatch(/flex\s*:\s*0 0 auto/);
+    expect(tools).toMatch(/margin-left\s*:\s*auto/);
+  });
+
+  it('tightens the toolbar gap that buys the sixth control its place', () => {
+    expect(rule('.seg.view-toggle')).toMatch(/gap\s*:\s*6px/);
+  });
+
+  it('lets a settlement line wrap instead of running off the page', () => {
+    expect(rule('.payment')).toMatch(/flex-wrap\s*:\s*wrap/);
+    expect(rule('.payment strong')).toMatch(/min-width\s*:\s*0/);
+  });
+});

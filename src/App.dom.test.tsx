@@ -246,3 +246,51 @@ describe('App — Stats route', () => {
     expect(screen.queryByRole('button', { name: /Stats/ })).toBeNull();
   });
 });
+
+/**
+ * The Play screen's chrome, which is markup rather than pixels.
+ *
+ * Its foot was a bare block for as long as it existed, so the CTA sized to its
+ * own label — 183px of a 358px row, left-aligned, on the screen whose button
+ * gets pressed eighteen times a round — and the Board tab's money rows were
+ * sliced through the middle by an opaque edge with text peeking out beside it.
+ * Joining `.screen-foot` fixes both, and is why that class is what to assert.
+ *
+ * The toolbar's three icon toggles are grouped for the same kind of reason:
+ * ungrouped, whichever fell off the line at 360px was stranded alone on a
+ * second row, and the tabs then expanded into the space it left so it could
+ * never wrap back.
+ */
+describe('Play chrome', () => {
+  const openPlay = async (user: ReturnType<typeof userEvent.setup>) => {
+    seed([round()]);
+    render(<App />);
+    await user.click(screen.getByText('Test Links'));
+    await waitFor(() => expect(document.querySelector('.screen.play')).not.toBeNull());
+  };
+
+  it('puts the CTA in the app’s pinned bar, not loose in the screen', async () => {
+    const user = userEvent.setup();
+    await openPlay(user);
+    const cta = [...document.querySelectorAll<HTMLElement>('.screen.play button')].find((b) =>
+      /Next Hole|Finish Round/i.test(b.textContent ?? '')
+    )!;
+    expect(cta).toBeTruthy();
+    const foot = cta.closest('.screen-foot');
+    expect(foot).not.toBeNull();
+    // And it is the screen's own last child, so it has a floor to reach.
+    expect(document.querySelector('.screen.play > .screen-foot')).toBe(foot);
+  });
+
+  it('keeps the toolbar’s icon toggles in one group', async () => {
+    const user = userEvent.setup();
+    await openPlay(user);
+    const tools = document.querySelector('.view-tools');
+    expect(tools).not.toBeNull();
+    for (const name of ['Glare mode', 'Settings']) {
+      expect(screen.getByRole('button', { name }).closest('.view-tools')).toBe(tools);
+    }
+    // The three view tabs stay outside it, or they would wrap with the icons.
+    expect(screen.getByRole('button', { name: 'Board' }).closest('.view-tools')).toBeNull();
+  });
+});

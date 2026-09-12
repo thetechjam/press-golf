@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest';
-import { computeAwards } from './awards';
+import { computeAwards, holeName } from './awards';
 import { makeRound, player, holes18, scoresFrom } from './testFixtures';
 
 const find = (round: Parameters<typeof computeAwards>[0], id: string) =>
@@ -681,5 +681,27 @@ describe('awards that report the same hole', () => {
     const awards = computeAwards(round);
     expect(awards.find((a) => a.id === 'snowman')?.playerIds).toEqual(['a1']);
     expect(awards.find((a) => a.id === 'wrecking-ball')?.playerIds).toEqual(['b2']);
+  });
+});
+
+describe('naming a hole', () => {
+  it('speaks golf rather than reading out a coordinate', () => {
+    // "Jo birdied 1" reads as one birdie as easily as the first hole, and the
+    // detail line under it ("3 on a par 4") settles nothing.
+    expect(holeName(1)).toBe('the 1st');
+    expect(holeName(2)).toBe('the 2nd');
+    expect(holeName(3)).toBe('the 3rd');
+    expect(holeName(4)).toBe('the 4th');
+    expect(holeName(9)).toBe('the 9th');
+    expect(holeName(18)).toBe('the 18th');
+  });
+
+  it('gets the teens right, which is where the naive rule breaks', () => {
+    // 11, 12 and 13 take "th" despite ending in 1, 2 and 3 — and every one of
+    // them is a hole somebody plays.
+    expect(holeName(11)).toBe('the 11th');
+    expect(holeName(12)).toBe('the 12th');
+    expect(holeName(13)).toBe('the 13th');
+    expect(holeName(21)).toBe('the 21st');
   });
 });
