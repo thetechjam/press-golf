@@ -7,7 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Golf League takes a Handicap Index too.** It was the one format still
+  asking everyone to type a stroke count — which is backwards, since a league
+  group plays the same nine every week and is the most likely to know its
+  Indexes. Give the course its slope and rating and the four player rows ask
+  for an Index, showing what it is worth over the nine. League's own rules are
+  unchanged: each singles match is still played off the low man of the two, the
+  team match off the low of all four, and still at most one stroke a hole.
+
 ### Fixed
+- **A nine played off an eighteen-hole rating now converts instead of giving
+  up.** A rating belongs to a set of holes, and that set is not always the set
+  in front of you — a league night, or any nine-hole round loaded from a saved
+  eighteen-hole card. Press now records how many holes a rating covers and
+  halves it accordingly, where before it judged the eighteen-hole figure
+  against nine holes, found it implausible, and quietly fell back to typed
+  stroke counts.
+
 - **Accessibility sweep across every screen.** Golf League's player name and
   handicap fields had no accessible name, only a placeholder. The scorecard's
   eighteen hole headers, and Golf League's starting-hole grid, were buttons

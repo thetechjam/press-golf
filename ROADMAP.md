@@ -18,7 +18,10 @@ what's deferred, and how to expand without a rewrite.
   view, swipe between holes.
 - **Guardrails**: warns on unentered scores before advancing/finishing, with
   auto-jump to the first blank player.
-- **Handicaps**: net scoring, per-hole stroke index, par presets. Gross/net is
+- **Handicaps**: net scoring, per-hole stroke index, par presets. A Handicap
+  Index converts against the course's slope and rating wherever one is known —
+  including a league night, and including a nine played off an eighteen-hole
+  rating, which `Round.ratingHoles` is what makes possible. Gross/net is
   **per game** (`games/scoring.ts`), so a gross skins game can run alongside a
   net match on one card; the round default is still derived from whether
   anybody entered a handicap, and `netByGame` records only explicit overrides.
