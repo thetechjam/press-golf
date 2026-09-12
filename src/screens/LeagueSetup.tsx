@@ -7,6 +7,7 @@ import { DeleteButton } from '../components/DeleteButton';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
 import { parOptions } from '../courses/parOptions';
+import { validSlope, validRating, courseHandicap } from '../games/courseHandicap';
 import { StarIcon, XIcon, GearIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { SetupRow } from '../components/SetupRow';
@@ -33,6 +34,17 @@ const newPlayer = (): Player => ({ id: uid(), name: '', handicap: undefined });
 
 export function LeagueSetup({ onCancel, onStart }: Props) {
   const [course, setCourse] = useState('');
+  /**
+   * The course's slope and rating, and how many holes that rating covers.
+   *
+   * `ratingHoles` earns its place here more than anywhere: a league night is
+   * nine holes off a course almost always rated over eighteen, so without it
+   * the figure loaded from a saved card is judged against nine holes, fails as
+   * implausible, and every player falls back to a typed stroke count.
+   */
+  const [slope, setSlope] = useState<number | undefined>();
+  const [rating, setRating] = useState<number | undefined>();
+  const [ratingHoles, setRatingHoles] = useState<number | undefined>();
   const [nine, setNine] = useState<Nine>('front');
   const [holes, setHoles] = useState<Hole[]>(makeHoles('front'));
   // Full scorecard behind the current nine (18 holes when loaded from a course),
@@ -81,13 +93,23 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
     setCourse(c.name);
     setSource(c.holes);
     setHoles(sliceCourseHoles(c.holes, 9, { nine }));
+    setSlope(c.slope);
+    setRating(c.rating);
+    setRatingHoles(c.holes.length);
     setSavedNote(`Loaded "${c.name}" — ${nine === 'back' ? 'back 9' : 'front 9'}`);
   };
   const saveFavorite = () => {
     const name = course.trim();
     if (!name) return setError('Add a course name before saving.');
     const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
-    saveCourse({ id: existing?.id ?? uid(), name, holes: holes.map((h) => ({ ...h })) });
+    saveCourse({
+      id: existing?.id ?? uid(),
+      name,
+      holes: holes.map((h) => ({ ...h })),
+      // The nine on screen is what is being saved, so its rating covers nine.
+      slope,
+      rating: ratingHoles === holes.length ? rating : undefined,
+    });
     setCourses(listCourses());
     setError('');
     setSavedNote(`Saved "${name}"`);
@@ -122,15 +144,27 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
     const allPlayers = teams.flatMap((t) => [t.a, t.b]);
     if (allPlayers.some((p) => !p.name.trim()))
       return setError('Name all four players (A and B on each team).');
-    // Handicaps are mandatory for a league: every match (A, B, Team) scores net
-    // off them, so a blank must not silently become scratch.
-    if (allPlayers.some((p) => p.handicap == null || Number.isNaN(p.handicap)))
-      return setError('Enter a handicap for all four players — league scoring needs it.');
+    // A number to score off is mandatory for a league: every match (A, B,
+    // Team) is net, so a blank must not silently become scratch. Which number
+    // depends on the field actually on screen — on a rated nine that is the
+    // Index, and demanding a stroke count there made the round unstartable.
+    const figure = (p: TeamState['a']) => (rated ? p.index : p.handicap);
+    if (allPlayers.some((p) => figure(p) == null || Number.isNaN(figure(p) as number))) {
+      return setError(
+        rated
+          ? 'Enter a Handicap Index for all four players — league scoring needs it.'
+          : 'Enter a handicap for all four players — league scoring needs it.'
+      );
+    }
 
     const players: Player[] = allPlayers.map((p) => ({
       id: p.id,
       name: p.name.trim(),
-      handicap: p.handicap as number,
+      // Both are carried when present: `courseHandicapFor` prefers the Index
+      // where the course can convert it and falls back to the stroke count,
+      // so a round stays scoreable if its rating is later found to be wrong.
+      handicap: p.handicap,
+      index: p.index,
     }));
 
     // Rotate holes into play order so the round starts on the chosen hole
@@ -162,9 +196,28 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
       scores: {},
       wolf: {},
       presses: [],
+      slope: rated ? slope : undefined,
+      rating: rated ? rating : undefined,
+      ratingHoles: rated ? ratingHoles : undefined,
       status: 'in_progress',
     };
     onStart(round);
+  };
+
+  // Judged against the holes the rating covers, not the nine being played.
+  const ratedHoles = ratingHoles ?? holes.length;
+  const rated = validSlope(slope) && validRating(rating, ratedHoles);
+  /** What a player's Index is worth over this nine, for showing beside the field. */
+  const derivedHandicap = (index: number | undefined): number | null => {
+    if (!rated || index == null || Number.isNaN(index)) return null;
+    return courseHandicap({
+      index,
+      slope: slope as number,
+      rating: rating as number,
+      ratingHoles: ratedHoles,
+      playingHoles: holes.length,
+      playingPar: holes.reduce((sum, h) => sum + h.par, 0),
+    });
   };
 
   const siProblem = strokeIndexProblem(holes);
@@ -231,19 +284,54 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
                 placeholder={`${role.toUpperCase()} player`}
                 aria-label={`Name of team ${ti + 1}'s ${role.toUpperCase()} player`}
               />
-              <input
-                className="player-hcp"
-                type="number"
-                inputMode="numeric"
-                value={t[role].handicap ?? ''}
-                onChange={(e) =>
-                  updatePlayer(ti, role, {
-                    handicap: e.target.value === '' ? undefined : Number(e.target.value),
-                  })
-                }
-                placeholder="HCP"
-                aria-label={`Handicap for team ${ti + 1}'s ${role.toUpperCase()} player`}
-              />
+              {/* A rated nine can work the strokes out, so the field asks for
+                  the number the player carries between courses and shows what
+                  it is worth here — the same trade as New Round. League's own
+                  rules then run on the result: the low man of the match is
+                  subtracted from it, and the cap still allows one a hole. */}
+              {rated ? (
+                <span className="player-index">
+                  <input
+                    className="player-hcp"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.1"
+                    value={t[role].index ?? ''}
+                    onChange={(e) =>
+                      updatePlayer(ti, role, {
+                        index: e.target.value === '' ? undefined : Number(e.target.value),
+                      })
+                    }
+                    placeholder="Index"
+                    aria-label={`Handicap Index for team ${ti + 1}'s ${role.toUpperCase()} player`}
+                  />
+                  {derivedHandicap(t[role].index) != null && (
+                    <span
+                      className="player-derived"
+                      aria-label={`Plays off ${derivedHandicap(t[role].index)} on this nine`}
+                    >
+                      <span aria-hidden="true" className="player-derived-arrow">
+                        →
+                      </span>
+                      {derivedHandicap(t[role].index)}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <input
+                  className="player-hcp"
+                  type="number"
+                  inputMode="numeric"
+                  value={t[role].handicap ?? ''}
+                  onChange={(e) =>
+                    updatePlayer(ti, role, {
+                      handicap: e.target.value === '' ? undefined : Number(e.target.value),
+                    })
+                  }
+                  placeholder="HCP"
+                  aria-label={`Handicap for team ${ti + 1}'s ${role.toUpperCase()} player`}
+                />
+              )}
             </div>
           ))}
         </section>
@@ -251,6 +339,43 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
 
       <section className="card">
         <h2>Course · {nine === 'back' ? 'Back 9 (holes 10–18)' : 'Front 9 (holes 1–9)'}</h2>
+
+        <div className="rating-row">
+          <label className="field small">
+            <span>Slope</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={55}
+              max={155}
+              value={slope ?? ''}
+              onChange={(e) => setSlope(e.target.value === '' ? undefined : Number(e.target.value))}
+              placeholder="113"
+            />
+          </label>
+          <label className="field small">
+            <span>Rating</span>
+            <input
+              type="number"
+              inputMode="decimal"
+              step="0.1"
+              value={rating ?? ''}
+              onChange={(e) => {
+                setRating(e.target.value === '' ? undefined : Number(e.target.value));
+                // Typed here, it is the rating for the nine on screen.
+                setRatingHoles(holes.length);
+              }}
+              placeholder={`${holes.length * 4}.0`}
+            />
+          </label>
+        </div>
+        <p className="hint-inline">
+          {rated
+            ? ratedHoles === holes.length
+              ? 'Handicap Index converts to strokes for this nine.'
+              : `Rated over ${ratedHoles} holes — an Index converts to strokes for this nine.`
+            : 'Optional — off the card. With both, players can enter a Handicap Index instead of working out their own strokes.'}
+        </p>
         <div className="seg">
           {(['front', 'back'] as const).map((n) => (
             <button

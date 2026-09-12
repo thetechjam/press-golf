@@ -42,9 +42,18 @@ export function Setup({ onCancel, onStart }: Props) {
   ]);
   const [holeCount, setHoleCount] = useState(18);
   const [holes, setHoles] = useState<Hole[]>(makeHoles(18));
-  /** Slope and rating of these holes, when the user knows them. */
+  /** Slope and rating of the course, when the user knows them. */
   const [slope, setSlope] = useState<number | undefined>();
   const [rating, setRating] = useState<number | undefined>();
+  /**
+   * How many holes the rating above covers.
+   *
+   * Loading an eighteen-hole course to play nine is the case this exists for:
+   * the rating is for eighteen, and saying so is what lets it be halved rather
+   * than judged against nine holes and thrown out. A rating typed by hand is
+   * for the holes on screen, so it tracks the hole count.
+   */
+  const [ratingHoles, setRatingHoles] = useState<number | undefined>();
   /** Handicap allowance per game, as a percentage. Absent entries are 100%. */
   const [allowanceByGame, setAllowanceByGame] = useState<Partial<Record<GameType, number>>>({});
   const [games, setGames] = useState<GameType[]>(['skins']);
@@ -149,6 +158,7 @@ export function Setup({ onCancel, onStart }: Props) {
     setImported(null);
     setSlope(c.slope);
     setRating(c.rating);
+    setRatingHoles(c.holes.length);
     openRow('holes');
     setSavedNote({ text: `Loaded "${c.name}"`, row: 'course' });
   };
@@ -310,7 +320,11 @@ export function Setup({ onCancel, onStart }: Props) {
    * left over from a different number of holes, would produce a confident
    * wrong answer rather than no answer.
    */
-  const rated = validSlope(slope) && validRating(rating, holes.length);
+  // Judged against the holes the rating covers, not the holes being played —
+  // otherwise an eighteen-hole rating loaded to play nine reads as implausible
+  // and the Index column never appears.
+  const ratedHoles = ratingHoles ?? holes.length;
+  const rated = validSlope(slope) && validRating(rating, ratedHoles);
   /** The course handicap an Index is worth here, for showing beside the field. */
   const derivedHandicap = (index: number | undefined): number | null => {
     if (!rated || index == null || Number.isNaN(index)) return null;
@@ -318,7 +332,7 @@ export function Setup({ onCancel, onStart }: Props) {
       index,
       slope: slope as number,
       rating: rating as number,
-      ratingHoles: holes.length,
+      ratingHoles: ratedHoles,
       playingHoles: holes.length,
       playingPar: holes.reduce((sum, h) => sum + h.par, 0),
     });
@@ -408,6 +422,7 @@ export function Setup({ onCancel, onStart }: Props) {
       // the saved course later must not re-handicap a round already played.
       slope: rated ? slope : undefined,
       rating: rated ? rating : undefined,
+      ratingHoles: rated ? ratingHoles : undefined,
       scores: {},
       wolf: {},
       presses: [],
@@ -883,7 +898,10 @@ export function Setup({ onCancel, onStart }: Props) {
                   inputMode="decimal"
                   step="0.1"
                   value={rating ?? ''}
-                  onChange={(e) => setRating(e.target.value === '' ? undefined : Number(e.target.value))}
+                  onChange={(e) => {
+                    setRating(e.target.value === '' ? undefined : Number(e.target.value));
+                    setRatingHoles(holes.length);
+                  }}
                   placeholder={`${holes.length * 4}.0`}
                 />
               </label>

@@ -58,6 +58,12 @@ export interface RoundOverrides {
   scores?: Scores;
   wolf?: Round['wolf'];
   presses?: number[];
+  /** The course's figures, which turn a player's Index into strokes. */
+  slope?: number;
+  rating?: number;
+  /** How many holes the rating covers, when not the number being played. */
+  ratingHoles?: number;
+  status?: Round['status'];
 }
 
 export function makeRound(o: RoundOverrides = {}): Round {
@@ -75,6 +81,9 @@ export function makeRound(o: RoundOverrides = {}): Round {
     scores: o.scores ?? {},
     wolf: o.wolf ?? {},
     presses: o.presses,
-    status: 'in_progress',
+    slope: o.slope,
+    rating: o.rating,
+    ratingHoles: o.ratingHoles,
+    status: o.status ?? 'in_progress',
   };
 }

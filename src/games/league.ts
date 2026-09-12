@@ -1,6 +1,6 @@
 import type { Round, Hole, LeagueTeam } from '../types';
 import { runMatch } from './matchPlay';
-import { strokeIndexMap, strokesReceivedOnHole } from './handicap';
+import { strokeIndexMap, strokesReceivedOnHole, courseHandicapFor } from './handicap';
 
 export interface LeagueMatchResult {
   key: 'A' | 'B' | 'team';
@@ -44,7 +44,24 @@ function leagueBaselines(round: Round): Baselines {
   // League rule: at most 1 stroke per hole, so capping the effective handicap at
   // `total` makes the second-stroke branch of strokesReceivedOnHole unreachable.
   const capHcp = (v: number) => Math.min(Math.max(0, v), total);
-  const hcp = (id: string) => round.players.find((p) => p.id === id)?.handicap ?? 0;
+  /**
+   * The strokes a player plays off on these holes.
+   *
+   * Through `courseHandicapFor`, so a league night gets the same treatment as
+   * every other round: a Handicap Index converted against the course's slope
+   * and rating when both are known and plausible, and the typed stroke count
+   * when they are not. Everything below — the low-man subtraction, the cap,
+   * the allocation — works on whatever number comes back, so league's own
+   * rules did not have to change to gain this.
+   *
+   * Note that a nine-hole league night needs a *nine-hole* rating: an
+   * eighteen-hole figure fails `validRating` for nine holes and falls back to
+   * the typed handicap rather than halving itself and looking right.
+   */
+  const hcp = (id: string) => {
+    const player = round.players.find((p) => p.id === id);
+    return player ? courseHandicapFor(round, player) : 0;
+  };
   const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? '?';
   const [t0, t1] = cfg.teams;
   const aLow = Math.min(hcp(t0.aId), hcp(t1.aId));
