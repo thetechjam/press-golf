@@ -59,6 +59,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   390×844 phone has 63px to spare.
 
 ### Fixed
+- **The app looks for new versions instead of waiting to be reloaded.** It only
+  ever checked on a page load — and an installed app is resumed far more often
+  than it is loaded, because iOS suspends it rather than killing it. Tapping the
+  icon returns to the screen that was open, with no navigation and no check, so
+  a phone could sit on an old build indefinitely and say nothing about it. It
+  now asks whenever the app comes back to the foreground, and hourly while it
+  is left open. The check runs during a round too, even though the banner
+  offering the update still waits for the round to end — finding an update is
+  not the same as interrupting someone with it. Both are skipped with no
+  signal, which is where this app is usually used.
+
 - **The Settings gear is no longer cut off the side of the Play screen.** On an
   iPhone the scoring toolbar ran off the right edge, taking the gear — the only
   way into Settings mid-round — partly with it, and the money ticker above it
