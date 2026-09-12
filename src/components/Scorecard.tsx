@@ -26,11 +26,20 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
     onScore(holeNumber, playerId, value);
   };
 
-  const jumpProps = (i: number) =>
+  /**
+   * Turns a hole's column header into a control that jumps to it.
+   *
+   * The label is the point: the cell's text is the hole number alone, so a
+   * screen reader announced eighteen buttons called "1" through "18" with
+   * nothing to say what pressing one did. The number is on screen for sighted
+   * users and the sentence is for everyone else.
+   */
+  const jumpProps = (i: number, holeNumber: number) =>
     onJumpToHole
       ? {
           role: 'button' as const,
           tabIndex: 0,
+          'aria-label': `Go to hole ${holeNumber}`,
           onClick: () => onJumpToHole(i),
           onKeyDown: (e: React.KeyboardEvent) => {
             if (e.key === 'Enter' || e.key === ' ') {
@@ -52,7 +61,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
               <Fragment key={h.number}>
                 <th
                   className={`sc-hole${h.number === currentHole ? ' current' : ''}`}
-                  {...jumpProps(i)}
+                  {...jumpProps(i, h.number)}
                 >
                   {h.number}
                 </th>

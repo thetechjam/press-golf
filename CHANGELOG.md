@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Accessibility sweep across every screen.** Golf League's player name and
+  handicap fields had no accessible name, only a placeholder. The scorecard's
+  eighteen hole headers, and Golf League's starting-hole grid, were buttons
+  that announced as their own number — "1, button" — with nothing to say what
+  pressing one did; they now say "Go to hole 4" and "Start on hole 4". "Edit
+  stakes" and "Edit handicaps" were 17px tall, under the 24×24 minimum, and are
+  now 28. Header buttons went from 38px to 44px across every screen, and the
+  roster chips from 36 to 40, so the app uses one set of sizes.
+- **A long course name is no longer cut off.** In the saved-course list the name
+  shared a line with the send and delete buttons and truncated on a narrow
+  phone. It gets the full width now and wraps instead.
+
 ### Added
 - **A screen for your rounds.** Home used to list every round ever played,
   under the two buttons you came to press. It now shows the five most recent

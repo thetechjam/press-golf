@@ -220,11 +220,16 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
           {(['a', 'b'] as const).map((role) => (
             <div key={role} className="player-row">
               <span className="ab-badge">{role.toUpperCase()}</span>
+              {/* Named, because a placeholder is not an accessible name and
+                  goes the moment somebody types. There are four of each of
+                  these on the screen, so the name has to say which team and
+                  which slot, not just "player". */}
               <input
                 className="player-name"
                 value={t[role].name}
                 onChange={(e) => updatePlayer(ti, role, { name: e.target.value })}
                 placeholder={`${role.toUpperCase()} player`}
+                aria-label={`Name of team ${ti + 1}'s ${role.toUpperCase()} player`}
               />
               <input
                 className="player-hcp"
@@ -237,6 +242,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
                   })
                 }
                 placeholder="HCP"
+                aria-label={`Handicap for team ${ti + 1}'s ${role.toUpperCase()} player`}
               />
             </div>
           ))}
@@ -316,12 +322,17 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
       <section className="card">
         <h2>Starting hole</h2>
         <div className="start-hole-grid">
+          {/* The number alone is enough on screen, under a heading that says
+              what the grid is for. A screen reader gets the buttons without
+              the heading, so nine of them announced as "1" through "9" with
+              nothing to say what pressing one does. */}
           {holes.map((h) => (
             <button
               key={h.number}
               className={`seg-btn${startHole === h.number ? ' active' : ''}`}
               onClick={() => setStartHole(h.number)}
               aria-pressed={startHole === h.number}
+              aria-label={`Start on hole ${h.number}`}
             >
               {h.number}
             </button>
