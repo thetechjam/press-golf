@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { Round, SavedCourse } from '../types';
 import { Sheet } from './Sheet';
-import { COURSE_KEY, SHARE_KEY, encodeRound, shareUrl, shareUrlQR } from '../shareLink';
-import { encodeCourse } from '../shareCourse';
-import { encodeQR, qrPath } from '../qr';
+import { ShareQr } from './ShareQr';
+import { useShareLink, sendLink } from '../shareTarget';
 
 interface Props {
   /** Exactly one of these. A round is handed over; a course is handed out. */
@@ -12,81 +11,35 @@ interface Props {
   onClose: () => void;
 }
 
-type State =
-  | { kind: 'working' }
-  | { kind: 'ready'; url: string; path: string; side: number; tooBig: false }
-  | { kind: 'ready'; url: string; tooBig: true }
-  | { kind: 'failed' };
-
 /**
- * The sheet that hands a round — or a course — to somebody else's phone.
+ * The sheet that hands a live round — or a saved course — to another phone.
  *
- * The round travels inside the link, so this works with no signal and nothing
- * is uploaded anywhere — which is worth saying on the sheet, because "share a
- * link" normally means the opposite and a group betting real money is entitled
- * to know which one this is.
+ * The round or card travels inside the link, so this works with no signal and
+ * nothing is uploaded anywhere, which is worth saying on the sheet: "share a
+ * link" normally means the opposite, and a group betting real money is
+ * entitled to know which one this is.
  *
- * A round too large for a QR code still gets a link: the code is the
- * convenience, the link is the feature.
+ * A finished round is shared from the Share sheet on Results instead, which
+ * offers the scoreboard images alongside this same code.
  */
 export function SendRound({ round, course, onClose }: Props) {
-  const [state, setState] = useState<State>({ kind: 'working' });
+  const state = useShareLink(round, course);
   const [copied, setCopied] = useState(false);
-  // A live round is being handed over to be carried on; a finished one is
-  // being shown. Same link either way — but saying "they can carry on scoring"
-  // about a card that is already settled would be nonsense.
   const live = !!round && round.status !== 'finished';
   const name = course?.name ?? round?.course ?? 'Golf round';
 
-  useEffect(() => {
-    let alive = true;
-    void (async () => {
-      const key = course ? COURSE_KEY : SHARE_KEY;
-      const payload = course ? await encodeCourse(course) : round ? await encodeRound(round) : null;
-      if (!alive) return;
-      if (!payload) return setState({ kind: 'failed' });
-
-      const url = shareUrl(window.location.href, payload, key);
-      const code = encodeQR(shareUrlQR(window.location.href, payload, key));
-      if (!code) return setState({ kind: 'ready', url, tooBig: true });
-      const { path, side } = qrPath(code);
-      setState({ kind: 'ready', url, path, side, tooBig: false });
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [round, course]);
-
   const send = async (url: string) => {
-    // The share sheet first — on a phone this is the whole point, since the
-    // link is going into a message thread and not a clipboard.
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: course ? 'Golf course' : 'Golf round',
-          text: `${name} — open in Press`,
-          url,
-        });
-        return;
-      }
-    } catch (err) {
-      // Dismissing the share sheet is not a failure to fall back from.
-      if ((err as Error)?.name === 'AbortError') return;
-    }
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
+    const wasCopied = await sendLink(
+      url,
+      course ? 'Golf course' : 'Golf round',
+      `${name} — open in Press`
+    );
+    setCopied(wasCopied);
+    if (wasCopied) setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <Sheet
-      title={course ? 'Send this course' : live ? 'Hand over scoring' : 'Send this round'}
-      onClose={onClose}
-    >
+    <Sheet title={course ? 'Send this course' : 'Hand over scoring'} onClose={onClose}>
       {state.kind === 'working' && <p className="send-note">Building the link…</p>}
 
       {state.kind === 'failed' && (
@@ -98,31 +51,14 @@ export function SendRound({ round, course, onClose }: Props) {
 
       {state.kind === 'ready' && (
         <>
-          {!state.tooBig && (
-            <div className="send-qr">
-              <svg
-                viewBox={`0 0 ${state.side} ${state.side}`}
-                role="img"
-                aria-label="QR code for this round"
-                shapeRendering="crispEdges"
-              >
-                {/* The light ground is drawn rather than inherited: a QR code
-                    on a dark background is one no camera will read, and this
-                    app has a dark theme. */}
-                <rect width={state.side} height={state.side} fill="#fff" />
-                <path d={state.path} fill="#000" />
-              </svg>
-            </div>
-          )}
+          {!state.tooBig && <ShareQr path={state.path} side={state.side} />}
 
           <p className="send-note">
             {state.tooBig
               ? `This ${course ? 'course' : 'round'} is too big for a QR code, but the link still carries it.`
               : course
                 ? 'Point their camera at this. They get the pars and stroke indexes you checked.'
-                : live
-                  ? 'Point their camera at this. They can take over scoring from here.'
-                  : 'Point another phone’s camera at this to open the round in Press.'}
+                : 'Point their camera at this. They can take over scoring from here.'}
           </p>
 
           <button className="btn-primary big" onClick={() => void send(state.url)}>

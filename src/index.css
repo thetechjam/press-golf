@@ -2756,23 +2756,11 @@ select:focus {
   color: var(--gold);
 }
 
-/* Two share CTAs of equal weight — results and the hole-by-hole card. */
-.share-row {
-  display: flex;
-  gap: 10px;
-}
-.share-row .btn-primary {
-  flex: 1;
-  min-width: 0;
-  white-space: nowrap;
-  /* Containing block for the busy label stacked on top of the idle one. */
-  position: relative;
-}
-/* The two labels of a share CTA. The idle one stays in flow and goes on
+/* The two labels of a picture CTA. The idle one stays in flow and goes on
    setting the button's height; taking BOTH out of it would collapse the
    button to its padding and min-height the moment a render started. Width is
-   never at stake here — `flex: 1` on two buttons splits the row evenly
-   whatever they say — so this is a pure cross-fade with no geometry in it. */
+   never at stake — the buttons are full-width in the sheet — so this is a
+   pure cross-fade with no geometry in it. */
 .share-face {
   display: inline-flex;
   align-items: center;
@@ -2793,22 +2781,61 @@ select:focus {
   filter: blur(2px);
 }
 
-/* Secondary text-share under the scoreboard share CTA. */
-.share-text {
-  margin: -6px auto 0;
-  font-size: 0.85rem;
-}
-
-/* ---- Sending a round (QR sheet, and a round that arrived by link) ---- */
-.btn-ghost.send-round {
+/* The one way out of the Results screen. Everything that used to be stacked
+   here is grouped in the Share sheet instead. */
+.share-open {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  margin: -2px auto 0;
-  font-size: 0.85rem;
+  gap: 10px;
 }
 
+/* Two picture CTAs in the Share sheet, stacked, each with a line saying what
+   it actually produces — "Results" and "Scorecard" side by side said nothing
+   about the difference. */
+.share-picture .btn-primary,
+.share-picture .btn-secondary {
+  width: 100%;
+  /* Containing block for the busy label stacked on top of the idle one. */
+  position: relative;
+}
+.share-picture-hint {
+  margin: 6px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.share-picture + .share-picture {
+  margin-top: 16px;
+}
+
+/* The rule between sending a picture of the result and sending the round. */
+.share-split {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 14px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.share-split::before,
+.share-split::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* Edit stakes and Edit handicaps, together, where the money is. */
+.board-edits {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ---- Sending a round (QR sheet, and a round that arrived by link) ---- */
 /* The code is drawn on its own white ground rather than the card's, because a
    QR code on a dark background is one no camera will read — and Press has a
    dark theme. The padding is the quiet zone's visual half; the other half is

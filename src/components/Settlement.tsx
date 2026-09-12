@@ -9,9 +9,16 @@ import { StakesEditor } from './StakesEditor';
 interface Props {
   round: Round;
   onChange?: (round: Round) => void;
+  /**
+   * Opens the handicap editor. It lives here rather than at the foot of the
+   * screen because it is the same kind of act as editing the stakes — fixing a
+   * number that decides the money — and the two belong within reach of each
+   * other and of the figures they change.
+   */
+  onEditHandicaps?: () => void;
 }
 
-export function Settlement({ round, onChange }: Props) {
+export function Settlement({ round, onChange, onEditHandicaps }: Props) {
   const settlement = computeSettlement(round);
   const [editing, setEditing] = useState(!settlement.active);
 
@@ -26,11 +33,18 @@ export function Settlement({ round, onChange }: Props) {
         <span className="board-title">
           <CoinIcon size={16} /> Settlement
         </span>
-        {onChange && (
-          <button className="link-btn" onClick={() => setEditing((e) => !e)}>
-            {editing ? 'Done' : 'Edit stakes'}
-          </button>
-        )}
+        <span className="board-edits">
+          {onEditHandicaps && (
+            <button className="link-btn" onClick={onEditHandicaps}>
+              Edit handicaps
+            </button>
+          )}
+          {onChange && (
+            <button className="link-btn" onClick={() => setEditing((e) => !e)}>
+              {editing ? 'Done' : 'Edit stakes'}
+            </button>
+          )}
+        </span>
       </div>
 
       {editing && onChange && (

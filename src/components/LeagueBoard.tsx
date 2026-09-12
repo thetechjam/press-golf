@@ -4,7 +4,14 @@ import { TrophyIcon } from '../icons';
 
 const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
 
-export function LeagueBoard({ round }: { round: Round }) {
+export function LeagueBoard({
+  round,
+  onEditHandicaps,
+}: {
+  round: Round;
+  /** A league night has no Settlement card, so the edit lives here instead. */
+  onEditHandicaps?: () => void;
+}) {
   const league = computeLeague(round);
   const [t0, t1] = league.teams;
   // Leader is marked by the row highlight alone — no trophy glyph.
@@ -16,7 +23,14 @@ export function LeagueBoard({ round }: { round: Round }) {
         <span className="board-title">
           <TrophyIcon size={16} /> League
         </span>
-        <span className="board-status">{league.complete ? 'Final' : 'Live'}</span>
+        <span className="board-edits">
+          {onEditHandicaps && (
+            <button className="link-btn" onClick={onEditHandicaps}>
+              Edit handicaps
+            </button>
+          )}
+          <span className="board-status">{league.complete ? 'Final' : 'Live'}</span>
+        </span>
       </div>
 
       <ol className="board-list">
