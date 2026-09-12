@@ -341,3 +341,57 @@ describe('reduced-motion suppression block position', () => {
     expect(bare.slice(blockEnd).trim()).toBe('');
   });
 });
+
+/**
+ * The pinned CTA bar on Setup and Golf League is four declarations doing four
+ * different jobs, and three of them fail silently.
+ *
+ * It replaced a sticky button, which is why the bar exists at all: a button's
+ * own containing block is only as tall as the button, so it has nowhere to
+ * move, and Play hit the same wall before it (see `.play-foot`).
+ *
+ * Drop the background and the bar turns back into a transparent slab with the
+ * page sliding visibly under it. Drop the fade and a course-search list ends
+ * mid-row against a hard edge, saying "this is the end" where four more
+ * results are waiting. Let the fade keep pointer events and it silently eats
+ * taps on the row it is drawn over. Drop the scroll-padding and every field
+ * the browser scrolls into view of its own accord lands behind the button —
+ * measured at 31px under it before the rule existed.
+ *
+ * All four render perfectly in a screenshot of the top of the screen.
+ */
+describe('pinned CTA bar', () => {
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+  const rule = (selector: string) =>
+    new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`).exec(
+      bare
+    )?.[1] ?? '';
+
+  it('is the sticky thing, pinned to the bottom of the scrollport', () => {
+    const foot = rule('.screen-foot');
+    expect(foot).toMatch(/position\s*:\s*sticky/);
+    expect(foot).toMatch(/bottom\s*:\s*0/);
+    // Above the content it is meant to cover, or it covers nothing.
+    expect(foot).toMatch(/z-index\s*:\s*[1-9]/);
+  });
+
+  it('is opaque, so content scrolls behind a bar and not behind a button', () => {
+    expect(rule('.screen-foot')).toMatch(/background\s*:\s*var\(--bg\)/);
+  });
+
+  it('fades the content into the bar from outside the bar', () => {
+    const fade = rule('.screen-foot::before');
+    // bottom: 100% puts it above the bar: inside, it would tint the button.
+    expect(fade).toMatch(/bottom\s*:\s*100%/);
+    expect(fade).toMatch(/linear-gradient\(\s*to top\s*,\s*var\(--bg\)/);
+    expect(fade).toMatch(/pointer-events\s*:\s*none/);
+  });
+
+  it('reserves its own height for scrolls the browser starts', () => {
+    expect(rule('html:has(.screen-foot)')).toMatch(/scroll-padding-bottom\s*:/);
+  });
+
+  it('takes over the screen padding it now sits below', () => {
+    expect(rule('.screen:has(> .screen-foot)')).toMatch(/padding-bottom\s*:\s*0/);
+  });
+});

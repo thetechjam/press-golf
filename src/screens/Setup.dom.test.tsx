@@ -566,3 +566,37 @@ describe('every field says what it is', () => {
     expect(unnamed.map((el) => el.className)).toEqual([]);
   });
 });
+
+/**
+ * Where the Start button lives, and what travels with it.
+ *
+ * The button is pinned to the bottom of a screen you have to scroll, so an
+ * error it produces has to be pinned with it. Left in the flow above the bar
+ * it can be scrolled off the screen while the button that wrote it stays in
+ * reach — press, nothing happens, no reason given. The markup is the whole
+ * guard here: the CSS invariants are in `overscroll.test.ts`.
+ */
+describe('the pinned Start bar', () => {
+  it('holds the button', () => {
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    const cta = screen.getByRole('button', { name: /Start Round/i });
+    expect(cta.closest('.screen-foot')).not.toBeNull();
+    // And is the screen's last child, so it has somewhere to stick from.
+    const screenEl = document.querySelector('.screen')!;
+    expect(screenEl.querySelector(':scope > .screen-foot')).not.toBeNull();
+  });
+
+  it('keeps a refusal beside the button that caused it, and says it out loud', async () => {
+    const user = userEvent.setup();
+    const onStart = vi.fn();
+    render(<Setup onCancel={() => {}} onStart={onStart} />);
+
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(onStart).not.toHaveBeenCalled();
+
+    const error = document.querySelector('.screen-foot .error')!;
+    expect(error).not.toBeNull();
+    expect(error.textContent).toContain('player');
+    expect(error.getAttribute('role')).toBe('alert');
+  });
+});
