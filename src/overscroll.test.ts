@@ -470,6 +470,18 @@ describe('pinned bar reaches the bottom', () => {
     expect(rule('.app > .screen')).toMatch(/flex\s*:\s*1/);
   });
 
+  it('states the screen\u2019s width rather than leaving it to be inferred', () => {
+    // A flex item only stretches to the line when the container's cross size
+    // is definite; where it is not, the item can size to its own max-content
+    // and grow past the phone. An iPhone screenshot showed exactly that: the
+    // toolbar and the money ticker \u2014 the two children whose content can be
+    // wider than the screen \u2014 laid out past the right edge, while the header
+    // and the scoring card sat correctly inside it.
+    const screenRule = rule('.app > .screen');
+    expect(screenRule).toMatch(/width\s*:\s*100%/);
+    expect(screenRule).toMatch(/min-width\s*:\s*0/);
+  });
+
   it('lets the bar take what the content did not', () => {
     expect(rule('.screen-foot')).toMatch(/margin-top\s*:\s*auto/);
   });
@@ -522,6 +534,16 @@ describe('rows that have to fit a narrow phone', () => {
 
   it('tightens the toolbar gap that buys the sixth control its place', () => {
     expect(rule('.seg.view-toggle')).toMatch(/gap\s*:\s*6px/);
+  });
+
+  it('will not let the toolbar be wider than the screen it sits in', () => {
+    // Measured off the phone this was reported from: every other child of the
+    // screen was the right width and this row alone was 34pt wider, so its
+    // tabs shared the extra out evenly and the Settings gear went off the
+    // side. It cannot exceed its parent, whatever hands it that width.
+    const row = rule('.seg.view-toggle');
+    expect(row).toMatch(/max-width\s*:\s*100%/);
+    expect(row).toMatch(/min-width\s*:\s*0/);
   });
 
   it('lets a settlement line wrap instead of running off the page', () => {

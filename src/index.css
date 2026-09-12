@@ -206,8 +206,23 @@ body {
   display: flex;
   flex-direction: column;
 }
+/* `width: 100%` looks redundant next to a stretching flex item, and is not.
+   Making .app a flex column turned every screen into a flex item, and a flex
+   item's cross size is only stretched to the line when the container's cross
+   size is definite — where it is not, an item can size itself to its own
+   max-content instead and grow past the phone. That is what a screenshot from
+   an iPhone showed: the scoring toolbar and the money ticker, the two children
+   of that screen whose content can be wider than the screen, were both laid
+   out past the right edge, while the header and the scoring card — which
+   cannot exceed their content — sat correctly inside it. The tabs then shared
+   the extra width out between them and the Settings gear ended up off the
+   side. Stating the width leaves nothing to infer.
+   box-sizing is border-box globally, so the screen's own padding is inside
+   this 100% rather than added to it. */
 .app > .screen {
   flex: 1 0 auto;
+  width: 100%;
+  min-width: 0;
 }
 
 /* A phone in landscape is ~874px wide. 900px is effectively full width there
@@ -1145,6 +1160,18 @@ select:focus {
   /* 6px rather than the .seg default of 8. Five gaps across six controls, and
      those 10px are the difference between one row and two at 360px. */
   gap: 6px;
+  /* Pinned to the width of the screen it sits in, and this is not belt and
+     braces — it is the one declaration that matches what was measured off the
+     phone this was reported from. Every other child of that screen was the
+     right width; this row alone laid itself out 34pt wider, and its three tabs
+     shared the extra out between them evenly, with room to spare inside each
+     (the word "BOARD" took 43pt of a 78pt button). So the row was not failing
+     to wrap — it was wrapping against a width it should never have had, and
+     the last control in it, Settings, ended up off the side of the phone.
+     Whatever hands it that width, it cannot exceed its parent now, and the
+     wrap above takes over instead. */
+  max-width: 100%;
+  min-width: 0;
 }
 /* Three tabs + three icon toggles. The tabs need 158px between them at their
    narrowest, so the row fits one line down to 360px: 158 + 6 + the 144px the

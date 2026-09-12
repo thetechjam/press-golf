@@ -61,17 +61,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **The Settings gear is no longer cut off the side of the Play screen.** On an
   iPhone the scoring toolbar ran off the right edge, taking the gear — the only
-  way into Settings mid-round — partly with it. The three tabs were each
-  `flex: 1`, which means a flex-basis of zero, and WebKit decides where to break
-  a flex line from that basis: three tabs that could not really shrink below
-  "BOARD" never forced the row to wrap, so the last control in it hung off the
-  screen instead. Blink accounts for that minimum and wraps, which is why it
-  looked right on every width that could be measured here. The tabs are one
-  group now, carrying the width of all three, so the row breaks on a real
-  number whichever engine is doing the breaking — and Safari is told not to
-  inflate text on its own, which moves every width the stylesheet reasons about
-  and gives no sign it has, on a phone with no browser chrome to notice it
-  against.
+  way into Settings mid-round — partly with it, and the money ticker above it
+  ran off the same edge. Those two are the only children of that screen whose
+  content can be wider than the phone; the header and the scoring card, which
+  cannot, sat correctly inside it. The screen had become a flex item when the
+  pinned bar was given a floor to reach, and a flex item only stretches to its
+  line when the container's cross size is definite — where it is not, it can
+  size itself to its own content and grow past the phone. The screen states its
+  width now. Three other things guard the same row from the other direction:
+  the view tabs are one group, so the row breaks on the width of all three
+  rather than on the zero a `flex: 1` basis reports; the row cannot exceed its
+  parent; and Safari is told not to inflate text on its own, which moves every
+  width the stylesheet reasons about and gives no sign it has on a phone with
+  no browser chrome to notice it against.
 
 - **The Play screen's button now fills the bar it sits in.** It was sizing
   itself to its own label — 183px of a 358px row, left-aligned — on the screen
