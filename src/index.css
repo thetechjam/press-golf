@@ -1154,22 +1154,29 @@ select:focus {
   border-color: var(--green-600);
 }
 /* Play's toggle already sits in .screen's 16px flex gap — no extra margin. */
+/* A grid, not a flex row, and that is the whole fix.
+   Three attempts at this row failed the same way. Flex decides where to break
+   a line, and whether an item may shrink, from values that are only sometimes
+   what you think they are — so the tabs refused to go under "BOARD", the line
+   never broke, and the Settings gear ended up off the side of an iPhone.
+   `max-width: 100%` did not save it either: it clamps this element's own box,
+   and the buttons inside carried on overflowing that box, which is why the
+   screenshot showed the gear 26pt past every other row on the screen while the
+   Layout readout, which measures boxes, reported nothing wrong.
+   A grid track cannot do that. `minmax(0, 1fr)` says the tabs take what is
+   left after the icons and may go below their own content to do it; the two
+   columns therefore sum to exactly this element's width, whatever that width
+   turns out to be, on any engine. The worst case is a tab label a character
+   short — and at any real phone width there is room to spare, so it never
+   arises. */
 .seg.view-toggle {
   margin-bottom: 0;
-  flex-wrap: wrap;
-  /* 6px rather than the .seg default of 8. Five gaps across six controls, and
-     those 10px are the difference between one row and two at 360px. */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  /* 6px rather than the .seg default of 8: it is one gap now, but the tabs
+     inside use the same figure and the row should read as one rhythm. */
   gap: 6px;
-  /* Pinned to the width of the screen it sits in, and this is not belt and
-     braces — it is the one declaration that matches what was measured off the
-     phone this was reported from. Every other child of that screen was the
-     right width; this row alone laid itself out 34pt wider, and its three tabs
-     shared the extra out between them evenly, with room to spare inside each
-     (the word "BOARD" took 43pt of a 78pt button). So the row was not failing
-     to wrap — it was wrapping against a width it should never have had, and
-     the last control in it, Settings, ended up off the side of the phone.
-     Whatever hands it that width, it cannot exceed its parent now, and the
-     wrap above takes over instead. */
   max-width: 100%;
   min-width: 0;
 }
@@ -1217,20 +1224,35 @@ select:focus {
    3 x 140 plus the two gaps between them. */
 .view-tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* minmax(0, 1fr), not 1fr: a bare `1fr` is `minmax(auto, 1fr)`, which will
+     not go under a column's own content — the same floor that kept this row
+     from fitting in the first place, one level down. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
-  flex: 1 1 auto;
+  min-width: 0;
   max-width: 432px;
 }
 /* The three icon toggles as one flex item, so when the row does run out (320px
    and below) they wrap together instead of stranding whichever one happened to
    be last on a line of its own — and once one had wrapped, the three tabs
    expanded to fill the line it left, so it could never wrap back. */
+/* The `auto` column of the grid above: its natural width, never squeezed —
+   the icons are 44px tap targets and the tabs give way instead. */
 .view-tools {
   display: flex;
   gap: 6px;
-  flex: 0 0 auto;
-  margin-left: auto;
+}
+/* Under 360px the six controls genuinely do not fit a line, and this says so
+   as a breakpoint rather than leaving it to be inferred: one column, with the
+   icons on their own row under the tabs, pushed right. Stated, not wrapped —
+   the inference is what went wrong three times. */
+@media (max-width: 359.98px) {
+  .seg.view-toggle {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .view-tools {
+    justify-self: end;
+  }
 }
 /* Wake-lock toggle: fixed slot beside the view toggle. 44px, the size the
    header icons settled on, not the 48px var(--tap) the tabs beside them use:

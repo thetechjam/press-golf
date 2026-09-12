@@ -45,6 +45,13 @@ function readLayout(): string {
     const position = getComputedStyle(child).position;
     if (position === 'fixed' || position === 'absolute') continue;
     over = Math.max(over, child.getBoundingClientRect().right - contentRight);
+    // And what the row's own box does not admit to. A row whose width is
+    // clamped still paints its contents wherever they land, so the first
+    // version of this reported a clean 402 · 402 · 402 for a toolbar whose
+    // last button was sitting 26px off the side of the phone. scrollWidth
+    // counts what was painted; the rectangle above only counts what was
+    // promised.
+    over = Math.max(over, child.scrollWidth - child.clientWidth);
   }
   const rounded = Math.round(over);
   return `${vw} · ${appW} · ${Math.round(box.width)}${rounded > 0 ? ` · +${rounded}` : ''}`;
