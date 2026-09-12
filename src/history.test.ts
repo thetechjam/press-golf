@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import type { Round } from './types';
-import { searchRounds, filterByStatus, groupByMonth, describeEmpty } from './history';
+import {
+  searchRounds,
+  filterByStatus,
+  groupByMonth,
+  describeEmpty,
+  roundYears,
+  filterByYear,
+  describeNoMatches,
+} from './history';
 import { makeRound, holes18 } from './games/testFixtures';
 
 /** A round with the handful of fields the history screen looks at. */
@@ -154,5 +162,51 @@ describe('saying why the list is empty', () => {
   it('says the plain thing when nothing is filtered at all', () => {
     expect(describeEmpty('', 'all')).toBe('No rounds yet.');
     expect(describeEmpty('   ', 'all')).toBe('No rounds yet.');
+  });
+});
+
+describe('narrowing by year', () => {
+  it('lists the years actually played in, newest first', () => {
+    // Derived from the rounds, not a fixed set of windows: a history is lumpy,
+    // and a rolling window hides half a season behind arithmetic.
+    expect(roundYears(all)).toEqual([2026, 2025]);
+  });
+
+  it('has nothing to offer for no rounds', () => {
+    expect(roundYears([])).toEqual([]);
+  });
+
+  it('ignores a round whose date cannot be read', () => {
+    expect(roundYears([...all, round({ id: 'x', date: 'whenever' })])).toEqual([2026, 2025]);
+  });
+
+  it('keeps only the year asked for', () => {
+    expect(ids(filterByYear(all, 2026))).toEqual(['a', 'b', 'c']);
+    expect(ids(filterByYear(all, 2025))).toEqual(['d']);
+    expect(ids(filterByYear(all, 2024))).toEqual([]);
+  });
+
+  it('passes everything through for all time', () => {
+    expect(ids(filterByYear(all, 'all'))).toEqual(['a', 'b', 'c', 'd']);
+  });
+});
+
+describe('saying why a year came up empty', () => {
+  it('keeps the year in the sentence, so a good search is not blamed', () => {
+    expect(describeNoMatches('sam', 2025)).toBe('No rounds in 2025 match “sam”.');
+  });
+
+  it('drops the year when there is not one set', () => {
+    expect(describeNoMatches('sam', 'all')).toBe('No rounds match “sam”.');
+  });
+
+  it('covers the year alone, which the screen should never produce', () => {
+    // The years offered come from the rounds, so this is unreachable from the
+    // UI. It still has to say something true if it is ever reached.
+    expect(describeNoMatches('  ', 2024)).toBe('No rounds in 2024.');
+  });
+
+  it('says the plain thing when nothing is filtered at all', () => {
+    expect(describeNoMatches('', 'all')).toBe('No rounds yet.');
   });
 });

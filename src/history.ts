@@ -124,3 +124,42 @@ export function describeEmpty(query: string, status: StatusFilter): string {
   if (status === 'in_progress') return 'No rounds in progress.';
   return 'No rounds yet.';
 }
+
+/**
+ * The years these rounds were played in, newest first.
+ *
+ * Derived from the rounds rather than offered as fixed windows ("last 12
+ * months", "this season") because a golf history is lumpy: somebody with two
+ * years of rounds wants those two years, and a rolling window would hide half
+ * of one of them behind arithmetic nobody asked for.
+ */
+export function roundYears(rounds: Round[]): number[] {
+  const years = new Set<number>();
+  for (const round of rounds) {
+    const year = Number(/^(\d{4})-/.exec(round.date)?.[1]);
+    if (Number.isInteger(year)) years.add(year);
+  }
+  return [...years].sort((a, b) => b - a);
+}
+
+/** Rounds played in `year`; `'all'` passes everything through. */
+export function filterByYear(rounds: Round[], year: number | 'all'): Round[] {
+  if (year === 'all') return rounds;
+  return rounds.filter((r) => Number(/^(\d{4})-/.exec(r.date)?.[1]) === year);
+}
+
+/**
+ * A sentence for an empty result under a search-and-year pair.
+ *
+ * The year on its own can never empty a list — the years offered are derived
+ * from the rounds — so the case that matters is a query with a year still set,
+ * where "no rounds match" alone would send somebody hunting for a typo in a
+ * search that was fine.
+ */
+export function describeNoMatches(query: string, year: number | 'all'): string {
+  const searched = query.trim().length > 0;
+  if (searched && year !== 'all') return `No rounds in ${year} match “${query.trim()}”.`;
+  if (searched) return `No rounds match “${query.trim()}”.`;
+  if (year !== 'all') return `No rounds in ${year}.`;
+  return 'No rounds yet.';
+}

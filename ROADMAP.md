@@ -74,7 +74,10 @@ what's deferred, and how to expand without a rewrite.
 - **Stats** (`src/stats.ts`, `src/screens/Stats.tsx`): cross-round history
   derived from the saved rounds — scoring average against par, best round,
   scoring mix, skins won, money across rounds. Players are matched by name,
-  since a `Player.id` is per-round. Local only; nothing new is stored.
+  since a `Player.id` is per-round. Local only; nothing new is stored. The
+  same search as Round history, plus a year filter, narrows which rounds the
+  figures come from, so "how do I score at Torrey" and "was last season
+  better" are the same screen asked twice.
 
 ## Where data lives today
 
