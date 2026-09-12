@@ -499,7 +499,48 @@ button:focus-visible {
   min-width: 0;
   text-align: left;
   padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
+/* The card's text moved from <div>s to <span>s when it became a shared
+   component — the select-mode tick sits beside the text, so the two need a
+   row and the text needs a column of its own. These have to be told they are
+   blocks; overflow: hidden on an inline box does not ellipsize. */
+.round-body {
+  flex: 1;
+  min-width: 0;
+  display: block;
+}
+.round-title,
+.round-sub,
+.round-result {
+  display: block;
+}
+
+/* Select mode. The tick is drawn rather than an <input>: the whole card is
+   already the control, and a checkbox inside a button is a second target
+   inside the first. `aria-pressed` on the card carries the state. */
+.round-tick {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.round-tick.on {
+  background: var(--green-600);
+  border-color: var(--green-600);
+}
+.round-card.selected {
+  border-color: var(--green-600);
+}
+
 .round-title {
   font-family: var(--font-display);
   font-weight: 500;
@@ -4391,6 +4432,125 @@ select:focus {
    does not inherit, so nulling .hole-dot leaves the pseudo-element — the thing
    that actually scales to 1.3 — still animating. The 1.3 end state stays; it
    marks the current hole and is information, not motion. */
+/* ---- Round history ---- */
+.history-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.history-search {
+  position: relative;
+}
+.history-search input {
+  width: 100%;
+  /* Room for the clear button, so a long query never runs under it. */
+  padding-right: 40px;
+}
+/* type="search" brings its own clear button in WebKit and Chromium, which sat
+   next to ours as a second, smaller, unlabelled ✕ doing the same job. Ours
+   stays because it is the one with an accessible name and a target the size of
+   a thumb. */
+.history-search input::-webkit-search-cancel-button,
+.history-search input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.history-clear {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.history-filter {
+  width: 100%;
+}
+
+.history-count {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.history-empty {
+  margin: 28px 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+.history-group h2 {
+  margin: 6px 0 8px;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Room for the sticky bar to scroll clear of the last card, added only while
+   it is on screen. */
+.screen.history.selecting {
+  padding-bottom: 80px;
+}
+
+/* The bulk bar sits above the safe area and stays put while the list scrolls
+   under it — the selection it describes is spread down the whole list. */
+.history-bulk {
+  position: sticky;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+}
+.history-bulk .btn-ghost {
+  white-space: nowrap;
+}
+.history-bulk .btn-danger {
+  margin-left: auto;
+}
+
+/* Uses --over-strong, the text-safe error red, rather than the --over accent:
+   this is a word you have to read before you tap it. */
+.btn-danger {
+  padding: 10px 16px;
+  min-height: 40px;
+  border: 1px solid var(--over-strong);
+  border-radius: 10px;
+  background: none;
+  color: var(--over-strong);
+  font-weight: 700;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btn-danger:active {
+  background: color-mix(in srgb, var(--over-strong) 12%, transparent);
+}
+.btn-danger:disabled {
+  opacity: 0.45;
+}
+
+/* Home's handover to the history. */
+.btn-ghost.saved-all {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  font-size: 0.88rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ticker-face,
   .del-face,

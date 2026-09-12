@@ -1,15 +1,22 @@
 import { useState } from 'react';
 import type { Round } from '../types';
 import { listRounds, deleteRound } from '../storage';
-import { completedHoleCount } from '../games/util';
-import { GAMES, activeResults } from '../games';
-import { computeLeague } from '../games/league';
 import { InstallPrompt } from '../components/InstallPrompt';
-import { DeleteButton } from '../components/DeleteButton';
-import { FlagIcon, PressMark, TrophyIcon, XIcon, GearIcon, ChartIcon } from '../icons';
+import { RoundCard } from '../components/RoundCard';
+import { FlagIcon, PressMark, TrophyIcon, GearIcon, ChartIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
-import { formatRoundDate } from '../roundDate';
 import { countsForStats } from '../stats';
+
+/**
+ * How many rounds Home shows before handing over to the history.
+ *
+ * Home is a launcher: the two buttons at the top are what somebody opened the
+ * app to press, and an unbounded archive underneath them pushes those further
+ * from the thumb with every round played. Five covers the round you are
+ * part-way through and the last few you might want to look at again; anything
+ * older is a search, which is what the history screen is for.
+ */
+const ON_HOME = 5;
 
 interface Props {
   onNew: () => void;
@@ -17,32 +24,10 @@ interface Props {
   onResume: (round: Round) => void;
   onViewResults: (round: Round) => void;
   onStats: () => void;
+  onHistory: () => void;
 }
 
-const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
-
-/** A round with no course name still gets a glanceable identity. */
-const roundTitle = (r: Round): string => {
-  if (r.course) return r.course;
-  if (r.options.league) return 'League night';
-  const names = r.players.map((p) => p.name.split(' ')[0]);
-  return names.length <= 2 ? names.join(' v ') : `${names[0]} +${names.length - 1}`;
-};
-
-/** One-line outcome for a finished round, or null while in progress. */
-const resultLine = (r: Round): string | null => {
-  if (r.status !== 'finished') return null;
-  if (r.options.league) {
-    const [a, b] = computeLeague(r).teams;
-    if (a.points === b.points) return `All square · ${fmtPts(a.points)}–${fmtPts(b.points)}`;
-    const [win, lose] = a.points > b.points ? [a, b] : [b, a];
-    return `${win.name} won ${fmtPts(win.points)}–${fmtPts(lose.points)}`;
-  }
-  const first = activeResults(r)[0];
-  return first ? `${first.title}: ${first.status}` : null;
-};
-
-export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats }: Props) {
+export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onHistory }: Props) {
   const [rounds, setRounds] = useState<Round[]>(listRounds());
   const [showSettings, setShowSettings] = useState(false);
   const [settingsView, setSettingsView] = useState<'settings' | 'help'>('settings');
@@ -120,44 +105,20 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats }: P
               </button>
             )}
           </div>
-          {rounds.map((r) => {
-            const thru = completedHoleCount(r);
-            const result = resultLine(r);
-            return (
-              <div key={r.id} className="round-card">
-                <button
-                  className="round-main"
-                  onClick={() => (r.status === 'finished' ? onViewResults(r) : onResume(r))}
-                >
-                  <div className="round-title">{roundTitle(r)}</div>
-                  <div className="round-sub">
-                    {formatRoundDate(r.date)} · {r.players.length} players · {r.holes.length} holes
-                    {r.status === 'finished'
-                      ? ''
-                      : thru === 0
-                        ? ' · not started'
-                        : ` · thru ${thru}`}
-                  </div>
-                  {result && <div className="round-result">{result}</div>}
-                  <div className="round-games">
-                    {r.options.league && <span className="tag">League</span>}
-                    {r.games.map((g) => (
-                      <span key={g} className="tag">
-                        {GAMES.find((m) => m.id === g)?.label ?? g}
-                      </span>
-                    ))}
-                  </div>
-                </button>
-                <DeleteButton
-                  className="round-del"
-                  label={`round ${r.course || r.date}`}
-                  onDelete={() => remove(r.id)}
-                >
-                  <XIcon />
-                </DeleteButton>
-              </div>
-            );
-          })}
+          {rounds.slice(0, ON_HOME).map((r) => (
+            <RoundCard
+              key={r.id}
+              round={r}
+              onOpen={() => (r.status === 'finished' ? onViewResults(r) : onResume(r))}
+              onDelete={() => remove(r.id)}
+            />
+          ))}
+
+          {rounds.length > ON_HOME && (
+            <button className="btn-ghost saved-all" onClick={onHistory}>
+              All {rounds.length} rounds ›
+            </button>
+          )}
         </section>
       )}
 
