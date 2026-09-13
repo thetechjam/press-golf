@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The Magpie.** A round award for whoever picked up the most junk, alongside
+  the Skin Thief and the ATM. It names the haul rather than totalling it — "2
+  greenies · a sandie · a polie" is a round you can picture, where "4 junk" is a
+  number already on the card above it. Two is the floor and a tie wins nothing,
+  for the same reason the Skin Thief has both: collecting one greenie is not a
+  story, and a group that all picked up a couple had a nice round rather than a
+  winner.
+
 - **Junk.** The side bets a scorecard cannot see: a par is just a 4 whether it
   came off the tee or out of a bunker. Six of them — greenie, sandie, barkie,
   arnie, chip-in and polie — claimed on the hole as they happen, because nobody
