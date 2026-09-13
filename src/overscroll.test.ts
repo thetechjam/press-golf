@@ -557,6 +557,14 @@ describe('rows that have to fit a narrow phone', () => {
     expect(rule('.payment')).toMatch(/flex-wrap\s*:\s*wrap/);
     expect(rule('.payment strong')).toMatch(/min-width\s*:\s*0/);
   });
+
+  it('lets a junk line wrap rather than widening the card that holds it', () => {
+    // The one free-text line under the scorecard, and the longest: a player who
+    // picked up on six holes writes a sentence. Unwrapped it would push the
+    // whole card sideways, and what falls off the right is a bet somebody is
+    // owed.
+    expect(rule('.sc-junk li')).toMatch(/flex-wrap\s*:\s*wrap/);
+  });
 });
 
 /**

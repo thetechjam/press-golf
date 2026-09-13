@@ -1,5 +1,7 @@
-import type { Round } from './types';
+import type { JunkKind, Round } from './types';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from './games/handicap';
+import { claimsOn, junkMeta } from './games/junk';
+import { ordinal } from './games/util';
 import { anyNetScoring } from './games/scoring';
 import { leagueStrokesOnHole, type LeagueMatchKey } from './games/league';
 import { scoreMarkClass } from './scoreMark';
@@ -52,6 +54,30 @@ export interface ScorecardRow {
   toPar: number | null;
 }
 
+/**
+ * One hole's worth of one player's junk.
+ *
+ * Grouped by hole rather than listed flat because two bets picked up on the
+ * same hole are one story — out of the sand and holed it — and the hole number
+ * is the part somebody cross-references against the grid above.
+ */
+export interface ScorecardJunkHole {
+  holeNumber: number;
+  kinds: JunkKind[];
+  /** 'Sandie + Barkie' */
+  label: string;
+}
+
+export interface ScorecardJunkEntry {
+  playerId: string;
+  name: string;
+  holes: ScorecardJunkHole[];
+  /** Claims in total — the number the money settles on. */
+  count: number;
+  /** 'Greenie (3rd) · Sandie + Barkie (7th)' */
+  detail: string;
+}
+
 export interface ScorecardModel {
   holes: ScorecardHole[];
   parTotal: number;
@@ -59,6 +85,52 @@ export interface ScorecardModel {
   /** Empty for a round covering only one nine, where a subtotal restates TOT. */
   nines: ScorecardNine[];
   rows: ScorecardRow[];
+  /** Empty unless the round is playing junk and somebody claimed some. */
+  junk: ScorecardJunkEntry[];
+}
+
+/**
+ * The junk claimed, written out under the card.
+ *
+ * There is no column for it and there cannot be one: junk is claimed rather
+ * than scored, so a cell that already holds a score, a stroke dot and a league
+ * chip has nothing left to say a greenie with. Underneath is where a paper
+ * card carries side bets too, and in a junk round it is the half of the
+ * afternoon the grid above is blind to.
+ *
+ * Only players who claimed something appear — a name with nothing after it is
+ * a line somebody has to read to learn nothing. Holes run in play order so the
+ * footer scans the same direction as the grid, and kinds within a hole keep
+ * `claimsOn`'s list order so the same haul reads the same way twice.
+ */
+function junkEntries(round: Round): ScorecardJunkEntry[] {
+  // Claims can outlive the game being deselected. They stay in storage, but a
+  // card should show the games the round is playing, which is the same rule
+  // settlement and the awards apply.
+  if (!round.games.includes('junk')) return [];
+
+  const entries: ScorecardJunkEntry[] = [];
+  for (const p of round.players) {
+    const holes: ScorecardJunkHole[] = [];
+    for (const h of round.holes) {
+      const kinds = claimsOn(round, h.number, p.id);
+      if (kinds.length === 0) continue;
+      holes.push({
+        holeNumber: h.number,
+        kinds,
+        label: kinds.map((k) => junkMeta(k).label).join(' + '),
+      });
+    }
+    if (holes.length === 0) continue;
+    entries.push({
+      playerId: p.id,
+      name: p.name,
+      holes,
+      count: holes.reduce((n, g) => n + g.kinds.length, 0),
+      detail: holes.map((g) => `${g.label} (${ordinal(g.holeNumber)})`).join(' · '),
+    });
+  }
+  return entries;
 }
 
 /**
@@ -175,5 +247,6 @@ export function buildScorecard(round: Round): ScorecardModel {
     showHandicap: usesHandicaps(round),
     nines,
     rows,
+    junk: junkEntries(round),
   };
 }

@@ -4162,6 +4162,42 @@ select:focus {
 /* ---- Scorecard legend ----------------------------------------------------
    Sits under the grid on the Card tab, where the marks are densest and where
    the screen previously ran out of content halfway down. */
+/* Junk is the one thing on this card that no column can hold — it is claimed,
+   not scored, and the cell it would go in already carries a score, a stroke dot
+   and a league chip. Written underneath is where a paper card carries side bets
+   too, above the key because it is the round rather than a note about it. */
+.sc-junk {
+  margin: 12px 2px 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+.sc-junk h2 {
+  margin: 0 0 5px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--gold-ink);
+}
+.sc-junk ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+/* Wraps rather than truncates: the part that would be cut is the bet somebody
+   is owed, which is the whole reason the line is here. */
+.sc-junk li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+}
+.sc-junk-who {
+  color: var(--ink);
+  font-weight: 600;
+}
+
 .sc-legend {
   list-style: none;
   margin: 10px 2px 0;
