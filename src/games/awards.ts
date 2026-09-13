@@ -1,10 +1,11 @@
-import type { Round } from '../types';
+import type { JunkKind, Round } from '../types';
 import { computeSettlement, formatMoney } from './settlement';
 import { totalStrokesReceived, usesHandicaps } from './handicap';
 import { computeSkins } from './skins';
 import { wolfOutcomes } from './wolf';
 import { vegasHoles, vegasTeams, vegasReady } from './vegas';
 import { computeQuota } from './quota';
+import { JUNK, claimsOn, junkCounts } from './junk';
 
 /**
  * Round awards — the ribbing layer over a finished round.
@@ -317,6 +318,56 @@ function skinThief(round: Round): Award | null {
   };
 }
 
+/**
+ * Most junk, and only when somebody is clearly holding it.
+ *
+ * Two is the floor and a tie wins nothing, for the same reason Skin Thief has
+ * both: "Al collected one" is not a story, and a group that all picked up a
+ * greenie apiece has a nice round rather than a winner.
+ *
+ * The detail names the haul rather than totalling it, because that is the part
+ * worth reading out — "two greenies and a sandie" is a round somebody can
+ * picture, where "4 junk" is a number they already saw on the card above.
+ */
+function magpie(round: Round): Award | null {
+  if (!round.games.includes('junk')) return null;
+
+  const counts = junkCounts(round);
+  const ranked = round.players
+    .map((p) => ({ id: p.id, name: p.name, n: counts[p.id] ?? 0 }))
+    .sort((a, b) => b.n - a.n);
+
+  const top = ranked[0];
+  if (!top || top.n < 2) return null;
+  if (ranked[1] && ranked[1].n === top.n) return null;
+
+  // Counted per kind, in list order, so the haul reads the same way twice.
+  const haul = new Map<JunkKind, number>();
+  for (const h of round.holes) {
+    for (const kind of claimsOn(round, h.number, top.id)) {
+      haul.set(kind, (haul.get(kind) ?? 0) + 1);
+    }
+  }
+  const detail = JUNK.filter((j) => haul.has(j.id))
+    .map((j) => {
+      const n = haul.get(j.id) as number;
+      const word = j.label.toLowerCase();
+      return n === 1 ? `a ${word}` : `${n} ${word}s`;
+    })
+    .join(' · ');
+
+  return {
+    id: 'magpie',
+    title: 'The Magpie',
+    line: `${top.name} picked up everything loose`,
+    detail,
+    playerIds: [top.id],
+    // Below Skin Thief at the same count: a skin is a hole won outright, and
+    // junk is a side bet on the way past.
+    score: Math.min(28 + top.n * 6, 58),
+  };
+}
+
 function wolfsGamble(round: Round): Award | null {
   if (!round.games.includes('wolf')) return null;
 
@@ -466,6 +517,7 @@ export function computeAwards(round: Round): Award[] {
     highwayRobbery(round),
     sandbagger(round),
     skinThief(round),
+    magpie(round),
     wolfsGamble(round),
     wreckingBall(round),
     shortOfTheMark(round),

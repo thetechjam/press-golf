@@ -705,3 +705,93 @@ describe('naming a hole', () => {
     expect(holeName(21)).toBe('the 21st');
   });
 });
+
+describe('The Magpie', () => {
+  const four = [
+    player('p1', 'Al'),
+    player('p2', 'Bo'),
+    player('p3', 'Cy'),
+    player('p4', 'Di'),
+  ];
+
+  const withJunk = (junk: NonNullable<Parameters<typeof makeRound>[0]>['junk']) =>
+    makeRound({ players: four, holes: holes18(), games: ['junk'], junk });
+
+  test('names the sole leader once they are holding two or more', () => {
+    const round = withJunk({
+      2: { p1: ['greenie'] },
+      7: { p1: ['sandie'], p2: ['polie'] },
+    });
+    const award = find(round, 'magpie');
+    expect(award?.line).toBe('Al picked up everything loose');
+  });
+
+  test('names the haul rather than totalling it', () => {
+    // "two greenies and a sandie" is a round somebody can picture; "4 junk" is
+    // a number they already saw on the card above.
+    const round = withJunk({
+      2: { p1: ['greenie'] },
+      5: { p1: ['greenie', 'sandie'] },
+      9: { p1: ['polie'] },
+    });
+    expect(find(round, 'magpie')?.detail).toBe('2 greenies · a sandie · a polie');
+  });
+
+  test('keeps the haul in list order however it was collected', () => {
+    const round = withJunk({ 2: { p1: ['polie'] }, 3: { p1: ['greenie'] } });
+    expect(find(round, 'magpie')?.detail).toBe('a greenie · a polie');
+  });
+
+  test('says nothing about one', () => {
+    // Collecting one greenie is not a story.
+    expect(find(withJunk({ 2: { p1: ['greenie'] } }), 'magpie')).toBeUndefined();
+  });
+
+  test('says nothing when two are level', () => {
+    // Everyone picking up a couple is a nice round, not a winner.
+    const round = withJunk({
+      2: { p1: ['greenie', 'sandie'] },
+      7: { p2: ['polie', 'barkie'] },
+    });
+    expect(find(round, 'magpie')).toBeUndefined();
+  });
+
+  test('stays away from a round that is not playing junk', () => {
+    const round = makeRound({
+      players: four,
+      holes: holes18(),
+      games: ['skins'],
+      junk: { 2: { p1: ['greenie'] }, 5: { p1: ['sandie'] } },
+    });
+    expect(find(round, 'magpie')).toBeUndefined();
+  });
+
+  test('ranks a big haul above a small one, and both below a skins heist', () => {
+    const small = find(withJunk({ 2: { p1: ['greenie', 'sandie'] } }), 'magpie');
+    const big = find(
+      withJunk({
+        2: { p1: ['greenie', 'sandie', 'barkie'] },
+        3: { p1: ['arnie', 'polie'] },
+      }),
+      'magpie'
+    );
+    expect(big!.score).toBeGreaterThan(small!.score);
+    // A skin is a hole won outright; junk is a side bet on the way past.
+    expect(big!.score).toBeLessThan(60);
+  });
+
+  test('counts only the players and holes this round still has', () => {
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo')],
+      holes: holes18().slice(0, 9),
+      games: ['junk'],
+      junk: {
+        2: { p1: ['greenie', 'sandie'] },
+        12: { p1: ['polie'] },
+        3: { gone: ['barkie', 'arnie', 'greenie'] },
+      },
+    });
+    // The 12th is not being played and `gone` is not in the round.
+    expect(find(round, 'magpie')?.detail).toBe('a greenie · a sandie');
+  });
+});
