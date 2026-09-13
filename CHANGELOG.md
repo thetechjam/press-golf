@@ -40,6 +40,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   team match off the low of all four, and still at most one stroke a hole.
 
 ### Changed
+- **Glare mode and Keep screen awake are set in Settings, not on the scoring
+  toolbar.** Both were already in the sheet the gear opens, so the row was
+  spending two of its six controls to save a tap on settings that get set once
+  and left alone — on the screen with the least width to spare in the app, and
+  after three attempts to make six of them fit a phone. Three tabs and one
+  button now sit on one line at every width from 280px up, with the Settings
+  button a full 44px and room to spare at any text size. Nothing moved out of
+  reach: Appearance, Glare mode and Keep screen awake are where they have
+  always been, two taps away, and the screen lock still follows the setting for
+  as long as a round is open.
+
 - **New Round fits on a phone again.** With every row collapsed — what you see
   from the second round on — the screen still scrolled, and most of the
   overflow was the Players card spending two rows to offer one thing.
