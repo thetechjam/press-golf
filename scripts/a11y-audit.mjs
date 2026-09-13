@@ -84,6 +84,14 @@ const round = (over) => ({
     nassau: { mode: '2v2', teamA: [ids[0], ids[1]], teamB: [ids[2], ids[3]] },
   },
   scores,
+  // A haul over three holes, one of them a double claim, so the scorecard's
+  // junk footer — the longest free-text line the card carries — is on screen
+  // when the Card tab is audited rather than only the empty case.
+  junk: {
+    3: { [ids[0]]: ['greenie'] },
+    7: { [ids[0]]: ['sandie', 'barkie'], [ids[1]]: ['chipIn'] },
+    12: { [ids[0]]: ['polie'], [ids[2]]: ['greenie'] },
+  },
   wolf: {},
   slope: 129,
   rating: 74.6,

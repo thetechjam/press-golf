@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildScorecard, formatToPar } from './scorecardModel';
 import { makeRound, player, holes, holes18, scoresFrom } from './games/testFixtures';
-import type { LeagueSetup } from './types';
+import type { JunkClaims, LeagueSetup } from './types';
 
 const FOUR = [
   player('p1', 'Al', 9),
@@ -282,5 +282,64 @@ describe('buildScorecard — OUT / IN subtotals', () => {
     for (const row of model.rows) {
       expect(row.nineTotals).toHaveLength(model.nines.length);
     }
+  });
+});
+
+describe('buildScorecard — junk footer', () => {
+  // Barkie before Sandie on the 7th on purpose: the label should come back in
+  // JUNK's list order, not the order somebody happened to tap them in.
+  const claims: JunkClaims = {
+    3: { p1: ['greenie'] },
+    7: { p1: ['barkie', 'sandie'], p2: ['chipIn'] },
+    12: { p1: ['polie'] },
+  };
+
+  const junkRound = (o: Partial<Parameters<typeof makeRound>[0]> = {}) =>
+    makeRound({ players: FOUR, games: ['junk'], junk: claims, ...o });
+
+  it('lists only the players who claimed something', () => {
+    expect(buildScorecard(junkRound()).junk.map((e) => e.playerId)).toEqual(['p1', 'p2']);
+  });
+
+  it('keeps players in round order, so the footer reads down the same way the rows do', () => {
+    const round = junkRound({
+      players: [FOUR[1], FOUR[0], FOUR[2], FOUR[3]],
+    });
+    expect(buildScorecard(round).junk.map((e) => e.name)).toEqual(['Bo', 'Al']);
+  });
+
+  it('groups a player’s claims by hole, in play order', () => {
+    const [al] = buildScorecard(junkRound()).junk;
+    expect(al.holes.map((h) => h.holeNumber)).toEqual([3, 7, 12]);
+  });
+
+  it('names two bets on the same hole as one group', () => {
+    const [al] = buildScorecard(junkRound()).junk;
+    expect(al.holes[1].label).toBe('Sandie + Barkie');
+  });
+
+  it('counts every claim, not every hole', () => {
+    const [al] = buildScorecard(junkRound()).junk;
+    expect(al.count).toBe(4);
+    expect(al.holes).toHaveLength(3);
+  });
+
+  it('writes the detail line with each hole as an ordinal', () => {
+    const [al, bo] = buildScorecard(junkRound()).junk;
+    expect(al.detail).toBe('Greenie (3rd) · Sandie + Barkie (7th) · Polie (12th)');
+    expect(bo.detail).toBe('Chip-in (7th)');
+  });
+
+  it('is empty when the round is not playing junk, even with claims in storage', () => {
+    expect(buildScorecard(junkRound({ games: ['skins'] })).junk).toEqual([]);
+  });
+
+  it('is empty when junk is on but nobody has claimed anything', () => {
+    expect(buildScorecard(makeRound({ games: ['junk'] })).junk).toEqual([]);
+  });
+
+  it('ignores claims on holes the round is no longer playing', () => {
+    const round = junkRound({ holes: holes(3) });
+    expect(buildScorecard(round).junk.map((e) => e.detail)).toEqual(['Greenie (3rd)']);
   });
 });

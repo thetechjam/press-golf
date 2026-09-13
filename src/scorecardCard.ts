@@ -23,6 +23,9 @@ const TOTAL_W = 96;
 const NINE_W = 72;
 const ROW_H = 74;
 const HEAD_ROW_H = 46;
+/** Name column for the junk footer. Narrower than NAME_W — nothing lines up with it. */
+const JUNK_NAME_W = 230;
+const JUNK_LINE_H = 34;
 
 /** Column width per hole, floored so 9-hole rounds stay proportionate. */
 const holeColWidth = (count: number) => (count > 12 ? 56 : 78);
@@ -30,6 +33,38 @@ const holeColWidth = (count: number) => (count > 12 ? 56 : 78);
 function boardWidth(model: ScorecardModel): number {
   const cols = model.holes.length * holeColWidth(model.holes.length);
   return PAD * 2 + NAME_W + cols + model.nines.length * NINE_W + TOTAL_W * 2;
+}
+
+/**
+ * Splits text into lines that fit `maxWidth` under the context's current font.
+ *
+ * `fit()` truncates, which is right for a name — the row it labels is still
+ * there to identify it — and wrong for junk, where the part that gets cut is
+ * a bet somebody is owed. A single word wider than the line is left over-long
+ * rather than broken: nothing here produces one, and a mid-word break would
+ * read as a typo in an image nobody can correct.
+ *
+ * Takes the measuring interface rather than a canvas context so the wrapping
+ * can be tested without one.
+ */
+export function wrapLines(
+  ctx: { measureText(text: string): { width: number } },
+  text: string,
+  maxWidth: number
+): string[] {
+  const lines: string[] = [];
+  let line = '';
+  for (const word of text.split(' ')) {
+    const next = line ? `${line} ${word}` : word;
+    if (line && ctx.measureText(next).width > maxWidth) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = next;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
 }
 
 /** Centers text in a column. */
@@ -46,9 +81,21 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
   const holeW = holeColWidth(model.holes.length);
   const W = boardWidth(model);
 
+  // Wrapped up front, on a throwaway context, because the canvas has to be
+  // sized before anything is drawn on it and clipping the footer off the
+  // bottom would lose claims silently.
+  const measurer = document.createElement('canvas').getContext('2d')!;
+  measurer.font = disp(400, 24);
+  const junkLines = model.junk.map((entry) =>
+    wrapLines(measurer, entry.detail, W - PAD * 2 - JUNK_NAME_W)
+  );
+  const junkH = model.junk.length
+    ? 48 + junkLines.reduce((n, lines) => n + lines.length, 0) * JUNK_LINE_H
+    : 0;
+
   const work = document.createElement('canvas');
   work.width = W;
-  work.height = 600 + model.rows.length * ROW_H + 400;
+  work.height = 600 + model.rows.length * ROW_H + 400 + junkH;
   const ctx = work.getContext('2d')!;
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, work.width, work.height);
@@ -212,6 +259,37 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
     center(ctx, row.toPar == null ? '' : formatToPar(row.toPar), parX, base);
 
     y += ROW_H;
+  }
+
+  // ---- Junk ----
+  // The grid is blind to it by construction: junk is claimed, not scored, so
+  // there is nothing in the scores for a column to read. Written out here for
+  // the same reason a paper card carries side bets in the margin — without it
+  // the shared image of a junk round is missing half the afternoon.
+  if (model.junk.length > 0) {
+    y += 56;
+    ctx.font = disp(600, 24);
+    ctx.fillStyle = GOLD;
+    setLS(ctx, 5);
+    ctx.fillText('JUNK', PAD, y);
+    setLS(ctx, 0);
+    y += 4;
+
+    model.junk.forEach((entry, i) => {
+      const lines = junkLines[i];
+      ctx.font = disp(500, 26);
+      ctx.fillStyle = CREAM;
+      ctx.fillText(fit(ctx, up(entry.name), JUNK_NAME_W - 20), PAD, y + JUNK_LINE_H);
+      ctx.font = disp(400, 24);
+      ctx.fillStyle = MUTED;
+      lines.forEach((line, l) => {
+        ctx.fillText(line, PAD + JUNK_NAME_W, y + JUNK_LINE_H + l * JUNK_LINE_H);
+      });
+      y += lines.length * JUNK_LINE_H;
+    });
+    // The footer strapline sits 40px below whatever ends the card; from a
+    // baseline rather than the bottom of a row, that reads as touching.
+    y += 18;
   }
 
   // ---- Footer ----
