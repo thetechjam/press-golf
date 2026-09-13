@@ -58,6 +58,7 @@ export interface RoundOverrides {
   scores?: Scores;
   wolf?: Round['wolf'];
   presses?: number[];
+  junk?: Round['junk'];
   /** The course's figures, which turn a player's Index into strokes. */
   slope?: number;
   rating?: number;
@@ -81,6 +82,7 @@ export function makeRound(o: RoundOverrides = {}): Round {
     scores: o.scores ?? {},
     wolf: o.wolf ?? {},
     presses: o.presses,
+    junk: o.junk,
     slope: o.slope,
     rating: o.rating,
     ratingHoles: o.ratingHoles,

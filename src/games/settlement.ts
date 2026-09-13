@@ -1,4 +1,4 @@
-import type { Round, GameType } from '../types';
+import type { Round, GameType, GameResult } from '../types';
 import { computeSkins } from './skins';
 import { computeStableford } from './stableford';
 import { computeWolf } from './wolf';
@@ -6,6 +6,7 @@ import { matchSegmentSides, resolveSides } from './matchPlay';
 import { nassauSegments, nassauTeams } from './nassau';
 import { vegasHoles, vegasTeams } from './vegas';
 import { computeQuota } from './quota';
+import { computeJunk } from './junk';
 import { totalStrokesReceived } from './handicap';
 import { netFor } from './scoring';
 
@@ -39,6 +40,7 @@ const LABEL: Record<GameType, string> = {
   nassau: 'Nassau',
   vegas: 'Vegas',
   quota: 'Quota',
+  junk: 'Junk',
 };
 
 export const STAKE_UNIT: Record<GameType, string> = {
@@ -51,6 +53,7 @@ export const STAKE_UNIT: Record<GameType, string> = {
   nassau: 'bet',
   vegas: 'point',
   quota: 'point',
+  junk: 'junk',
 };
 
 /**
@@ -75,6 +78,23 @@ export function formatMoney(n: number): string {
   return n < 0 ? `−${s}` : s;
 }
 
+/**
+ * The games that settle on a count: each player's standing value is a number of
+ * things won, and every one of them is worth the stake against every rival.
+ *
+ * One map rather than a condition listing the games and a ternary chain
+ * choosing between them. Those were two lists of the same five games that had
+ * to agree, and adding a sixth meant editing both — which is exactly the shape
+ * of edit that gets half-made.
+ */
+const COUNTED: Partial<Record<GameType, (round: Round) => GameResult>> = {
+  junk: computeJunk,
+  skins: computeSkins,
+  stableford: computeStableford,
+  wolf: computeWolf,
+  quota: computeQuota,
+};
+
 /** Field-difference model: each unit shifts `stake` between you and every rival. */
 function fieldNet(
   ids: string[],
@@ -94,22 +114,10 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
   ids.forEach((id) => (net[id] = 0));
   if (stake <= 0) return net;
 
-  if (
-    gameType === 'skins' ||
-    gameType === 'stableford' ||
-    gameType === 'wolf' ||
-    gameType === 'quota'
-  ) {
-    const res =
-      gameType === 'skins'
-        ? computeSkins(round)
-        : gameType === 'stableford'
-          ? computeStableford(round)
-          : gameType === 'quota'
-            ? computeQuota(round)
-            : computeWolf(round);
+  const counted = COUNTED[gameType];
+  if (counted) {
     const valueById: Record<string, number> = {};
-    res.standings.forEach((s) => {
+    counted(round).standings.forEach((s) => {
       if (s.playerId) valueById[s.playerId] = s.value;
     });
     return fieldNet(ids, valueById, stake);

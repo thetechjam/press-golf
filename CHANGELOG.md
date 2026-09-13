@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Junk.** The side bets a scorecard cannot see: a par is just a 4 whether it
+  came off the tee or out of a bunker. Six of them — greenie, sandie, barkie,
+  arnie, chip-in and polie — claimed on the hole as they happen, because nobody
+  can work them out from the numbers afterwards. More than one can land on the
+  same hole: a tree, then up and down from sand, is a barkie and a sandie. Each
+  is worth the stake from every other player, so one greenie at $2 among four is
+  $6 to whoever got it. Turn it on with the other games, put a number on it in
+  the Money row, and tap them from the Hole tab — the panel names who a tap will
+  credit before you make it. They ride along on a shared round and on a mid-round
+  handover, and a copy that has a claim yours does not is no longer mistaken for
+  the same round.
+
 - **Settings says which build you are running, and whether the layout fits.**
   Two lines under the version: the build's date and time, and a layout
   reading. The version alone cannot answer "did my phone take the update?" — it

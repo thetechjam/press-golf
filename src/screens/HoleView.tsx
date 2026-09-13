@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
-import type { Round, Hole, WolfChoice } from '../types';
+import type { Round, Hole, JunkClaims, WolfChoice } from '../types';
 import { PlayerScoreRow } from '../components/PlayerScoreRow';
 import { WolfControls } from '../components/WolfControls';
 import { NassauControls } from '../components/NassauControls';
+import { JunkControls } from '../components/JunkControls';
 import { VegasStrip } from '../components/VegasStrip';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
 import { anyNetScoring } from '../games/scoring';
@@ -21,10 +22,11 @@ interface Props {
   onScore: (playerId: string, value: number | null) => void;
   onWolf: (choice: WolfChoice) => void;
   onPresses: (presses: number[]) => void;
+  onJunk: (junk: JunkClaims) => void;
 }
 
 export function HoleView({
-  round, hole, idx, dir, highlightId, holeComplete, onGo, onScore, onWolf, onPresses,
+  round, hole, idx, dir, highlightId, holeComplete, onGo, onScore, onWolf, onPresses, onJunk,
 }: Props) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   // One ref serves both jobs: keeping the current dot centred, and measuring
@@ -103,6 +105,9 @@ export function HoleView({
           <NassauControls round={round} hole={hole} onChange={onPresses} />
         )}
         {round.games.includes('vegas') && <VegasStrip round={round} hole={hole} />}
+        {round.games.includes('junk') && (
+          <JunkControls round={round} hole={hole} onChange={onJunk} />
+        )}
         <section className="steppers">
           {round.players.map((p, i) => (
             <PlayerScoreRow

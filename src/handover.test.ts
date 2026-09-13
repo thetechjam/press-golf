@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Round } from './types';
 import { compareRounds, forkRound, describeArrival } from './handover';
-import { makeRound, holes18, scoresFrom } from './games/testFixtures';
+import { makeRound, holes18, player, scoresFrom } from './games/testFixtures';
 import { mergeRounds } from './backup';
 
 /**
@@ -170,21 +170,21 @@ describe('saying it in a sentence', () => {
   const compare = (mineTo: number, theirsTo: number) =>
     compareRounds(card(THEIRS, through(theirsTo), through(theirsTo)), card(MINE, through(mineTo), through(mineTo)));
 
-  it('names the number of scores at stake', () => {
+  it('names the number of entries at stake', () => {
     expect(describeArrival(compare(9, 18))).toBe(
-      'The copy you were sent has 18 scores yours doesn’t.'
+      'The copy you were sent has 18 entries yours doesn’t.'
     );
     expect(describeArrival(compare(18, 9))).toBe(
-      'Your copy has 18 scores the one you were sent doesn’t.'
+      'Your copy has 18 entries the one you were sent doesn’t.'
     );
     expect(describeArrival(compare(9, 9))).toContain('already have this round');
   });
 
-  it('counts one score as one, not as “1 scores”', () => {
+  it('counts one entry as one, not as “1 entries”', () => {
     const mine = card(MINE, [4], [4]);
     const theirs = card(THEIRS, [4, 4], [4]);
     expect(describeArrival(compareRounds(theirs, mine))).toBe(
-      'The copy you were sent has 1 score yours doesn’t.'
+      'The copy you were sent has 1 entry yours doesn’t.'
     );
   });
 
@@ -192,9 +192,56 @@ describe('saying it in a sentence', () => {
     const mine = card(MINE, [4, 4, 4], [4, 4, 4]);
     const theirs = card(THEIRS, [4, 7], [4, 4, 4, 4]);
     const text = describeArrival(compareRounds(theirs, mine));
-    expect(text).toContain('Both phones have scored this round');
-    expect(text).toContain('1 score only on the copy you were sent');
-    expect(text).toContain('1 score only on yours');
+    expect(text).toContain('Both phones have been used on this round');
+    expect(text).toContain('1 entry only on the copy you were sent');
+    expect(text).toContain('1 entry only on yours');
     expect(text).toContain('1 entered differently on each');
+  });
+});
+
+describe('junk on a handed-over round', () => {
+  /** Two copies of one round, differing only in a claimed greenie. */
+  const withJunk = (junk?: Round['junk']): Round => ({
+    ...makeRound({
+      players: [player('a', 'Al'), player('b', 'Bo')],
+      holes: holes18(),
+      games: ['junk'],
+      scores: { 1: { a: 4, b: 5 } },
+    }),
+    junk,
+  });
+
+  it('is not the same round just because the scores match', () => {
+    // Nobody can work a sandie out from a 4. Compared on scores alone these
+    // two read as identical, and accepting or declining throws the claim away
+    // without a word.
+    const arrival = compareRounds(withJunk({ 2: { a: ['greenie'] } }), withJunk());
+    expect(arrival.kind).toBe('ahead');
+  });
+
+  it('counts a claim only this device holds as behind', () => {
+    const arrival = compareRounds(withJunk(), withJunk({ 2: { a: ['greenie'] } }));
+    expect(arrival.kind).toBe('behind');
+  });
+
+  it('calls two different claims on one hole a divergence', () => {
+    const arrival = compareRounds(
+      withJunk({ 2: { a: ['greenie'] } }),
+      withJunk({ 2: { a: ['sandie'] } })
+    );
+    expect(arrival.kind).toBe('diverged');
+  });
+
+  it('does not mind which order they were tapped in', () => {
+    // Two phones, same two claims, different taps. That is agreement.
+    const arrival = compareRounds(
+      withJunk({ 2: { a: ['greenie', 'polie'] } }),
+      withJunk({ 2: { a: ['polie', 'greenie'] } })
+    );
+    expect(arrival.kind).toBe('same');
+  });
+
+  it('still reads as the same round when neither has any', () => {
+    expect(compareRounds(withJunk(), withJunk()).kind).toBe('same');
   });
 });

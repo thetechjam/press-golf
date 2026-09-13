@@ -220,7 +220,7 @@ describe('a round this device already has', () => {
     seed(asDecoded(live, 4));
     await arriveWith(`#r=${await encodeRound(asDecoded(live, 9))}`);
 
-    expect(screen.getByText('The copy you were sent has 10 scores yours doesn’t.')).toBeTruthy();
+    expect(screen.getByText('The copy you were sent has 10 entries yours doesn’t.')).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'Bring mine up to date' }));
 
     await waitFor(() => expect(stored()[0].scores[9]?.p0).toBe(4));
@@ -245,7 +245,7 @@ describe('a round this device already has', () => {
     await arriveWith(`#r=${await encodeRound(theirs)}`);
 
     expect(screen.getByRole('heading', { name: 'Two versions of this round' })).toBeTruthy();
-    expect(screen.getByText(/Both phones have scored this round/)).toBeTruthy();
+    expect(screen.getByText(/Both phones have been used on this round/)).toBeTruthy();
     // Keeping both is offered first, because it is the only answer that
     // loses nothing.
     expect(screen.getByRole('button', { name: 'Keep both' })).toBeTruthy();

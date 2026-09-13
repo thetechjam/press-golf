@@ -407,3 +407,69 @@ describe('how big the link gets', () => {
     expect(payload.length).toBeLessThan(JSON.stringify(round).length / 2);
   });
 });
+
+describe('junk over a link', () => {
+  const four = ['Al', 'Bo', 'Cy', 'Di'];
+
+  /** A round with junk on it, players carrying ids a receiver will not reuse. */
+  const withJunk = (): Round => ({
+    ...makeRound({
+      players: four.map((name, i) => player(`mine-${i}`, name)),
+      holes: holes18(),
+      games: ['junk'],
+      options: { stakes: { junk: 2 } },
+    }),
+    junk: {
+      3: { 'mine-0': ['greenie', 'sandie'], 'mine-2': ['polie'] },
+      11: { 'mine-1': ['barkie'] },
+    },
+  });
+
+  it('arrives claimed against the same people it left', () => {
+    // Junk is keyed by player id, and the receiver mints their own — so a
+    // round that keeps the sender's ids pays the wrong people, or nobody.
+    const result = unpackRound(packRound(withJunk())!);
+    if (!result.ok) throw new Error(result.error);
+    const { round } = result;
+
+    const by = (name: string) => round.players.find((p) => p.name === name)!.id;
+    expect(round.junk?.[3]?.[by('Al')]).toEqual(['greenie', 'sandie']);
+    expect(round.junk?.[3]?.[by('Cy')]).toEqual(['polie']);
+    expect(round.junk?.[11]?.[by('Bo')]).toEqual(['barkie']);
+    expect(computeSettlement(round).totals[by('Al')]).toBe(
+      computeSettlement(withJunk()).totals['mine-0']
+    );
+  });
+
+  it('costs nothing in a round with no junk on it', () => {
+    const packed = packRound(makeRound({ players: [player('a', 'Al'), player('b', 'Bo')] }));
+    expect(packed).not.toBeNull();
+    expect('j' in packed!).toBe(false);
+  });
+
+  it('drops a claim on a player position nobody occupies', () => {
+    // A truncated or hand-edited link: counted, it would pay a phantom.
+    const packed = packRound(withJunk())!;
+    packed.j = { 3: { '9': ['greenie'], '0': ['sandie'] } } as typeof packed.j;
+    const result = unpackRound(packed);
+    if (!result.ok) throw new Error(result.error);
+    const ids = Object.keys(result.round.junk?.[3] ?? {});
+    expect(ids).toEqual([result.round.players[0].id]);
+  });
+
+  it('drops a kind this version cannot name', () => {
+    const packed = packRound(withJunk())!;
+    packed.j = { 3: { '0': ['sandie', 'moonshot'] } } as typeof packed.j;
+    const result = unpackRound(packed);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.round.junk?.[3]?.[result.round.players[0].id]).toEqual(['sandie']);
+  });
+
+  it('leaves the round with no junk at all rather than an empty shell', () => {
+    const packed = packRound(withJunk())!;
+    packed.j = { 3: { '9': ['greenie'] } } as typeof packed.j;
+    const result = unpackRound(packed);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.round.junk).toBeUndefined();
+  });
+});

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Round, WolfChoice } from '../types';
+import type { JunkClaims, Round, WolfChoice } from '../types';
 import { Leaderboard } from '../components/Leaderboard';
 import { Scorecard } from '../components/Scorecard';
 import { LeagueBoard } from '../components/LeagueBoard';
@@ -84,6 +84,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     setScoreAt(hole.number, playerId, value);
 
   const setPresses = (presses: number[]) => onChange({ ...round, presses });
+  const setJunk = (junk: JunkClaims) => onChange({ ...round, junk });
 
   const setWolf = (choice: WolfChoice) => {
     const wolfPlayerId =
@@ -216,6 +217,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           onScore={setScore}
           onWolf={setWolf}
           onPresses={setPresses}
+          onJunk={setJunk}
         />
       )}
 

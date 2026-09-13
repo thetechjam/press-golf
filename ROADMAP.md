@@ -10,7 +10,16 @@ what's deferred, and how to expand without a rewrite.
 - **Games with correct scoring engines** (`src/games/*`): stroke play, match play,
   skins, Stableford (standard + modified), Wolf (partner / lone / blind), Nassau
   (front/back/total) with a **manual press** button, Vegas (2v2, optional birdie
-  flip), Quota (gross card against a handicap-set target).
+  flip), Quota (gross card against a handicap-set target), Junk.
+- **Junk** (`src/games/junk.ts`, `src/components/JunkControls.tsx`): the one
+  game here that derives nothing. A sandie is a par out of a bunker and the card
+  shows a 4, so six of them — greenie, sandie, barkie, arnie, chip-in, polie —
+  are claimed by hand on the hole and counted, each worth the stake from every
+  other player through the same field-difference model skins uses. Claims are
+  keyed by hole and player like `scores`, travel over a share link with the
+  player ids rewritten, and count as entries in the handover comparison: two
+  copies whose scores match but whose claims do not are not the same round, and
+  nothing else on the card could tell you so.
 - **Money / settlement** (`src/games/settlement.ts`): per-game stakes → zero-sum
   net per player → fewest payments ("Bo pays Al $45"), editable on the results
   screen, included in the shared summary.

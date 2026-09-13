@@ -2,6 +2,8 @@ import type {
   GameOptions,
   GameType,
   Hole,
+  JunkClaims,
+  JunkKind,
   LeagueSetup,
   Player,
   Round,
@@ -12,6 +14,7 @@ import type {
 } from './types';
 import { DEFAULT_OPTIONS } from './types';
 import { GAMES } from './games';
+import { isJunkKind } from './games/junk';
 
 /**
  * A whole round packed small enough to travel in a URL fragment.
@@ -100,6 +103,8 @@ interface PackedRound {
   /** One string per player, one character per hole, in hole order. */
   s: string[];
   w?: Record<number, WolfHole>;
+  /** Claimed junk, hole -> player index -> kinds. */
+  j?: JunkClaims;
   pr?: number[];
   sl?: number;
   ra?: number;
@@ -119,10 +124,10 @@ interface PackedRound {
  * `shareLink.test.ts` asserts that no original id survives a pack, which is
  * what would catch a sixth place being added later.
  */
-function mapPlayerIds<T extends Pick<Round, 'options' | 'wolf' | 'scores'>>(
+function mapPlayerIds<T extends Pick<Round, 'options' | 'wolf' | 'scores' | 'junk'>>(
   round: T,
   to: (id: string) => string
-): Pick<Round, 'options' | 'wolf' | 'scores'> {
+): Required<Pick<Round, 'options' | 'wolf' | 'scores'>> & Pick<Round, 'junk'> {
   const team = (t: TeamSetup | undefined): TeamSetup | undefined =>
     t && { mode: t.mode, teamA: t.teamA.map(to), teamB: t.teamB.map(to) };
 
@@ -156,7 +161,20 @@ function mapPlayerIds<T extends Pick<Round, 'options' | 'wolf' | 'scores'>>(
     scores[Number(hole)] = mapped;
   }
 
-  return { options, wolf, scores };
+  // Same two keys as `scores`, and the same reason for being here: junk is
+  // keyed by player id, so a round that arrives with the sender's ids and
+  // keeps them pays the wrong people — or nobody.
+  let junk: JunkClaims | undefined;
+  if (round.junk) {
+    junk = {};
+    for (const [hole, byPlayer] of Object.entries(round.junk)) {
+      const mapped: Record<string, JunkKind[]> = {};
+      for (const [id, kinds] of Object.entries(byPlayer)) mapped[to(id)] = kinds;
+      junk[Number(hole)] = mapped;
+    }
+  }
+
+  return { options, wolf, scores, junk };
 }
 
 /* ------------------------------------------------------------------ *
@@ -176,7 +194,7 @@ export function packRound(round: Round): PackedRound | null {
   // already inconsistent; passing it through would silently drop a score.
   const to = (id: string): string => index.get(id) ?? id;
 
-  const { options, wolf, scores } = mapPlayerIds(round, to);
+  const { options, wolf, scores, junk } = mapPlayerIds(round, to);
 
   const strings: string[] = [];
   for (let i = 0; i < round.players.length; i += 1) {
@@ -208,6 +226,7 @@ export function packRound(round: Round): PackedRound | null {
   };
   if (round.course) packed.c = round.course;
   if (Object.keys(wolf).length) packed.w = wolf;
+  if (junk && Object.keys(junk).length) packed.j = junk;
   if (round.presses?.length) packed.pr = round.presses;
   if (typeof round.slope === 'number') packed.sl = round.slope;
   if (typeof round.rating === 'number') packed.ra = round.rating;
@@ -350,6 +369,35 @@ function readWolf(v: unknown, playerCount: number): Record<number, WolfHole> {
 }
 
 /**
+ * Junk out of a payload, keeping only what still refers to something.
+ *
+ * Same posture as `readOptions` and `readWolf`: this arrives as text from
+ * somebody else's phone and goes straight into a money calculation. A claim on
+ * a player position nobody occupies would count for a phantom, and an unknown
+ * kind from a later version would count as junk without anyone being able to
+ * say what it was. Both are dropped rather than rejecting the round — a claim
+ * Press cannot read is a side bet lost, not a scorecard lost.
+ */
+function readJunk(v: unknown, playerCount: number): JunkClaims | undefined {
+  if (!isObject(v)) return undefined;
+  const known = indexChecker(playerCount);
+  const out: JunkClaims = {};
+
+  for (const [hole, entry] of Object.entries(v)) {
+    const n = Number(hole);
+    if (!Number.isInteger(n) || !isObject(entry)) continue;
+    const onHole: Record<string, JunkKind[]> = {};
+    for (const [id, kinds] of Object.entries(entry)) {
+      if (!known(id) || !Array.isArray(kinds)) continue;
+      const clean = [...new Set(kinds.filter((k): k is JunkKind => typeof k === 'string' && isJunkKind(k)))];
+      if (clean.length) onHole[id] = clean;
+    }
+    if (Object.keys(onHole).length) out[n] = onHole;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/**
  * Rebuilds a round from a packed object. Never throws — every failure comes
  * back as a sentence the arrival screen can show as written.
  *
@@ -432,7 +480,12 @@ export function unpackRound(raw: unknown): UnpackResult {
     return Number.isInteger(n) && n >= 0 && n < players.length ? playerId(n) : id;
   };
   const mapped = mapPlayerIds(
-    { options: readOptions(raw.o, players.length), wolf: readWolf(raw.w, players.length), scores: {} },
+    {
+      options: readOptions(raw.o, players.length),
+      wolf: readWolf(raw.w, players.length),
+      scores: {},
+      junk: readJunk(raw.j, players.length),
+    },
     fromIndex
   );
 
@@ -449,6 +502,7 @@ export function unpackRound(raw: unknown): UnpackResult {
     wolf: mapped.wolf,
     status: raw.f === 1 ? 'finished' : 'in_progress',
   };
+  if (mapped.junk) round.junk = mapped.junk;
   if (typeof raw.c === 'string' && raw.c) round.course = raw.c;
   if (Array.isArray(raw.pr)) round.presses = raw.pr.filter((n): n is number => typeof n === 'number');
   const slope = num(raw.sl);
