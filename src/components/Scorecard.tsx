@@ -200,6 +200,19 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
         </tbody>
       </table>
     </div>
+    {model.junk.length > 0 && (
+      <section className="sc-junk">
+        <h2>Junk</h2>
+        <ul>
+          {model.junk.map((entry) => (
+            <li key={entry.playerId}>
+              <span className="sc-junk-who">{entry.name}</span>
+              <span className="sc-junk-what">{entry.detail}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )}
     {/* The circle/square convention and the gold stroke dot were drawn all
         over this grid and explained nowhere — the aria-labels carried the
         meaning for screen-reader users while sighted users had to guess. */}
