@@ -438,7 +438,7 @@ button:focus-visible {
    Classes with a bespoke :active (.btn-primary, .btn-secondary,
    .bar .btn-ghost, .cs-hit, .saved-course-load, .score-chip) keep theirs. */
 .seg-btn:active,
-.awake-toggle:active,
+.view-tool:active,
 .nav-arrow:active,
 .game-card:active,
 .round-main:active,
@@ -449,7 +449,7 @@ button:focus-visible {
 .sheet-close:active {
   transform: scale(0.97);
 }
-.awake-toggle,
+.view-tool,
 .nav-arrow,
 .round-main,
 .hole-dot,
@@ -1236,31 +1236,14 @@ select:focus {
    and below) they wrap together instead of stranding whichever one happened to
    be last on a line of its own — and once one had wrapped, the three tabs
    expanded to fill the line it left, so it could never wrap back. */
-/* The `auto` column of the grid above: its natural width, never squeezed —
-   the icons are 44px tap targets and the tabs give way instead. */
-.view-tools {
-  display: flex;
-  gap: 6px;
-}
-/* Under 360px the six controls genuinely do not fit a line, and this says so
-   as a breakpoint rather than leaving it to be inferred: one column, with the
-   icons on their own row under the tabs, pushed right. Stated, not wrapped —
-   the inference is what went wrong three times. */
-@media (max-width: 359.98px) {
-  .seg.view-toggle {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .view-tools {
-    justify-self: end;
-  }
-}
-/* Wake-lock toggle: fixed slot beside the view toggle. 44px, the size the
-   header icons settled on, not the 48px var(--tap) the tabs beside them use:
-   these are the row's secondary controls, and the 12px it returns is part of
-   what keeps all six on one line at 360px. */
-.awake-toggle {
-  position: relative;
-  flex: 0 0 44px;
+/* The `auto` column of the toolbar grid: Settings, on its own. 44px, the size
+   the header icons settled on rather than the 48px var(--tap) the tabs beside
+   it use — it is the row's secondary control and reads as one.
+   This was .view-tool, and carried an "on" state and an off-state diagonal
+   strike, because Glare and Keep screen awake sat here too. Both are in the
+   sheet this button opens, so the states went with them. */
+.view-tool {
+  min-width: 44px;
   min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -1270,29 +1253,6 @@ select:focus {
   align-items: center;
   justify-content: center;
   color: var(--muted);
-}
-.awake-toggle.on {
-  color: var(--green-700);
-  border-color: var(--green-600);
-}
-/* Off = diagonal strike (muted-speaker convention) — dimming reads as disabled here. */
-.awake-toggle:not(.on)::after {
-  content: '';
-  position: absolute;
-  left: 11px;
-  right: 11px;
-  top: 50%;
-  height: 2.5px;
-  border-radius: 2px;
-  background: var(--ink);
-  /* Halo separates the strike from the glyph regardless of emoji colors. */
-  box-shadow: 0 0 0 1.5px var(--bg);
-  transform: rotate(-45deg);
-}
-/* Settings reuses .awake-toggle's sizing but isn't a toggle — it has no "on"
-   state, so without this it would permanently show the off-state strike. */
-.awake-toggle.gear-btn:not(.on)::after {
-  content: none;
 }
 
 /* Starting-hole picker: seg-style buttons that wrap on narrow phones so each
@@ -4653,7 +4613,7 @@ select:focus {
   .hero-settings:hover,
   .sheet-close:hover,
   .game-info-btn:hover,
-  .awake-toggle:hover,
+  .view-tool:hover,
   .nav-arrow:hover:not(:disabled),
   .seg-btn:hover:not(.active):not(:disabled),
   .game-card:hover:not(.active),
@@ -4827,7 +4787,7 @@ select:focus {
   .ticker-face,
   .del-face,
   .share-face,
-  .awake-toggle,
+  .view-tool,
   .nav-arrow,
   .round-main,
   .hole-dot,
@@ -4848,7 +4808,7 @@ select:focus {
       color var(--swap) ease;
   }
   .seg-btn:active,
-  .awake-toggle:active,
+  .view-tool:active,
   .nav-arrow:active,
   .game-card:active,
   .round-main:active,

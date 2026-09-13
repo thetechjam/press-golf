@@ -12,10 +12,9 @@ import { visibleSwing } from '../games/money';
 import { wolfForHole } from '../games/wolf';
 import { colorMap } from '../player';
 import { usesHandicaps } from '../games/handicap';
-import { getSettings, saveSettings } from '../storage';
-import { applyTheme } from '../theme';
-import { useWakeLock, wakeLockSupported } from '../useWakeLock';
-import { EyeIcon, ContrastIcon, GearIcon, PencilIcon } from '../icons';
+import { getSettings } from '../storage';
+import { useWakeLock } from '../useWakeLock';
+import { GearIcon, PencilIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { EditHandicaps } from '../components/EditHandicaps';
 import { SendRound } from '../components/SendRound';
@@ -43,30 +42,17 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   // Lock lives only while Play is mounted — released on exit/finish by unmount.
   useWakeLock(keepAwake);
 
-  const toggleKeepAwake = () => {
-    const next = !keepAwake;
-    setKeepAwake(next);
-    saveSettings({ keepAwake: next });
-  };
-
   const [showSettings, setShowSettings] = useState(false);
   const [showHcp, setShowHcp] = useState(false);
   const [handingOver, setHandingOver] = useState(false);
-  const [glare, setGlare] = useState(() => getSettings().glare);
-  const toggleGlare = () => {
-    const next = !glare;
-    setGlare(next);
-    const s = saveSettings({ glare: next });
-    applyTheme(s.theme, s.glare);
-  };
 
-  // Because keepAwake and glare are also editable in the sheet, re-read both
-  // on close so neither pair of controls can disagree.
+  // Keep screen awake is set in the sheet now, so re-read it on close: the lock
+  // itself lives here, for as long as Play is mounted, and has to follow.
+  // Glare needs no equivalent — the sheet applies the theme itself, and this
+  // screen no longer holds an opinion about it.
   const closeSettings = () => {
     setShowSettings(false);
-    const s = getSettings();
-    setKeepAwake(s.keepAwake);
-    setGlare(s.glare);
+    setKeepAwake(getSettings().keepAwake);
   };
 
   // Scroll the flagged player row into view and clear the flash after it plays.
@@ -200,40 +186,18 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             </button>
           ))}
         </div>
-        {/* Grouped, so the three of them wrap onto a second line together
-            rather than one at a time. Stranded alone, the odd icon also let
-            the tabs expand into the space it vacated, which pinned the wrap in
-            place. */}
-        <div className="view-tools">
-          {wakeLockSupported && (
-            <button
-              className={`awake-toggle${keepAwake ? ' on' : ''}`}
-              onClick={toggleKeepAwake}
-              aria-label="Keep screen awake"
-              aria-pressed={keepAwake}
-              title="Keep screen awake"
-            >
-              <EyeIcon size={20} />
-            </button>
-          )}
-          <button
-            className={`awake-toggle${glare ? ' on' : ''}`}
-            onClick={toggleGlare}
-            aria-label="Glare mode"
-            aria-pressed={glare}
-            title="Glare mode — max contrast for direct sun"
-          >
-            <ContrastIcon size={20} />
-          </button>
-          <button
-            className="awake-toggle gear-btn"
-            onClick={() => setShowSettings(true)}
-            aria-label="Settings"
-            title="Settings"
-          >
-            <GearIcon size={20} />
-          </button>
-        </div>
+        {/* Settings, and nothing else. Glare and Keep screen awake used to sit
+            here too, and both are in the sheet this opens — so the row carried
+            three icons to save a tap on two settings that are set once and left
+            alone. Three tabs and one button fit any phone with room over. */}
+        <button
+          className="view-tool"
+          onClick={() => setShowSettings(true)}
+          aria-label="Settings"
+          title="Settings"
+        >
+          <GearIcon size={20} />
+        </button>
       </div>
 
       {mode === 'hole' && !round.options.league && (

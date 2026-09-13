@@ -282,16 +282,28 @@ describe('Play chrome', () => {
     expect(document.querySelector('.screen.play > .screen-foot')).toBe(foot);
   });
 
-  it('keeps the toolbar’s icon toggles in one group', async () => {
+  it('carries three tabs and Settings, and nothing else', async () => {
+    // Glare and Keep screen awake used to sit here as well. Both are in the
+    // sheet the gear opens, so the row was spending two icons to save a tap on
+    // settings that get set once and left alone — on the screen with the least
+    // width to spare in the app.
     const user = userEvent.setup();
     await openPlay(user);
-    const tools = document.querySelector('.view-tools');
-    expect(tools).not.toBeNull();
-    for (const name of ['Glare mode', 'Settings']) {
-      expect(screen.getByRole('button', { name }).closest('.view-tools')).toBe(tools);
-    }
-    // The three view tabs stay outside it, or they would wrap with the icons.
-    expect(screen.getByRole('button', { name: 'Board' }).closest('.view-tools')).toBeNull();
+    const row = document.querySelector('.view-toggle')!;
+    expect([...row.querySelectorAll('button')].map((b) => b.textContent)).toEqual([
+      'Hole',
+      'Board',
+      'Card',
+      '',
+    ]);
+    const gear = screen.getByRole('button', { name: 'Settings' });
+    expect(gear.closest('.view-toggle')).toBe(row);
+    // And wearing the class that makes it a 44px target rather than shrinking
+    // to its glyph — it is the grid's `auto` column, so its own width is the
+    // width the row is built around.
+    expect(gear.classList.contains('view-tool')).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Glare mode' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Keep screen awake' })).toBeNull();
   });
 });
 

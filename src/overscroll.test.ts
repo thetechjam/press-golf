@@ -271,7 +271,7 @@ describe('reduced-motion suppression block position', () => {
    * ordering assertion passes — the `@media` text really does still follow
    * every target.
    *
-   * It compiles to `.wrapper .awake-toggle, .wrapper .nav-arrow, …`: every
+   * It compiles to `.wrapper .view-tool, .wrapper .nav-arrow, …`: every
    * selector descendant-scoped to a container that is an ancestor of none of
    * them, so the block matches nothing at all. Measured against the built
    * artifact on disk, ALL SIX targets lose suppression and compute
@@ -524,14 +524,6 @@ describe('rows that have to fit a narrow phone', () => {
     expect(rule('.view-tabs')).toMatch(/min-width\s*:\s*0/);
   });
 
-  it('states the narrow-phone breakpoint instead of inferring it', () => {
-    // Under 360px the six controls genuinely do not fit a line. Said as a
-    // breakpoint, because leaving it to be inferred is what went wrong.
-    const media = /@media \(max-width: 359\.98px\) \{([\s\S]*?)\n\}/.exec(bare)?.[1] ?? '';
-    expect(media).toMatch(/\.seg\.view-toggle/);
-    expect(media).toMatch(/grid-template-columns\s*:\s*minmax\(0, 1fr\)/);
-  });
-
   it('caps the tab group rather than each tab', () => {
     // Capped individually, each button is stranded at the left of a grid column
     // wider than itself — three scattered buttons instead of one control.
@@ -539,12 +531,12 @@ describe('rows that have to fit a narrow phone', () => {
     expect(rule('.view-toggle .seg-btn')).not.toMatch(/max-width/);
   });
 
-  it('keeps Play’s icon toggles together, at their natural width', () => {
-    // The `auto` column: never squeezed, because these are 44px tap targets
-    // and the tabs are what gives way.
-    const tools = rule('.view-tools');
-    expect(tools).toMatch(/display\s*:\s*flex/);
-    expect(tools).not.toMatch(/flex-shrink\s*:\s*[1-9]/);
+  it('keeps the toolbar’s one icon button at a full tap target', () => {
+    // The `auto` column. It never gives way — the tabs do — so this is the
+    // width the row is built around: 44px, the size the header icons use.
+    const tool = rule('.view-tool');
+    expect(tool).toMatch(/min-width\s*:\s*44px/);
+    expect(tool).toMatch(/min-height\s*:\s*44px/);
   });
 
   it('tightens the toolbar gap that buys the sixth control its place', () => {
