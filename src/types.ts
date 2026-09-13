@@ -8,7 +8,34 @@ export type GameType =
   | 'wolf'
   | 'nassau'
   | 'vegas'
-  | 'quota';
+  | 'quota'
+  | 'junk';
+
+/**
+ * The side bets a scorecard cannot see.
+ *
+ * Every other game in this app is derived: hand it the scores and it tells you
+ * who won. Junk is the opposite — a sandie is a par out of a bunker and a
+ * barkie is a par after hitting a tree, and the card records neither, only the
+ * par. So these are claimed by hand, on the hole, by the people who watched it
+ * happen.
+ *
+ * Six, and the six are not configurable. A list somebody has to agree on
+ * before the first tee is a list that gets argued about on the first tee;
+ * these are the ones nearly every group already plays, and a group that plays
+ * others can simply not tap them.
+ */
+export type JunkKind = 'greenie' | 'sandie' | 'barkie' | 'arnie' | 'chipIn' | 'polie';
+
+/**
+ * Claimed junk: hole number -> player id -> what they claimed there.
+ *
+ * Shaped like `scores` deliberately, which is the same lookup by the same two
+ * keys. A player can hold more than one on a hole — hitting a tree and then
+ * getting up and down from sand for the par is a barkie and a sandie, and
+ * anyone who has done it will want both.
+ */
+export type JunkClaims = Record<number, Record<string, JunkKind[]>>;
 
 export interface Player {
   id: string;
@@ -156,6 +183,8 @@ export interface Round {
   wolf: Record<number, WolfHole>;
   /** Hole numbers where a Nassau press was called (each starts a new bet). */
   presses?: number[];
+  /** Claimed junk by hole and player (only used when Junk is active). */
+  junk?: JunkClaims;
   /**
    * Slope and rating of the course, copied at setup so a round stays scoreable
    * on its own terms — editing the saved course afterwards must not

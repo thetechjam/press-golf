@@ -73,7 +73,7 @@ const round = (over) => ({
   updatedAt: Date.now(),
   players,
   holes,
-  games: ['skins', 'nassau', 'stableford'],
+  games: ['skins', 'nassau', 'stableford', 'junk'],
   options: {
     useNet: true,
     stablefordMode: 'standard',
@@ -381,6 +381,23 @@ for (const width of [390, 360]) {
     },
     audit
   );
+  /* The junk panel is the densest thing on the Hole tab — a wrap of player
+     chips over a wrap of six — and it is only on screen while it is open, so
+     nothing above measures it. */
+  await step(
+    at('Play — claiming junk'),
+    async () => {
+      await page.locator('.junk.collapsed').click();
+      // Waited for rather than slept through: a panel that silently failed to
+      // open audits as the screen behind it and reports clean, which is worse
+      // than not auditing it at all.
+      await page.locator('.junk-kinds').waitFor({ timeout: 4000 });
+    },
+    audit
+  );
+  await page.locator('.junk-done').click().catch(() => {});
+  await page.waitForTimeout(300);
+
   for (const tab of ['Board', 'Card']) {
     await step(
       at(`Play — ${tab.toLowerCase()}`),

@@ -1996,6 +1996,107 @@ select:focus {
   border-color: var(--green-600);
 }
 
+/* ---------- Junk ---------- */
+/* A third strip on the Hole tab, so it takes the shape of the two beside it
+   rather than inventing one. Its own tint, because a scorekeeper glancing down
+   should be able to tell which strip is asking a question. */
+.junk {
+  background: color-mix(in srgb, var(--gold) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 30%, var(--line));
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.junk-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.92rem;
+  margin-bottom: 10px;
+}
+.junk-head svg {
+  flex-shrink: 0;
+}
+/* Pushed to the end of its row; the only way out of the panel, since tapping a
+   claim has to stay a claim rather than doubling as a dismissal. */
+.junk-done {
+  margin-left: auto;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: none;
+  background: none;
+  color: var(--green-600);
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.7rem;
+}
+.junk-players,
+.junk-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.junk-players {
+  margin-bottom: 10px;
+}
+.junk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px 8px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  font-weight: 600;
+  font-size: 0.85rem;
+  min-height: 40px;
+}
+.junk-chip.active {
+  background: var(--green-600);
+  color: #fff;
+  border-color: var(--green-600);
+}
+/* How many this player is already holding on this hole — so the row answers
+   "who has what" without opening each one in turn. */
+.junk-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  font-size: 0.7rem;
+  line-height: 18px;
+  text-align: center;
+}
+.junk-chip.active .junk-count {
+  background: color-mix(in srgb, #fff 28%, transparent);
+}
+/* The six. Six across does not fit a phone, so they wrap to two rows of three
+   — which is why they are sized by their labels rather than stretched to a
+   grid: "Chip-in" and "Arnie" in equal columns wastes the row on the short
+   one. */
+.junk-kind {
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+}
+.junk-kind.active {
+  background: var(--green-600);
+  color: #fff;
+  border-color: var(--green-600);
+}
+.junk-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
 /* ---------- Nassau press ---------- */
 .nassau {
   background: color-mix(in srgb, var(--green-500) 10%, var(--card));
@@ -3427,7 +3528,8 @@ select:focus {
 
 /* ---- Collapsed game cards (Play → Hole tab) ---- */
 .wolf.collapsed,
-.nassau.collapsed {
+.nassau.collapsed,
+.junk.collapsed {
   display: flex;
   align-items: center;
   gap: 8px;

@@ -7,6 +7,7 @@ import { computeWolf } from './wolf';
 import { computeNassau } from './nassau';
 import { computeVegas } from './vegas';
 import { computeQuota } from './quota';
+import { computeJunk } from './junk';
 
 export interface GameMeta {
   id: GameType;
@@ -72,6 +73,13 @@ export const GAMES: GameMeta[] = [
     blurb: 'Three bets: front 9, back 9, and total.',
     minPlayers: 2,
     compute: computeNassau,
+  },
+  {
+    id: 'junk',
+    label: 'Junk',
+    blurb: 'Side bets the card can\u2019t see. Tap them on the hole.',
+    minPlayers: 2,
+    compute: computeJunk,
   },
 ];
 

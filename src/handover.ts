@@ -17,37 +17,53 @@ import { uid } from './storage';
  * two rounds; the screen only has to name the outcome.
  */
 
-/** A scored cell: this hole, this player, by position rather than by id. */
+/** One entry on the card: this hole, this player, by position rather than id. */
 type Cell = string;
 
 /**
- * Which cells a round has a score in, keyed by hole number and the player's
- * position in the list.
+ * Everything a round holds that the other copy might not, keyed by hole number
+ * and the player's position in the list.
  *
  * By position because the two copies do not agree on player ids and never
  * will: a round rebuilt from a link carries `p0`, `p1` …, while the phone that
  * first scored it carries whatever `uid()` produced. Packing preserves the
  * order of the players, so position is the one identifier both sides share.
+ *
+ * Junk counts here alongside scores, and has to. It is the one thing on the
+ * card that cannot be derived from anything else — nobody can work a sandie
+ * out from a 4 — so a copy that has one and a copy that does not are not the
+ * same round. Compared on scores alone they read as identical, and accepting
+ * the arriving copy, or declining it, throws the claim away without a word.
+ * Values are strings so both kinds of entry compare the same way.
  */
-function cells(round: Round): Map<Cell, number> {
+function cells(round: Round): Map<Cell, string> {
   const at = new Map(round.players.map((p, i) => [p.id, i]));
-  const out = new Map<Cell, number>();
+  const out = new Map<Cell, string>();
   for (const [hole, byPlayer] of Object.entries(round.scores ?? {})) {
     for (const [id, score] of Object.entries(byPlayer)) {
       const position = at.get(id);
       if (position === undefined || typeof score !== 'number') continue;
-      out.set(`${hole}:${position}`, score);
+      out.set(`s:${hole}:${position}`, String(score));
+    }
+  }
+  for (const [hole, byPlayer] of Object.entries(round.junk ?? {})) {
+    for (const [id, kinds] of Object.entries(byPlayer)) {
+      const position = at.get(id);
+      if (position === undefined || !Array.isArray(kinds) || kinds.length === 0) continue;
+      // Sorted, so the same claims tapped in a different order on each phone
+      // are the same entry rather than a disagreement.
+      out.set(`j:${hole}:${position}`, [...kinds].sort().join(','));
     }
   }
   return out;
 }
 
 export interface Comparison {
-  /** Holes scored on the arriving copy that this device has no score for. */
+  /** Entries on the arriving copy that this device does not have. */
   theirsOnly: number;
-  /** Holes scored here that the arriving copy has no score for. */
+  /** Entries here that the arriving copy does not have. */
   mineOnly: number;
-  /** Holes both have scored, differently — a correction on one side or the other. */
+  /** Entries both copies hold, differently — a correction on one side or the other. */
   differing: number;
 }
 
@@ -116,7 +132,9 @@ export function forkRound(incoming: Round, now: number = Date.now()): Round {
 
 /** One sentence describing what the two copies disagree about. */
 export function describeArrival(arrival: Arrival): string {
-  const holes = (n: number) => `${n} ${n === 1 ? 'score' : 'scores'}`;
+  // "Entry", not "score": a claimed greenie is one of these too, and calling
+  // it a score would be wrong in exactly the round that needed the warning.
+  const holes = (n: number) => `${n} ${n === 1 ? 'entry' : 'entries'}`;
   switch (arrival.kind) {
     case 'new':
       return '';
@@ -132,7 +150,7 @@ export function describeArrival(arrival: Arrival): string {
       if (theirsOnly) parts.push(`${holes(theirsOnly)} only on the copy you were sent`);
       if (mineOnly) parts.push(`${holes(mineOnly)} only on yours`);
       if (differing) parts.push(`${differing} entered differently on each`);
-      return `Both phones have scored this round: ${parts.join(', ')}.`;
+      return `Both phones have been used on this round: ${parts.join(', ')}.`;
     }
   }
 }
