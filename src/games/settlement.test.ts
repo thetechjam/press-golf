@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeSettlement, formatMoney, unitFor, type Transaction } from './settlement';
+import { computeSkins } from './skins';
 import { makeRound, player, holes, holes18, scoresFrom } from './testFixtures';
 import type { Round } from '../types';
 
@@ -176,7 +177,9 @@ describe('computeSettlement — field games (skins)', () => {
       scores,
     });
     const s = computeSettlement(round);
-    // Skins: Al 2, Bo 0, Cy 0 (hole 3 tie carries, never resolved).
+    // Skins: Al 2, Bo 0, Cy 0. Hole 3 is tied by all three, so the carried
+    // skin is split three ways — which adds the same third to everybody and
+    // therefore moves nothing.
     // fieldNet: stake * (n*value - total). total=2, n=3.
     // Al: 2*(3*2 - 2) = 8 ; Bo: 2*(0 - 2) = -4 ; Cy: -4.
     expect(s.totals.p1).toBe(8);
@@ -184,6 +187,74 @@ describe('computeSettlement — field games (skins)', () => {
     expect(s.totals.p3).toBe(-4);
     assertZeroSum(s.totals);
     assertTransactionsSettle(s.totals, nameMap(round), s.transactions);
+  });
+
+  it('keeps a split that will not divide into cents adding up to zero', () => {
+    // Three of four players share one skin at a $1 stake: 33.3 cents each
+    // against a dollar off the fourth, which does not balance to the cent.
+    // Somebody has to absorb the third of a cent, and it must not be the
+    // invariant.
+    const hs = holes(1);
+    const scores = scoresFrom(hs, { p1: [4], p2: [4], p3: [4], p4: [5] });
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo'), player('p3', 'Cy'), player('p4', 'Di')],
+      holes: hs,
+      games: ['skins'],
+      options: { stakes: { skins: 1 } },
+      scores,
+    });
+    const s = computeSettlement(round);
+    expect(s.totals.p1).toBe(0.33);
+    expect(s.totals.p2).toBe(0.33);
+    expect(s.totals.p3).toBe(0.33);
+    expect(s.totals.p4).toBe(-0.99);
+    assertZeroSum(s.totals);
+    assertTransactionsSettle(s.totals, nameMap(round), s.transactions);
+  });
+
+  /**
+   * The pot left on the table when the round runs out of holes.
+   *
+   * It is split among the players who tied for it, and it is the settlement
+   * that carries the split — the skins count stays at holes won outright, so
+   * the card and the season stats never claim anybody won a fraction of a
+   * hole. Three players, because a two-player split hands both of them the
+   * same share and is a wash by construction.
+   */
+  it('settles a dead pot on the players who tied for it', () => {
+    const hs = holes(2);
+    const scores = scoresFrom(hs, {
+      p1: [3, 3],
+      p2: [4, 3],
+      p3: [4, 4],
+    });
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo'), player('p3', 'Cy')],
+      holes: hs,
+      games: ['skins'],
+      options: { stakes: { skins: 2 } },
+      scores,
+    });
+    const s = computeSettlement(round);
+
+    // Al wins hole 1. Hole 2 is Al and Bo tied for best, so 1 skin is on a
+    // third hole that does not exist: half each.
+    // settleValue: Al 1.5, Bo 0.5, Cy 0. total=2, n=3.
+    // Al: 2*(3*1.5 - 2) = 5 ; Bo: 2*(3*0.5 - 2) = -1 ; Cy: 2*(0 - 2) = -4.
+    expect(s.totals.p1).toBe(5);
+    expect(s.totals.p2).toBe(-1);
+    expect(s.totals.p3).toBe(-4);
+    assertZeroSum(s.totals);
+    assertTransactionsSettle(s.totals, nameMap(round), s.transactions);
+
+    // The observable consequence, and the reason the split is worth having:
+    // Bo and Cy both won nothing — identical skin counts, both '0 skins' on
+    // the card — and Bo still comes out $3 better, because he was in on the
+    // last pot and Cy was not.
+    const counts = computeSkins(round).standings;
+    expect(counts.find((x) => x.playerId === 'p2')?.value).toBe(0);
+    expect(counts.find((x) => x.playerId === 'p3')?.value).toBe(0);
+    expect(s.totals.p2 - s.totals.p3).toBe(3);
   });
 });
 

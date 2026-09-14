@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeSkins } from './skins';
-import { makeRound, holes, scoresFrom } from './testFixtures';
+import { makeRound, holes, player, scoresFrom } from './testFixtures';
 
 function byId(r: ReturnType<typeof computeSkins>) {
   const m: Record<string, number> = {};
@@ -57,6 +57,14 @@ describe('computeSkins', () => {
    * lied: a finished round's Results screen said "2 on the line next hole"
    * under a card with no next hole anywhere near it.
    */
+  /**
+   * A tie on the last hole of the round.
+   *
+   * The pot has no hole left to carry to, so it goes back to the players who
+   * tied for it — what a group does standing on the last green rather than let
+   * the money evaporate. It used to vanish, and the card said "2 on the line
+   * next hole" on a finished round's Results screen to explain it.
+   */
   describe('a carry with nowhere to go', () => {
     const scoredOut = (extra: Partial<Parameters<typeof makeRound>[0]> = {}) => {
       const hs = holes(3);
@@ -67,13 +75,33 @@ describe('computeSkins', () => {
       return computeSkins(makeRound({ holes: hs, games: ['skins'], scores, ...extra }));
     };
 
-    it('says nobody won them once every hole has been scored', () => {
+    it('splits the pot between the players who tied for it', () => {
+      // Al wins hole 1; holes 2 and 3 tie, so 2 skins ride on a fourth hole
+      // that does not exist. One each — as money, not as skins.
       const r = scoredOut();
-      expect(r.status).toBe('2 skins unclaimed');
-      expect(r.note).toBe('Nobody won the last 2 skins');
+      const al = r.standings.find((s) => s.playerId === 'p1');
+      const bo = r.standings.find((s) => s.playerId === 'p2');
+      expect(al?.settleValue).toBe(2);
+      expect(bo?.settleValue).toBe(1);
     });
 
-    it('says the same on a round finished with holes left unplayed', () => {
+    it('leaves the count as holes won outright', () => {
+      // The half the old behaviour got right: Al won one hole, Bo won none,
+      // and a share of a dead pot is not a hole won by anybody.
+      const r = scoredOut();
+      const v = byId(r);
+      expect(v.p1).toBe(1);
+      expect(v.p2).toBe(0);
+      expect(r.standings.find((s) => s.playerId === 'p2')?.detail).toBe('0 skins');
+    });
+
+    it('says who split it, and what', () => {
+      const r = scoredOut();
+      expect(r.status).toBe('Split the last 2 skins');
+      expect(r.note).toBe('Al and Bo split the last 2 skins');
+    });
+
+    it('splits on a round finished with holes left unplayed', () => {
       const hs = holes(3);
       const scores = scoresFrom(hs, {
         p1: [3, 4, undefined],
@@ -82,9 +110,31 @@ describe('computeSkins', () => {
       const r = computeSkins(
         makeRound({ holes: hs, games: ['skins'], scores, status: 'finished' })
       );
-      // Singular, and without the "1": "the last skin" is how it would be said.
-      expect(r.status).toBe('1 skin unclaimed');
-      expect(r.note).toBe('Nobody won the last skin');
+      expect(r.standings.find((s) => s.playerId === 'p1')?.settleValue).toBe(1.5);
+      expect(r.standings.find((s) => s.playerId === 'p2')?.settleValue).toBe(0.5);
+      expect(r.note).toBe('Al and Bo split the last skin');
+    });
+
+    it('pays nobody a share while the pot is still live', () => {
+      // Mid-round the carry belongs to whoever wins the next hole, so nothing
+      // may reach the settlement yet — the count was already whole, so
+      // `settleValue` is the only thing that could leak it.
+      const hs = holes(3);
+      const scores = scoresFrom(hs, {
+        p1: [3, 3, undefined],
+        p2: [4, 3, undefined],
+        p3: [4, 4, undefined],
+      });
+      const r = computeSkins(
+        makeRound({
+          holes: hs,
+          players: [player('p1', 'Al'), player('p2', 'Bo'), player('p3', 'Cy')],
+          games: ['skins'],
+          scores,
+        })
+      );
+      expect(r.note).toBe('1 on the line next hole');
+      expect(r.standings.every((x) => x.settleValue === undefined)).toBe(true);
     });
 
     it('never promises a next hole once the round is over', () => {
@@ -92,7 +142,7 @@ describe('computeSkins', () => {
     });
 
     it('stays live while a hole is only half scored', () => {
-      // Hole 3 has one score on it, which the loop above skips over — so the
+      // Hole 3 has one score on it, which the scoring loop skips over — so the
       // hole is still to be played, and the carry is still going somewhere.
       const hs = holes(3);
       const scores = scoresFrom(hs, {
@@ -101,12 +151,46 @@ describe('computeSkins', () => {
       });
       const r = computeSkins(makeRound({ holes: hs, games: ['skins'], scores }));
       expect(r.note).toBe('1 on the line next hole');
+      expect(byId(r).p1).toBe(1);
     });
 
-    it('leaves the dead skins out of the standings, as it always did', () => {
-      const v = byId(scoredOut());
-      expect(v.p1).toBe(1);
+    it('keeps the exact share when the pot will not divide evenly', () => {
+      // Two skins between three: the card rounds, the value does not, because
+      // the settlement multiplies it by the stake.
+      const hs = holes(3);
+      const scores = scoresFrom(hs, {
+        p1: [3, 4, 4],
+        p2: [4, 4, 4],
+        p3: [4, 4, 4],
+      });
+      const r = computeSkins(
+        makeRound({
+          holes: hs,
+          players: [player('p1', 'Al'), player('p2', 'Bo'), player('p3', 'Cy')],
+          games: ['skins'],
+          scores,
+        })
+      );
+      const settle = (id: string) => r.standings.find((s) => s.playerId === id)?.settleValue ?? 0;
+      expect(settle('p2')).toBeCloseTo(2 / 3, 10);
+      expect(settle('p1') + settle('p2') + settle('p3')).toBeCloseTo(3, 10);
+      // Whole on the card, exact underneath.
+      expect(r.standings.find((s) => s.playerId === 'p2')?.detail).toBe('0 skins');
+      expect(r.note).toBe('Al, Bo and Cy split the last 2 skins');
+    });
+
+    it('leaves an all-halved round reading as nobody won anything', () => {
+      // The case that decided the model: every hole tied, so the pot is split
+      // and the money is a wash — but the card must not claim either of them
+      // won half a skin, and the season stats must not record it.
+      const hs = holes(4);
+      const scores = scoresFrom(hs, { p1: [4, 4, 4, 4], p2: [4, 4, 4, 4] });
+      const r = computeSkins(makeRound({ holes: hs, games: ['skins'], scores }));
+      const v = byId(r);
+      expect(v.p1).toBe(0);
       expect(v.p2).toBe(0);
+      expect(r.standings.every((s) => s.detail === '0 skins')).toBe(true);
+      expect(r.note).toBe('Al and Bo split the last 4 skins');
     });
   });
 

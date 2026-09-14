@@ -214,6 +214,18 @@ export interface GameStanding {
   label: string;
   detail: string;
   value: number;
+  /**
+   * What to settle on, when that is not what to show.
+   *
+   * Skins is the one game where the two come apart: a pot left on the table
+   * when the round runs out of holes is split among the players who tied for
+   * it, and that is money rather than holes won. Counting it in `value` would
+   * put half a skin on the card and in the season stats for a hole nobody won
+   * — a round of eighteen halves would read as nine skins each.
+   *
+   * Absent everywhere else, where the count and the stake are the same number.
+   */
+  settleValue?: number;
   rank: number;
   isLeader: boolean;
 }
