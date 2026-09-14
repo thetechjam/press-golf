@@ -36,16 +36,78 @@ describe('computeSkins', () => {
     expect(v.p2).toBe(0);
   });
 
-  it('reports carryover in the status/note when the last hole ties', () => {
-    const hs = holes(2);
+  it('reports a carryover while there is still a hole to carry it to', () => {
+    const hs = holes(3);
     const scores = scoresFrom(hs, {
-      p1: [3, 4],
-      p2: [4, 4],
+      p1: [3, 4, undefined],
+      p2: [4, 4, undefined],
     });
     const r = computeSkins(makeRound({ holes: hs, games: ['skins'], scores }));
-    // Hole 1: Al wins 1 skin. Hole 2: tie → 1 carried.
+    // Hole 1: Al wins 1 skin. Hole 2: tie → 1 carried, and hole 3 is unplayed.
     expect(r.status).toContain('carried over');
-    expect(r.note).toContain('on the line');
+    expect(r.note).toBe('1 on the line next hole');
+  });
+
+  /**
+   * A tie on the last hole of the round.
+   *
+   * The pot carries to a hole that does not exist, so those skins are won by
+   * nobody — and the settlement already agrees, because it pays out of
+   * `value`, which only counts skins actually taken. It was the sentence that
+   * lied: a finished round's Results screen said "2 on the line next hole"
+   * under a card with no next hole anywhere near it.
+   */
+  describe('a carry with nowhere to go', () => {
+    const scoredOut = (extra: Partial<Parameters<typeof makeRound>[0]> = {}) => {
+      const hs = holes(3);
+      const scores = scoresFrom(hs, {
+        p1: [3, 4, 4],
+        p2: [4, 4, 4],
+      });
+      return computeSkins(makeRound({ holes: hs, games: ['skins'], scores, ...extra }));
+    };
+
+    it('says nobody won them once every hole has been scored', () => {
+      const r = scoredOut();
+      expect(r.status).toBe('2 skins unclaimed');
+      expect(r.note).toBe('Nobody won the last 2 skins');
+    });
+
+    it('says the same on a round finished with holes left unplayed', () => {
+      const hs = holes(3);
+      const scores = scoresFrom(hs, {
+        p1: [3, 4, undefined],
+        p2: [4, 4, undefined],
+      });
+      const r = computeSkins(
+        makeRound({ holes: hs, games: ['skins'], scores, status: 'finished' })
+      );
+      // Singular, and without the "1": "the last skin" is how it would be said.
+      expect(r.status).toBe('1 skin unclaimed');
+      expect(r.note).toBe('Nobody won the last skin');
+    });
+
+    it('never promises a next hole once the round is over', () => {
+      expect(scoredOut({ status: 'finished' }).note).not.toContain('next hole');
+    });
+
+    it('stays live while a hole is only half scored', () => {
+      // Hole 3 has one score on it, which the loop above skips over — so the
+      // hole is still to be played, and the carry is still going somewhere.
+      const hs = holes(3);
+      const scores = scoresFrom(hs, {
+        p1: [3, 4, 5],
+        p2: [4, 4, undefined],
+      });
+      const r = computeSkins(makeRound({ holes: hs, games: ['skins'], scores }));
+      expect(r.note).toBe('1 on the line next hole');
+    });
+
+    it('leaves the dead skins out of the standings, as it always did', () => {
+      const v = byId(scoredOut());
+      expect(v.p1).toBe(1);
+      expect(v.p2).toBe(0);
+    });
   });
 
   it('only scores a hole once every player has a score', () => {
