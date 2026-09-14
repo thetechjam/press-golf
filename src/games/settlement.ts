@@ -95,35 +95,6 @@ const COUNTED: Partial<Record<GameType, (round: Round) => GameResult>> = {
   quota: computeQuota,
 };
 
-/**
- * Money to the cent, still summing to exactly zero.
- *
- * Every count in this app used to be a whole number, so the arithmetic below
- * landed on exact figures on its own. Splitting a skins pot that will not
- * divide evenly — two skins between three players — puts a third into the
- * standings, and the field difference then comes out as 7.999999999999999.
- * That formats as $8.00 and fails every equality a settlement is checked with.
- *
- * Rounding each share on its own would fix the display and quietly break the
- * invariant the whole screen rests on: what one player is up, the others are
- * down. So the rounding residual goes back onto the largest share, where a
- * cent is least visible and least likely to be the one somebody queries.
- */
-function toCents(ids: string[], raw: number[]): Record<string, number> {
-  const cents = raw.map((v) => Math.round(v * 100));
-  const residual = cents.reduce((a, c) => a + c, 0);
-  if (residual !== 0) {
-    let at = 0;
-    for (let i = 1; i < cents.length; i += 1) {
-      if (Math.abs(cents[i]) > Math.abs(cents[at])) at = i;
-    }
-    cents[at] -= residual;
-  }
-  const net: Record<string, number> = {};
-  ids.forEach((id, i) => (net[id] = cents[i] / 100));
-  return net;
-}
-
 /** Field-difference model: each unit shifts `stake` between you and every rival. */
 function fieldNet(
   ids: string[],
@@ -132,10 +103,9 @@ function fieldNet(
 ): Record<string, number> {
   const n = ids.length;
   const total = ids.reduce((a, id) => a + (valueById[id] ?? 0), 0);
-  return toCents(
-    ids,
-    ids.map((id) => stake * (n * (valueById[id] ?? 0) - total))
-  );
+  const net: Record<string, number> = {};
+  ids.forEach((id) => (net[id] = stake * (n * (valueById[id] ?? 0) - total)));
+  return net;
 }
 
 function gameNet(round: Round, gameType: GameType, stake: number): Record<string, number> {
@@ -148,7 +118,7 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
   if (counted) {
     const valueById: Record<string, number> = {};
     counted(round).standings.forEach((s) => {
-      if (s.playerId) valueById[s.playerId] = s.settleValue ?? s.value;
+      if (s.playerId) valueById[s.playerId] = s.value;
     });
     return fieldNet(ids, valueById, stake);
   }
