@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { computeSettlement, formatMoney, unitFor, type Transaction } from './settlement';
 import { makeRound, player, holes, holes18, scoresFrom } from './testFixtures';
-import type { Round } from '../types';
+import type { GameType, Round } from '../types';
 
 /** Sum of all net balances must always be zero (money is conserved). */
 function assertZeroSum(totals: Record<string, number>) {
@@ -22,7 +22,10 @@ function assertTransactionsSettle(
     bal[t.from] += t.amount; // debtor pays, balance rises toward 0
     bal[t.to] -= t.amount; // creditor receives, balance falls toward 0
   }
-  for (const v of Object.values(bal)) expect(Math.abs(v)).toBeLessThan(0.01);
+  // Sub-cent, not sub-dollar. This was a whole cent of slack, which is exactly
+  // the size of the error it was there to catch: three players splitting a $5
+  // stake were handed $1.67 each against a $5 debt and this still passed.
+  for (const v of Object.values(bal)) expect(Math.abs(v)).toBeLessThan(1e-9);
 }
 
 function nameMap(round: Round): Record<string, string> {
@@ -457,5 +460,186 @@ describe('unitFor', () => {
   it('leaves the other games alone', () => {
     expect(unitFor(nassauRound(18), 'skins')).toBe('skin');
     expect(unitFor(nassauRound(18), 'matchPlay')).toBe('the match');
+  });
+});
+
+/**
+ * Money that will not divide evenly.
+ *
+ * Nothing exotic is needed to get there: four players, a plain $5 stake, and
+ * three of them tied for the win is a third of a cent each. The totals were
+ * exact and every figure *shown* was rounded on its own, so the screen said
+ * one player owed $5 and then told him to hand over $1.67 three times.
+ */
+describe('computeSettlement — cents', () => {
+  const threeWayTie = (stake: number) => {
+    const hs = holes(2);
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo'), player('p3', 'Cy'), player('p4', 'Di')],
+      holes: hs,
+      games: ['strokePlay'],
+      options: { stakes: { strokePlay: stake } },
+      scores: scoresFrom(hs, { p1: [4, 4], p2: [4, 4], p3: [4, 4], p4: [5, 5] }),
+    });
+    return { round, s: computeSettlement(round) };
+  };
+
+  it('pays out exactly what the loser owes, to the cent', () => {
+    const { round, s } = threeWayTie(5);
+    expect(s.totals.p4).toBe(-5);
+    // The indivisible cent lands on one of the three sharing the pot, not on
+    // the player whose figure is exact — he owes the stake and nothing else.
+    expect([s.totals.p1, s.totals.p2, s.totals.p3].sort()).toEqual([1.66, 1.67, 1.67]);
+    assertZeroSum(s.totals);
+    assertTransactionsSettle(s.totals, nameMap(round), s.transactions);
+  });
+
+  it('leaves an exact figure exact, wherever the player sits in the round', () => {
+    // The loser first this time. His figure is the stake and divides cleanly,
+    // so he must not be the one who absorbs the cent just by being listed
+    // first — only the players actually sharing the pot are candidates.
+    const hs = holes(2);
+    const round = makeRound({
+      players: [player('p1', 'Di'), player('p2', 'Al'), player('p3', 'Bo'), player('p4', 'Cy')],
+      holes: hs,
+      games: ['strokePlay'],
+      options: { stakes: { strokePlay: 5 } },
+      scores: scoresFrom(hs, { p1: [5, 5], p2: [4, 4], p3: [4, 4], p4: [4, 4] }),
+    });
+    const s = computeSettlement(round);
+    expect(s.totals.p1).toBe(-5);
+    expect([s.totals.p2, s.totals.p3, s.totals.p4].sort()).toEqual([1.66, 1.67, 1.67]);
+    assertZeroSum(s.totals);
+    assertTransactionsSettle(s.totals, nameMap(round), s.transactions);
+  });
+
+  it('splits ten dollars three ways the way a person would', () => {
+    const { s } = threeWayTie(10);
+    expect([s.totals.p1, s.totals.p2, s.totals.p3].sort()).toEqual([3.33, 3.33, 3.34]);
+    expect(s.totals.p4).toBe(-10);
+  });
+
+  it('gives every total a whole number of cents', () => {
+    const { s } = threeWayTie(5);
+    for (const v of Object.values(s.totals)) {
+      expect(Math.abs(v * 100 - Math.round(v * 100))).toBeLessThan(1e-9);
+    }
+  });
+
+  it('keeps the totals row equal to the per-game rows above it', () => {
+    // Two games at once: the totals used to be a sum of unrounded dollars, and
+    // 0.01 + 0.02 is not 0.03 in binary.
+    const hs = holes(2);
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo'), player('p3', 'Cy'), player('p4', 'Di')],
+      holes: hs,
+      games: ['strokePlay', 'skins'],
+      options: { stakes: { strokePlay: 5, skins: 1.33 } },
+      scores: scoresFrom(hs, { p1: [4, 4], p2: [4, 4], p3: [4, 4], p4: [5, 5] }),
+    });
+    const s = computeSettlement(round);
+    for (const id of ['p1', 'p2', 'p3', 'p4']) {
+      const fromGames = s.perGame.reduce((a, g) => a + Math.round((g.net[id] ?? 0) * 100), 0);
+      expect(fromGames).toBe(Math.round(s.totals[id] * 100));
+    }
+    assertZeroSum(s.totals);
+    assertTransactionsSettle(s.totals, nameMap(round), s.transactions);
+  });
+
+  it('settles the same way twice', () => {
+    // Largest remainder is order-dependent by nature, so the tie-break has to
+    // be stable or the same card settles two different ways on two phones.
+    expect(computeSettlement(threeWayTie(5).round).totals).toEqual(
+      computeSettlement(threeWayTie(5).round).totals
+    );
+  });
+});
+
+/**
+ * The cent invariants, over a spread of rounds rather than a chosen one.
+ *
+ * The bug this covers was reachable from an ordinary four-ball at a $5 stake
+ * and survived a suite with twenty-five settlement tests in it, because every
+ * one of them picked a card where the money happened to divide. So this picks
+ * cards it did not choose: narrow score ranges and duplicated cards, because
+ * ties are what make money indivisible, and every game and stake mixed in.
+ *
+ * Deterministic — a fixed seed and a written-out generator, so a failure names
+ * a round that can be pasted into a test of its own rather than a round that
+ * only existed once.
+ */
+describe('computeSettlement — cent invariants across many rounds', () => {
+  const GAMES: GameType[] = ['strokePlay', 'matchPlay', 'skins', 'stableford', 'quota'];
+  const NAMES = ['Al', 'Bo', 'Cy', 'Di', 'Ed'];
+  const STAKES = [1, 2, 5, 10, 20, 0.5, 0.25, 1.33, 3.33, 0.05];
+
+  /** mulberry32. The obvious hand-rolled LCG loses its low bits to float
+   *  precision and returns zero forever, which passes everything. */
+  function rng(seed: number) {
+    let s = seed;
+    return (n: number) => {
+      s = (s + 0x6d2b79f5) | 0;
+      let t = Math.imul(s ^ (s >>> 15), 1 | s);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return Math.floor((((t ^ (t >>> 14)) >>> 0) / 4294967296) * n);
+    };
+  }
+
+  const cents = (v: number) => Math.round(v * 100);
+
+  it('holds over 400 generated rounds', () => {
+    const rnd = rng(7);
+    let withSplit = 0;
+
+    for (let trial = 0; trial < 400; trial += 1) {
+      const np = 2 + rnd(4);
+      const ids = Array.from({ length: np }, (_, i) => `p${i}`);
+      const hs = holes([1, 2, 3, 9][rnd(4)]);
+      const games = GAMES.filter(() => rnd(3) === 0);
+      if (games.length === 0) continue;
+
+      const stakes: Partial<Record<GameType, number>> = {};
+      for (const g of games) stakes[g] = STAKES[rnd(STAKES.length)];
+
+      // A two-stroke range makes ties ordinary; copying a card makes them certain.
+      const cards: Record<string, (number | undefined)[]> = {};
+      for (const id of ids) cards[id] = hs.map(() => (rnd(8) === 0 ? undefined : 4 + rnd(2)));
+      for (let c = rnd(np); c > 0; c -= 1) cards[ids[rnd(np)]] = [...cards[ids[rnd(np)]]];
+
+      const round = makeRound({
+        players: ids.map((id, i) => player(id, NAMES[i])),
+        holes: hs,
+        games,
+        options: { stakes, useNet: false },
+        scores: scoresFrom(hs, cards),
+      });
+      const s = computeSettlement(round);
+      if (Object.values(s.totals).some((v) => cents(v) % 100 !== 0)) withSplit += 1;
+
+      // Every figure is exactly a whole number of cents — not merely within a
+      // rounding error of one. `formatMoney` prints an integer dollar amount
+      // without decimals, so −16 shows as "−$16" and the −15.999999999999998
+      // that dollar arithmetic produces shows as "−$16.00" in the same column.
+      for (const v of Object.values(s.totals)) {
+        expect(v).toBe(cents(v) / 100);
+      }
+      // What one player is up, the others are down.
+      expect(Object.values(s.totals).reduce((a, v) => a + cents(v), 0)).toBe(0);
+      // Each game's row balances on its own, and the rows add up to the total.
+      for (const g of s.perGame) {
+        expect(ids.reduce((a, id) => a + cents(g.net[id] ?? 0), 0)).toBe(0);
+      }
+      for (const id of ids) {
+        const fromGames = s.perGame.reduce((a, g) => a + cents(g.net[id] ?? 0), 0);
+        expect(fromGames).toBe(cents(s.totals[id]));
+      }
+      // The payment instructions discharge every balance exactly.
+      assertTransactionsSettle(s.totals, nameMap(round), s.transactions);
+    }
+
+    // Guards the generator itself: a sweep that never produces an uneven split
+    // proves nothing, and the first version of this silently produced one
+    // round four thousand times.
+    expect(withSplit).toBeGreaterThan(20);
   });
 });

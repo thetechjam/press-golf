@@ -197,6 +197,64 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
   return net;
 }
 
+/**
+ * A game's net, in whole cents, still summing to exactly zero.
+ *
+ * Money that will not divide evenly is ordinary here, not exotic: four players,
+ * a plain $5 stake, and three of them tied for the win is a third of a cent
+ * each. Rounding every figure on its own is what a display does, and it broke
+ * the one invariant the screen has — what one player is up, the others are
+ * down. That round told the loser he owed $5 and then gave him three payments
+ * of $1.67 to make.
+ *
+ * Every share is truncated to a cent and the leftover cents go back only to
+ * the players who were truncated. That is the part that matters: the loser's
+ * figure is the stake and divides exactly, so he is not a candidate, and the
+ * indivisible cent lands on one of the three sharing the pot. $5 three ways is
+ * 1.67, 1.67, 1.66.
+ *
+ * Which of the three absorbs it is decided by order, and order is all that is
+ * available — every net this app produces is one group sharing an identical
+ * amount against another group paying an identical amount, so the remainders
+ * are either equal or zero and there is no "most truncated" player to prefer.
+ */
+function toCents(ids: string[], raw: Record<string, number>): Record<string, number> {
+  const exact = ids.map((id) => (raw[id] ?? 0) * 100);
+  const cents = exact.map((v) => Math.trunc(v));
+  let residual = -cents.reduce((a, c) => a + c, 0);
+
+  for (let i = 0; i < ids.length && residual !== 0; i += 1) {
+    // Below a millionth of a cent the difference is float noise from the
+    // multiplication above, not a share of anything, and stepping on it would
+    // move real money.
+    const step = Math.abs(exact[i] - cents[i]) < 1e-6 ? 0 : Math.sign(exact[i] - cents[i]);
+    if (step === 0) continue;
+    cents[i] += step;
+    residual -= step;
+  }
+
+  // Unreachable while every caller hands in a zero-sum net, which they all do.
+  // Kept because zero-sum is the invariant the settlement is read through, and
+  // a screen that does not balance is worse than one player's cent being off.
+  if (residual !== 0) {
+    let at = 0;
+    for (let i = 1; i < cents.length; i += 1) {
+      if (Math.abs(cents[i]) > Math.abs(cents[at])) at = i;
+    }
+    cents[at] += residual;
+  }
+
+  const out: Record<string, number> = {};
+  ids.forEach((id, i) => (out[id] = cents[i]));
+  return out;
+}
+
+const fromCents = (ids: string[], cents: Record<string, number>): Record<string, number> => {
+  const out: Record<string, number> = {};
+  ids.forEach((id) => (out[id] = cents[id] / 100));
+  return out;
+};
+
 /** Greedy minimum-transaction settlement from net balances. */
 function settleTransactions(
   totals: Record<string, number>,
@@ -234,18 +292,29 @@ export function computeSettlement(round: Round): Settlement {
   const nameById: Record<string, string> = {};
   round.players.forEach((p) => (nameById[p.id] = p.name));
 
-  const totals: Record<string, number> = {};
-  ids.forEach((id) => (totals[id] = 0));
+  // Accumulated in whole cents rather than dollars: a round playing three games
+  // adds three rounded figures together, and 0.01 + 0.02 is not 0.03 in
+  // binary floating point. Integers make the sum exact and keep the totals
+  // row agreeing with the per-game rows above it.
+  const totalCents: Record<string, number> = {};
+  ids.forEach((id) => (totalCents[id] = 0));
   const perGame: GameMoney[] = [];
 
   for (const gt of round.games) {
     const stake = round.options.stakes?.[gt] ?? 0;
     if (stake <= 0) continue;
-    const net = gameNet(round, gt, stake);
-    perGame.push({ gameType: gt, label: LABEL[gt], unit: unitFor(round, gt), stake, net });
-    ids.forEach((id) => (totals[id] += net[id]));
+    const cents = toCents(ids, gameNet(round, gt, stake));
+    perGame.push({
+      gameType: gt,
+      label: LABEL[gt],
+      unit: unitFor(round, gt),
+      stake,
+      net: fromCents(ids, cents),
+    });
+    ids.forEach((id) => (totalCents[id] += cents[id]));
   }
 
+  const totals = fromCents(ids, totalCents);
   return {
     active: perGame.length > 0,
     totals,
