@@ -36,8 +36,68 @@
   /* Foreground-only gold. The base :root is a light theme, so dark ink is the
      default. Bright gold is restored only in dark mode where surfaces are dark. */
   --gold-ink: #7d5a0c;
+  /* Foreground-only green — the one accent ramp that never got an ink token,
+     and the only reason dark mode had a contrast problem at all.
+     --green-600 and --green-700 are surface colours: they are mid-dark greens
+     chosen against white, and dark mode kept painting them as text on a
+     near-black page, where they measure 2.4-3.2:1 against a 4.5 minimum. It
+     showed up across seventeen different elements — every ghost button, every
+     board status line, both Results links — because it was one missing token
+     wearing many hats. Four elements had already been patched one at a time
+     with :root.dark overrides to --fairway; this is that patch, applied once
+     at the source, and those four are gone.
+     Light: 5.46:1 on --card and 5.19:1 on --bg. Dark: --fairway, 7.90 on --bg
+     and 6.84 on --card, the same swap --focus already makes. */
+  --green-ink: #14694e;
+  /* Highlight tint — the wash behind the current hole and the leading row.
+     Written as a raw 18% at both sites, which in dark mode put --muted at
+     4.16:1 and an over-par red at 4.16:1 against a 4.5 floor: a tint is a
+     surface, and text has to keep working on it. 12% clears both (5.94 and
+     4.66) and still reads as highlighted in either theme. Tokenised because
+     two sites writing the same percentage independently is how they drift. */
+  --tint: 12%;
+  /* Corner scale. --radius was the only token here and 35 other corners were
+     written as raw pixels beside it, including a lone 6px and a lone 14px that
+     were nothing but the nearest round number somebody reached for. Named so
+     the next corner is a choice between steps rather than a new value.
+     `50%` stays literal at its seven use sites: a circle is a shape, not a
+     step on a scale, and naming it would invite 48% . */
+  --r-2xs: 2px;
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 12px;
   --radius: 16px;
+  --r-pill: 999px;
   --tap: 48px;
+  /* Type scale. This file tokenised motion and colour early and carefully and
+     never did the same for type, so the sizes grew one screen at a time and
+     reached thirty-six distinct values — four of them (0.78, 0.8, 0.82, 0.85)
+     inside a single pixel of each other and used fifty-two times between them.
+     Nobody can see the difference between two of those; what is visible in
+     aggregate is that nothing lines up with anything, because there was no
+     scale for it to line up with.
+
+     Twelve steps, each at least a whole pixel from its neighbours at a 16px
+     root, so every step is a decision somebody can actually see. Named by size
+     rather than by role — a role name (--fs-caption) claims to know where it
+     will be used, and the same 13px is a chip here and a helper line there.
+
+     Marks are not type and are not on this scale: .sc-dots and .sc-chip live
+     inside a 35x37px scorecard cell at 8px and 7px, below the smallest step,
+     and snapping them to it would overflow the cell they annotate. */
+  --fs-3xs: 0.625rem;
+  --fs-2xs: 0.6875rem;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-lg: 0.9375rem;
+  --fs-xl: 1rem;
+  --fs-2xl: 1.125rem;
+  --fs-3xl: 1.3125rem;
+  --fs-4xl: 1.5rem;
+  --fs-5xl: 1.75rem;
+  --fs-6xl: 2.3125rem;
   /* Motion. Every transition DURATION in this file comes from these three
      tokens — no transition hardcodes a time. Timing functions are tokenized
      for the two transform curves only: --ease-out front-loads the movement
@@ -104,6 +164,7 @@
   --under: #43d281;
   --under-ink: var(--under);
   --gold-ink: var(--gold);
+  --green-ink: var(--fairway);
 }
 
 /* Glare mode: max-contrast light theme for direct daylight, whatever the
@@ -281,7 +342,7 @@ button {
   transform: scale(0.98);
 }
 .btn-primary.big {
-  font-size: 1.15rem;
+  font-size: var(--fs-2xl);
   padding: 18px;
   min-height: var(--tap);
 }
@@ -367,7 +428,7 @@ html:has(.screen-foot) {
 }
 
 .btn-ghost {
-  color: var(--green-600);
+  color: var(--green-ink);
   font-weight: 600;
   padding: 8px 6px;
   min-height: var(--tap);
@@ -375,7 +436,7 @@ html:has(.screen-foot) {
 
 .btn-secondary {
   background: var(--card);
-  color: var(--green-700);
+  color: var(--green-ink);
   border: 1.5px solid var(--green-600);
   border-radius: var(--radius);
   font-weight: 700;
@@ -387,7 +448,7 @@ html:has(.screen-foot) {
   transform: scale(0.98);
 }
 .btn-secondary.big {
-  font-size: 1.1rem;
+  font-size: var(--fs-2xl);
   padding: 16px;
   min-height: var(--tap);
 }
@@ -483,11 +544,11 @@ button:focus-visible {
   width: 26px;
   height: 26px;
   flex-shrink: 0;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   background: var(--green-600);
   color: #fff;
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   display: grid;
   place-items: center;
 }
@@ -500,7 +561,7 @@ button:focus-visible {
   border-radius: 50%;
   color: #fff;
   font-weight: 800;
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   letter-spacing: 0.02em;
   display: grid;
   place-items: center;
@@ -518,23 +579,17 @@ button:focus-visible {
      comes with that has to go, the hero spaces itself. */
   margin: 0;
   font-family: var(--font-display);
-  font-size: 2.3rem;
+  font-size: var(--fs-6xl);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--green-700);
+  color: var(--green-ink);
   display: flex;
   /* The P Flag mark stands in for the P: its bottom edge sits on the text
      baseline, and the flag tip runs tight against the R. */
   align-items: baseline;
   justify-content: center;
   gap: 3px;
-}
-:root.dark .logo {
-  color: var(--fairway);
-}
-:root.dark .round-result {
-  color: var(--fairway);
 }
 .tagline {
   color: var(--muted);
@@ -554,12 +609,12 @@ button:focus-visible {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.85rem;
-  color: var(--green-600);
+  font-size: var(--fs-md);
+  color: var(--green-ink);
   padding: 0 4px;
 }
 .saved h2 {
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--muted);
@@ -611,21 +666,21 @@ button:focus-visible {
   border-radius: 50%;
   border: 2px solid var(--line);
   color: #fff;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   font-weight: 700;
 }
 .round-tick.on {
   background: var(--green-600);
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
 }
 .round-card.selected {
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
 }
 
 .round-title {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1.08rem;
+  font-size: var(--fs-2xl);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -633,13 +688,13 @@ button:focus-visible {
   text-overflow: ellipsis;
 }
 .round-result {
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
-  color: var(--green-600);
+  color: var(--green-ink);
   margin-top: 2px;
 }
 .round-sub {
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   color: var(--muted);
   margin-top: 2px;
   white-space: nowrap;
@@ -653,22 +708,22 @@ button:focus-visible {
   flex-wrap: wrap;
 }
 .tag {
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   background: var(--bg);
-  color: var(--green-600);
-  border-radius: 999px;
+  color: var(--green-ink);
+  border-radius: var(--r-pill);
   padding: 3px 9px;
   text-transform: capitalize;
 }
 .round-del {
   width: 44px;
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: var(--fs-2xl);
 }
 .hint {
   text-align: center;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   margin-top: auto;
 }
 /* A trailing paragraph's own bottom margin is dead space: there is no sibling
@@ -689,7 +744,7 @@ button:focus-visible {
 }
 .empty-icon {
   line-height: 1;
-  color: var(--green-600);
+  color: var(--green-ink);
 }
 .empty-title {
   font-weight: 700;
@@ -697,12 +752,12 @@ button:focus-visible {
 }
 .empty-sub {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: var(--fs-md);
   margin: 0;
 }
 .empty-help {
   margin-top: 10px;
-  font-size: 0.88rem;
+  font-size: var(--fs-md);
 }
 
 /* ---------- Top bar ---------- */
@@ -718,7 +773,7 @@ button:focus-visible {
 }
 .bar h1 {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: var(--fs-xl);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
@@ -737,7 +792,7 @@ button:focus-visible {
    this paints the box that was always being occupied. */
 .bar .btn-ghost {
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--card);
   /* 44px: a thumb's size, and the same as the icon buttons sitting next to
      them in the same bar — 44 beside 38 was worse than either. Still short of
@@ -746,7 +801,7 @@ button:focus-visible {
      button rows of equal height read as one crowded slab. */
   min-height: 44px;
   padding: 0 12px;
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -776,7 +831,7 @@ button:focus-visible {
 }
 .bar .btn-ghost:active {
   transform: scale(0.97);
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
 }
 /* Icon-only header buttons stay square, matching the toolbar toggles. */
 /* 44px, the size a thumb is drawn for. These were 38 and passed WCAG 2.5.8 AA
@@ -796,15 +851,15 @@ button:focus-visible {
    drops its label and gives the width to the course name. The destination
    still rides in the accessible name. */
 .bar .btn-ghost.back {
-  font-size: 1.5rem;
+  font-size: var(--fs-4xl);
   line-height: 1;
   padding-bottom: 3px;
-  color: var(--green-600);
+  color: var(--green-ink);
 }
 .hero-settings {
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -821,7 +876,7 @@ button:focus-visible {
    the content inside the card carries the weight. */
 .card h2 {
   margin: 0 0 12px;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -833,7 +888,7 @@ button:focus-visible {
   gap: 6px;
 }
 .field > span {
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 input,
@@ -842,7 +897,7 @@ select {
   color: var(--ink);
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 12px;
   min-height: var(--tap);
 }
@@ -858,7 +913,7 @@ select:focus {
   gap: 6px;
 }
 .cs-status {
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   color: var(--muted);
   margin: 0;
 }
@@ -883,7 +938,7 @@ select:focus {
   flex-direction: column;
   gap: 6px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--card);
   padding: 6px;
 }
@@ -896,7 +951,7 @@ select:focus {
   text-align: left;
   padding: 10px 12px;
   min-height: var(--tap);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: var(--bg);
 }
 .cs-hit:active {
@@ -907,19 +962,19 @@ select:focus {
 }
 .cs-hit-name {
   font-weight: 700;
-  color: var(--green-700);
-}
-:root.dark .cs-hit-name {
-  color: var(--fairway);
+  color: var(--green-ink);
 }
 .cs-hit-meta {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 .cs-attribution {
-  font-size: 0.68rem;
+  font-size: var(--fs-2xs);
+  /* No opacity on top of --muted. --muted is already the tuned quiet colour;
+     multiplying it by 0.75 took an attribution line that has to stay legible
+     for licence reasons from 5.4:1 down to 3.46:1, which is the one thing it
+     was not allowed to do. */
   color: var(--muted);
-  opacity: 0.75;
   margin: 2px 0 0;
 }
 
@@ -937,7 +992,7 @@ select:focus {
    name is the only part you read to decide whether this is the course. */
 .saved-course-row {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--bg);
   padding: 4px 6px 6px;
   margin-bottom: 8px;
@@ -970,16 +1025,13 @@ select:focus {
 .saved-course-name {
   display: block;
   font-weight: 700;
-  color: var(--green-700);
+  color: var(--green-ink);
   /* Wraps rather than truncating: it has the width now, and a course name cut
      off mid-word is the one thing this row must not do. */
   overflow-wrap: anywhere;
 }
-:root.dark .saved-course-name {
-  color: var(--fairway);
-}
 .saved-course-meta {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
   max-width: 100%;
   white-space: nowrap;
@@ -993,10 +1045,10 @@ select:focus {
   min-height: 44px;
   flex-shrink: 0;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--card);
   color: var(--muted);
-  font-size: 1.3rem;
+  font-size: var(--fs-3xl);
   line-height: 1;
   cursor: pointer;
 }
@@ -1024,7 +1076,7 @@ select:focus {
    glyph's size out of the transition: setting font-size on the button itself
    would resize the outgoing glyph mid-fade. */
 .del-word {
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   font-weight: 700;
   white-space: nowrap;
   opacity: 0;
@@ -1092,7 +1144,7 @@ select:focus {
   font-family: var(--font-display);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--green-600);
+  color: var(--green-ink);
 }
 .player-derived-arrow {
   color: var(--muted);
@@ -1139,7 +1191,7 @@ select:focus {
 .seg-btn {
   flex: 1;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--line);
   background: var(--bg);
   font-family: var(--font-display);
@@ -1151,7 +1203,7 @@ select:focus {
 .seg-btn.active {
   background: var(--green-600);
   color: #fff;
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
 }
 /* Play's toggle already sits in .screen's 16px flex gap — no extra margin. */
 /* A grid, not a flex row, and that is the whole fix.
@@ -1246,7 +1298,7 @@ select:focus {
   min-width: 44px;
   min-height: 44px;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   background: var(--bg);
   line-height: 1;
   display: flex;
@@ -1295,13 +1347,13 @@ select:focus {
   margin-top: 10px;
   padding: 8px 12px;
   min-height: var(--tap);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1px solid color-mix(in srgb, var(--green-600) 35%, var(--line));
   background: var(--card);
-  color: var(--green-600);
+  color: var(--green-ink);
   font: inherit;
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   cursor: pointer;
 }
 .check-note.bad {
@@ -1314,7 +1366,7 @@ select:focus {
   border-radius: var(--radius);
   background: color-mix(in srgb, var(--gold) 16%, var(--card));
   border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   line-height: 1.4;
 }
 
@@ -1330,14 +1382,14 @@ select:focus {
   gap: 4px;
 }
 .par-cell > .par-hole {
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 /* Only drawn when there are two boxes in the cell to tell apart. Sized down
    hard and letter-spaced so it reads as a caption on the field below rather
    than as another value in the column. */
 .par-cap {
-  font-size: 0.58rem;
+  font-size: var(--fs-3xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1375,7 +1427,7 @@ select:focus {
   cursor: pointer;
   text-align: left;
   padding: 14px;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--line);
   background: var(--bg);
 }
@@ -1397,7 +1449,7 @@ select:focus {
   background: none;
   border: 0;
   color: var(--muted);
-  font-size: 1.1rem;
+  font-size: var(--fs-2xl);
   line-height: 1;
   display: grid;
   place-items: center;
@@ -1407,18 +1459,21 @@ select:focus {
   padding-top: 10px;
   border-top: 1px solid var(--line);
   color: var(--under-ink);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   line-height: 1.45;
 }
 .game-check {
   width: 24px;
   height: 24px;
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   border: 2px solid var(--line);
   display: grid;
   place-items: center;
-  color: #fff;
-  font-size: 0.85rem;
+  /* The tick sits on --fairway, which is the same bright green in every theme,
+     so its ink cannot be a theme token. Pinned to the light theme's --ink:
+     white measured 2.35:1 on that fill and this measures 6.98:1. */
+  color: #10231b;
+  font-size: var(--fs-md);
   flex-shrink: 0;
 }
 .game-card.active .game-check {
@@ -1435,13 +1490,13 @@ select:focus {
 .game-text strong {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1.05rem;
+  font-size: var(--fs-xl);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .game-text small {
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
 }
 
 .toggle {
@@ -1474,7 +1529,7 @@ select:focus {
 }
 .seg.small .seg-btn {
   padding: 8px 6px;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   min-height: 40px;
 }
 .nassau-1v1 {
@@ -1585,11 +1640,11 @@ select:focus {
 .nav-arrow {
   width: 52px;
   height: 44px;
-  font-size: 1.6rem;
-  color: var(--green-700);
+  font-size: var(--fs-4xl);
+  color: var(--green-ink);
   background: var(--card);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--r-lg);
 }
 .nav-arrow:disabled {
   opacity: 0.3;
@@ -1606,19 +1661,19 @@ select:focus {
 }
 .hole-num {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: var(--fs-4xl);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .hole-par {
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   color: var(--muted);
   white-space: nowrap;
 }
 .progress {
   text-align: center;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   color: var(--muted);
   margin-top: -8px;
 }
@@ -1666,7 +1721,7 @@ select:focus {
   border-color: var(--fairway);
 }
 .hole-dot.current::before {
-  border-color: var(--green-700);
+  border-color: var(--green-ink);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--fairway) 45%, transparent);
   transform: scale(1.3);
 }
@@ -1733,7 +1788,7 @@ select:focus {
   gap: 9px;
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1rem;
+  font-size: var(--fs-xl);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   min-width: 0;
@@ -1765,7 +1820,7 @@ select:focus {
   /* 1.75rem, so the number stands 28px tall and the name row is sized by the
      avatar beside it rather than by the number overshooting it by three
      pixels. Still nearly twice the name's 1rem, which is the job it does. */
-  font-size: 1.75rem;
+  font-size: var(--fs-5xl);
   font-weight: 600;
   line-height: 1;
 }
@@ -1785,7 +1840,7 @@ select:focus {
   font-variant-numeric: tabular-nums;
 }
 .score-tag {
-  font-size: 0.65rem;
+  font-size: var(--fs-3xs);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
@@ -1831,12 +1886,12 @@ select:focus {
      will start here — and this is the one number that must not move. Take it
      out of the spacing instead; see .stepper and .hole-view. */
   height: 44px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   border: 1.5px solid var(--line);
   background: var(--bg);
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 1.15rem;
+  font-size: var(--fs-2xl);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   /* The most-tapped control in the app — roughly 72 taps a round. Without
@@ -1850,7 +1905,7 @@ select:focus {
 }
 .score-chip[aria-checked='true'] {
   background: var(--green-600);
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
   color: #fff;
 }
 /* Light mode: white text on --under (#1a8f4c) measures 4.14:1, short of
@@ -1862,7 +1917,7 @@ select:focus {
    see the override below. */
 .tone-under .score-chip[aria-checked='true'] {
   background: var(--green-600);
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
 }
 .tone-over .score-chip[aria-checked='true'] {
   background: var(--over-strong);
@@ -1899,8 +1954,8 @@ select:focus {
   letter-spacing: 0.08em;
 }
 .score-more.has-value {
-  border-color: var(--green-600);
-  color: var(--green-700);
+  border-color: var(--green-ink);
+  color: var(--green-ink);
   background: var(--card);
 }
 /* Dark mode: --green-700 (unchanged from light) on dark --card measures
@@ -1921,7 +1976,7 @@ select:focus {
 }
 .score-overflow .score-chip.sel {
   background: var(--green-600);
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
   color: #fff;
 }
 /* Same over/under tone language as the inline chips above, so a score like 9
@@ -1932,7 +1987,7 @@ select:focus {
    these chain through both `.tone-*` and `.score-overflow` for (0,4,0). */
 .tone-under .score-overflow .score-chip.sel {
   background: var(--green-600);
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
 }
 .tone-over .score-overflow .score-chip.sel {
   background: var(--over-strong);
@@ -1955,7 +2010,7 @@ select:focus {
   padding: 12px 14px;
 }
 .wolf-head {
-  font-size: 0.92rem;
+  font-size: var(--fs-lg);
   line-height: 1.6;
   margin-bottom: 10px;
   display: flex;
@@ -1976,11 +2031,11 @@ select:focus {
   align-items: center;
   gap: 7px;
   padding: 8px 14px 8px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--line);
   background: var(--card);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   min-height: 40px;
 }
 /* Lone/Blind chips have no avatar — keep them evenly padded. */
@@ -1993,7 +2048,7 @@ select:focus {
 .wolf-chip.active {
   background: var(--green-600);
   color: #fff;
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
 }
 
 /* ---------- Junk ---------- */
@@ -2010,7 +2065,7 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.92rem;
+  font-size: var(--fs-lg);
   margin-bottom: 10px;
 }
 .junk-head svg {
@@ -2024,12 +2079,12 @@ select:focus {
   padding: 4px 10px;
   border: none;
   background: none;
-  color: var(--green-600);
+  color: var(--green-ink);
   font-family: var(--font-display);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
 }
 .junk-players,
 .junk-kinds {
@@ -2045,26 +2100,26 @@ select:focus {
   align-items: center;
   gap: 7px;
   padding: 8px 12px 8px 8px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--line);
   background: var(--card);
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   min-height: 40px;
 }
 .junk-chip.active {
   background: var(--green-600);
   color: #fff;
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
 }
 /* How many this player is already holding on this hole — so the row answers
    "who has what" without opening each one in turn. */
 .junk-count {
   min-width: 18px;
   padding: 0 5px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: color-mix(in srgb, var(--ink) 12%, transparent);
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   line-height: 18px;
   text-align: center;
 }
@@ -2078,23 +2133,23 @@ select:focus {
 .junk-kind {
   min-height: 44px;
   padding: 8px 14px;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--line);
   background: var(--card);
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   letter-spacing: 0.02em;
 }
 .junk-kind.active {
   background: var(--green-600);
   color: #fff;
-  border-color: var(--green-600);
+  border-color: var(--green-ink);
 }
 .junk-hint {
   margin: 0;
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
 }
 
 /* ---------- Nassau press ---------- */
@@ -2112,11 +2167,11 @@ select:focus {
   gap: 8px;
   width: 100%;
   padding: 9px 12px;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
 }
 .vegas-nums {
   flex: 0 0 auto;
@@ -2127,7 +2182,7 @@ select:focus {
   font-variant-numeric: tabular-nums;
 }
 .vegas-num {
-  font-size: 1rem;
+  font-size: var(--fs-xl);
   font-weight: 500;
   color: var(--muted);
 }
@@ -2148,7 +2203,7 @@ select:focus {
 }
 
 .nassau-head {
-  font-size: 0.92rem;
+  font-size: var(--fs-lg);
   margin-bottom: 10px;
   display: flex;
   align-items: center;
@@ -2157,10 +2212,10 @@ select:focus {
 .press-btn {
   width: 100%;
   padding: 11px;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--green-600);
   background: var(--card);
-  color: var(--green-700);
+  color: var(--green-ink);
   font-weight: 700;
   min-height: 44px;
   cursor: pointer;
@@ -2183,9 +2238,9 @@ select:focus {
   gap: 6px;
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 5px 6px 5px 12px;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   font-weight: 600;
 }
 /* An automatic press has no × to press, so the chip closes up to where the
@@ -2194,7 +2249,7 @@ select:focus {
   padding-right: 12px;
 }
 .press-auto {
-  font-size: 0.68rem;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -2206,7 +2261,7 @@ select:focus {
   border-radius: 50%;
   background: var(--line);
   color: var(--ink);
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   line-height: 1;
   cursor: pointer;
 }
@@ -2238,7 +2293,7 @@ select:focus {
 .board-title {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 1.02rem;
+  font-size: var(--fs-xl);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   display: inline-flex;
@@ -2247,13 +2302,13 @@ select:focus {
 }
 /* "LIVE" / "FINAL" reads as a scoreboard flag. */
 .board-status {
-  font-size: 0.66rem;
-  color: var(--green-600);
+  font-size: var(--fs-2xs);
+  color: var(--green-ink);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   border: 1.5px solid currentColor;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 3px 9px;
   align-self: center;
   /* A pill is a pill only on one line — wrapping overruns the rounded border. */
@@ -2280,7 +2335,7 @@ select:focus {
   align-items: center;
   gap: 10px;
   padding: 7px 6px;
-  border-radius: 10px;
+  border-radius: var(--r-md);
 }
 .board-row.leader {
   background: color-mix(in srgb, var(--fairway) 14%, transparent);
@@ -2290,7 +2345,7 @@ select:focus {
   grid-template-columns: minmax(0, auto) minmax(0, 1fr);
 }
 .board-rank {
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   color: var(--muted);
   text-align: center;
   font-weight: 700;
@@ -2329,7 +2384,7 @@ select:focus {
 }
 .board-note,
 .board-foot {
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   color: var(--muted);
   padding-top: 6px;
 }
@@ -2355,7 +2410,7 @@ select:focus {
 }
 .warn-banner p {
   margin: 0 0 10px;
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   line-height: 1.35;
 }
 .warn-actions {
@@ -2365,7 +2420,7 @@ select:focus {
 .warn-keep {
   flex: 1;
   padding: 12px;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink);
@@ -2406,20 +2461,20 @@ select:focus {
   letter-spacing: 0.04em;
 }
 .lmatch-up {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 .lmatch-status {
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   color: var(--muted);
   margin-top: 2px;
 }
 .lmatch-status.final {
-  color: var(--green-600);
+  color: var(--green-ink);
   font-weight: 700;
 }
 .lmatch-strokes {
-  font-size: 0.76rem;
+  font-size: var(--fs-xs);
   color: var(--gold-ink);
   margin-top: 3px;
   letter-spacing: 0.01em;
@@ -2434,9 +2489,9 @@ select:focus {
    the only thing in the app actually below that bar. The padding is negative
    on the sides so the words still line up with the card edge they sit against. */
 .link-btn {
-  color: var(--green-600);
+  color: var(--green-ink);
   font-weight: 700;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   cursor: pointer;
   min-height: 28px;
   padding: 4px 6px;
@@ -2474,7 +2529,7 @@ select:focus {
   text-align: right;
 }
 .stake-input .per {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
   min-width: 64px;
 }
@@ -2547,7 +2602,7 @@ select:focus {
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
-  font-size: 0.95rem;
+  font-size: var(--fs-lg);
 }
 .payment strong {
   min-width: 0;
@@ -2559,7 +2614,7 @@ select:focus {
 .pay-amount {
   margin-left: auto;
   font-weight: 700;
-  color: var(--green-700);
+  color: var(--green-ink);
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
   font-size: 0.92em;
 }
@@ -2569,10 +2624,10 @@ select:focus {
   margin: 4px auto;
   padding: 5px 12px;
   border: 2px solid var(--under);
-  border-radius: 8px;
+  border-radius: var(--r-sm);
   color: var(--under-ink);
   font-weight: 800;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   text-transform: uppercase;
   letter-spacing: 0.12em;
   transform: rotate(-2deg);
@@ -2620,7 +2675,7 @@ select:focus {
   left: calc(6% + var(--i) * 7.5%);
   width: 7px;
   height: 12px;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   background: var(--fairway);
   opacity: 0;
   animation: confetti-fall 1.5s ease-in calc(var(--i) * 0.07s) 1 both;
@@ -2716,27 +2771,27 @@ select:focus {
 }
 .winner-line {
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: var(--fs-4xl);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .winner-sub {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   text-transform: capitalize;
   margin-top: 2px;
 }
 .results-course {
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-size: var(--fs-3xl);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 .results-sub {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
 }
 
 /* ---------- Polish: animation & feedback ---------- */
@@ -2775,7 +2830,7 @@ select:focus {
 }
 .hcp-dots {
   color: var(--gold-ink);
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   margin-left: 6px;
   letter-spacing: 1px;
   vertical-align: middle;
@@ -2784,10 +2839,10 @@ select:focus {
   flex-shrink: 0;
   margin-left: 6px;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--line);
   font-family: var(--font-display);
-  font-size: 0.62rem;
+  font-size: var(--fs-3xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--muted);
@@ -2806,10 +2861,10 @@ select:focus {
   line-height: 1;
 }
 .mark-circle {
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 .mark-square {
-  border-radius: 4px;
+  border-radius: var(--r-xs);
 }
 /* Bogey and double+ used to draw the same 2px square, separated only by the
    outer ring — which made a high-handicap row read as an undifferentiated wall
@@ -2842,7 +2897,7 @@ select:focus {
 }
 .score-num.celebrate {
   animation: celebrate 0.9s ease-out;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
 }
 @media (prefers-reduced-motion: reduce) {
   .score-num.celebrate {
@@ -2856,7 +2911,7 @@ select:focus {
   padding: 13px;
   border-radius: var(--radius);
   border: 1px dashed var(--green-600);
-  color: var(--green-600);
+  color: var(--green-ink);
   background: transparent;
   font-weight: 700;
   cursor: pointer;
@@ -2873,7 +2928,7 @@ select:focus {
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 12px;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 /* The two par presets. Only Setup uses these. */
@@ -2881,12 +2936,12 @@ select:focus {
   padding: 7px 12px;
   /* 31px tall was the smallest thing on the screen you were meant to tap. */
   min-height: 40px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   border: 1px solid var(--line);
   background: var(--bg);
   font-weight: 600;
-  font-size: 0.8rem;
-  color: var(--green-700);
+  font-size: var(--fs-sm);
+  color: var(--green-ink);
 }
 .si-input {
   padding: 6px;
@@ -2895,11 +2950,11 @@ select:focus {
      fiddlier to hit. */
   min-height: 40px;
   text-align: center;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   width: 100%;
 }
 .hint-inline {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
   margin: 8px 0 0;
 }
@@ -2927,7 +2982,7 @@ select:focus {
   border-collapse: separate;
   border-spacing: 0;
   width: 100%;
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   font-variant-numeric: tabular-nums;
 }
 .scorecard th,
@@ -2979,20 +3034,20 @@ select:focus {
 }
 .sc-hole.current,
 .sc-cell.current {
-  background: color-mix(in srgb, var(--fairway) 18%, transparent);
-  border-radius: 6px;
+  background: color-mix(in srgb, var(--fairway) var(--tint), transparent);
+  border-radius: var(--r-xs);
 }
 .sc-par-row td,
 .sc-par-row th {
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
 }
 /* The header block closes under SI, not under Par — the border moved down when
    the stroke-index row was added. */
 .sc-si-row td,
 .sc-si-row th {
   color: var(--muted);
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   letter-spacing: 0.02em;
   border-bottom: 1px solid var(--line);
 }
@@ -3100,7 +3155,7 @@ select:focus {
   font-weight: 700;
   line-height: 1;
   padding: 1px 2px;
-  border-radius: 2px;
+  border-radius: var(--r-2xs);
   color: var(--gold-ink);
   border: 1px solid currentColor;
 }
@@ -3155,7 +3210,7 @@ select:focus {
   margin: 6px 0 0;
   text-align: center;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
 }
 .share-picture + .share-picture {
   margin-top: 16px;
@@ -3168,7 +3223,7 @@ select:focus {
   gap: 12px;
   margin: 20px 0 14px;
   color: var(--muted);
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -3194,7 +3249,7 @@ select:focus {
    in the viewBox, where a scanner needs it. */
 .send-qr {
   background: #fff;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 10px;
   margin: 4px auto 14px;
   width: min(260px, 70vw);
@@ -3207,12 +3262,12 @@ select:focus {
 
 .send-note {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   text-align: center;
   margin: 0 0 14px;
 }
 .send-note.quiet {
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   margin: 14px 0 0;
 }
 
@@ -3226,7 +3281,7 @@ select:focus {
   background: var(--card);
   border: 1px solid var(--line);
   border-left: 4px solid var(--gold);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 12px 14px;
   margin-bottom: 12px;
 }
@@ -3238,11 +3293,11 @@ select:focus {
   flex: 1;
 }
 .unkept-text strong {
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
 }
 .unkept-text span {
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
 }
 .unkept .btn-secondary {
   flex: 0 0 auto;
@@ -3260,7 +3315,7 @@ select:focus {
   width: 40px;
   height: 40px;
   border: none;
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: none;
   color: var(--muted);
   cursor: pointer;
@@ -3283,7 +3338,7 @@ select:focus {
 .course-card-preview table {
   border-collapse: collapse;
   font-variant-numeric: tabular-nums;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   margin: 0 auto;
 }
 .course-card-preview th,
@@ -3312,19 +3367,19 @@ select:focus {
   background: var(--card);
   border: 1px solid var(--line);
   border-left: 4px solid var(--gold);
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   padding: 12px 14px;
 }
 .course-issues strong {
   display: block;
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   margin-bottom: 6px;
 }
 .course-issues ul {
   margin: 0;
   padding-left: 18px;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
 }
 .course-issues li + li {
   margin-top: 4px;
@@ -3358,14 +3413,14 @@ select:focus {
 }
 .arriving-course {
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: var(--fs-3xl);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 .arriving-sub {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   margin-top: 2px;
 }
 /* The decision screen stacks two or three answers; they share a width so the
@@ -3398,18 +3453,18 @@ select:focus {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
 }
 .pergame-stake {
   color: var(--muted);
-  font-size: 0.74rem;
+  font-size: var(--fs-xs);
 }
 .pergame-nets {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 12px;
   margin-top: 4px;
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums;
 }
 .pg-name {
@@ -3467,7 +3522,7 @@ select:focus {
   /* 4px around a 19px line of read-only text. Nothing in this strip is
      tappable, so its height is type and air, and the air was the larger half. */
   padding: 4px 2px;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -3536,11 +3591,11 @@ select:focus {
   width: 100%;
   min-height: 0;
   padding: 9px 12px;
-  border-radius: 12px;
+  border-radius: var(--r-lg);
   border: 1px solid var(--line);
   background: var(--card);
   color: var(--ink);
-  font-size: 0.82rem;
+  font-size: var(--fs-sm);
   text-align: left;
 }
 .collapsed-text {
@@ -3551,12 +3606,12 @@ select:focus {
 }
 .collapsed-hint {
   flex: 0 0 auto;
-  color: var(--green-600);
+  color: var(--green-ink);
   font-family: var(--font-display);
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
 }
 
 /* ---------- Sheet ----------
@@ -3663,7 +3718,7 @@ select:focus {
   display: none;
   width: 36px;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--line);
   /* Pulls up into the panel's own top padding so the handle costs no height
      that the sheet's contents would otherwise have. */
@@ -3799,7 +3854,7 @@ select:focus {
 }
 .set-hint {
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
 }
 
 /* Bare `input[type=checkbox]` rendered as the OS control — on iOS that meant
@@ -3819,7 +3874,7 @@ select:focus {
      the knob stranded near the top. */
   min-height: 0;
   padding: 0;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--line);
   border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
   position: relative;
@@ -3835,7 +3890,7 @@ select:focus {
   left: 3px;
   width: 26px;
   height: 26px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: #fff;
   box-shadow: 0 1px 3px rgba(4, 17, 11, 0.35);
   transform: translateY(-50%);
@@ -3843,7 +3898,7 @@ select:focus {
 }
 .switch:checked {
   background: var(--green-600);
-  border-color: var(--green-700);
+  border-color: var(--green-ink);
 }
 .switch:checked::after {
   transform: translate(20px, -50%);
@@ -3864,7 +3919,7 @@ select:focus {
   text-align: left;
   padding: 0;
   color: var(--gold-ink);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   text-decoration: underline;
   min-height: var(--tap);
 }
@@ -3884,11 +3939,11 @@ select:focus {
 .board-hcp {
   display: inline-block;
   flex-shrink: 0;
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   padding: 1px 5px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--fairway) 18%, transparent);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--fairway) var(--tint), transparent);
   color: var(--muted);
   vertical-align: middle;
 }
@@ -3902,11 +3957,11 @@ select:focus {
   margin-left: 6px;
 }
 .lg-chip {
-  font-size: 0.62rem;
+  font-size: var(--fs-3xs);
   font-weight: 700;
   line-height: 1;
   padding: 3px 5px;
-  border-radius: 4px;
+  border-radius: var(--r-xs);
   /* --gold is invisible on light backgrounds (see bbaca25) — ink in light and
      glare, bright gold only where the surface is dark. */
   color: var(--gold-ink);
@@ -3945,7 +4000,7 @@ select:focus {
   color: var(--ink);
   background: var(--bg);
   border: 2px solid var(--fairway);
-  border-radius: 4px;
+  border-radius: var(--r-xs);
 }
 .sc-cell .sc-input {
   margin: 6px 3px;
@@ -3959,13 +4014,13 @@ select:focus {
   flex-direction: column;
   gap: 2px;
   color: var(--muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
 }
 .about-title {
   font-family: var(--font-display);
   font-weight: 600;
   color: var(--ink);
-  font-size: 0.95rem;
+  font-size: var(--fs-lg);
 }
 .about-ver {
   color: var(--muted);
@@ -3997,7 +4052,7 @@ select:focus {
   color: var(--ink);
   background: var(--bg);
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   padding: 10px;
   width: 100%;
 }
@@ -4008,7 +4063,7 @@ select:focus {
 .fb-status {
   margin: 0;
   color: var(--under-ink);
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
 }
 /* A backup or restore that failed has to read differently from one that
    worked, and Press has no red anywhere — the warning gold `warn-banner`
@@ -4035,7 +4090,7 @@ select:focus {
   padding: 0;
   margin-top: -6px;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   text-decoration: underline;
   min-height: var(--tap);
 }
@@ -4053,13 +4108,13 @@ select:focus {
 }
 .help-section h3 {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: var(--fs-xl);
   margin: 0;
 }
 .help-section p {
   margin: 0;
   color: var(--under-ink);
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   line-height: 1.45;
 }
 .help-game {
@@ -4075,7 +4130,7 @@ select:focus {
 }
 .help-game-label {
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
 }
 
 /* ---- Round awards ------------------------------------------------------- */
@@ -4118,13 +4173,13 @@ select:focus {
 .award-title {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 0.74rem;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: 0.09em;
   color: var(--gold-ink);
 }
 .award-line {
-  font-size: 0.92rem;
+  font-size: var(--fs-lg);
   color: var(--ink);
 }
 /* Was ui-monospace — the only mono in the app, which read as debug output
@@ -4132,7 +4187,7 @@ select:focus {
 .award-detail {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 0.76rem;
+  font-size: var(--fs-xs);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
@@ -4168,12 +4223,12 @@ select:focus {
    too, above the key because it is the round rather than a note about it. */
 .sc-junk {
   margin: 12px 2px 0;
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 .sc-junk h2 {
   margin: 0 0 5px;
-  font-size: 0.7rem;
+  font-size: var(--fs-2xs);
   font-weight: 700;
   letter-spacing: 0.09em;
   text-transform: uppercase;
@@ -4205,7 +4260,7 @@ select:focus {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 16px;
-  font-size: 0.76rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 .sc-legend li {
@@ -4234,7 +4289,7 @@ select:focus {
 }
 .sc-legend-dot {
   color: var(--gold-ink);
-  font-size: 1.1rem;
+  font-size: var(--fs-2xl);
   line-height: 0.6;
   width: 15px;
   text-align: center;
@@ -4312,7 +4367,7 @@ select:focus {
   .play-foot .btn-primary.big {
     padding-top: 11px;
     padding-bottom: 11px;
-    font-size: 1rem;
+    font-size: var(--fs-xl);
   }
   /* The stacked layout drew its separator with `.stepper + .stepper`, which in
      a grid would underline the wrong edges. Every cell gets a top and left
@@ -4364,13 +4419,13 @@ select:focus {
 .setup-row-label {
   font-family: var(--font-display);
   font-weight: 500;
-  font-size: 0.95rem;
+  font-size: var(--fs-lg);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
 .setup-row-summary {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: var(--fs-md);
   text-align: right;
   min-width: 0;
   overflow: hidden;
@@ -4389,7 +4444,7 @@ select:focus {
    and an adjacent override cannot be out-ordered by the rule it overrides. */
 .setup-row-chevron {
   color: var(--muted);
-  font-size: 1.2rem;
+  font-size: var(--fs-2xl);
   line-height: 1;
   transition: transform var(--swap) var(--ease-in-out);
 }
@@ -4433,7 +4488,7 @@ select:focus {
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: var(--green-700);
+  color: var(--green-ink);
   flex: 0 0 auto;
 }
 :root.dark .crew-chip-title {
@@ -4441,7 +4496,7 @@ select:focus {
 }
 .crew-chip-names {
   color: var(--muted);
-  font-size: 0.88rem;
+  font-size: var(--fs-md);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4492,10 +4547,10 @@ select:focus {
      palette token later does not silently drop it under. Measure the
      composited colour against --card, not the alpha value, if you change it. */
   border: 1px solid color-mix(in srgb, var(--ink) 52%, transparent);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   background: var(--bg);
   color: var(--ink);
-  font-size: 0.88rem;
+  font-size: var(--fs-md);
 }
 
 /* The update prompt declares no transition, animation or transform, and is
@@ -4530,13 +4585,13 @@ select:focus {
 
 .update-msg {
   flex: 1;
-  font-size: 0.92rem;
+  font-size: var(--fs-lg);
 }
 
 .update-banner button {
   min-height: var(--tap);
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   font-weight: 700;
   cursor: pointer;
 }
@@ -4606,13 +4661,13 @@ select:focus {
 }
 .stat-sum-n {
   font-family: var(--font-display);
-  font-size: 1.4rem;
+  font-size: var(--fs-3xl);
   font-weight: 600;
-  color: var(--green-600);
+  color: var(--green-ink);
   font-variant-numeric: tabular-nums;
 }
 .stat-sum-l {
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -4642,7 +4697,7 @@ select:focus {
 }
 .stat-rounds {
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   flex: 0 0 auto;
 }
 
@@ -4660,7 +4715,7 @@ select:focus {
 }
 .stat-big {
   font-family: var(--font-display);
-  font-size: 1.35rem;
+  font-size: var(--fs-3xl);
   font-weight: 600;
   line-height: 1.1;
   font-variant-numeric: tabular-nums;
@@ -4672,7 +4727,7 @@ select:focus {
   color: var(--over-strong);
 }
 .stat-cap {
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -4691,26 +4746,26 @@ select:focus {
   align-items: baseline;
   gap: 4px;
   background: color-mix(in srgb, var(--green-600) 8%, transparent);
-  border-radius: 999px;
+  border-radius: var(--r-pill);
   padding: 3px 9px;
 }
 .stat-tally-n {
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   font-variant-numeric: tabular-nums;
 }
 .stat-tally-l {
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 
 .stat-best {
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   border-top: 1px solid var(--line);
   padding-top: 8px;
 }
 .stat-foot {
-  font-size: 0.72rem;
+  font-size: var(--fs-xs);
   color: var(--muted);
 }
 
@@ -4761,7 +4816,7 @@ select:focus {
   /* .btn-ghost is bare text with no box of its own, so the tint needs a shape
      to land in. It only exists on hover, so nothing is rounded at rest. */
   .btn-ghost:hover {
-    border-radius: 10px;
+    border-radius: var(--r-md);
   }
   /* The primary CTA is the one filled control, so it darkens instead of
      tinting — and darkens rather than lightens because its label is white:
@@ -4847,7 +4902,7 @@ select:focus {
 .history-count {
   margin: 0 0 10px;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
 }
 .history-empty {
   margin: 28px 0;
@@ -4857,7 +4912,7 @@ select:focus {
 
 .history-group h2 {
   margin: 6px 0 8px;
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
@@ -4898,11 +4953,11 @@ select:focus {
   padding: 10px 16px;
   min-height: 40px;
   border: 1px solid var(--over-strong);
-  border-radius: 10px;
+  border-radius: var(--r-md);
   background: none;
   color: var(--over-strong);
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -4918,7 +4973,7 @@ select:focus {
   display: block;
   width: 100%;
   margin-top: 2px;
-  font-size: 0.88rem;
+  font-size: var(--fs-md);
 }
 
 @media (prefers-reduced-motion: reduce) {
