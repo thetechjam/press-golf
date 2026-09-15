@@ -687,9 +687,15 @@ button:focus-visible {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+/* The live status, and the card's third line rather than its loudest.
+   It was 600 — heavier than the title above it at 500, in the accent colour,
+   at the same size as the meta line. Three emphasis signals on a detail that
+   is secondary to the course name, repeated down a list of cards. Matching
+   --round-sub's weight leaves colour to do the distinguishing on its own,
+   which is enough: nothing else on the card is green. */
 .round-result {
   font-size: var(--fs-sm);
-  font-weight: 600;
+  font-weight: 400;
   color: var(--green-ink);
   margin-top: 2px;
 }
