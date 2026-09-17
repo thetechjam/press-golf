@@ -1,4 +1,5 @@
 import type { Round, SavedCourse } from './types';
+import { kv } from './kv';
 
 const KEY = 'press.rounds.v1';
 const COURSES_KEY = 'press.courses.v1';
@@ -29,7 +30,7 @@ const isTheme = (v: unknown): v is Theme => typeof v === 'string' && THEMES.incl
 
 export function getSettings(): Settings {
   try {
-    const raw = localStorage.getItem(SETTINGS_KEY);
+    const raw = kv.getItem(SETTINGS_KEY);
     if (!raw) return { ...DEFAULT_SETTINGS };
     const p = JSON.parse(raw) as Partial<Settings> & { sunlight?: unknown };
     return {
@@ -56,7 +57,7 @@ export function saveSettings(patch: Partial<Settings>): Settings {
     glare: patch.glare ?? cur.glare,
     reporterName: patch.reporterName ?? cur.reporterName,
   };
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(next));
+  kv.setItem(SETTINGS_KEY, JSON.stringify(next));
   return next;
 }
 
@@ -66,7 +67,7 @@ export function uid(): string {
 
 export function listRounds(): Round[] {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = kv.getItem(KEY);
     if (!raw) return [];
     const rounds = JSON.parse(raw) as Round[];
     return rounds.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -82,17 +83,17 @@ export function getRound(id: string): Round | undefined {
 export function saveRound(round: Round): void {
   const rounds = listRounds().filter((r) => r.id !== round.id);
   rounds.push({ ...round, updatedAt: Date.now() });
-  localStorage.setItem(KEY, JSON.stringify(rounds));
+  kv.setItem(KEY, JSON.stringify(rounds));
 }
 
 export function deleteRound(id: string): void {
   const rounds = listRounds().filter((r) => r.id !== id);
-  localStorage.setItem(KEY, JSON.stringify(rounds));
+  kv.setItem(KEY, JSON.stringify(rounds));
 }
 
 export function listCourses(): SavedCourse[] {
   try {
-    const raw = localStorage.getItem(COURSES_KEY);
+    const raw = kv.getItem(COURSES_KEY);
     if (!raw) return [];
     return (JSON.parse(raw) as SavedCourse[]).sort((a, b) => a.name.localeCompare(b.name));
   } catch {
@@ -104,12 +105,12 @@ export function listCourses(): SavedCourse[] {
 export function saveCourse(course: SavedCourse): void {
   const courses = listCourses().filter((c) => c.id !== course.id);
   courses.push(course);
-  localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
+  kv.setItem(COURSES_KEY, JSON.stringify(courses));
 }
 
 export function deleteCourse(id: string): void {
   const courses = listCourses().filter((c) => c.id !== id);
-  localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
+  kv.setItem(COURSES_KEY, JSON.stringify(courses));
 }
 
 /**
@@ -126,13 +127,13 @@ export function deleteCourse(id: string): void {
  * Re-throws so the caller can tell a failed restore from a successful one.
  */
 export function writeAll(rounds: Round[], courses: SavedCourse[]): void {
-  const prevRounds = localStorage.getItem(KEY);
-  const prevCourses = localStorage.getItem(COURSES_KEY);
+  const prevRounds = kv.getItem(KEY);
+  const prevCourses = kv.getItem(COURSES_KEY);
   const restore = (key: string, prev: string | null) =>
-    prev === null ? localStorage.removeItem(key) : localStorage.setItem(key, prev);
+    prev === null ? kv.removeItem(key) : kv.setItem(key, prev);
   try {
-    localStorage.setItem(KEY, JSON.stringify(rounds));
-    localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
+    kv.setItem(KEY, JSON.stringify(rounds));
+    kv.setItem(COURSES_KEY, JSON.stringify(courses));
   } catch (err) {
     restore(KEY, prevRounds);
     restore(COURSES_KEY, prevCourses);

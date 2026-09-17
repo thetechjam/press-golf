@@ -1,5 +1,6 @@
 import type { Round } from './types';
 import { uid } from './storage';
+import { kv } from './kv';
 
 /**
  * Feedback capture. Writes to localStorage first and sends second, so a report
@@ -74,7 +75,7 @@ export function buildFeedback(draft: FeedbackDraft, ctx: FeedbackContext): Queue
 
 export function listQueue(): QueuedFeedback[] {
   try {
-    const raw = localStorage.getItem(QUEUE_KEY);
+    const raw = kv.getItem(QUEUE_KEY);
     if (!raw) return [];
     const q = JSON.parse(raw) as QueuedFeedback[];
     return Array.isArray(q) ? q : [];
@@ -84,7 +85,7 @@ export function listQueue(): QueuedFeedback[] {
 }
 
 function writeQueue(q: QueuedFeedback[]): void {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+  kv.setItem(QUEUE_KEY, JSON.stringify(q));
 }
 
 export function enqueue(entry: QueuedFeedback): void {
@@ -93,7 +94,7 @@ export function enqueue(entry: QueuedFeedback): void {
 
 /** Discards every queued report. Used when a user wants stale round data gone. */
 export function clearQueue(): void {
-  localStorage.removeItem(QUEUE_KEY);
+  kv.removeItem(QUEUE_KEY);
 }
 
 // Guards against concurrent flushes double-sending, and against a slow earlier
