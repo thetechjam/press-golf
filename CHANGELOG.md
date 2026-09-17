@@ -101,6 +101,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   390×844 phone has 63px to spare.
 
 ### Fixed
+- **Saving a course from the check note answers where the button is.** The
+  "Looks right — save this course" button sits inside the caveat at the top of
+  Holes & pars; the row's confirmation slot is under the eighteen-cell par
+  grid, a screenful down. Pressing it retired the caveat and put "Saved" out of
+  sight, so the only visible result was a warning disappearing under your
+  finger — which reads as having dismissed it. The confirmation now takes the
+  caveat's own slot: the gold note becomes a green one, same shape, no jump.
+  Saving from the button at the foot of the row still answers at the foot.
+
 - **The scoring toolbar is laid out as grid tracks, so it cannot run off the
   side of a phone.** Three attempts at this row failed the same way, because
   flex decides where to break a line, and whether a control may shrink, from

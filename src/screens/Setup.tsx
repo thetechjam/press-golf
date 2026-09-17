@@ -91,9 +91,10 @@ export function Setup({ onCancel, onStart }: Props) {
    * confirmation nobody could see is not a confirmation. It is shown beside
    * the control that produced it instead.
    */
-  const [savedNote, setSavedNote] = useState<{ text: string; row: 'course' | 'holes' } | null>(
-    null
-  );
+  const [savedNote, setSavedNote] = useState<{
+    text: string;
+    row: 'course' | 'holes' | 'check';
+  } | null>(null);
   const [nassauMode, setNassauMode] = useState<'1v1' | '2v2'>('1v1');
   const [nassauSideA, setNassauSideA] = useState('');
   const [nassauSideB, setNassauSideB] = useState('');
@@ -182,7 +183,15 @@ export function Setup({ onCancel, onStart }: Props) {
     });
   };
 
-  const saveFavorite = () => {
+  /**
+   * `from` is which button asked, because that is where the answer has to
+   * appear. The two are a screen apart: the check note sits at the top of
+   * Holes & pars and the ghost button below the whole par grid, so a single
+   * note slot at the foot means saving from the top makes the caveat vanish
+   * and puts the confirmation a thousand pixels down, out of sight. Same
+   * failure the note was moved out of the page footer to avoid.
+   */
+  const saveFavorite = (from: 'check' | 'foot' = 'foot') => {
     const name = course.trim();
     if (!name) {
       openRow('course');
@@ -199,7 +208,7 @@ export function Setup({ onCancel, onStart }: Props) {
     });
     setCourses(listCourses());
     setError('');
-    setSavedNote({ text: `Saved "${name}"`, row: 'holes' });
+    setSavedNote({ text: `Saved "${name}"`, row: from === 'check' ? 'check' : 'holes' });
     // Keeping a course is the user vouching for it, so the "check this against
     // the card" caveat has served its purpose and goes. From here their copy
     // is the one that loads, and search is only ever saving them the typing.
@@ -855,7 +864,14 @@ export function Setup({ onCancel, onStart }: Props) {
                 </button>
               ))}
             </div>
-            {holesSource === 'search' && (
+            {/* One slot, two states, written as a choice so they cannot both
+                appear: the caveat while the numbers are still the database's,
+                and — once the user has vouched for them — the confirmation, in
+                the same place. Saving from here retires the caveat, so putting
+                the answer at the foot of the row instead (below the whole par
+                grid, a screenful away) would read as the press having
+                dismissed a warning and done nothing else. */}
+            {holesSource === 'search' ? (
               <p className={`check-note${importIssues.length ? ' bad' : ''}`} role="status">
                 <strong>Check these against the card.</strong> Pars and stroke indexes from
                 course search are open community data and are sometimes wrong — a par out by one
@@ -876,14 +892,22 @@ export function Setup({ onCancel, onStart }: Props) {
                     card, because this is where the checking happens — and
                     saving is what turns a database guess into the copy that
                     loads next time. */}
-                <button type="button" className="check-save" onClick={saveFavorite}>
+                <button
+                  type="button"
+                  className="check-save"
+                  onClick={() => saveFavorite('check')}
+                >
                   <StarIcon size={15} />
                   {importIssues.length > 0
                     ? 'Save this course anyway'
                     : 'Looks right — save this course'}
                 </button>
               </p>
-            )}
+            ) : savedNote?.row === 'check' ? (
+              <p className="check-note saved" role="status">
+                <StarIcon size={15} /> {savedNote.text} — it loads from here next time.
+              </p>
+            ) : null}
             <div className="rating-row">
               <label className="field small">
                 <span>Slope</span>
@@ -994,7 +1018,7 @@ export function Setup({ onCancel, onStart }: Props) {
                 typed or preset by hand — and the call-out's is the prompt at
                 the moment it matters. */}
             {holesSource !== 'search' && (
-              <button className="btn-ghost add" onClick={saveFavorite}>
+              <button className="btn-ghost add" onClick={() => saveFavorite('foot')}>
                 <StarIcon size={16} /> Save this course for next time
               </button>
             )}

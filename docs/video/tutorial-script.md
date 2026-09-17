@@ -15,6 +15,17 @@ tutorial that shows a button the app does not have is worse than no tutorial.
 Timings are targets for the voice generation — the footage is cut to the
 narration, not the other way round.
 
+> **Stale after the last edit.** Scenes 03, 04 and 14 were rewritten and have
+> not been re-voiced. Until they are, every timestamp from 03 onward — the
+> scene headings here, the cue times in `press-tutorial.srt`, and the chapter
+> marks in the description — describes narration that no longer exists. Only 03
+> changes length: it gains a sentence, about ten seconds at the rate the
+> existing take measures (38 words in 13.84s). 04 and 14 were rewritten at the
+> same length, so they move but do not stretch. Every number downstream is that
+> one estimate carried forward. Regenerate the three clips, re-time the
+> captions off them, and take the real numbers from the clips rather than from
+> here.
+
 ---
 
 ## 01 · Cold open — Home, first run (0:00–0:18)
@@ -34,15 +45,17 @@ narration, not the other way round.
 > name — that's what every net score in the round comes off. Press remembers
 > your regular crew, so next week this is one tap.
 
-## 03 · Course (0:36–0:56)
+## 03 · Course, and checking the card (0:36–1:01)
 
-*The Course row opens. Course search, then a saved course loaded — pars and
-stroke indexes fill in.*
+*The Course row opens. Course search, Pebble Beach tapped — and Holes & pars
+opens itself on the load. The check note at the top of it, then the grid: every
+par and every stroke index, editable, eighteen across.*
 
 > Open Course. Search for it and Press pulls in the pars and the stroke
-> indexes, or load one you saved earlier. Check them against the real card
-> once. Everything downstream — every stroke anybody gets — comes off these
-> eighteen numbers.
+> indexes, or load one you saved earlier. Either way the card opens right here
+> — and search data gets read before you see it, so anything that looks off is
+> flagged. Check it against the real card once, then save it. Everything
+> downstream — every stroke anybody gets — comes off these eighteen numbers.
 
 ## 04 · Games (0:56–1:16)
 
@@ -50,8 +63,8 @@ stroke indexes fill in.*
 One ⓘ tapped, the rules text unfolds.*
 
 > Games is where the money starts. Tap what you're playing. Every format
-> carries its own rules behind the little i — so when somebody at the table has
-> never played Wolf, you don't have to be the one who explains it.
+> carries its own rules behind the info button — so when somebody at the table
+> has never played Wolf, you don't have to be the one who explains it.
 
 ## 05 · The formats (1:16–1:40)
 
@@ -136,8 +149,8 @@ controls on a hole.*
 
 *The Share sheet: Results image, Scorecard image.*
 
-> Share gives you the scoreboard as an image, the full card as an image, or
-> plain text for the group chat.
+> Share gives you the scoreboard as an image, or the full card as an image —
+> both straight into the group chat.
 
 ## 15 · Handing the round over (4:04–4:24)
 
@@ -191,7 +204,7 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 >
 > 0:00 What Press is
 > 0:18 Adding players and handicaps
-> 0:36 Loading a course
+> 0:36 Loading a course, and checking the card
 > 0:56 Picking your games
 > 1:16 Every format, and net scoring
 > 1:40 Setting the stakes
@@ -221,11 +234,21 @@ generated:
 | The 1920×1080 canvas, titles, cuts | ffmpeg in the Higgsfield sandbox: the 780×1688 take composited centre-left on `--green-900`, scene title and gold rule on the right |
 | Captions | Whisper times the narration; the cue **text** comes from this script, not the transcript |
 
-That last row is deliberate. Whisper hears the narration well enough to time it
-and not well enough to quote it — it produced "Smosh Cisco Ash Eye" for "the
-little i", "goes too down" for "two down", and "per whole" for "per hole". The
-words were never in doubt, so `press-tutorial.srt` carries the script's own
-wording, timed by the transcript's word positions.
+That last row is deliberate, and it has a failure mode this video shipped with.
+
+Taking the cue text from the script means the captions are always right —
+including when the audio is wrong. Whisper transcribed one line as "Smosh Cisco
+Ash Eye", and that was read here as Whisper mishearing clean speech. It was not.
+The voice really does mangle "the little i": a bare letter between two function
+words is not a word, and the burned-in caption read "the little i" over the top
+of it, so nothing on screen disagreed. "goes too down" for "two down" and "per
+whole" for "per hole" are the harmless kind — homophones, right in the audio,
+wrong only in the transcript.
+
+The difference is audible and nothing in this pipeline checks for it. So the
+rule is: a transcript that garbles a line is evidence about the *audio* until
+somebody listens and rules it out, and a line the voice cannot say gets
+rewritten in the script — never corrected in the captions.
 
 ### Scene lengths
 
@@ -239,5 +262,7 @@ new clip lengths; a take that is short by more than about a second shows.
 ### Files
 
 - `docs/video/tutorial-script.md` — this file; the narration is the source of truth
-- `docs/video/press-tutorial.srt` — captions for the YouTube upload
+- `docs/video/press-tutorial.srt` — captions for the YouTube upload. Derived:
+  the words come from this file, the times from the narration. The words are
+  current; the times are not, per the note at the top.
 - `scripts/capture-tutorial.mjs` — the recorder; `video-out/` is gitignored

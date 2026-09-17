@@ -288,6 +288,52 @@ async function glide(page, selector, distance, ms = 1400) {
 }
 
 /**
+ * Asserts a beat is actually on screen, and fails the take when it is not.
+ *
+ * Every locator in these scenes sits behind an `if (await count())`, which
+ * makes a take that quietly skipped a beat indistinguishable from one that
+ * played it: scene 03 recorded a blind scroll past the scorecard check while
+ * the narration talked about checking the scorecard, and the recorder printed
+ * ✓ every time. Being in the DOM is not the test — being in the viewport is,
+ * because that is what the camera sees. A beat the script promises is a beat
+ * the recorder checks.
+ */
+async function shown(page, selector, label = selector) {
+  const box = await page
+    .locator(selector)
+    .first()
+    .boundingBox()
+    .catch(() => null);
+  const height = page.viewportSize().height;
+  if (!box || box.y >= height || box.y + box.height <= 0) {
+    throw new Error(`Not on screen: ${label} — ${box ? 'scrolled out of frame' : 'no such element'}`);
+  }
+}
+
+/**
+ * Brings something to a comfortable place on screen, at reading pace.
+ *
+ * `scrollIntoViewIfNeeded` jumps, and a jump reads as a cut — fine for `tap`,
+ * where the press that follows explains it, wrong when the point of the shot
+ * is the thing arriving. Works out the distance and hands it to `glide` so the
+ * eye can follow it up the screen.
+ *
+ * Returns false when the element is not there rather than throwing, and does
+ * it in four seconds rather than Playwright's default thirty — a missing beat
+ * should fail the take promptly, and `shown()` is what decides that it has.
+ */
+async function reveal(page, selector, { top = 120, ms = 1200 } = {}) {
+  const box = await page
+    .locator(selector)
+    .first()
+    .boundingBox({ timeout: 4000 })
+    .catch(() => null);
+  if (!box) return false;
+  await glide(page, null, box.y - top, ms);
+  return true;
+}
+
+/**
  * Keeps a take rolling until it is as long as the narration it will carry.
  *
  * The cut pairs each take with its voice clip, and a take that runs out first
@@ -358,8 +404,8 @@ const scenes = [
   },
   {
     id: '03-course',
-    target: 15.6,
-    title: 'Loading a course — search, and a saved card',
+    target: 25.8,
+    title: 'Loading a course, and checking the card',
     seed: { rounds: [], courses },
     stubApi: true,
     async run(page) {
@@ -371,15 +417,37 @@ const scenes = [
         const hit = page.getByText(/Pebble Beach Golf Links/).first();
         if (await hit.count()) await tap(page, hit, { settle: 1600 });
       }
-      await pause(page, 1200);
-      await glide(page, null, 300, 1200);
+      // The load opens Holes & pars itself — and this is the part the take
+      // used to scroll past while the narration talked about it. A blind
+      // 300px glide landed wherever the row happened to be; the audit is
+      // named here so the shot cannot miss it again.
+      //
+      // Three beats, in the order somebody actually checks a card: the note
+      // that says check it (and lists what already looks wrong, when search
+      // data is wrong), then the eighteen pars and stroke indexes themselves,
+      // then vouching for it.
+      await reveal(page, '.check-note', { top: 90 });
+      await shown(page, '.check-note', 'the check-the-card note');
+      await pause(page, 2800);
+
+      await reveal(page, '.par-grid', { top: 150, ms: 1500 });
+      await shown(page, '.par-grid', 'the pars and stroke indexes');
+      await pause(page, 1800);
+      await glide(page, null, 280, 1800);
       await pause(page, 2000);
+
+      // Saving is what retires the caveat: the gold note becomes the green
+      // one in the same slot, and from here their copy is the one that loads.
+      // Worth the shot because it is the only way the warning goes away.
+      await reveal(page, '.check-save', { top: 320, ms: 1100 });
+      await tap(page, page.locator('.check-save'), { settle: 2400 });
+      await shown(page, '.check-note.saved', 'the saved confirmation');
     },
   },
   {
     id: '04-games',
     target: 18.0,
-    title: 'Picking the games, and the rules behind the i',
+    title: 'Picking the games, and the rules behind the info button',
     seed: { rounds: [], courses },
     async run(page) {
       await tap(page, page.getByRole('button', { name: /Start New Round/i }));
@@ -806,7 +874,7 @@ await writeFile(
       recorded: new Date().toISOString(),
       handoverUrlCaptured: Boolean(handoverUrl),
       notes: [
-        'Course search (03) is served a canned OpenGolfAPI response; the UI and parsing are live.',
+        'Course search (03) is served a canned OpenGolfAPI response; the UI, the parsing and the scorecard check are live.',
         'Players and rounds are fixtures — no real card is on screen.',
       ],
       scenes: manifest,
