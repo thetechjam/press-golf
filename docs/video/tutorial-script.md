@@ -5,7 +5,7 @@ scene in `scripts/capture-tutorial.mjs`, and every screen described is the real
 app driven in a real browser — nothing in this video is a mock-up, because a
 tutorial that shows a button the app does not have is worse than no tutorial.
 
-- **Runtime:** ~4:30
+- **Runtime:** ~5:27
 - **Footage:** 390×844 portrait, composited centre-frame on a felt-green 16:9
   canvas (`--green-900` `#0b3d2e`) with the scene title set in Oswald.
 - **Voice:** one narrator, plain and quick. Brand voice: buddies-trip money
@@ -15,20 +15,15 @@ tutorial that shows a button the app does not have is worse than no tutorial.
 Timings are targets for the voice generation — the footage is cut to the
 narration, not the other way round.
 
-> **Stale after the last edit.** Scenes 03, 04 and 14 were rewritten and have
-> not been re-voiced. Until they are, every timestamp from 03 onward — the
-> scene headings here, the cue times in `press-tutorial.srt`, and the chapter
-> marks in the description — describes narration that no longer exists. Only 03
-> changes length: it gains a sentence, about ten seconds at the rate the
-> existing take measures (38 words in 13.84s). 04 and 14 were rewritten at the
-> same length, so they move but do not stretch. Every number downstream is that
-> one estimate carried forward. Regenerate the three clips, re-time the
-> captions off them, and take the real numbers from the clips rather than from
-> here.
+The scene ranges above each block, the chapter marks in the description and the
+runtime are all read back out of `press-tutorial.srt` rather than kept by hand.
+They had drifted badly doing it the other way: this file claimed a 4:30 runtime
+against captions that already ran to 5:17. Re-derive them after any re-voice
+instead of editing them.
 
 ---
 
-## 01 · Cold open — Home, first run (0:00–0:18)
+## 01 · Cold open — Home, first run (0:00–0:24)
 
 *On screen: Press opens on an empty Home. The wordmark, "Track golf side games
 — the fun way", Start New Round, Golf League, and "No rounds yet".*
@@ -37,7 +32,7 @@ narration, not the other way round.
 > Wolf, the lot — and it does the math while you play. No account, no app
 > store, nothing to install. Here's a full round in four minutes.
 
-## 02 · Players (0:18–0:36)
+## 02 · Players (0:24–0:40)
 
 *Start New Round. Four names typed in, a handicap beside each.*
 
@@ -45,7 +40,7 @@ narration, not the other way round.
 > name — that's what every net score in the round comes off. Press remembers
 > your regular crew, so next week this is one tap.
 
-## 03 · Course, and checking the card (0:36–1:01)
+## 03 · Course, and checking the card (0:40–1:08)
 
 *The Course row opens. Course search, Pebble Beach tapped — and Holes & pars
 opens itself on the load. The check note at the top of it, then the grid: every
@@ -57,7 +52,7 @@ par and every stroke index, editable, eighteen across.*
 > flagged. Check it against the real card once, then save it. Everything
 > downstream — every stroke anybody gets — comes off these eighteen numbers.
 
-## 04 · Games (0:56–1:16)
+## 04 · Games (1:08–1:24)
 
 *The Games row opens. Game cards toggled on: Skins, Nassau, Stableford, Junk.
 One ⓘ tapped, the rules text unfolds.*
@@ -66,7 +61,7 @@ One ⓘ tapped, the rules text unfolds.*
 > carries its own rules behind the info button — so when somebody at the table
 > has never played Wolf, you don't have to be the one who explains it.
 
-## 05 · The formats (1:16–1:40)
+## 05 · The formats (1:24–1:53)
 
 *Scrolling the full game list, then the Scoring panel with Net/Gross and the
 allowance selector.*
@@ -79,7 +74,7 @@ allowance selector.*
 > more than eighteen. Set a game to gross to play it off the card, or cut the
 > allowance the way the format asks.
 
-## 06 · Money (1:40–1:52)
+## 06 · Money (1:53–2:06)
 
 *The Money row opens. A stake typed against each game.*
 
@@ -87,7 +82,7 @@ allowance selector.*
 > blank and you're playing for nothing — and you can change it mid-round from
 > the Board.
 
-## 07 · Scoring a hole (1:52–2:14)
+## 07 · Scoring a hole (2:06–2:28)
 
 *Start Round. The Hole tab: hole number, par, the progress dots, a row per
 player. Scores tapped in on the chips.*
@@ -97,14 +92,14 @@ player. Scores tapped in on the chips.*
 > the dots beside a name are the strokes they're getting on this hole. The
 > strip across the top is your eighteen; filled means done.
 
-## 08 · The money ticker (2:14–2:28)
+## 08 · The money ticker (2:28–2:41)
 
 *The ticker above the hole updates as the last score lands.*
 
 > The line at the top is the money, live, all round. Close out a hole and it
 > tells you exactly what just changed hands, and who it came from.
 
-## 09 · Junk, Wolf and presses (2:28–2:48)
+## 09 · Junk, Wolf and presses (2:41–3:01)
 
 *The junk panel opens; a greenie and a sandie claimed. Then the Wolf and Nassau
 controls on a hole.*
@@ -114,7 +109,7 @@ controls on a hole.*
 > presses too: take one by hand, or set it to press automatically when a side
 > goes two down.
 
-## 10 · The Board (2:48–3:06)
+## 10 · The Board (3:01–3:17)
 
 *The Board tab: money board, then a leaderboard per game.*
 
@@ -122,14 +117,14 @@ controls on a hole.*
 > skins, where the money actually sits. Somebody gave you the wrong handicap on
 > the first tee? Fix it here and every board behind it recalculates.
 
-## 11 · The card (3:06–3:16)
+## 11 · The card (3:17–3:26)
 
 *The Card tab: the full scorecard grid.*
 
 > Card is the whole scorecard, eighteen across. Tap a number to fix it, tap a
 > hole to jump straight back to it.
 
-## 12 · Results and awards (3:16–3:36)
+## 12 · Results and awards (3:26–3:49)
 
 *Finish Round. The Results screen: winner hero with confetti, then the awards.*
 
@@ -137,7 +132,7 @@ controls on a hole.*
 > Shot of the Day, The Snowman, The ATM, Sandbagger — and each one cites the
 > number it's based on, so the argument is short.
 
-## 13 · Settling up (3:36–3:52)
+## 13 · Settling up (3:49–4:03)
 
 *The Settlement block: the fewest payments that clear the group.*
 
@@ -145,14 +140,14 @@ controls on a hole.*
 > the whole group into the fewest payments that settle it. Three people pay,
 > not twelve.
 
-## 14 · Sharing the result (3:52–4:04)
+## 14 · Sharing the result (4:03–4:13)
 
 *The Share sheet: Results image, Scorecard image.*
 
 > Share gives you the scoreboard as an image, or the full card as an image —
 > both straight into the group chat.
 
-## 15 · Handing the round over (4:04–4:24)
+## 15 · Handing the round over (4:13–4:53)
 
 *The QR code in the share sheet, then the same round opening on a second phone
 as "Sent to you" with a Keep it button.*
@@ -165,7 +160,7 @@ as "Sent to you" with a Keep it button.*
 > you both end up keeping score, Press puts the two cards side by side and asks
 > which one is real, instead of picking one on a timestamp.
 
-## 16 · Offline (4:24–4:40)
+## 16 · Offline (4:53–5:16)
 
 *The network is cut — genuinely, at the browser — and the app is reloaded and
 driven again.*
@@ -175,7 +170,7 @@ driven again.*
 > round, every saved course, every bit of history lives on your phone. That's
 > the privacy story too — there's no account to make, and nothing to leak.
 
-## 17 · Close (4:40–4:52)
+## 17 · Close (5:16–5:27)
 
 *Home screen, the install hint at the bottom.*
 
@@ -203,22 +198,22 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 > ▶️ pressgolf.netlify.app
 >
 > 0:00 What Press is
-> 0:18 Adding players and handicaps
-> 0:36 Loading a course, and checking the card
-> 0:56 Picking your games
-> 1:16 Every format, and net scoring
-> 1:40 Setting the stakes
-> 1:52 Scoring a hole
-> 2:14 The live money ticker
-> 2:28 Junk, Wolf and presses
-> 2:48 The Board
-> 3:06 The scorecard
-> 3:16 Results and awards
-> 3:36 Settling up
-> 3:52 Sharing the result
-> 4:04 Handing the round to another phone
-> 4:24 Playing offline
-> 4:40 Adding Press to your home screen
+> 0:24 Adding players and handicaps
+> 0:40 Loading a course, and checking the card
+> 1:08 Picking your games
+> 1:24 Every format, and net scoring
+> 1:53 Setting the stakes
+> 2:06 Scoring a hole
+> 2:28 The live money ticker
+> 2:41 Junk, Wolf and presses
+> 3:01 The Board
+> 3:17 The scorecard
+> 3:26 Results and awards
+> 3:49 Settling up
+> 4:03 Sharing the result
+> 4:13 Handing the round to another phone
+> 4:53 Playing offline
+> 5:16 Adding Press to your home screen
 
 ---
 
@@ -234,21 +229,58 @@ generated:
 | The 1920×1080 canvas, titles, cuts | ffmpeg in the Higgsfield sandbox: the 780×1688 take composited centre-left on `--green-900`, scene title and gold rule on the right |
 | Captions | Whisper times the narration; the cue **text** comes from this script, not the transcript |
 
-That last row is deliberate, and it has a failure mode this video shipped with.
+That last row is deliberate, and it hides the one defect this video shipped
+with. Taking the cue text from the script means the captions are always right —
+*including when the audio is wrong.*
 
-Taking the cue text from the script means the captions are always right —
-including when the audio is wrong. Whisper transcribed one line as "Smosh Cisco
-Ash Eye", and that was read here as Whisper mishearing clean speech. It was not.
-The voice really does mangle "the little i": a bare letter between two function
-words is not a word, and the burned-in caption read "the little i" over the top
-of it, so nothing on screen disagreed. "goes too down" for "two down" and "per
-whole" for "per hole" are the harmless kind — homophones, right in the audio,
-wrong only in the transcript.
+### What "Smosh Cisco Ash Eye" actually was
 
-The difference is audible and nothing in this pipeline checks for it. So the
-rule is: a transcript that garbles a line is evidence about the *audio* until
-somebody listens and rules it out, and a line the voice cannot say gets
-rewritten in the script — never corrected in the captions.
+Not a mispronunciation. `seed_audio` intermittently emits a burst of
+hallucinated speech — a few seconds of fluent, confident nonsense dropped into
+an otherwise correct read. Measured by regenerating one line five times:
+
+| take | duration | transcript |
+|---|---|---|
+| old wording | 18.2s | `and restom, and exciled, dumb M'flann.` then the line, clean |
+| new, 1st | 21.1s | line, then `HubExibo slash rontd stock.` mid-sentence |
+| new, 2nd | 14.4s | clean |
+| new, 3rd | 23.3s | `Sprada Filonsad. When fear lies as a green whoop until to the stand…` |
+| new, 4th | 15.0s | clean |
+
+Two in five. And note what the old wording did: it read "the little i"
+correctly — Whisper heard "the little **eye**", which is how the letter is
+said — and put its garbage somewhere else entirely. The thing that got blamed
+was never the problem.
+
+Three consequences worth keeping:
+
+**A burst inflates the clip.** Clean takes of that line run 14.4–15.0s; the
+ones carrying a burst ran 18.2s and 23.3s. So a `target` measured off a bad
+clip is padded with nonsense, and the take is cut to cover it. Scene 04's old
+target was 18.0s against a clean 15.0s — three seconds of footage recorded to
+sit under gibberish.
+
+**Captions cannot show it.** The cue text comes from this file, so a burst
+plays under a caption that reads perfectly. That is why it survived to the
+finished video and why watching it back is the only thing that found it.
+
+**So the gate is the transcript, and it is set-difference, not similarity.**
+Transcribe every take; if a single word appears that the script does not
+contain, reshoot. `faster-whisper` on `small.en` is enough — the bursts are not
+subtle. The other fourteen clips have never been checked this way and the same
+two-in-five odds applied to all of them.
+
+For the record, "goes too down" for "two down" and "per whole" for "per hole"
+*are* the harmless kind: homophones, right in the audio and wrong only in the
+transcript. Telling the two apart is what the set-difference does — a homophone
+is a real word in the script's own sentence; a burst is not.
+
+### Why the line still changed
+
+"the info button" over "the little i" is now a clarity fix rather than a
+pronunciation one. Said aloud, a bare "i" is "eye", so "behind the little eye"
+is what a viewer hears, and there is no eye on screen. The button is the
+thing; name it.
 
 ### Scene lengths
 
@@ -259,10 +291,27 @@ frozen frame — on the worst scene, fourteen seconds of still image under half 
 narration. Re-record after changing the script, and update the targets from the
 new clip lengths; a take that is short by more than about a second shows.
 
+### The clips that exist
+
+Generated 2026-09-17, voice Grady (`e2a2d2e6-9ed2-59cd-82af-feaa27f8a678`),
+`seed_audio`, default rate. Each was transcribed and carries no word the script
+does not — scene 04 took three attempts to get there.
+
+| scene | length | job |
+|---|---|---|
+| 03 | 26.10s | `d446e57d-0b56-4c59-b0c4-92c1b3d4c25d` |
+| 04 | 14.96s | `4ec03bce-2732-4ad7-acef-87cedb1f59c3` |
+| 14 |  7.57s | `0a356a5d-d5bb-4dfe-ad49-b372ffea5f7e` |
+
+A fourth clean take of 04 exists at 14.40s (`8fde87f8-…`) if the shorter read
+suits the cut better; it opens with 1.76s of silence, which is why it is not
+the one listed. The other fourteen scenes are still on their original clips.
+
 ### Files
 
 - `docs/video/tutorial-script.md` — this file; the narration is the source of truth
 - `docs/video/press-tutorial.srt` — captions for the YouTube upload. Derived:
-  the words come from this file, the times from the narration. The words are
-  current; the times are not, per the note at the top.
+  the words come from this file, the times from the narration's own word
+  positions. Scenes 03, 04 and 14 are timed off clips that exist and were
+  checked; everything after them is shifted by what those scenes measured.
 - `scripts/capture-tutorial.mjs` — the recorder; `video-out/` is gitignored

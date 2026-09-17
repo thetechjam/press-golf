@@ -404,7 +404,7 @@ const scenes = [
   },
   {
     id: '03-course',
-    target: 25.8,
+    target: 26.1,
     title: 'Loading a course, and checking the card',
     seed: { rounds: [], courses },
     stubApi: true,
@@ -446,7 +446,7 @@ const scenes = [
   },
   {
     id: '04-games',
-    target: 18.0,
+    target: 15.0,
     title: 'Picking the games, and the rules behind the info button',
     seed: { rounds: [], courses },
     async run(page) {
@@ -623,7 +623,7 @@ const scenes = [
   },
   {
     id: '14-share',
-    target: 8.8,
+    target: 7.6,
     title: 'Sharing the result',
     seed: { rounds: [doneRound], courses },
     async run(page) {
