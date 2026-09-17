@@ -49,6 +49,22 @@ const urlOf = (n: number) =>
   'HTTPS://PRESSGOLF.NETLIFY.APP/#R=' +
   Array.from({ length: n }, (_, i) => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'[(i * 13 + 7) % 32]).join('');
 
+/**
+ * The version sweep decodes 215 QR codes with a real scanner, which costs about
+ * three seconds on an idle machine — inside Vitest's 5s default, but not by
+ * enough. It has already timed out once on a machine that was also running a
+ * preview server and a browser, which is the shape of a CI box on a bad day.
+ *
+ * The budget is raised rather than the sweep trimmed. Its redundancy is the
+ * point: several payload lengths land in each version and the odd step keeps
+ * them crossing byte boundaries, which is how it caught a BCH remainder
+ * computed the wrong way and fifteen format bits laid down backwards. Buying
+ * two seconds by decoding fewer codes would be selling the only test that can
+ * see either. 30s still fails a genuine hang; it just does not fail a slow
+ * afternoon.
+ */
+const SWEEP_TIMEOUT = 30_000;
+
 describe('what a scanner reads', () => {
   it('reads back every version the encoder can produce', () => {
     const covered = new Set<number>();
@@ -67,7 +83,7 @@ describe('what a scanner reads', () => {
     expect([...covered]).toEqual(
       Array.from({ length: MAX_VERSION - 2 }, (_, i) => i + 3)
     );
-  });
+  }, SWEEP_TIMEOUT);
 
   it('reads back the smallest codes', () => {
     for (const text of ['A', 'HI', 'PRESS', '12345678']) expect(scan(text)).toBe(text);
