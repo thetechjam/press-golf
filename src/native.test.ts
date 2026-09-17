@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { isNative, useNativeStorage, PERSISTED_KEYS } from './native';
+import { isNative, initNativeStorage, PERSISTED_KEYS } from './native';
 import { kv, setBackend, type KvBackend } from './kv';
 import { listRounds, saveRound, getSettings, saveSettings } from './storage';
 import { makeRound } from './games/testFixtures';
@@ -81,7 +81,7 @@ describe('on the web', () => {
   });
 
   it('does nothing, and says so', async () => {
-    expect(await useNativeStorage()).toBe(false);
+    expect(await initNativeStorage()).toBe(false);
     // The backend is still the browser's own store — this is the guarantee
     // that shipping this file changes nothing for anyone using the website.
     kv.setItem('press.probe', 'a');
@@ -104,7 +104,7 @@ describe('on the web', () => {
         },
       },
     });
-    expect(await useNativeStorage()).toBe(false);
+    expect(await initNativeStorage()).toBe(false);
     kv.setItem('press.probe', 'a');
     expect(localStorage.getItem('press.probe')).toBe('a');
   });
@@ -113,7 +113,7 @@ describe('on the web', () => {
     // A native build missing the Preferences plugin would otherwise hydrate
     // from nothing and look like a wiped install.
     vi.stubGlobal('Capacitor', { isNativePlatform: () => true, Plugins: {} });
-    expect(await useNativeStorage()).toBe(false);
+    expect(await initNativeStorage()).toBe(false);
   });
 });
 
@@ -121,7 +121,7 @@ describe('inside the shell', () => {
   it('brings every key across before anything reads', async () => {
     const bridge = installBridge();
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
-    await useNativeStorage();
+    await initNativeStorage();
     expect(bridge.reads).toEqual([...PERSISTED_KEYS]);
   });
 
@@ -129,7 +129,7 @@ describe('inside the shell', () => {
     const saved = [{ ...makeRound(), id: 'r1', course: 'Pebble Beach' }];
     const bridge = installBridge({ 'press.rounds.v1': JSON.stringify(saved) });
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
-    await useNativeStorage();
+    await initNativeStorage();
     expect(listRounds().map((r) => r.course)).toEqual(['Pebble Beach']);
     expect(bridge.writes).toHaveLength(0);
   });
@@ -137,7 +137,7 @@ describe('inside the shell', () => {
   it('sends writes to the store and not to localStorage', async () => {
     const bridge = installBridge();
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
-    await useNativeStorage();
+    await initNativeStorage();
 
     saveRound({ ...makeRound(), id: 'r1', course: 'Torrey Pines South' });
     saveSettings({ glare: true });
@@ -150,12 +150,12 @@ describe('inside the shell', () => {
   it('survives a restart, which is the reason any of this exists', async () => {
     const bridge = installBridge();
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
-    await useNativeStorage();
+    await initNativeStorage();
     saveRound({ ...makeRound(), id: 'r1', course: 'Cypress Point' });
 
     // App closed and reopened against the same disk.
     installBridge(Object.fromEntries(bridge.disk));
-    await useNativeStorage();
+    await initNativeStorage();
     expect(listRounds().map((r) => r.course)).toEqual(['Cypress Point']);
   });
 
@@ -167,7 +167,7 @@ describe('inside the shell', () => {
     );
     const seen: string[] = [];
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
-    expect(await useNativeStorage((key) => seen.push(key))).toBe(true);
+    expect(await initNativeStorage((key) => seen.push(key))).toBe(true);
 
     expect(seen).toEqual(['press.rounds.v1']);
     expect(listRounds()).toEqual([]);
@@ -181,7 +181,7 @@ describe('inside the shell', () => {
     installBridge({}, { onSet: true });
     const seen: string[] = [];
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
-    await useNativeStorage((key) => seen.push(key));
+    await initNativeStorage((key) => seen.push(key));
 
     expect(() => saveRound({ ...makeRound(), id: 'r1', course: 'Oakmont' })).not.toThrow();
     await new Promise((r) => setTimeout(r, 0));

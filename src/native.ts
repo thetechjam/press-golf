@@ -18,7 +18,7 @@ import { QUEUE_KEY } from './feedback';
  * bridge is not there. The package is still installed for the native build:
  * that is how its Swift half gets compiled in. It is simply never imported.
  *
- * On the web this module does nothing at all and `useNativeStorage` says so by
+ * On the web this module does nothing at all and `initNativeStorage` says so by
  * returning false, which is what `main.tsx` does with it.
  */
 
@@ -57,8 +57,13 @@ export const PERSISTED_KEYS = [ROUNDS_KEY, COURSES_KEY, SETTINGS_KEY, QUEUE_KEY]
  *
  * Returns false when there is nothing to do, so the caller cannot accidentally
  * treat a browser as a phone.
+ *
+ * Named `init` rather than `use` deliberately: `use` is React's reserved
+ * prefix, and a function wearing it is a hook as far as the linter is
+ * concerned — which this is not, and which made calling it at the top of
+ * `main.tsx` an error rather than the point.
  */
-export async function useNativeStorage(
+export async function initNativeStorage(
   onError?: (key: string, err: unknown) => void
 ): Promise<boolean> {
   const prefs = bridge()?.Plugins?.Preferences;
