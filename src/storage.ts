@@ -1,9 +1,15 @@
 import type { Round, SavedCourse } from './types';
 import { kv } from './kv';
 
-const KEY = 'press.rounds.v1';
-const COURSES_KEY = 'press.courses.v1';
-const SETTINGS_KEY = 'press.settings.v1';
+/**
+ * Exported because a native build has to hydrate every one of them before the
+ * app reads anything, and a key this module knew about privately would be a
+ * key that silently stopped persisting on iOS. `native.ts` composes the list;
+ * `native.test.ts` checks it against what this file actually writes.
+ */
+export const ROUNDS_KEY = 'press.rounds.v1';
+export const COURSES_KEY = 'press.courses.v1';
+export const SETTINGS_KEY = 'press.settings.v1';
 
 export type Theme = 'system' | 'light' | 'dark';
 
@@ -67,7 +73,7 @@ export function uid(): string {
 
 export function listRounds(): Round[] {
   try {
-    const raw = kv.getItem(KEY);
+    const raw = kv.getItem(ROUNDS_KEY);
     if (!raw) return [];
     const rounds = JSON.parse(raw) as Round[];
     return rounds.sort((a, b) => b.updatedAt - a.updatedAt);
@@ -83,12 +89,12 @@ export function getRound(id: string): Round | undefined {
 export function saveRound(round: Round): void {
   const rounds = listRounds().filter((r) => r.id !== round.id);
   rounds.push({ ...round, updatedAt: Date.now() });
-  kv.setItem(KEY, JSON.stringify(rounds));
+  kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
 }
 
 export function deleteRound(id: string): void {
   const rounds = listRounds().filter((r) => r.id !== id);
-  kv.setItem(KEY, JSON.stringify(rounds));
+  kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
 }
 
 export function listCourses(): SavedCourse[] {
@@ -127,15 +133,15 @@ export function deleteCourse(id: string): void {
  * Re-throws so the caller can tell a failed restore from a successful one.
  */
 export function writeAll(rounds: Round[], courses: SavedCourse[]): void {
-  const prevRounds = kv.getItem(KEY);
+  const prevRounds = kv.getItem(ROUNDS_KEY);
   const prevCourses = kv.getItem(COURSES_KEY);
   const restore = (key: string, prev: string | null) =>
     prev === null ? kv.removeItem(key) : kv.setItem(key, prev);
   try {
-    kv.setItem(KEY, JSON.stringify(rounds));
+    kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
     kv.setItem(COURSES_KEY, JSON.stringify(courses));
   } catch (err) {
-    restore(KEY, prevRounds);
+    restore(ROUNDS_KEY, prevRounds);
     restore(COURSES_KEY, prevCourses);
     throw err;
   }

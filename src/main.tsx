@@ -5,6 +5,12 @@ import App from './App.tsx'
 import { getSettings } from './storage'
 import { applyTheme, watchSystemTheme } from './theme'
 import { flushQueue, postFeedback, watchConnectivity } from './feedback'
+import { useNativeStorage } from './native'
+
+// Inside the native shell, storage has to be hydrated before anything reads
+// it — and the first read is two lines down. On the web this resolves
+// immediately having done nothing, so the browser path is unchanged.
+await useNativeStorage()
 
 // Applied before render so there is no flash of the wrong palette.
 const settings = getSettings()
