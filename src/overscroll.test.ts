@@ -45,6 +45,29 @@ describe('settings switch sizing', () => {
 });
 
 /**
+ * Settings rows are a mix of <button> and <a>, and only one of those picks up
+ * padding from the user-agent stylesheet.
+ *
+ * Chromium gives a bare <button> `padding: 1px 6px`. With four button rows in
+ * the list that is invisible — they are all indented by the same 6px and look
+ * deliberate. Adding the tip jar, which leaves the app and so has to be an
+ * <a>, made it a defect: one row starting six pixels left of the rest, in a
+ * sheet where every other row lines up. Zeroing it is what makes the element
+ * chosen for its behaviour stop deciding the layout.
+ */
+describe('settings action rows', () => {
+  const rule = /\.set-action\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+
+  it('does not let a browser default indent half the list', () => {
+    expect(rule).toMatch(/padding\s*:\s*0/);
+  });
+
+  it('keeps the one link row from being the only underlined label', () => {
+    expect(rule).toMatch(/text-decoration\s*:\s*none/);
+  });
+});
+
+/**
  * The sheet is a <dialog>, and `display` is the one declaration on it that
  * cannot be written the obvious way. A user-agent rule hides a closed dialog
  * (`dialog:not([open]) { display: none }`), but author origin beats UA origin

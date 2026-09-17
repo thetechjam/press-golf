@@ -57,7 +57,15 @@ const rowOpen = (label: string) =>
     .find((el) => el.textContent?.includes(label))
     ?.getAttribute('aria-expanded') === 'true';
 
-const callOut = () => document.querySelector('.check-note');
+/**
+ * The caveat, specifically — not the confirmation that replaces it.
+ *
+ * Both are `.check-note`, deliberately: the answer takes the question's slot
+ * so the row does not jump. `:not(.saved)` is what keeps "the caveat is gone"
+ * from being satisfied by the caveat still being there.
+ */
+const callOut = () => document.querySelector('.check-note:not(.saved)');
+const keptNote = () => document.querySelector('.check-note.saved');
 
 /** Picks the first course search result, from typing to loaded scorecard. */
 async function pickFromSearch(user: ReturnType<typeof userEvent.setup>) {
@@ -311,6 +319,64 @@ describe('keeping a course you have checked', () => {
     await user.click(saveButton());
 
     await waitFor(() => expect(callOut()).toBeNull());
+  });
+
+  /**
+   * Where the confirmation lands, which is the whole of this.
+   *
+   * The save button is inside the call-out at the top of Holes & pars; the
+   * row's other note slot is below the eighteen-cell par grid, a screenful
+   * down. Answering there means the caveat vanishes under the user's finger
+   * and nothing appears in its place — the press reads as having done
+   * nothing, or worse, as having dismissed a warning.
+   */
+  it('answers where the button was, not below the par grid', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+
+    const before = callOut()!;
+    const parent = before.parentElement!;
+    const slot = [...parent.children].indexOf(before);
+
+    await user.click(saveButton());
+    await waitFor(() => expect(keptNote()).not.toBeNull());
+
+    expect(keptNote()!.textContent).toMatch(/Saved "Bramble Ridge GC"/);
+    // Same parent, same position in it: the answer is in the question's slot.
+    expect(keptNote()!.parentElement).toBe(parent);
+    expect([...parent.children].indexOf(keptNote()!)).toBe(slot);
+  });
+
+  it('puts it above the par grid, not after it', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+    await user.click(saveButton());
+    await waitFor(() => expect(keptNote()).not.toBeNull());
+
+    const grid = document.querySelector('.par-grid')!;
+    // DOCUMENT_POSITION_FOLLOWING: the grid comes after the note.
+    expect(keptNote()!.compareDocumentPosition(grid) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('still answers at the foot when that is the button that was pressed', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+    // Retire the caveat first, which is what reveals the foot button.
+    await user.click(saveButton());
+    await waitFor(() => expect(callOut()).toBeNull());
+
+    await user.click(screen.getByRole('button', { name: /save this course for next time/i }));
+    // The foot note, not the one in the call-out's old slot.
+    await waitFor(() =>
+      expect(
+        [...document.querySelectorAll('.hint-inline')].some((el) =>
+          /Saved "Bramble Ridge GC"/.test(el.textContent ?? '')
+        )
+      ).toBe(true)
+    );
   });
 
   it('does not pretend a damaged card looks right', async () => {

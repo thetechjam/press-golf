@@ -28,3 +28,6 @@ dist-ssr
 
 # Subagent-driven-development scratch workspace
 .superpowers/
+
+# tutorial footage
+video-out/
