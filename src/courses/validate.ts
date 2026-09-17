@@ -3,6 +3,7 @@ import {
   strokeIndexProblem,
   describeStrokeIndexProblem,
   duplicateStrokeIndexes,
+  nineSplit,
 } from '../games/strokeIndex';
 
 /**
@@ -22,6 +23,16 @@ import {
 /** Pars outside this are possible but vanishingly rare, and usually bad data. */
 const MIN_PAR = 3;
 const MAX_PAR = 6;
+
+/**
+ * How many of a nine may sit on the wrong parity before the allocation stops
+ * looking like an allocation.
+ *
+ * Real cards deviate: a hole swaps nines after a redesign and nobody re-ranks
+ * the whole card. Two such holes is still recognisably the convention; four is
+ * a coin toss, which is what an invented sequence produces.
+ */
+const MIN_NINE_SPLIT = 7;
 
 const list = (ns: number[]): string => {
   if (ns.length === 1) return `${ns[0]}`;
@@ -69,6 +80,18 @@ export function scorecardIssues(used: Hole[], expected?: number, raw?: Hole[]): 
     );
   }
 
+  // Identical pars all the way down, on a full eighteen. Par 3 is left alone
+  // because an eighteen-hole par-3 course is a real thing somebody plays; par
+  // 4 and 5 are not, and par 4 in particular is this app's own fill value —
+  // the line above says so when holes are missing, which is exactly the state
+  // that reaches here looking like a complete card.
+  const pars = new Set(holes.map((h) => h.par));
+  if (holes.length === 18 && pars.size === 1 && holes[0].par !== 3) {
+    issues.push(
+      `Every hole came back as par ${holes[0].par}, which is a placeholder rather than a scorecard.`
+    );
+  }
+
   const si = strokeIndexProblem(holes);
   if (si) {
     issues.push(describeStrokeIndexProblem(si, holes.length));
@@ -80,6 +103,18 @@ export function scorecardIssues(used: Hole[], expected?: number, raw?: Hole[]): 
           ' They have been re-ranked to fit, so the order shown is a guess.'
       );
     }
+  }
+
+  // Judged on the raw card when there is one: a nine sliced out of an eighteen
+  // is re-ranked to 1..9, and the split it came from is the thing being asked
+  // about. `used` is checked only when it is itself a whole eighteen.
+  const card = raw?.length === 18 ? raw : holes;
+  const split = nineSplit(card);
+  if (split && split.matched < MIN_NINE_SPLIT) {
+    issues.push(
+      `Only ${split.matched} of the front nine have ${split.frontParity} stroke indexes — a course ranks ` +
+        `one nine odd and the other even, so this ranking looks generated rather than measured.`
+    );
   }
 
   return issues;

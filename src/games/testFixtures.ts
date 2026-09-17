@@ -32,6 +32,22 @@ export function holes18(par = 4): Hole[] {
 }
 
 /**
+ * A scorecard a course would actually print: par 72 from four par 3s and four
+ * par 5s, with the stroke indexes allocated odd across the front nine and even
+ * across the back, as the Rules of Handicapping lay them out.
+ *
+ * `holes18()` is eighteen par 4s ranked 1,2,3…18, which is right for the
+ * scoring engines — they do not care what the pars are — and wrong for
+ * anything that judges whether a card is real. `courses/validate.ts` reads
+ * exactly this shape as a placeholder, because that is what it is.
+ */
+export function realCard18(): Hole[] {
+  const pars = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 4, 3, 5, 4, 4, 3, 4, 5];
+  const si = [5, 1, 15, 7, 11, 3, 17, 9, 13, 6, 2, 16, 8, 12, 4, 18, 10, 14];
+  return pars.map((par, i) => ({ number: i + 1, par, strokeIndex: si[i] }));
+}
+
+/**
  * Builds a Scores object from a per-player array of hole scores.
  * `byPlayer` maps playerId -> array of scores indexed by hole order (undefined = not entered).
  */

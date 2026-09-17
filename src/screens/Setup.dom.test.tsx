@@ -4,6 +4,7 @@ import { render, screen, cleanup, waitFor, within } from '@testing-library/react
 import userEvent from '@testing-library/user-event';
 import { Setup } from './Setup';
 import type { SavedCourse } from '../types';
+import { realCard18 } from '../games/testFixtures';
 
 /**
  * The scorecard a round is about to be played on, and how much the screen
@@ -22,7 +23,11 @@ const COURSE = {
   holes_data: Array.from({ length: 18 }, (_, i) => ({
     number: i + 1,
     par: [4, 5, 3, 4, 4, 3, 5, 4, 4, 4, 3, 5, 4, 4, 3, 4, 5, 4][i],
-    handicap_index: ((i * 7) % 18) + 1,
+    // Odd across the front nine, even across the back, the way a course
+    // allocates them. It used to be ((i * 7) % 18) + 1 — a valid 1..18
+    // ranking that splits 5/4, which `scorecardIssues` now reads (correctly)
+    // as generated rather than measured.
+    handicap_index: [5, 1, 15, 7, 11, 3, 17, 9, 13, 6, 2, 16, 8, 12, 4, 18, 10, 14][i],
   })),
 };
 
@@ -490,7 +495,7 @@ describe('telling you what just happened, where it happened', () => {
   const saved: SavedCourse = {
     id: 'c9',
     name: 'Bramble Ridge GC',
-    holes: Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: 4, strokeIndex: i + 1 })),
+    holes: realCard18(),
   };
 
   it('confirms a loaded course inside the row you loaded it from', async () => {
@@ -625,7 +630,7 @@ describe('the players card shortcuts', () => {
           createdAt: 1,
           updatedAt: 1,
           players: [{ id: 'p1', name: 'Alex' }],
-          holes: Array.from({ length: 18 }, (_, i) => ({ number: i + 1, par: 4, strokeIndex: i + 1 })),
+          holes: realCard18(),
           games: ['skins'],
           options: {
             useNet: false,

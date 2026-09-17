@@ -73,6 +73,36 @@ export function duplicateStrokeIndexes(holes: Hole[]): number[] {
     .sort((a, b) => a - b);
 }
 
+/**
+ * How cleanly an eighteen's stroke indexes split odd/even across the nines.
+ *
+ * The Rules of Handicapping (Appendix E) allocate the odd indexes to one nine
+ * and the even to the other, so a player receiving nine shots gets them spread
+ * across the round rather than bunched into one half. Which nine takes the odds
+ * is not fixed — the allocation is switched when the back nine rates harder —
+ * so both directions are correct and only the *mixing* is a signal.
+ *
+ * It is a signal about provenance rather than about golf. A card ranked
+ * 1,2,3…18 straight down the holes satisfies every other check here: it is a
+ * complete 1..18 ranking with no duplicates and nothing out of range. It is
+ * also not how any course allocates, which makes it far more likely to be a
+ * sequence somebody generated than a card somebody measured — and the round
+ * would be played on it with every net score and Stableford point computed as
+ * if it were real.
+ *
+ * Returns the size of the dominant parity on the front nine (9 is textbook,
+ * 5 is the straight sequence above) or null when the question does not apply:
+ * anything that is not a complete, valid eighteen has no nines to split.
+ */
+export function nineSplit(holes: Hole[]): { matched: number; frontParity: 'odd' | 'even' } | null {
+  if (holes.length !== 18 || !strokeIndexesUsable(holes)) return null;
+  const front = holes.slice(0, 9).map((h) => h.strokeIndex as number);
+  const odd = front.filter((si) => si % 2 === 1).length;
+  return odd >= 5
+    ? { matched: odd, frontParity: 'odd' }
+    : { matched: 9 - odd, frontParity: 'even' };
+}
+
 /** True when these stroke indexes are a usable 1..N ranking. */
 export function strokeIndexesUsable(holes: Hole[]): boolean {
   return holes.every((h) => typeof h.strokeIndex === 'number') && strokeIndexProblem(holes) === null;
