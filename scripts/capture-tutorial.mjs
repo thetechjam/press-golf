@@ -287,6 +287,29 @@ async function glide(page, selector, distance, ms = 1400) {
   await pause(page, 400);
 }
 
+/**
+ * Keeps a take rolling until it is as long as the narration it will carry.
+ *
+ * The cut pairs each take with its voice clip, and a take that runs out first
+ * leaves the editor holding a frozen frame for the rest of the line — on the
+ * worst scene here that was fourteen seconds of still image under half the
+ * narration. Stretching the footage instead only trades the freeze for a
+ * crawl. So the take itself covers the line: once the scripted actions are
+ * done, the screen goes on moving — a slow look down the screen and back —
+ * until the scene has played for as long as the voice will.
+ *
+ * `target` comes from the generated narration, so it is measured rather than
+ * guessed; scenes whose actions already outrun their line simply return.
+ */
+async function fillTo(page, startedAt, targetMs, selector = null) {
+  const left = () => targetMs - (Date.now() - startedAt);
+  while (left() > 2600) {
+    await glide(page, selector, 300, 1500);
+    if (left() > 2600) await glide(page, selector, -300, 1500);
+  }
+  if (left() > 300) await pause(page, left());
+}
+
 /** The score chip for a number, inside one player's row. */
 const chip = (page, playerId, n) =>
   page.locator(`#player-row-${playerId} button[aria-label^="${n},"]`).first();
@@ -301,6 +324,7 @@ let handoverUrl = null;
 const scenes = [
   {
     id: '01-cold-open',
+    target: 24.0,
     title: 'Cold open — a phone with no rounds on it',
     seed: { rounds: [], courses: [] },
     async run(page) {
@@ -313,6 +337,7 @@ const scenes = [
   },
   {
     id: '02-players',
+    target: 16.0,
     title: 'Adding players and handicaps',
     seed: { rounds: [], courses },
     async run(page) {
@@ -333,6 +358,7 @@ const scenes = [
   },
   {
     id: '03-course',
+    target: 15.6,
     title: 'Loading a course — search, and a saved card',
     seed: { rounds: [], courses },
     stubApi: true,
@@ -352,6 +378,7 @@ const scenes = [
   },
   {
     id: '04-games',
+    target: 18.0,
     title: 'Picking the games, and the rules behind the i',
     seed: { rounds: [], courses },
     async run(page) {
@@ -368,6 +395,7 @@ const scenes = [
   },
   {
     id: '05-formats',
+    target: 29.2,
     title: 'The whole format list, and net scoring',
     seed: { rounds: [], courses },
     async run(page) {
@@ -382,6 +410,7 @@ const scenes = [
   },
   {
     id: '06-money',
+    target: 12.9,
     title: 'Setting the stakes',
     seed: { rounds: [], courses },
     async run(page) {
@@ -396,6 +425,7 @@ const scenes = [
   },
   {
     id: '07-hole',
+    target: 22.0,
     title: 'Scoring a hole',
     seed: { rounds: [liveRound], courses },
     async run(page) {
@@ -411,6 +441,7 @@ const scenes = [
   },
   {
     id: '08-ticker',
+    target: 13.3,
     title: 'The live money ticker',
     seed: { rounds: [liveRound], courses },
     async run(page) {
@@ -427,6 +458,7 @@ const scenes = [
   },
   {
     id: '09-junk-wolf',
+    target: 19.5,
     title: 'Junk, Wolf and presses',
     seed: { rounds: [liveRound, wolfRound], courses },
     async run(page) {
@@ -457,6 +489,7 @@ const scenes = [
   },
   {
     id: '10-board',
+    target: 16.5,
     title: 'The Board — every game at once',
     seed: { rounds: [liveRound], courses },
     async run(page) {
@@ -472,6 +505,7 @@ const scenes = [
   },
   {
     id: '11-card',
+    target: 9.2,
     title: 'The scorecard',
     seed: { rounds: [doneRound], courses },
     async run(page) {
@@ -488,6 +522,7 @@ const scenes = [
   },
   {
     id: '12-results',
+    target: 22.3,
     title: 'Results and awards',
     seed: { rounds: [doneRound], courses },
     async run(page) {
@@ -503,6 +538,7 @@ const scenes = [
   },
   {
     id: '13-settlement',
+    target: 14.8,
     title: 'Settling up',
     seed: { rounds: [doneRound], courses },
     async run(page) {
@@ -519,6 +555,7 @@ const scenes = [
   },
   {
     id: '14-share',
+    target: 8.8,
     title: 'Sharing the result',
     seed: { rounds: [doneRound], courses },
     async run(page) {
@@ -534,6 +571,7 @@ const scenes = [
   },
   {
     id: '15-qr',
+    target: 17.7,
     title: 'The round in a QR code',
     seed: { rounds: [doneRound], courses },
     permissions: ['clipboard-read', 'clipboard-write'],
@@ -564,6 +602,7 @@ const scenes = [
   },
   {
     id: '16-arrival',
+    target: 22.7,
     title: 'The round arriving on another phone',
     seed: { rounds: [], courses: [] },
     async run(page) {
@@ -584,6 +623,7 @@ const scenes = [
   },
   {
     id: '17-offline',
+    target: 22.7,
     title: 'With the network switched off',
     seed: { rounds: [doneRound, liveRound], courses },
     async run(page, context) {
@@ -636,6 +676,7 @@ const scenes = [
   },
   {
     id: '18-close',
+    target: 13.3,
     title: 'Close — add it to your home screen',
     seed: { rounds: [doneRound], courses },
     async run(page) {
@@ -721,7 +762,12 @@ for (const scene of picked) {
     await page.goto(BASE, { waitUntil: 'domcontentloaded' });
     await page.waitForSelector('.screen', { timeout: 20000 });
     await pause(page, 700);
+    const rolling = Date.now();
     await scene.run(page, context);
+    // PREROLL: the context, the navigation and the first paint are already on
+    // the tape by the time `run` is called, and they are part of what the
+    // narration has to cover.
+    if (scene.target) await fillTo(page, rolling, scene.target * 1000 - 1500);
   } catch (err) {
     failure = err?.message ?? String(err);
   }

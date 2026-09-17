@@ -206,3 +206,38 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 > 4:04 Handing the round to another phone
 > 4:24 Playing offline
 > 4:40 Adding Press to your home screen
+
+---
+
+## How the cut was made
+
+The finished video is assembled from three things, and only one of them is
+generated:
+
+| Piece | Where it comes from |
+|---|---|
+| Every frame of app footage | `npm run capture:video` — Chromium driving the production build |
+| The narration | Higgsfield `seed_audio`, voice "Grady", one clip per scene |
+| The 1920×1080 canvas, titles, cuts | ffmpeg in the Higgsfield sandbox: the 780×1688 take composited centre-left on `--green-900`, scene title and gold rule on the right |
+| Captions | Whisper times the narration; the cue **text** comes from this script, not the transcript |
+
+That last row is deliberate. Whisper hears the narration well enough to time it
+and not well enough to quote it — it produced "Smosh Cisco Ash Eye" for "the
+little i", "goes too down" for "two down", and "per whole" for "per hole". The
+words were never in doubt, so `press-tutorial.srt` carries the script's own
+wording, timed by the transcript's word positions.
+
+### Scene lengths
+
+Each take is recorded to the length of the line it carries: `scripts/capture-tutorial.mjs`
+holds a `target` per scene, measured from the generated narration, and keeps the
+screen moving until the take covers it. Without that the editor is left holding a
+frozen frame — on the worst scene, fourteen seconds of still image under half the
+narration. Re-record after changing the script, and update the targets from the
+new clip lengths; a take that is short by more than about a second shows.
+
+### Files
+
+- `docs/video/tutorial-script.md` — this file; the narration is the source of truth
+- `docs/video/press-tutorial.srt` — captions for the YouTube upload
+- `scripts/capture-tutorial.mjs` — the recorder; `video-out/` is gitignored
