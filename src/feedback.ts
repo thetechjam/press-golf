@@ -7,7 +7,8 @@ import { kv } from './kv';
  * composed on a course with no signal is never lost.
  */
 
-const QUEUE_KEY = 'press.feedback.queue.v1';
+/** Exported for the same reason as storage.ts's keys — see there. */
+export const QUEUE_KEY = 'press.feedback.queue.v1';
 /** Bounded so a permanently offline install cannot grow localStorage forever. */
 const MAX_QUEUE = 20;
 
