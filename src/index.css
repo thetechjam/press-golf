@@ -4101,6 +4101,13 @@ select:focus {
   color: inherit;
   text-align: left;
   cursor: pointer;
+  /* One row is an <a> rather than a <button> — it leaves the app — and two
+     browser defaults would otherwise make it the odd one out: an underlined
+     label, and 6px less indent than its neighbours, because a <button> picks
+     up UA padding an <a> does not. Zeroed rather than matched, so every row
+     in this sheet starts on the same line as the toggles above them. */
+  padding: 0;
+  text-decoration: none;
 }
 .set-clear-queue {
   align-self: flex-start;

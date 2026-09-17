@@ -8,6 +8,8 @@ import { FeedbackForm } from './FeedbackForm';
 import { HelpSheet } from './HelpSheet';
 import { BackupRows } from './BackupRows';
 import { clearQueue, listQueue } from '../feedback';
+import { tipJarUrl } from '../tipJar';
+import { isNative } from '../native';
 
 /**
  * The two things a bug report from a phone needs and a screenshot cannot show.
@@ -85,6 +87,9 @@ export function SettingsSheet({
   // Read once the sheet is up, so the screen behind it is the one measured.
   const [layout, setLayout] = useState('');
   useEffect(() => setLayout(readLayout()), []);
+  // Neither of these changes while the sheet is open, so they are read once
+  // rather than on every render.
+  const tipJar = isNative() ? null : tipJarUrl();
 
   // Refresh the count whenever we land back on the settings list — e.g. after
   // sending (or failing to send) a report in the feedback view.
@@ -200,6 +205,32 @@ export function SettingsSheet({
             <button type="button" className="set-clear-queue" onClick={clearReports}>
               Clear waiting reports
             </button>
+          )}
+
+          {/* Last row before the version numbers, which is where a thing the
+              app wants belongs — under everything the app is for.
+
+              Two gates, and both can turn it off. `tipJarUrl()` is null when
+              there is no handle, because a jar that 404s is worse than none.
+              And it stays off in the native shell: Apple treats a link out to
+              a tip page as a purchase route around IAP, and a row worth a few
+              coffees is not worth a rejected build. The website is where the
+              coffee is. */}
+          {tipJar && (
+            <a
+              className="set-row set-action"
+              href={tipJar}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <span>
+                <span className="set-label">Buy me a coffee</span>
+                <span className="set-hint">
+                  Press is free, with no ads and no account. Tips keep it that way.
+                </span>
+              </span>
+              <span aria-hidden="true">↗</span>
+            </a>
           )}
 
           <div className="about">

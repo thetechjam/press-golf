@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **A tip jar, in one row at the bottom of Settings.** Press is free, has no
+  ads and no account, and none of that is changing — so the one thing it asks
+  for sits below everything the app is actually for, above the version numbers,
+  and asks once. It links out to Buy Me a Coffee. Two things can switch it off
+  and both are deliberate: an empty handle produces no row rather than a link
+  to `buymeacoffee.com/` with nothing after the slash, and it never appears in
+  the native shell, where Apple reads a link out to a tip page as a purchase
+  route around in-app purchase.
+
 - **The Magpie.** A round award for whoever picked up the most junk, alongside
   the Skin Thief and the ATM. It names the haul rather than totalling it — "2
   greenies · a sandie · a polie" is a round you can picture, where "4 junk" is a
