@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit",
     "audit:a11y": "node scripts/a11y-audit.mjs",
-    "audit:contrast": "node scripts/contrast-audit.mjs"
+    "audit:contrast": "node scripts/contrast-audit.mjs",
+    "capture:video": "node scripts/capture-tutorial.mjs"
   },
   "dependencies": {
     "react": "^19.2.7",
