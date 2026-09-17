@@ -370,7 +370,7 @@ let handoverUrl = null;
 const scenes = [
   {
     id: '01-cold-open',
-    target: 24.0,
+    target: 19.4,
     title: 'Cold open — a phone with no rounds on it',
     seed: { rounds: [], courses: [] },
     async run(page) {
@@ -383,7 +383,7 @@ const scenes = [
   },
   {
     id: '02-players',
-    target: 16.0,
+    target: 16.9,
     title: 'Adding players and handicaps',
     seed: { rounds: [], courses },
     async run(page) {
@@ -463,7 +463,7 @@ const scenes = [
   },
   {
     id: '05-formats',
-    target: 29.2,
+    target: 38.2,
     title: 'The whole format list, and net scoring',
     seed: { rounds: [], courses },
     async run(page) {
@@ -478,7 +478,7 @@ const scenes = [
   },
   {
     id: '06-money',
-    target: 12.9,
+    target: 12.7,
     title: 'Setting the stakes',
     seed: { rounds: [], courses },
     async run(page) {
@@ -493,7 +493,7 @@ const scenes = [
   },
   {
     id: '07-hole',
-    target: 22.0,
+    target: 27.9,
     title: 'Scoring a hole',
     seed: { rounds: [liveRound], courses },
     async run(page) {
@@ -509,7 +509,7 @@ const scenes = [
   },
   {
     id: '08-ticker',
-    target: 13.3,
+    target: 10.7,
     title: 'The live money ticker',
     seed: { rounds: [liveRound], courses },
     async run(page) {
@@ -526,7 +526,7 @@ const scenes = [
   },
   {
     id: '09-junk-wolf',
-    target: 19.5,
+    target: 19.0,
     title: 'Junk, Wolf and presses',
     seed: { rounds: [liveRound, wolfRound], courses },
     async run(page) {
@@ -557,7 +557,7 @@ const scenes = [
   },
   {
     id: '10-board',
-    target: 16.5,
+    target: 21.1,
     title: 'The Board — every game at once',
     seed: { rounds: [liveRound], courses },
     async run(page) {
@@ -573,7 +573,7 @@ const scenes = [
   },
   {
     id: '11-card',
-    target: 9.2,
+    target: 8.9,
     title: 'The scorecard',
     seed: { rounds: [doneRound], courses },
     async run(page) {
@@ -590,7 +590,7 @@ const scenes = [
   },
   {
     id: '12-results',
-    target: 22.3,
+    target: 17.3,
     title: 'Results and awards',
     seed: { rounds: [doneRound], courses },
     async run(page) {
@@ -606,7 +606,7 @@ const scenes = [
   },
   {
     id: '13-settlement',
-    target: 14.8,
+    target: 15.3,
     title: 'Settling up',
     seed: { rounds: [doneRound], courses },
     async run(page) {
@@ -639,7 +639,7 @@ const scenes = [
   },
   {
     id: '15-qr',
-    target: 17.7,
+    target: 16.0,
     title: 'The round in a QR code',
     seed: { rounds: [doneRound], courses },
     permissions: ['clipboard-read', 'clipboard-write'],
@@ -670,7 +670,7 @@ const scenes = [
   },
   {
     id: '16-arrival',
-    target: 22.7,
+    target: 22.2,
     title: 'The round arriving on another phone',
     seed: { rounds: [], courses: [] },
     async run(page) {
@@ -691,7 +691,7 @@ const scenes = [
   },
   {
     id: '17-offline',
-    target: 22.7,
+    target: 25.3,
     title: 'With the network switched off',
     seed: { rounds: [doneRound, liveRound], courses },
     async run(page, context) {
@@ -744,7 +744,7 @@ const scenes = [
   },
   {
     id: '18-close',
-    target: 13.3,
+    target: 15.0,
     title: 'Close — add it to your home screen',
     seed: { rounds: [doneRound], courses },
     async run(page) {
