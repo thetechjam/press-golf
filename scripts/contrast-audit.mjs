@@ -86,6 +86,7 @@ const CONTRAST = () => {
   };
 
   const out = [];
+  let measured = 0;
   for (const el of document.querySelectorAll('*')) {
     const own = [...el.childNodes].filter((n) => n.nodeType === 3 && n.textContent.trim()).map((n) => n.textContent.trim()).join(' ');
     if (!own) continue;
@@ -115,13 +116,19 @@ const CONTRAST = () => {
     const need = large ? 3 : 4.5;
     const got = ratio(fg, bg);
     const off = el.closest('button:disabled, [aria-disabled="true"]');
+    measured += 1;
     if (got < need && !off) {
       out.push({ text: own.slice(0, 40), cls: el.className?.toString?.().slice(0, 40) || el.tagName,
                  got: +got.toFixed(2), need, size: +size.toFixed(1), weight,
                  fg: fg.map(Math.round).join(','), bg: bg.map(Math.round).join(',') });
     }
   }
-  return out;
+  // The theme class ONLY. Reading the whole className folds in transient ones
+  // like `sheet-open`, which is enough to make three collapsed themes look like
+  // four distinct palettes and hide exactly the failure this reports.
+  const rc = document.documentElement.classList;
+  const theme = rc.contains('glare') ? 'glare' : rc.contains('dark') ? 'dark' : 'light';
+  return { measured, findings: out, theme };
 };
 
 const browser = await chromium.launch(
@@ -133,9 +140,29 @@ const browser = await chromium.launch(
 // times across five screens and is one fix.
 const seen = new Map();
 const unreachable = [];
+// A contrast audit that measured nothing reports exactly the same "clean" as one
+// that measured everything. This is what tells the two apart — and what would
+// have caught the walk silently painting the same theme three times.
+const coverage = new Map();
 
-for (const scheme of ['light', 'dark']) {
-  const context = await browser.newContext({ viewport: { width: 390, height: 844 }, colorScheme: scheme });
+// Themes are seeded as the app's own stored preference rather than left to the
+// browser's colorScheme, because one of the three is not an OS preference at
+// all. Glare is a Settings toggle that paints a max-contrast light palette for
+// direct sun — the one theme where a contrast miss actually costs somebody a
+// read, and the one no audit had ever looked at.
+const THEMES = [
+  { name: 'light', settings: { theme: 'light', glare: false } },
+  { name: 'dark', settings: { theme: 'dark', glare: false } },
+  { name: 'glare', settings: { theme: 'light', glare: true } },
+];
+
+for (const { name: scheme, settings } of THEMES) {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    // Kept aligned with the stored theme so anything keyed off the media query
+    // (a native control, a scrollbar) matches the palette being painted.
+    colorScheme: scheme === 'dark' ? 'dark' : 'light',
+  });
   const page = await context.newPage();
   page.setDefaultTimeout(5000);
 
@@ -146,13 +173,19 @@ for (const scheme of ['light', 'dark']) {
       unreachable.push(`${scheme} ${label}: ${e.message.split('\n')[0]}`);
       return;
     }
-    for (const f of await page.evaluate(CONTRAST)) {
+    const { measured, findings, theme } = await page.evaluate(CONTRAST);
+    const c = coverage.get(scheme) ?? { measured: 0, screens: 0, painted: new Set() };
+    c.measured += measured;
+    c.screens += 1;
+    c.painted.add(theme);
+    coverage.set(scheme, c);
+    for (const f of findings) {
       const key = `${scheme}|${f.cls}|${f.text}`;
       if (!seen.has(key)) seen.set(key, { ...f, scheme, where: label });
     }
   };
 
-  await walkScreens({ page, BASE, step, width: 390 });
+  await walkScreens({ page, BASE, step, width: 390, settings });
   await context.close();
 }
 
@@ -188,11 +221,23 @@ for (const r of rows) {
   console.log(`         "${r.text}"  @ ${r.where}`);
 }
 
+console.log(`\n${rule}\n  COVERAGE\n${rule}`);
+for (const [scheme, c] of coverage) {
+  console.log(`  ${scheme.padEnd(6)} ${String(c.measured).padStart(5)} elements over ${c.screens} screens   root class: ${[...c.painted].join(', ')}`);
+}
+
 for (const u of unreachable) console.log(`  ! unreachable: ${u}`);
 
 const verdict = [];
 if (rows.length) verdict.push(`${rows.length} below minimum`);
 // A screen the script could not reach is a hole in the audit, not a pass.
 if (unreachable.length) verdict.push(`${unreachable.length} screen(s) unreachable`);
+const empty = [...coverage.entries()].filter(([, c]) => c.measured === 0).map(([t]) => t);
+if (empty.length) verdict.push(`${empty.join(', ')} measured nothing`);
+// Three themes painting the same root class means the seeding silently failed.
+const painted = new Set([...coverage.values()].flatMap((c) => [...c.painted]));
+if (coverage.size > 1 && painted.size < coverage.size) {
+  verdict.push(`themes collapsed onto ${painted.size} palette(s): ${[...painted].join(', ')}`);
+}
 console.log(`\n${rule}\n  ${verdict.length ? verdict.join(', ') : 'Every measured element clears WCAG AA.'}\n${rule}`);
 process.exit(verdict.length ? 1 : 0);

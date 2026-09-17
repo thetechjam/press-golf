@@ -112,17 +112,23 @@ export { holes, ids, players, rounds, courses };
  * The caller supplies `step` so it decides what happens on arrival — measure,
  * screenshot, or report — and supplies `width` only so labels can say which
  * viewport a finding came from.
+ *
+ * `settings` seeds `press.settings.v1` before the first navigation. Glare is
+ * the reason it exists: it is a stored preference rather than an OS one, so a
+ * browser-level colorScheme cannot reach it and a walk that only sets
+ * colorScheme can never see that theme at all.
  */
-export async function walkScreens({ page, BASE, step, width }) {
+export async function walkScreens({ page, BASE, step, width, settings }) {
   const at = (screen) => `${screen} @ ${width}px`;
 
   await page.goto(BASE);
   await page.evaluate(
-    ([rounds, saved]) => {
+    ([rounds, saved, prefs]) => {
       localStorage.setItem('press.rounds.v1', JSON.stringify(rounds));
       localStorage.setItem('press.courses.v1', JSON.stringify(saved));
+      if (prefs) localStorage.setItem('press.settings.v1', JSON.stringify(prefs));
     },
-    [rounds, courses]
+    [rounds, courses, settings ?? null]
   );
   /** Back to Home, so each screen is reached from a known place. */
   const home = async () => {
