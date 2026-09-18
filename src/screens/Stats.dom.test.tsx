@@ -104,10 +104,41 @@ describe('filtering the stats', () => {
     show();
 
     await user.type(screen.getByLabelText('Search rounds'), 'casey');
-    // Both players in the round, not just the one searched for: the question
-    // is how these rounds went, and Casey was not playing alone.
+    // The searched player only. Alex was on that card, but a card for the
+    // people somebody happens to play with is a search that did not filter.
+    expect(names()).toEqual(['Casey']);
+    expect(summary()[0]).toContain('1');
+    // And the footnote says whose rounds the figures above came from.
+    expect(document.querySelector('.hint')?.textContent).toContain('the 1 round Casey played in');
+  });
+
+  it('keeps everybody when the search named a course, not a player', async () => {
+    const user = userEvent.setup();
+    show();
+
+    await user.type(screen.getByLabelText('Search rounds'), 'pebble');
+    expect(names()).toEqual(['Alex', 'Casey']);
+    expect(document.querySelector('.hint')?.textContent).toContain('the rounds shown above');
+  });
+
+  it('puts both people up when the search named both', async () => {
+    const user = userEvent.setup();
+    show();
+
+    await user.type(screen.getByLabelText('Search rounds'), 'alex casey');
+    // Rounds with both, and a card each — not one person called "Alex Casey".
     expect(names()).toEqual(['Alex', 'Casey']);
     expect(summary()[0]).toContain('1');
+  });
+
+  it('gives back everybody when the search is cleared', async () => {
+    const user = userEvent.setup();
+    show();
+
+    await user.type(screen.getByLabelText('Search rounds'), 'casey');
+    await user.click(screen.getByLabelText('Clear search'));
+    expect(names()).toEqual(['Alex', 'Casey']);
+    expect(document.querySelector('.hint')?.textContent).toContain('on this device');
   });
 
   it('offers the years actually played in, newest first, and filters to one', async () => {

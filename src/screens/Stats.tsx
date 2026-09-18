@@ -1,7 +1,13 @@
 import { useMemo, useState } from 'react';
 import { listRounds } from '../storage';
 import { computeStats, countsForStats, formatToPar, type PlayerStats } from '../stats';
-import { searchRounds, roundYears, filterByYear, describeNoMatches } from '../history';
+import {
+  searchRounds,
+  searchPlayers,
+  roundYears,
+  filterByYear,
+  describeNoMatches,
+} from '../history';
 import { formatMoney } from '../games/settlement';
 import { formatRoundDate } from '../roundDate';
 import { PlayerAvatar } from '../components/PlayerAvatar';
@@ -13,6 +19,12 @@ interface Props {
 }
 
 const plural = (n: number, one: string) => `${n} ${n === 1 ? one : `${one}s`}`;
+
+/** "Alex", "Alex and Casey", "Alex, Casey and Jordan". */
+const listNames = (names: string[]): string =>
+  names.length <= 1
+    ? (names[0] ?? '')
+    : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 
 /** The scoring-mix chips. Zero counts are dropped rather than shown as "0". */
 function Tally({ tally }: { tally: PlayerStats['tally'] }) {
@@ -118,7 +130,22 @@ export function Stats({ onBack }: Props) {
     [counted, query, year]
   );
   const stats = useMemo(() => computeStats(shown), [shown]);
+
+  // The colour is taken from the player's place in the unfiltered list, so
+  // searching somebody's name does not also repaint their badge.
+  const cards = useMemo(
+    () =>
+      searchPlayers(
+        stats.players.map((p, i) => ({ name: p.name, p, color: playerColor(i) })),
+        query
+      ),
+    [stats, query]
+  );
+
   const narrowed = shown.length !== counted.length;
+  // A search that named somebody: the rounds are theirs, so the figures above
+  // the cards are read as theirs too, and the footnote has to say whose.
+  const byPlayer = cards.length !== stats.players.length;
 
   return (
     <div className="screen stats">
@@ -225,14 +252,22 @@ export function Stats({ onBack }: Props) {
                 )}
               </div>
 
-              {stats.players.map((p, i) => (
-                <PlayerCard key={p.key} p={p} color={playerColor(i)} />
+              {cards.map(({ p, color }) => (
+                <PlayerCard key={p.key} p={p} color={color} />
               ))}
 
               <p className="hint">
-                {narrowed
-                  ? 'Counted from the rounds shown above. Players are matched by name.'
-                  : 'Counted from finished rounds on this device. Players are matched by name.'}
+                {byPlayer
+                  ? // One card is the usual case, and that player's own round
+                    // count is the honest number: a name that is also part of a
+                    // course would otherwise borrow rounds they did not play.
+                    `Counted from the ${plural(
+                      cards.length === 1 ? cards[0].p.rounds : shown.length,
+                      'round'
+                    )} ${listNames(cards.map(({ p }) => p.name))} played in. Players are matched by name.`
+                  : narrowed
+                    ? 'Counted from the rounds shown above. Players are matched by name.'
+                    : 'Counted from finished rounds on this device. Players are matched by name.'}
               </p>
             </>
           )}
