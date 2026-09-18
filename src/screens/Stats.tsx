@@ -125,27 +125,47 @@ export function Stats({ onBack }: Props) {
   // Years from the counted rounds rather than from everything on the device,
   // so no segment on this row can be tapped into an empty screen.
   const years = useMemo(() => roundYears(counted), [counted]);
-  const shown = useMemo(
-    () => filterByYear(searchRounds(counted, query), year),
-    [counted, query, year]
-  );
-  const stats = useMemo(() => computeStats(shown), [shown]);
+  // Three steps, because one word can be two answers: the rounds the query
+  // matched, the players it named among them, and — where it named somebody —
+  // the rounds those people actually played.
+  //
+  // The third step is not redundant. "alex" matches Alexandria Country Club as
+  // well as Alex, so the rounds the search found are not all rounds Alex was
+  // in; without narrowing them the tiles would count holes no card on screen
+  // came from, and the round count would be nobody's.
+  const { shown, stats, cards, byPlayer } = useMemo(() => {
+    const matched = filterByYear(searchRounds(counted, query), year);
+    const base = computeStats(matched);
+    // The colour is taken from the player's place in the unfiltered list, so
+    // searching somebody's name does not also repaint their badge.
+    const all = base.players.map((p, i) => ({ name: p.name, p, color: playerColor(i) }));
+    const named = searchPlayers(all, query);
+    if (named.length === all.length) {
+      return { shown: matched, stats: base, cards: all, byPlayer: false };
+    }
 
-  // The colour is taken from the player's place in the unfiltered list, so
-  // searching somebody's name does not also repaint their badge.
-  const cards = useMemo(
-    () =>
-      searchPlayers(
-        stats.players.map((p, i) => ({ name: p.name, p, color: playerColor(i) })),
-        query
-      ),
-    [stats, query]
-  );
+    // Scored in, not merely listed on: a no-show still on the card is not a
+    // round they played, and `computeStats` does not count it as one either.
+    const keys = new Set(named.map((c) => c.p.key));
+    const theirs = matched.filter((round) =>
+      round.players.some(
+        (p) =>
+          keys.has(p.name.trim().toLowerCase()) &&
+          round.holes.some((h) => round.scores[h.number]?.[p.id] != null)
+      )
+    );
+    const narrowedStats = computeStats(theirs);
+    // Their own figures are unchanged by this — every round they scored in is
+    // still here — but the cards are re-read from the narrowed stats anyway,
+    // so one computation is behind everything on screen.
+    const cards = named.flatMap((c) => {
+      const p = narrowedStats.players.find((q) => q.key === c.p.key);
+      return p ? [{ ...c, p }] : [];
+    });
+    return { shown: theirs, stats: narrowedStats, cards, byPlayer: true };
+  }, [counted, query, year]);
 
   const narrowed = shown.length !== counted.length;
-  // A search that named somebody: the rounds are theirs, so the figures above
-  // the cards are read as theirs too, and the footnote has to say whose.
-  const byPlayer = cards.length !== stats.players.length;
 
   return (
     <div className="screen stats">
@@ -258,13 +278,9 @@ export function Stats({ onBack }: Props) {
 
               <p className="hint">
                 {byPlayer
-                  ? // One card is the usual case, and that player's own round
-                    // count is the honest number: a name that is also part of a
-                    // course would otherwise borrow rounds they did not play.
-                    `Counted from the ${plural(
-                      cards.length === 1 ? cards[0].p.rounds : shown.length,
-                      'round'
-                    )} ${listNames(cards.map(({ p }) => p.name))} played in. Players are matched by name.`
+                  ? `Counted from the ${plural(shown.length, 'round')} ${listNames(
+                      cards.map(({ p }) => p.name)
+                    )} played in. Players are matched by name.`
                   : narrowed
                     ? 'Counted from the rounds shown above. Players are matched by name.'
                     : 'Counted from finished rounds on this device. Players are matched by name.'}

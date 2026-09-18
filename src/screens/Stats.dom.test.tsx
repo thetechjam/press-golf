@@ -121,6 +121,47 @@ describe('filtering the stats', () => {
     expect(document.querySelector('.hint')?.textContent).toContain('the rounds shown above');
   });
 
+  it('counts the whole card at a course, and only rounds at it', async () => {
+    const user = userEvent.setup();
+    show();
+
+    // Two Torrey rounds, and the Muirfield one left out of both the tiles and
+    // the cards — Casey is on neither Torrey card.
+    await user.type(screen.getByLabelText('Search rounds'), 'torrey');
+    expect(names()).toEqual(['Alex']);
+    expect(summary()[0]).toContain('1');
+
+    await user.clear(screen.getByLabelText('Search rounds'));
+    await user.type(screen.getByLabelText('Search rounds'), 'pebble beach');
+    expect(names()).toEqual(['Alex', 'Casey']);
+    expect(summary()[0]).toContain('1');
+    expect(summary()[1]).toContain('18');
+  });
+
+  it('keeps the rounds and the cards agreeing when a course carries a name', async () => {
+    const user = userEvent.setup();
+    // "alex" is Alex, and it is also the first five letters of Alexandria.
+    show([
+      round({
+        id: 'x',
+        course: 'Alexandria Country Club',
+        date: '2026-09-04',
+        updatedAt: 9,
+        players: [{ id: 'p3', name: 'Jordan' }],
+      }),
+      round({ id: 'y', course: 'Pebble Beach', date: '2026-05-01', updatedAt: 8 }),
+    ]);
+
+    await user.type(screen.getByLabelText('Search rounds'), 'alex');
+    // The search found both rounds; only one of them is Alex's, and the tiles
+    // have to say so or they are counting a round no card came from.
+    expect(names()).toEqual(['Alex']);
+    expect(summary()[0]).toContain('1');
+    expect(summary()[1]).toContain('18');
+    expect(screen.getByText('1 of 2 rounds')).toBeTruthy();
+    expect(document.querySelector('.hint')?.textContent).toContain('the 1 round Alex played in');
+  });
+
   it('puts both people up when the search named both', async () => {
     const user = userEvent.setup();
     show();
