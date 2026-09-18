@@ -110,6 +110,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   390×844 phone has 63px to spare.
 
 ### Fixed
+- **Searching Stats for a player narrows the cards to that player.** The search
+  found their rounds and then put a card up for everybody who was on those
+  cards with them, so typing a name in a regular foursome changed which rounds
+  the numbers came from and nothing you could see — a search that read as
+  broken. A word that names somebody now filters the player cards too, and the
+  footnote says whose rounds the figures above them came from. A word that
+  names a course or a game — "pebble", "skins" — leaves every player standing
+  as before, and two names in one query mean two people whose rounds overlap,
+  with a card each, not one person called both.
+
+- **The Stats tiles count the rounds the cards came from.** Searching by course
+  was never the broken half — every player at that course is what you want, and
+  that is what it showed — but one word can be both answers: "alex" matches
+  Alexandria Country Club as well as Alex. The rounds a search finds are now
+  narrowed to the ones the people it named actually scored in, so the round and
+  hole tiles, the "1 of 2 rounds" line and the footnote below the cards can no
+  longer disagree about which rounds the numbers came from.
+
 - **Saving a course from the check note answers where the button is.** The
   "Looks right — save this course" button sits inside the caveat at the top of
   Holes & pars; the row's confirmation slot is under the eighteen-cell par

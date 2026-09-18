@@ -8,6 +8,7 @@ import {
   roundYears,
   filterByYear,
   describeNoMatches,
+  searchPlayers,
 } from './history';
 import { makeRound, holes18 } from './games/testFixtures';
 
@@ -208,5 +209,38 @@ describe('saying why a year came up empty', () => {
 
   it('says the plain thing when nothing is filtered at all', () => {
     expect(describeNoMatches('', 'all')).toBe('No rounds yet.');
+  });
+});
+
+describe('narrowing the players a search was about', () => {
+  const people = [{ name: 'Alex' }, { name: 'Sam Whitfield' }, { name: 'Casey' }];
+  const named = (q: string) => searchPlayers(people, q).map((p) => p.name);
+
+  it('keeps everybody for an empty query', () => {
+    expect(named('')).toEqual(['Alex', 'Sam Whitfield', 'Casey']);
+    expect(named('   ')).toEqual(['Alex', 'Sam Whitfield', 'Casey']);
+  });
+
+  it('narrows to the person named', () => {
+    expect(named('casey')).toEqual(['Casey']);
+  });
+
+  it('matches a surname and a part-typed name', () => {
+    expect(named('whitfield')).toEqual(['Sam Whitfield']);
+    expect(named('whit')).toEqual(['Sam Whitfield']);
+  });
+
+  it('keeps every person named, not only the ones named by every word', () => {
+    // The rounds are the ones with both; the cards are one each.
+    expect(named('alex casey')).toEqual(['Alex', 'Casey']);
+  });
+
+  it('ignores the words that named a course or a game instead', () => {
+    expect(named('sam torrey')).toEqual(['Sam Whitfield']);
+  });
+
+  it('leaves the list alone when no word named anybody', () => {
+    // "pebble" found Pebble Beach rounds; whoever played them all still count.
+    expect(named('pebble')).toEqual(['Alex', 'Sam Whitfield', 'Casey']);
   });
 });

@@ -163,3 +163,29 @@ export function describeNoMatches(query: string, year: number | 'all'): string {
   if (year !== 'all') return `No rounds in ${year}.`;
   return 'No rounds yet.';
 }
+
+/**
+ * The players a search was about, out of a list already narrowed to the rounds
+ * it matched.
+ *
+ * `searchRounds` answers "which rounds", and for a course or a game that is the
+ * whole question. For a name it is only half of one: typing "casey" into Stats
+ * found Casey's rounds and then put a card up for everybody Casey played with,
+ * which reads as a search that did not filter. So a word that names somebody
+ * narrows the cards to them as well.
+ *
+ * Any word rather than every, unlike the round test: two names in one query
+ * mean two people whose rounds overlap, not one person called both. A query
+ * that names nobody — "pebble", "skins" — leaves the list alone rather than
+ * emptying it, which is also what keeps a name matched only by a course out of
+ * the way of the rounds it legitimately found.
+ */
+export function searchPlayers<T extends { name: string }>(players: T[], query: string): T[] {
+  const words = norm(query).split(' ').filter(Boolean);
+  if (words.length === 0) return players;
+  const named = players.filter((p) => {
+    const name = norm(p.name);
+    return words.some((word) => name.includes(word));
+  });
+  return named.length > 0 ? named : players;
+}
