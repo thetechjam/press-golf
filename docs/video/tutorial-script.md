@@ -5,7 +5,7 @@ scene in `scripts/capture-tutorial.mjs`, and every screen described is the real
 app driven in a real browser — nothing in this video is a mock-up, because a
 tutorial that shows a button the app does not have is worse than no tutorial.
 
-- **Runtime:** ~5:47
+- **Runtime:** ~5:39
 - **Footage:** 390×844 portrait, composited centre-frame on a felt-green 16:9
   canvas (`--green-900` `#0b3d2e`) with the scene title set in Oswald.
 - **Voice:** one narrator, plain and quick. Brand voice: buddies-trip money
@@ -23,7 +23,7 @@ instead of editing them.
 
 ---
 
-## 01 · Cold open — Home, first run (0:00–0:20)
+## 01 · Cold open — Home, first run (0:00–0:19)
 
 *On screen: Press opens on an empty Home. The wordmark, "Track golf side games
 — the fun way", Start New Round, Golf League, and "No rounds yet".*
@@ -32,7 +32,7 @@ instead of editing them.
 > Wolf, the lot — and it does the math while you play. No account, no app
 > store, nothing to install. Here's a full round in four minutes.
 
-## 02 · Players (0:20–0:38)
+## 02 · Players (0:19–0:36)
 
 *Start New Round. Four names typed in, a handicap beside each.*
 
@@ -40,7 +40,7 @@ instead of editing them.
 > name — that's what every net score in the round comes off. Press remembers
 > your regular crew, so next week this is one tap.
 
-## 03 · Course, and checking the card (0:38–1:05)
+## 03 · Course, and checking the card (0:36–1:03)
 
 *The Course row opens. Course search, Pebble Beach tapped — and Holes & pars
 opens itself on the load. The check note at the top of it, then the grid: every
@@ -52,7 +52,7 @@ par and every stroke index, editable, eighteen across.*
 > flagged. Check it against the real card once, then save it. Everything
 > downstream — every stroke anybody gets — comes off these eighteen numbers.
 
-## 04 · Games (1:05–1:21)
+## 04 · Games (1:03–1:18)
 
 *The Games row opens. Game cards toggled on: Skins, Nassau, Stableford, Junk.
 One ⓘ tapped, the rules text unfolds.*
@@ -61,7 +61,7 @@ One ⓘ tapped, the rules text unfolds.*
 > carries its own rules behind the info button — so when somebody at the table
 > has never played Wolf, you don't have to be the one who explains it.
 
-## 05 · The formats (1:21–2:00)
+## 05 · The formats (1:18–1:56)
 
 *Scrolling the full game list, then the Scoring panel with Net/Gross and the
 allowance selector.*
@@ -74,7 +74,7 @@ allowance selector.*
 > more than eighteen. Set a game to gross to play it off the card, or cut the
 > allowance the way the format asks.
 
-## 06 · Money (2:00–2:14)
+## 06 · Money (1:56–2:08)
 
 *The Money row opens. A stake typed against each game.*
 
@@ -82,7 +82,7 @@ allowance selector.*
 > blank and you're playing for nothing — and you can change it mid-round from
 > the Board.
 
-## 07 · Scoring a hole (2:14–2:43)
+## 07 · Scoring a hole (2:08–2:36)
 
 *Start Round. The Hole tab: hole number, par, the progress dots, a row per
 player. Scores tapped in on the chips.*
@@ -92,14 +92,14 @@ player. Scores tapped in on the chips.*
 > the dots beside a name are the strokes they're getting on this hole. The
 > strip across the top is your eighteen; filled means done.
 
-## 08 · The money ticker (2:43–2:54)
+## 08 · The money ticker (2:36–2:48)
 
 *The ticker above the hole updates as the last score lands.*
 
 > The line at the top is the money, live, all round. Close out a hole and it
 > tells you exactly what just changed hands, and who it came from.
 
-## 09 · Junk, Wolf and presses (2:54–3:15)
+## 09 · Junk, Wolf and presses (2:48–3:07)
 
 *The junk panel opens; a greenie and a sandie claimed. Then the Wolf and Nassau
 controls on a hole.*
@@ -109,7 +109,7 @@ controls on a hole.*
 > presses too: take one by hand, or set it to press automatically when a side
 > goes two down.
 
-## 10 · The Board (3:15–3:36)
+## 10 · The Board (3:07–3:28)
 
 *The Board tab: money board, then a leaderboard per game.*
 
@@ -117,14 +117,14 @@ controls on a hole.*
 > skins, where the money actually sits. Somebody gave you the wrong handicap on
 > the first tee? Fix it here and every board behind it recalculates.
 
-## 11 · The card (3:36–3:46)
+## 11 · The card (3:28–3:39)
 
 *The Card tab: the full scorecard grid.*
 
 > Card is the whole scorecard, eighteen across. Tap a number to fix it, tap a
 > hole to jump straight back to it.
 
-## 12 · Results and awards (3:46–4:05)
+## 12 · Results and awards (3:39–3:57)
 
 *Finish Round. The Results screen: winner hero with confetti, then the awards.*
 
@@ -132,7 +132,7 @@ controls on a hole.*
 > Shot of the Day, The Snowman, The ATM, Sandbagger — and each one cites the
 > number it's based on, so the argument is short.
 
-## 13 · Settling up (4:05–4:20)
+## 13 · Settling up (3:57–4:11)
 
 *The Settlement block: the fewest payments that clear the group.*
 
@@ -140,14 +140,14 @@ controls on a hole.*
 > the whole group into the fewest payments that settle it. Three people pay,
 > not twelve.
 
-## 14 · Sharing the result (4:20–4:29)
+## 14 · Sharing the result (4:11–4:20)
 
 *The Share sheet: Results image, Scorecard image.*
 
 > Share gives you the scoreboard as an image, or the full card as an image —
 > both straight into the group chat.
 
-## 15 · Handing the round over (4:29–5:08)
+## 15 · Handing the round over (4:20–4:59)
 
 *The QR code in the share sheet, then the same round opening on a second phone
 as "Sent to you" with a Keep it button.*
@@ -160,7 +160,7 @@ as "Sent to you" with a Keep it button.*
 > you both end up keeping score, Press puts the two cards side by side and asks
 > which one is real, instead of picking one on a timestamp.
 
-## 16 · Offline (5:08–5:34)
+## 16 · Offline (4:59–5:24)
 
 *The network is cut — genuinely, at the browser — and the app is reloaded and
 driven again.*
@@ -170,7 +170,7 @@ driven again.*
 > round, every saved course, every bit of history lives on your phone. That's
 > the privacy story too — there's no account to make, and nothing to leak.
 
-## 17 · Close (5:34–5:47)
+## 17 · Close (5:24–5:39)
 
 *Home screen, the install hint at the bottom.*
 
@@ -198,22 +198,22 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 > ▶️ pressgolf.netlify.app
 >
 > 0:00 What Press is
-> 0:20 Adding players and handicaps
-> 0:38 Loading a course, and checking the card
-> 1:05 Picking your games
-> 1:21 Every format, and net scoring
-> 2:00 Setting the stakes
-> 2:14 Scoring a hole
-> 2:43 The live money ticker
-> 2:54 Junk, Wolf and presses
-> 3:15 The Board
-> 3:36 The scorecard
-> 3:46 Results and awards
-> 4:05 Settling up
-> 4:20 Sharing the result
-> 4:29 Handing the round to another phone
-> 5:08 Playing offline
-> 5:34 Adding Press to your home screen
+> 0:19 Adding players and handicaps
+> 0:36 Loading a course, and checking the card
+> 1:03 Picking your games
+> 1:18 Every format, and net scoring
+> 1:56 Setting the stakes
+> 2:08 Scoring a hole
+> 2:36 The live money ticker
+> 2:48 Junk, Wolf and presses
+> 3:07 The Board
+> 3:28 The scorecard
+> 3:39 Results and awards
+> 3:57 Settling up
+> 4:11 Sharing the result
+> 4:20 Handing the round to another phone
+> 4:59 Playing offline
+> 5:24 Adding Press to your home screen
 
 ---
 
