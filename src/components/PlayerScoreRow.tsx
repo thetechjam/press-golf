@@ -20,6 +20,12 @@ interface Props {
    */
   matchStrokes?: string[];
   onChange: (value: number | null) => void;
+  /** Highest score entry offers; passed through to the chips. */
+  max?: number;
+  /** League only: this player picked up here, shown as an X. */
+  pickedUp?: boolean;
+  /** League only: toggles the pick-up. */
+  onPickup?: () => void;
 }
 
 
@@ -34,6 +40,9 @@ export function PlayerScoreRow({
   handicap,
   matchStrokes,
   onChange,
+  max,
+  pickedUp = false,
+  onPickup,
 }: Props) {
   const toPar = value == null ? 0 : value - par;
   const tone =
@@ -113,9 +122,11 @@ export function PlayerScoreRow({
             className={scoreNumClass({ celebrating, flapping })}
             key={value ?? 'empty'}
           >
-            {value ?? '–'}
+            {pickedUp ? 'X' : (value ?? '–')}
           </span>
-          <span className="score-tag">{value == null ? 'tap' : scoreLabel(toPar)}</span>
+          <span className="score-tag">
+            {pickedUp ? 'picked up' : value == null ? 'tap' : scoreLabel(toPar)}
+          </span>
         </span>
       </div>
       <ScoreChips
@@ -124,6 +135,9 @@ export function PlayerScoreRow({
         value={value}
         // Clearing must not buzz or celebrate — commit() is for real scores only.
         onChange={(v) => (v == null ? onChange(null) : commit(v))}
+        max={max}
+        pickedUp={pickedUp}
+        onPickup={onPickup}
       />
     </div>
   );

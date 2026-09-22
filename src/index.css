@@ -1110,48 +1110,43 @@ select:focus {
   flex-direction: column;
   gap: 8px;
 }
-/* The card is the row; the name is its first line and the whole tappable
-   width of it. Previously the name shared a line with the send and delete
-   buttons and truncated on a narrow phone — which is backwards, since the
-   name is the only part you read to decide whether this is the course. */
+/* One compact row per course: name and figures stacked in the load button,
+   which takes the width, and the actions at the end. The name wraps rather
+   than truncating, so it can share the line with them. */
 .saved-course-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background: var(--bg);
-  padding: 4px 6px 6px;
-  margin-bottom: 8px;
+  padding: 2px 4px 2px 0;
 }
 .saved-course-load {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 10px 8px 4px;
-  min-height: 40px;
-  border: none;
-  background: none;
-  transition: transform var(--press) var(--ease-out);
-}
-/* Name, meta and the two buttons on one line each — the meta shrinks, the
-   buttons never do. */
-.saved-course-foot {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding-left: 8px;
-}
-.saved-course-foot .saved-course-meta {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+  padding: 8px 6px 8px 12px;
+  min-height: 44px;
+  border: none;
+  /* The row's own left corners, so the hover tint (pointer devices only)
+     sits inside the rounded row instead of squaring it off. */
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+  background: none;
+  transition: transform var(--press) var(--ease-out);
 }
 .saved-course-load:active {
   transform: scale(0.99);
 }
 .saved-course-name {
-  display: block;
   font-weight: 700;
   color: var(--green-ink);
-  /* Wraps rather than truncating: it has the width now, and a course name cut
-     off mid-word is the one thing this row must not do. */
+  line-height: 1.25;
+  /* Wraps rather than truncating: a course name cut off mid-word is the one
+     thing this row must not do. */
   overflow-wrap: anywhere;
 }
 .saved-course-meta {
@@ -1164,13 +1159,13 @@ select:focus {
 }
 .saved-course-del {
   width: 44px;
-  /* Explicit, where it used to inherit its height from `align-items: stretch`
-     on a flex row that no longer exists — without this it rendered 4px tall. */
+  /* Explicit: the row centres its items rather than stretching them, so
+     without this it would be as tall as its glyph. */
   min-height: 44px;
   flex-shrink: 0;
-  border: 1px solid var(--line);
-  border-radius: var(--r-lg);
-  background: var(--card);
+  border: none;
+  border-radius: var(--r-md);
+  background: none;
   color: var(--muted);
   font-size: var(--fs-3xl);
   line-height: 1;
@@ -2170,6 +2165,26 @@ select:focus {
   grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   margin-top: 6px;
+}
+/* League pick-up. A full row of its own under the numbers, in the text-safe
+   red, so it reads as a different kind of answer rather than a tenth score. */
+.score-overflow .score-x {
+  grid-column: 1 / -1;
+  color: var(--over-strong);
+  font-weight: 700;
+}
+.score-overflow .score-x.sel {
+  background: var(--over-strong);
+  border-color: var(--over-strong);
+  color: #fff;
+}
+:root.dark .score-overflow .score-x.sel {
+  color: var(--bg);
+}
+/* An X on the scorecard: the forfeit, not a number. */
+.sc-x {
+  font-weight: 800;
+  color: var(--over-strong);
 }
 .score-overflow .score-chip.sel {
   background: var(--green-600);

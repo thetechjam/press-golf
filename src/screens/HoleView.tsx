@@ -7,7 +7,7 @@ import { JunkControls } from '../components/JunkControls';
 import { VegasStrip } from '../components/VegasStrip';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
 import { anyNetScoring } from '../games/scoring';
-import { leagueStrokesOnHole } from '../games/league';
+import { LEAGUE_MAX_SCORE, leagueStrokesOnHole, pickedUp } from '../games/league';
 import { skinsOnHole } from '../games/skins';
 import { playerColor } from '../player';
 import { useEdgeFade } from '../useEdgeFade';
@@ -21,13 +21,16 @@ interface Props {
   holeComplete: boolean[];
   onGo: (index: number) => void;
   onScore: (playerId: string, value: number | null) => void;
+  /** League only: toggle a pick-up ("X") for a player on this hole. */
+  onPickup: (playerId: string) => void;
   onWolf: (choice: WolfChoice) => void;
   onPresses: (presses: number[]) => void;
   onJunk: (junk: JunkClaims) => void;
 }
 
 export function HoleView({
-  round, hole, idx, dir, highlightId, holeComplete, onGo, onScore, onWolf, onPresses, onJunk,
+  round, hole, idx, dir, highlightId, holeComplete, onGo, onScore, onPickup, onWolf, onPresses,
+  onJunk,
 }: Props) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   // One ref serves both jobs: keeping the current dot centred, and measuring
@@ -139,6 +142,9 @@ export function HoleView({
               }
               matchStrokes={chips ? chips[p.id] : undefined}
               onChange={(v) => onScore(p.id, v)}
+              max={round.options.league ? LEAGUE_MAX_SCORE : undefined}
+              pickedUp={!!round.options.league && pickedUp(round, hole.number, p.id)}
+              onPickup={round.options.league ? () => onPickup(p.id) : undefined}
             />
           ))}
         </section>

@@ -9,15 +9,21 @@ interface Props {
   value: number | null;
   /** null means "clear this score" — see nextValue. */
   onChange: (value: number | null) => void;
+  /** Highest score offered behind "…". Defaults to SCORE_MAX. */
+  max?: number;
+  /** League only: this player picked up ("X") on this hole. */
+  pickedUp?: boolean;
+  /** League only: offers an "X" (picked up) choice behind "…" and toggles it. */
+  onPickup?: () => void;
 }
 
-export function ScoreChips({ name, par, value, onChange }: Props) {
+export function ScoreChips({ name, par, value, onChange, max, pickedUp = false, onPickup }: Props) {
   const [showAll, setShowAll] = useState(false);
   const overflowId = useId();
   const chips = chipRange(par);
   // A score outside the inline range lives behind "…" — mark the chip so the
   // row doesn't read as empty when a 9 is entered on a par 4.
-  const hidden = isOverflowValue(par, value);
+  const hidden = pickedUp || isOverflowValue(par, value);
 
   const pick = (n: number) => {
     onChange(nextValue(value, n));
@@ -44,7 +50,7 @@ export function ScoreChips({ name, par, value, onChange }: Props) {
               key={n}
               type="button"
               role="radio"
-              aria-checked={value === n}
+              aria-checked={!pickedUp && value === n}
               aria-label={`${n}, ${scoreLabel(n - par)}`}
               className={`score-chip${n === par ? ' par' : ''}`}
               onClick={() => pick(n)}
@@ -58,10 +64,14 @@ export function ScoreChips({ name, par, value, onChange }: Props) {
           className={`score-chip score-more${hidden ? ' has-value' : ''}`}
           aria-expanded={showAll}
           aria-controls={overflowId}
-          aria-label={hidden ? `More scores for ${name}, currently ${value}` : `More scores for ${name}`}
+          aria-label={
+            hidden
+              ? `More scores for ${name}, currently ${pickedUp ? 'picked up' : value}`
+              : `More scores for ${name}`
+          }
           onClick={() => setShowAll((s) => !s)}
         >
-          {hidden ? value : '…'}
+          {pickedUp ? 'X' : hidden ? value : '…'}
         </button>
       </div>
 
@@ -72,18 +82,35 @@ export function ScoreChips({ name, par, value, onChange }: Props) {
           role="group"
           aria-label={`All scores for ${name}`}
         >
-          {overflowRange().map((n) => (
+          {overflowRange(max).map((n) => (
             <button
               key={n}
               type="button"
-              className={`score-chip${value === n ? ' sel' : ''}`}
-              aria-pressed={value === n}
+              className={`score-chip${!pickedUp && value === n ? ' sel' : ''}`}
+              aria-pressed={!pickedUp && value === n}
               aria-label={`${n}, ${scoreLabel(n - par)}`}
               onClick={() => pick(n)}
             >
               {n}
             </button>
           ))}
+          {/* League rule: a player who picks up takes an X, and forfeits the
+              hole in both their matches. Last in the grid, spanning the rest
+              of its row, so it is never mistaken for a number. */}
+          {onPickup && (
+            <button
+              type="button"
+              className={`score-chip score-x${pickedUp ? ' sel' : ''}`}
+              aria-pressed={pickedUp}
+              aria-label={`Picked up — X, forfeits the hole`}
+              onClick={() => {
+                onPickup();
+                setShowAll(false);
+              }}
+            >
+              X · picked up
+            </button>
+          )}
         </div>
       )}
     </div>

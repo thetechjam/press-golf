@@ -239,9 +239,8 @@ describe('computeLeague — incomplete night', () => {
 });
 
 describe('leagueStrokesOnHole', () => {
-  // Team 1 (10, 14) v Team 2 (6, 8). A match plays off 6, B match off 8,
-  // team match off 6 — three different baselines, so one player receives
-  // different strokes in their singles and team matches at the same time.
+  // Team 1 (10, 14) v Team 2 (6, 8). Every match plays off the low of the
+  // foursome, 6 — so a player's singles strokes and team strokes are the same.
   const FOUR_H = [
     player('p1', 'Al', 10),
     player('p2', 'Bo', 14),
@@ -251,16 +250,18 @@ describe('leagueStrokesOnHole', () => {
   const hs = holes(9);
   const r = makeRound({ players: FOUR_H, holes: hs, options: { league: league() } });
 
-  it('gives Bo the B match stroke only on the holes the B match allows', () => {
-    // B match: 14 - 8 = 6 strokes, on stroke indexes 1..6.
-    expect(leagueStrokesOnHole(r, hs[0])['p2']).toContain('B');
-    expect(leagueStrokesOnHole(r, hs[6])['p2']).not.toContain('B');
+  it('gives Bo his strokes off the foursome low, in the B match and the team match', () => {
+    // 14 - 6 = 8, on stroke indexes 1..8.
+    expect(leagueStrokesOnHole(r, hs[0])['p2']).toEqual(['B', 'T']);
+    expect(leagueStrokesOnHole(r, hs[7])['p2']).toEqual(['B', 'T']);
+    expect(leagueStrokesOnHole(r, hs[8])['p2']).toEqual([]);
   });
 
-  it('gives Di team strokes where she gets none in her singles match', () => {
-    // B match: 8 - 8 = 0. Team match: 8 - 6 = 2, on stroke indexes 1..2.
-    expect(leagueStrokesOnHole(r, hs[0])['p4']).toEqual(['T']);
-    expect(leagueStrokesOnHole(r, hs[5])['p4']).toEqual([]);
+  it('gives Di strokes in her B match even though her B opponent is higher', () => {
+    // 8 - 6 = 2, on stroke indexes 1..2. Off the low of the pair she would
+    // have had none; off the foursome she gets two, and so does the team.
+    expect(leagueStrokesOnHole(r, hs[0])['p4']).toEqual(['B', 'T']);
+    expect(leagueStrokesOnHole(r, hs[2])['p4']).toEqual([]);
   });
 
   it('gives the low man no strokes anywhere', () => {
@@ -340,12 +341,14 @@ describe('a league night off a Handicap Index', () => {
     );
   });
 
-  it('still plays the singles off the low man of that match', () => {
-    // A is 7 v 8, so Cy gets 1. B is 3 v 2, so Bo gets 1. Neither is the
-    // player with the lowest Index overall, which is what makes this the
-    // league's rule rather than a plain handicap.
+  it('plays the singles off the low of the foursome, as the league rules say', () => {
+    // Di (2) is the low of all four. A is Al 7 v Cy 8, so 5 and 6; B is Bo 3
+    // v Di 2, so Bo gets 1.
     const byKey = Object.fromEntries(computeLeague(indexed).matches.map((m) => [m.key, m]));
-    expect(byKey.A.strokes).toEqual([{ name: 'Cy', strokes: 1 }]);
+    expect(byKey.A.strokes).toEqual([
+      { name: 'Al', strokes: 5 },
+      { name: 'Cy', strokes: 6 },
+    ]);
     expect(byKey.B.strokes).toEqual([{ name: 'Bo', strokes: 1 }]);
   });
 
@@ -423,5 +426,106 @@ describe('a league night off a Handicap Index', () => {
       rating: 74.6,
     });
     expect(computeLeague(wrong).teams).toEqual(computeLeague(typed).teams);
+  });
+});
+
+describe('league rules from the 2025 rule sheet', () => {
+  const hs = holes(9);
+  const flat = (n: number) => Array(9).fill(n);
+
+  it('caps two high handicaps at 9 shots each, which plays them level', () => {
+    // A: 2 v 4. B: 12 v 16 — off the foursome low of 2 that is 10 and 14,
+    // and both cap at 9.
+    const r = makeRound({
+      players: [player('p1', 'Al', 2), player('p2', 'Bo', 12), player('p3', 'Cy', 4), player('p4', 'Di', 16)],
+      holes: hs,
+      options: { league: league() },
+    });
+    const b = computeLeague(r).matches.find((m) => m.key === 'B')!;
+    expect(b.strokes).toEqual([
+      { name: 'Bo', strokes: 9 },
+      { name: 'Di', strokes: 9 },
+    ]);
+  });
+
+  it('counts anything over 9 as a 9', () => {
+    // Al takes 12 on the first hole, Cy a 9: halved, not lost.
+    const r = makeRound({
+      players: FOUR,
+      holes: hs,
+      options: { league: league() },
+      scores: scoresFrom(hs, {
+        p1: [12, 4, 4, 4, 4, 4, 4, 4, 4],
+        p2: flat(4),
+        p3: [9, 4, 4, 4, 4, 4, 4, 4, 4],
+        p4: flat(4),
+      }),
+    });
+    expect(computeLeague(r).matches[0].status).toBe('Halved');
+  });
+
+  it('loses the singles hole to a pick-up, whatever the other player scored', () => {
+    // Al picks up on hole 1 (recorded as a 9); Cy makes an 8. Otherwise square.
+    const r = makeRound({
+      players: FOUR,
+      holes: hs,
+      options: { league: league() },
+      scores: scoresFrom(hs, {
+        p1: [9, 4, 4, 4, 4, 4, 4, 4, 4],
+        p2: flat(4),
+        p3: [9, 4, 4, 4, 4, 4, 4, 4, 4],
+        p4: flat(4),
+      }),
+      pickups: { 1: ['p1'] },
+    });
+    const a = computeLeague(r).matches.find((m) => m.key === 'A')!;
+    expect(a.winner).toBe('B');
+  });
+
+  it('halves a hole where both singles players pick up', () => {
+    const r = makeRound({
+      players: FOUR,
+      holes: hs,
+      options: { league: league() },
+      scores: scoresFrom(hs, { p1: [9, ...flat(4).slice(1)], p2: flat(4), p3: [9, ...flat(4).slice(1)], p4: flat(4) }),
+      pickups: { 1: ['p1', 'p3'] },
+    });
+    expect(computeLeague(r).matches[0].status).toBe('Halved');
+  });
+
+  it("keeps the partner's ball in the team match after a pick-up", () => {
+    // Al picks up on hole 1, but Bo birdies it: Team 1 still wins the hole
+    // against Team 2's pars, and every other hole is level.
+    const r = makeRound({
+      players: FOUR,
+      holes: hs,
+      options: { league: league() },
+      scores: scoresFrom(hs, {
+        p1: [9, ...flat(4).slice(1)],
+        p2: [3, ...flat(4).slice(1)],
+        p3: flat(4),
+        p4: flat(4),
+      }),
+      pickups: { 1: ['p1'] },
+    });
+    const team = computeLeague(r).matches.find((m) => m.key === 'team')!;
+    expect(team.winner).toBe('A');
+  });
+
+  it('loses the team hole when both partners pick up', () => {
+    const r = makeRound({
+      players: FOUR,
+      holes: hs,
+      options: { league: league() },
+      scores: scoresFrom(hs, {
+        p1: [9, ...flat(4).slice(1)],
+        p2: [9, ...flat(4).slice(1)],
+        p3: [9, ...flat(4).slice(1)],
+        p4: flat(4),
+      }),
+      pickups: { 1: ['p1', 'p2'] },
+    });
+    const team = computeLeague(r).matches.find((m) => m.key === 'team')!;
+    expect(team.winner).toBe('B');
   });
 });

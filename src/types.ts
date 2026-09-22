@@ -186,6 +186,15 @@ export interface Round {
   /** Claimed junk by hole and player (only used when Junk is active). */
   junk?: JunkClaims;
   /**
+   * League only: hole number -> ids of players who picked up there (an "X").
+   *
+   * Kept beside the score rather than in it. The score cell for a pick-up
+   * holds the league maximum, 9, so everything that only reads gross numbers
+   * — totals, stats, "is this hole complete" — sees a sane card; the league
+   * engine reads this and treats the player as having forfeited the hole.
+   */
+  pickups?: Record<number, string[]>;
+  /**
    * Slope and rating of the course, copied at setup so a round stays scoreable
    * on its own terms — editing the saved course afterwards must not
    * re-handicap a round already in the book.

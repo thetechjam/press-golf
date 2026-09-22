@@ -105,6 +105,8 @@ interface PackedRound {
   w?: Record<number, WolfHole>;
   /** Claimed junk, hole -> player index -> kinds. */
   j?: JunkClaims;
+  /** League pick-ups ("X"), hole -> player indexes. */
+  x?: Record<number, string[]>;
   pr?: number[];
   sl?: number;
   ra?: number;
@@ -124,10 +126,12 @@ interface PackedRound {
  * `shareLink.test.ts` asserts that no original id survives a pack, which is
  * what would catch a sixth place being added later.
  */
-function mapPlayerIds<T extends Pick<Round, 'options' | 'wolf' | 'scores' | 'junk'>>(
+function mapPlayerIds<
+  T extends Pick<Round, 'options' | 'wolf' | 'scores' | 'junk' | 'pickups'>,
+>(
   round: T,
   to: (id: string) => string
-): Required<Pick<Round, 'options' | 'wolf' | 'scores'>> & Pick<Round, 'junk'> {
+): Required<Pick<Round, 'options' | 'wolf' | 'scores'>> & Pick<Round, 'junk' | 'pickups'> {
   const team = (t: TeamSetup | undefined): TeamSetup | undefined =>
     t && { mode: t.mode, teamA: t.teamA.map(to), teamB: t.teamB.map(to) };
 
@@ -174,7 +178,16 @@ function mapPlayerIds<T extends Pick<Round, 'options' | 'wolf' | 'scores' | 'jun
     }
   }
 
-  return { options, wolf, scores, junk };
+  // Pick-ups decide league holes, and are keyed by player id like the rest.
+  let pickups: Record<number, string[]> | undefined;
+  if (round.pickups) {
+    pickups = {};
+    for (const [hole, ids] of Object.entries(round.pickups)) {
+      if (ids.length) pickups[Number(hole)] = ids.map(to);
+    }
+  }
+
+  return { options, wolf, scores, junk, pickups };
 }
 
 /* ------------------------------------------------------------------ *
@@ -194,7 +207,7 @@ export function packRound(round: Round): PackedRound | null {
   // already inconsistent; passing it through would silently drop a score.
   const to = (id: string): string => index.get(id) ?? id;
 
-  const { options, wolf, scores, junk } = mapPlayerIds(round, to);
+  const { options, wolf, scores, junk, pickups } = mapPlayerIds(round, to);
 
   const strings: string[] = [];
   for (let i = 0; i < round.players.length; i += 1) {
@@ -227,6 +240,7 @@ export function packRound(round: Round): PackedRound | null {
   if (round.course) packed.c = round.course;
   if (Object.keys(wolf).length) packed.w = wolf;
   if (junk && Object.keys(junk).length) packed.j = junk;
+  if (pickups && Object.keys(pickups).length) packed.x = pickups;
   if (round.presses?.length) packed.pr = round.presses;
   if (typeof round.slope === 'number') packed.sl = round.slope;
   if (typeof round.rating === 'number') packed.ra = round.rating;
@@ -398,6 +412,24 @@ function readJunk(v: unknown, playerCount: number): JunkClaims | undefined {
 }
 
 /**
+ * League pick-ups out of a payload: hole -> player positions, keeping only
+ * positions somebody occupies. Same posture as `readJunk` — a pick-up Press
+ * cannot place is dropped rather than rejecting the round.
+ */
+function readPickups(v: unknown, playerCount: number): Record<number, string[]> | undefined {
+  if (!isObject(v)) return undefined;
+  const known = indexChecker(playerCount);
+  const out: Record<number, string[]> = {};
+  for (const [hole, ids] of Object.entries(v)) {
+    const n = Number(hole);
+    if (!Number.isInteger(n) || !Array.isArray(ids)) continue;
+    const clean = [...new Set(ids.filter((id): id is string => typeof id === 'string' && known(id)))];
+    if (clean.length) out[n] = clean;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+/**
  * Rebuilds a round from a packed object. Never throws — every failure comes
  * back as a sentence the arrival screen can show as written.
  *
@@ -485,6 +517,7 @@ export function unpackRound(raw: unknown): UnpackResult {
       wolf: readWolf(raw.w, players.length),
       scores: {},
       junk: readJunk(raw.j, players.length),
+      pickups: readPickups(raw.x, players.length),
     },
     fromIndex
   );
@@ -503,6 +536,7 @@ export function unpackRound(raw: unknown): UnpackResult {
     status: raw.f === 1 ? 'finished' : 'in_progress',
   };
   if (mapped.junk) round.junk = mapped.junk;
+  if (mapped.pickups) round.pickups = mapped.pickups;
   if (typeof raw.c === 'string' && raw.c) round.course = raw.c;
   if (Array.isArray(raw.pr)) round.presses = raw.pr.filter((n): n is number => typeof n === 'number');
   const slope = num(raw.sl);
