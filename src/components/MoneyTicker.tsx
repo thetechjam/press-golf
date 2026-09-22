@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Round, Hole } from '../types';
 import { computeSettlement, formatMoney } from '../games/settlement';
 import { colorMap } from '../player';
@@ -16,10 +16,20 @@ import { useEdgeFade } from '../useEdgeFade';
  * badges the steppers below lead with, so they map without reading, and the
  * full name is still there for a screen reader.
  */
-export function MoneyTicker({ round }: { round: Round }) {
+export function MoneyTicker({ round, visible = true }: { round: Round; visible?: boolean }) {
   const { ref, edge } = useEdgeFade<HTMLDivElement>();
   const settlement = computeSettlement(round);
   const colors = colorMap(round);
+  // The totals as last seen, so a figure that has moved since can flip like a
+  // score does. "Seen" matters: money only moves when a hole completes, which
+  // is exactly when HoleTicker swaps this face out for the hole's swing — so
+  // the flip is held until this face is back on screen. Nothing flips on the
+  // first render: resuming a round is not news.
+  const prev = useRef<Record<string, number> | null>(null);
+  const before = visible ? prev.current : null;
+  useEffect(() => {
+    if (visible) prev.current = settlement.totals;
+  });
   if (!settlement.active) return null;
 
   return (
@@ -36,7 +46,13 @@ export function MoneyTicker({ round }: { round: Round }) {
           <span key={p.id} className={`tick${net > 0 ? ' up' : net < 0 ? ' down' : ''}`}>
             <PlayerAvatar name={p.name} color={colors[p.id]} size={22} />
             <span className="sr-only">{p.name}</span>
-            <span className="tick-net">{net === 0 ? '—' : formatMoney(net)}</span>
+            {/* Keyed by value so a change remounts it and the flip replays. */}
+            <span
+              key={`${net}${visible ? '' : '-hidden'}`}
+              className={`tick-net${before && (before[p.id] ?? 0) !== net ? ' flap' : ''}`}
+            >
+              {net === 0 ? '—' : formatMoney(net)}
+            </span>
           </span>
         );
       })}
@@ -124,7 +140,7 @@ export function HoleTicker({
   return (
     <div className="ticker-stack">
       <div className={`ticker-face${swing ? ' out' : ''}`} aria-hidden={!!swing}>
-        <MoneyTicker round={round} />
+        <MoneyTicker round={round} visible={!swing} />
       </div>
       {shown && (
         <div className={`ticker-face${swing ? '' : ' out'}`} aria-hidden={!swing}>

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { scoreLabel, scoreNumClass } from '../scoreMark';
 import { PlayerAvatar } from './PlayerAvatar';
 import { ScoreChips } from './ScoreChips';
+import { buzz } from '../haptics';
 
 interface Props {
   id?: string;
@@ -21,8 +22,6 @@ interface Props {
   onChange: (value: number | null) => void;
 }
 
-// Vibration API is Android-only (no-op on iOS Safari/PWA); softer for taps, firmer for birdie+.
-const buzz = (pattern: number | number[]) => navigator.vibrate?.(pattern);
 
 export function PlayerScoreRow({
   id,
