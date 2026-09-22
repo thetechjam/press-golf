@@ -1,27 +1,10 @@
 import type { Round } from '../types';
 import { completedHoleCount } from '../games/util';
-import { GAMES, activeResults } from '../games';
-import { computeLeague } from '../games/league';
+import { GAMES } from '../games';
 import { DeleteButton } from './DeleteButton';
 import { XIcon } from '../icons';
 import { formatRoundDate } from '../roundDate';
-import { roundTitle } from '../roundTitle';
-
-const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
-
-
-/** One-line outcome for a finished round, or null while in progress. */
-const resultLine = (r: Round): string | null => {
-  if (r.status !== 'finished') return null;
-  if (r.options.league) {
-    const [a, b] = computeLeague(r).teams;
-    if (a.points === b.points) return `All square · ${fmtPts(a.points)}–${fmtPts(b.points)}`;
-    const [win, lose] = a.points > b.points ? [a, b] : [b, a];
-    return `${win.name} won ${fmtPts(win.points)}–${fmtPts(lose.points)}`;
-  }
-  const first = activeResults(r)[0];
-  return first ? `${first.title}: ${first.status}` : null;
-};
+import { roundTitle, standingLine } from '../roundSummary';
 
 interface Props {
   round: Round;
@@ -48,7 +31,7 @@ interface Props {
 export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect }: Props) {
   const selecting = onToggleSelect !== undefined;
   const thru = completedHoleCount(round);
-  const result = resultLine(round);
+  const result = standingLine(round);
 
   return (
     <div className={`round-card${selecting ? ' selecting' : ''}${selected ? ' selected' : ''}`}>
@@ -73,7 +56,18 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect }:
                 ? ' · not started'
                 : ` · thru ${thru}`}
           </span>
-          {result && <span className="round-result">{result}</span>}
+          {result && (
+            <span className="round-result">
+              {result.up ? (
+                <>
+                  <span className="up">{result.up}</span> ·{' '}
+                  <span className="down">{result.down}</span>
+                </>
+              ) : (
+                result.text
+              )}
+            </span>
+          )}
           <span className="round-games">
             {/* "thru 18" reads like a finished card at a glance; this is the
                 tell that it is not. */}

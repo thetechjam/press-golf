@@ -1,32 +1,6 @@
 import type { Round } from '../types';
-import { activeResults } from '../games';
-import { computeLeague } from '../games/league';
-import { computeSettlement, formatMoney } from '../games/settlement';
 import { completedHoleCount, firstIncompleteHole } from '../games/util';
-import { roundTitle } from '../roundTitle';
-
-const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
-
-/** Who is ahead right now, in the terms the round is being played for. */
-function standingLine(r: Round): string | null {
-  if (completedHoleCount(r) === 0) return null;
-  if (r.options.league) {
-    const [a, b] = computeLeague(r).teams;
-    if (a.points === b.points) return `All square · ${fmtPts(a.points)}–${fmtPts(b.points)}`;
-    const [lead, trail] = a.points > b.points ? [a, b] : [b, a];
-    return `${lead.name} lead ${fmtPts(lead.points)}–${fmtPts(trail.points)}`;
-  }
-  const settlement = computeSettlement(r);
-  if (settlement.active) {
-    const top = Math.max(...r.players.map((p) => settlement.totals[p.id] ?? 0));
-    if (top <= 0) return 'All square on the money';
-    const leaders = r.players.filter((p) => (settlement.totals[p.id] ?? 0) === top);
-    const who = leaders.length === 1 ? leaders[0].name : `${leaders.length} players`;
-    return `${who} up ${formatMoney(top)}`;
-  }
-  const first = activeResults(r)[0];
-  return first ? `${first.title}: ${first.status}` : null;
-}
+import { roundTitle, standingLine } from '../roundSummary';
 
 /**
  * Home's way back into the round being played.
@@ -49,7 +23,7 @@ export function ResumeCard({ round, onResume }: { round: Round; onResume: () => 
         In progress · {thru === 0 ? 'not started' : `thru ${thru} of ${round.holes.length}`}
       </span>
       <span className="resume-title">{roundTitle(round)}</span>
-      {standing && <span className="resume-standing">{standing}</span>}
+      {standing && <span className="resume-standing">{standing.text}</span>}
       <span className="resume-cta">
         {thru === round.holes.length ? 'Back to the card' : `Resume on hole ${next}`}{' '}
         <span aria-hidden="true">›</span>

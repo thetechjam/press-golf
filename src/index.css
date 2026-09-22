@@ -713,6 +713,15 @@ button:focus-visible {
   color: var(--green-ink);
   margin-top: 2px;
 }
+/* When the line is about money, who won and who paid are told apart by the
+   same up/down pair the money board uses. The text-safe tokens, since this
+   is 13px body text on --card. */
+.round-result .up {
+  color: var(--under-ink);
+}
+.round-result .down {
+  color: var(--over-strong);
+}
 .round-sub {
   font-size: var(--fs-sm);
   color: var(--muted);
