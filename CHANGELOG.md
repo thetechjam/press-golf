@@ -87,6 +87,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   team match off the low of all four, and still at most one stroke a hole.
 
 ### Changed
+- **Saved courses take one compact row each.** On Golf League the delete
+  button had dropped onto a line of its own under every course, and New Round
+  stacked name, figures and buttons on three lines. Both now show the name and
+  figures on the left with the actions at the end — about a third less height.
 - **Round cards say who won the money.** "Al won $10 · Bo & Cy paid $5"
   instead of the first game's status, and "up"/"down" mid-round. Home's cards
   no longer carry a delete; Round history, now always linked from Home, does.
