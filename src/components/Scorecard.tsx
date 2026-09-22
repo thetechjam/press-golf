@@ -15,6 +15,24 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
   const model = buildScorecard(round);
   const [editing, setEditing] = useState<{ playerId: string; holeNumber: number } | null>(null);
 
+  /**
+   * Which holes the grid draws. An eighteen-hole card at phone width showed
+   * holes 1–5 and a sideways scroll; one nine at a time fits, and the Out/In
+   * column after it still totals the nine. Opens on the nine being played, or
+   * on the whole card once the round is over and it is being read, not kept.
+   */
+  const splits = model.nines.length === 2;
+  const [view, setView] = useState<'front' | 'back' | 'all'>(() =>
+    !splits || round.status === 'finished'
+      ? 'all'
+      : (currentHole ?? 1) > model.holes.length / 2
+        ? 'back'
+        : 'front'
+  );
+  const half = model.nines[0]?.afterIndex ?? model.holes.length - 1;
+  const shown = (i: number) =>
+    !splits || view === 'all' || (view === 'front' ? i <= half : i > half);
+
   /** The subtotal column that follows hole-column `i`, if any. */
   const nineAfter = (i: number) => model.nines.find((n) => n.afterIndex === i);
 
@@ -52,12 +70,32 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
 
   return (
     <>
+    {splits && (
+      <div className="seg sc-view" role="group" aria-label="Holes shown">
+        {(
+          [
+            ['front', 'Front 9'],
+            ['back', 'Back 9'],
+            ['all', 'All 18'],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            className={`seg-btn${view === id ? ' active' : ''}`}
+            aria-pressed={view === id}
+            onClick={() => setView(id)}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    )}
     <div className="card-scroll">
       <table className="scorecard">
         <thead>
           <tr>
             <th className="sc-corner">Hole</th>
-            {model.holes.map((h, i) => (
+            {model.holes.map((h, i) => shown(i) && (
               <Fragment key={h.number}>
                 <th
                   className={`sc-hole${h.number === currentHole ? ' current' : ''}`}
@@ -73,7 +111,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
           </tr>
           <tr className="sc-par-row">
             <th className="sc-corner">Par</th>
-            {model.holes.map((h, i) => (
+            {model.holes.map((h, i) => shown(i) && (
               <Fragment key={h.number}>
                 <td>{h.par}</td>
                 {nineAfter(i) && <td className="sc-nine">{nineAfter(i)!.par}</td>}
@@ -87,7 +125,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
             <th className="sc-corner" title="Stroke index — hole difficulty rank">
               Stroke Index
             </th>
-            {model.holes.map((h, i) => (
+            {model.holes.map((h, i) => shown(i) && (
               <Fragment key={h.number}>
                 <td>{h.strokeIndex}</td>
                 {/* A stroke index is a rank, so it has no subtotal to show. */}
@@ -110,6 +148,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                 )}
               </th>
               {row.cells.map((cell, cellIndex) => {
+                if (!shown(cellIndex)) return null;
                 const tone =
                   cell.score == null
                     ? ''

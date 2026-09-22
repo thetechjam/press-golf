@@ -3183,6 +3183,15 @@ select:focus {
 }
 
 /* ---------- Scorecard grid ---------- */
+/* Front 9 / Back 9 / All 18 above the grid. The .seg look, a size down: it
+   is a view switch for the card, not the page's tabs. */
+.sc-view .seg-btn {
+  min-height: 38px;
+  font-size: var(--fs-md);
+}
+.sc-view {
+  margin-bottom: 8px;
+}
 .card-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
