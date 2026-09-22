@@ -1,17 +1,15 @@
-/** The pars a hole editor offers, always including the one already set. */
+/** The pars a hole editor steps through: golf is 3 to 6 in practice. */
 const COMMON = [3, 4, 5, 6];
 
 /**
- * Par choices for one hole's dropdown.
+ * The par a tap on a hole's tile moves to: up through 3–6 and round again.
  *
- * Golf is 3 to 6 in practice, but an imported scorecard can carry anything —
- * a 7, a 0, a stray 72 where the course total leaked into a hole. A `<select>`
- * whose options don't include its own value renders as though something else
- * were chosen, so the screen would show a par the round is not using and give
- * the user no way to correct the one it is. Folding the current value in keeps
- * the editor honest about what is stored and lets it be changed away.
+ * An imported scorecard can carry anything — a 7, a 0, a stray 72 where the
+ * course total leaked into a hole. The tile shows whatever is stored, so the
+ * screen never claims a par the round is not using, and anything outside the
+ * range goes to 3: one tap from being a real par.
  */
-export function parOptions(current: number): number[] {
-  if (COMMON.includes(current)) return COMMON;
-  return [...COMMON, current].sort((a, b) => a - b);
+export function nextPar(current: number): number {
+  const i = COMMON.indexOf(current);
+  return i === -1 ? COMMON[0] : COMMON[(i + 1) % COMMON.length];
 }

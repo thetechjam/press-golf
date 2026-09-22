@@ -66,6 +66,9 @@ const rowOpen = (label: string) =>
  */
 const callOut = () => document.querySelector('.check-note:not(.saved)');
 const keptNote = () => document.querySelector('.check-note.saved');
+/** A hole's par tile, found by the name a screen reader gives it. */
+const parTile = (hole: number) =>
+  screen.getByRole('button', { name: new RegExp(`^Par for hole ${hole}: `) });
 
 /** Picks the first course search result, from typing to loaded scorecard. */
 async function pickFromSearch(user: ReturnType<typeof userEvent.setup>) {
@@ -112,8 +115,7 @@ describe('a scorecard loaded from course search', () => {
     render(<Setup onCancel={() => {}} onStart={() => {}} />);
     await pickFromSearch(user);
 
-    const hole2 = screen.getByLabelText('Par for hole 2') as HTMLSelectElement;
-    expect(hole2.value).toBe('5');
+    expect(parTile(2).textContent).toBe('Par for hole 2: 5');
   });
 
   it('stops warning once the user overwrites the pars themselves', async () => {
@@ -145,7 +147,7 @@ describe('a scorecard the user saved themselves', () => {
 
     // Shown, because it rewrote every par on the card either way...
     await waitFor(() => expect(rowOpen('Holes & pars')).toBe(true));
-    expect(screen.getByLabelText('Par for hole 1')).toBeTruthy();
+    expect(parTile(1)).toBeTruthy();
     // ...but this is the user's own saved scorecard, not a database guess.
     expect(callOut()).toBeNull();
   });
@@ -158,7 +160,7 @@ describe('the par and stroke index fields', () => {
     await openRow(user, 'Holes & pars');
 
     // Par alone needs no caption — there is only one box under the hole number.
-    expect(screen.getByLabelText('Par for hole 7')).toBeTruthy();
+    expect(parTile(7)).toBeTruthy();
     expect(document.querySelectorAll('.par-cap')).toHaveLength(0);
 
     await user.click(screen.getByRole('button', { name: /Set hole difficulty/i }));
@@ -223,12 +225,11 @@ describe('a scorecard that arrives damaged', () => {
     render(<Setup onCancel={() => {}} onStart={() => {}} />);
     await pickFromSearch(user);
 
-    // The select shows the par the round is actually using, not a nearby one
-    // it happens to have an option for.
-    const hole3 = screen.getByLabelText('Par for hole 3') as HTMLSelectElement;
-    expect(hole3.value).toBe('12');
-    await user.selectOptions(hole3, '3');
-    expect((screen.getByLabelText('Par for hole 3') as HTMLSelectElement).value).toBe('3');
+    // The tile shows the par the round is actually using, however odd, and
+    // one tap makes it a real one.
+    expect(parTile(3).textContent).toBe('Par for hole 3: 12');
+    await user.click(parTile(3));
+    expect(parTile(3).textContent).toBe('Par for hole 3: 3');
   });
 
   it('says nothing extra when the scorecard is clean', async () => {
@@ -405,7 +406,7 @@ describe('keeping a course you have checked', () => {
     await pickFromSearch(user);
     expect(callOut()!.textContent).toMatch(/par 12/);
 
-    await user.selectOptions(screen.getByLabelText('Par for hole 3'), '3');
+    await user.click(parTile(3));
 
     // The report is re-read from the holes as they stand, not left as it was
     // at import.

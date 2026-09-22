@@ -1532,23 +1532,44 @@ select:focus {
   padding-bottom: 4px;
   border-bottom: 1px solid var(--line);
 }
-.par-cell select {
-  padding: 8px;
-  min-height: 40px;
-  text-align: center;
+/* A tap target the width of the cell, drawn like the score chips on the Hole
+   tab — the same "tap the number" gesture, so it reads as one. */
+.par-tile {
+  width: 100%;
+  min-height: 44px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-2xl);
+  font-variant-numeric: tabular-nums;
+  transition: transform var(--press) var(--ease-out);
+}
+.par-tile:active {
+  transform: scale(0.94);
 }
 
+/* Two across: the names are short and a menu of nine reads faster as a grid
+   than as a list. A card whose rules are open takes the full row, so the
+   text is not set in a half-width column. */
 .game-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+.game-card.expanded {
+  grid-column: 1 / -1;
 }
 .game-card {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   cursor: pointer;
   text-align: left;
-  padding: 14px;
+  min-height: var(--tap);
+  padding: 10px 12px;
   border-radius: var(--r-lg);
   border: 1px solid var(--line);
   background: var(--bg);
@@ -1560,7 +1581,7 @@ select:focus {
 .game-card-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 .game-info-btn {
   flex-shrink: 0;
@@ -1616,9 +1637,14 @@ select:focus {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.game-text small {
-  color: var(--muted);
-  font-size: var(--fs-xs);
+.game-text strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.game-info-text strong {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .toggle {
@@ -5176,7 +5202,9 @@ select:focus {
   .btn-primary,
   .btn-secondary,
   .bar .btn-ghost,
-  .saved-course-load {
+  .saved-course-load,
+  .par-tile,
+  .resume-card {
     transition: none;
   }
   .seg-btn,
@@ -5196,7 +5224,9 @@ select:focus {
   .sheet-close:active,
   .btn-primary:active,
   .btn-secondary:active,
-  .saved-course-load:active {
+  .saved-course-load:active,
+  .par-tile:active,
+  .resume-card:active {
     transform: none;
   }
   /* Higher specificity than the .bar .btn-ghost:active rule it overrides;

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { scorecardIssues } from './validate';
-import { parOptions } from './parOptions';
+import { nextPar } from './parOptions';
 import type { Hole } from '../types';
 
 /**
@@ -187,15 +187,14 @@ describe('a card that is valid and still not a scorecard', () => {
   });
 });
 
-describe('parOptions', () => {
-  it('offers the usual pars', () => {
-    expect(parOptions(4)).toEqual([3, 4, 5, 6]);
+describe('nextPar', () => {
+  it('steps up through the usual pars and round again', () => {
+    expect([3, 4, 5, 6].map(nextPar)).toEqual([4, 5, 6, 3]);
   });
 
-  it('includes a value from outside that range, in order', () => {
-    // Without this the select shows a par the round is not using, and offers
-    // no way to change the one it is.
-    expect(parOptions(7)).toEqual([3, 4, 5, 6, 7]);
-    expect(parOptions(0)).toEqual([0, 3, 4, 5, 6]);
+  it('sends a value from outside that range to 3', () => {
+    expect(nextPar(7)).toBe(3);
+    expect(nextPar(0)).toBe(3);
+    expect(nextPar(72)).toBe(3);
   });
 });

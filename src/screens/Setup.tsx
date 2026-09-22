@@ -5,13 +5,13 @@ import { GAMES, gameMeta } from '../games';
 import { GAME_RULES } from '../games/rules';
 import { usesHandicap, canScoreNet } from '../games/scoring';
 import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
-import { parOptions } from '../courses/parOptions';
 import { scorecardIssues } from '../courses/validate';
 import { validSlope, validRating, courseHandicap } from '../games/courseHandicap';
 import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
 import { SetupRow } from '../components/SetupRow';
+import { ParTile } from '../components/ParTile';
 import { courseSummary, holesSummary, gamesSummary, stakesSummary } from '../setupSummary';
 import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry, placePlayer } from '../roster';
 import { CrewChip, RecentChips } from '../components/RosterChips';
@@ -627,7 +627,7 @@ export function Setup({ onCancel, onStart }: Props) {
                   key={g.id}
                   role="button"
                   tabIndex={0}
-                  className={`game-card${games.includes(g.id) ? ' active' : ''}`}
+                  className={`game-card${games.includes(g.id) ? ' active' : ''}${expandedGame === g.id ? ' expanded' : ''}`}
                   onClick={() => toggleGame(g.id)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -640,7 +640,6 @@ export function Setup({ onCancel, onStart }: Props) {
                     <span className="game-check">{games.includes(g.id) ? '✓' : ''}</span>
                     <span className="game-text">
                       <strong>{g.label}</strong>
-                      <small>{g.blurb}</small>
                     </span>
                     <button
                       type="button"
@@ -655,8 +654,13 @@ export function Setup({ onCancel, onStart }: Props) {
                       ⓘ
                     </button>
                   </div>
+                  {/* The blurb lives behind the ⓘ with the rules: nine cards
+                      each carrying a sentence made this row the longest part
+                      of setup, and the name is what a regular picks by. */}
                   {expandedGame === g.id && (
-                    <p className="game-info-text">{GAME_RULES[g.id]}</p>
+                    <p className="game-info-text">
+                      <strong>{g.blurb}</strong> {GAME_RULES[g.id]}
+                    </p>
                   )}
                 </div>
               ))}
@@ -962,17 +966,7 @@ export function Setup({ onCancel, onStart }: Props) {
                 <div key={h.number} className="par-cell">
                   <span className="par-hole">{h.number}</span>
                   {advancedHoles && <span className="par-cap">Par</span>}
-                  <select
-                    value={h.par}
-                    onChange={(e) => setPar(h.number, Number(e.target.value))}
-                    aria-label={`Par for hole ${h.number}`}
-                  >
-                    {parOptions(h.par).map((p) => (
-                      <option key={p} value={p}>
-                        {p}
-                      </option>
-                    ))}
-                  </select>
+                  <ParTile hole={h.number} par={h.par} onChange={(v) => setPar(h.number, v)} />
                   {advancedHoles && (
                     <>
                       <span className="par-cap">SI</span>
