@@ -1,475 +1,475 @@
 1
-00:00:00,600 --> 00:00:02,080
+00:00:00,000 --> 00:00:01,480
 This is Press.
 
 2
-00:00:03,460 --> 00:00:05,360
+00:00:02,860 --> 00:00:04,760
 One phone keeps score for the whole
 
 3
-00:00:05,360 --> 00:00:09,880
+00:00:04,760 --> 00:00:09,280
 group — skins, Nassau, Wolf, the lot — and
 
 4
-00:00:09,880 --> 00:00:11,840
+00:00:09,280 --> 00:00:11,240
 it does the math while you play.
 
 5
-00:00:12,880 --> 00:00:16,080
+00:00:12,280 --> 00:00:15,480
 No account, no app store, nothing to
 
 6
-00:00:16,080 --> 00:00:19,680
+00:00:15,480 --> 00:00:19,080
 install. Here's a full round in four minutes.
 
 7
-00:00:20,857 --> 00:00:24,217
+00:00:19,368 --> 00:00:22,728
 Start New Round, and type everyone in.
 
 8
-00:00:25,117 --> 00:00:27,357
+00:00:23,628 --> 00:00:25,868
 Handicap goes in the box beside the
 
 9
-00:00:27,357 --> 00:00:30,717
+00:00:25,868 --> 00:00:29,228
 name — that's what every net score in
 
 10
-00:00:30,717 --> 00:00:31,917
+00:00:29,228 --> 00:00:30,428
 the round comes off.
 
 11
-00:00:32,897 --> 00:00:35,617
+00:00:31,408 --> 00:00:34,128
 Press remembers your regular crew, so next
 
 12
-00:00:35,617 --> 00:00:37,297
+00:00:34,128 --> 00:00:35,808
 week this is one tap.
 
 13
-00:00:38,637 --> 00:00:41,697
+00:00:36,934 --> 00:00:39,994
 Open Course. Search for it and Press
 
 14
-00:00:41,697 --> 00:00:43,317
+00:00:39,994 --> 00:00:41,614
 pulls in the pars and the stroke
 
 15
-00:00:43,317 --> 00:00:46,037
+00:00:41,614 --> 00:00:44,334
 indexes, or load one you saved earlier.
 
 16
-00:00:46,857 --> 00:00:48,657
+00:00:45,154 --> 00:00:46,954
 Either way the card opens right here —
 
 17
-00:00:48,657 --> 00:00:51,057
+00:00:46,954 --> 00:00:49,354
 and search data gets read before you
 
 18
-00:00:51,057 --> 00:00:53,137
+00:00:49,354 --> 00:00:51,434
 see it, so anything that looks off
 
 19
-00:00:53,137 --> 00:00:55,737
+00:00:51,434 --> 00:00:54,034
 is flagged. Check it against the real
 
 20
-00:00:55,737 --> 00:00:57,937
+00:00:54,034 --> 00:00:56,234
 card once, then save it.
 
 21
-00:00:57,937 --> 00:01:02,917
+00:00:56,234 --> 00:01:01,214
 Everything downstream — every stroke anybody gets — comes
 
 22
-00:01:02,917 --> 00:01:04,337
+00:01:01,214 --> 00:01:02,634
 off these eighteen numbers.
 
 23
-00:01:05,637 --> 00:01:07,797
+00:01:03,034 --> 00:01:05,194
 Games is where the money starts.
 
 24
-00:01:08,777 --> 00:01:09,677
+00:01:06,174 --> 00:01:07,074
 Tap what you're playing.
 
 25
-00:01:10,697 --> 00:01:13,237
+00:01:08,094 --> 00:01:10,634
 Every format carries its own rules behind
 
 26
-00:01:13,237 --> 00:01:16,317
+00:01:10,634 --> 00:01:13,714
 the info button — so when somebody at
 
 27
-00:01:16,317 --> 00:01:18,397
+00:01:13,714 --> 00:01:15,794
 the table has never played Wolf, you
 
 28
-00:01:18,397 --> 00:01:19,617
+00:01:15,794 --> 00:01:17,014
 don't have to be the one who
 
 29
-00:01:19,617 --> 00:01:20,277
+00:01:17,014 --> 00:01:17,674
 explains it.
 
 30
-00:01:21,493 --> 00:01:23,353
+00:01:18,001 --> 00:01:19,861
 The full list:
 
 31
-00:01:24,653 --> 00:01:28,153
+00:01:21,161 --> 00:01:24,661
 stroke play, match play — singles or two-man
 
 32
-00:01:28,153 --> 00:01:33,793
+00:01:24,661 --> 00:01:30,301
 best ball — skins, Stableford, Wolf, Vegas with
 
 33
-00:01:33,793 --> 00:01:37,113
+00:01:30,301 --> 00:01:33,621
 the birdie flip, Quota, Nassau with presses,
 
 34
-00:01:38,033 --> 00:01:40,273
+00:01:34,541 --> 00:01:36,781
 and a Thursday-night league format with A
 
 35
-00:01:40,273 --> 00:01:42,493
+00:01:36,781 --> 00:01:39,001
 and B singles plus a combined team
 
 36
-00:01:42,493 --> 00:01:45,393
+00:01:39,001 --> 00:01:41,901
 match. Net runs through all of it:
 
 37
-00:01:45,953 --> 00:01:48,033
+00:01:42,461 --> 00:01:44,541
 one stroke per hole down the stroke
 
 38
-00:01:48,033 --> 00:01:50,253
+00:01:44,541 --> 00:01:46,761
 index, a second one on the hardest
 
 39
-00:01:50,253 --> 00:01:52,733
+00:01:46,761 --> 00:01:49,241
 holes when somebody's playing off more than
 
 40
-00:01:52,733 --> 00:01:55,573
+00:01:49,241 --> 00:01:52,081
 eighteen. Set a game to gross to
 
 41
-00:01:55,573 --> 00:01:57,393
+00:01:52,081 --> 00:01:53,901
 play it off the card, or cut
 
 42
-00:01:57,393 --> 00:01:59,373
+00:01:53,901 --> 00:01:55,881
 the allowance the way the format asks.
 
 43
-00:02:00,593 --> 00:02:03,353
+00:01:56,201 --> 00:01:58,961
 Money sets the stake per game.
 
 44
-00:02:04,313 --> 00:02:06,533
+00:01:59,921 --> 00:02:02,141
 Five a skin, twenty on the Nassau.
 
 45
-00:02:07,273 --> 00:02:09,333
+00:02:02,881 --> 00:02:04,941
 Leave it blank and you're playing for
 
 46
-00:02:09,333 --> 00:02:12,173
+00:02:04,941 --> 00:02:07,781
 nothing — and you can change it mid-round
 
 47
-00:02:12,173 --> 00:02:12,873
+00:02:07,781 --> 00:02:08,481
 from the Board.
 
 48
-00:02:14,171 --> 00:02:17,071
+00:02:08,879 --> 00:02:11,779
 Start Round, and this is where you
 
 49
-00:02:17,071 --> 00:02:18,751
+00:02:11,779 --> 00:02:13,459
 live for the next four hours.
 
 50
-00:02:19,851 --> 00:02:26,091
+00:02:14,559 --> 00:02:20,799
 Hole number, par, one row per player.
 
 51
-00:02:27,511 --> 00:02:29,931
+00:02:22,219 --> 00:02:24,639
 Tap the score — par is the chip
 
 52
-00:02:29,931 --> 00:02:32,271
+00:02:24,639 --> 00:02:26,979
 in the middle, and the dots beside
 
 53
-00:02:32,271 --> 00:02:34,391
+00:02:26,979 --> 00:02:29,099
 a name are the strokes they're getting
 
 54
-00:02:34,391 --> 00:02:35,011
+00:02:29,099 --> 00:02:29,719
 on this hole.
 
 55
-00:02:35,551 --> 00:02:37,651
+00:02:30,259 --> 00:02:32,359
 The strip across the top is your
 
 56
-00:02:37,651 --> 00:02:41,571
+00:02:32,359 --> 00:02:36,279
 eighteen; filled means done.
 
 57
-00:02:43,017 --> 00:02:44,457
+00:02:36,827 --> 00:02:38,267
 The line at the top is the
 
 58
-00:02:44,457 --> 00:02:46,637
+00:02:38,267 --> 00:02:40,447
 money, live, all round.
 
 59
-00:02:47,477 --> 00:02:49,357
+00:02:41,287 --> 00:02:43,167
 Close out a hole and it tells
 
 60
-00:02:49,357 --> 00:02:52,417
+00:02:43,167 --> 00:02:46,227
 you exactly what just changed hands, and
 
 61
-00:02:52,417 --> 00:02:53,297
+00:02:46,227 --> 00:02:47,107
 who it came from.
 
 62
-00:02:54,560 --> 00:02:57,880
+00:02:48,081 --> 00:02:51,401
 Greenies, sandies, barkies — claim them on the
 
 63
-00:02:57,880 --> 00:02:59,740
+00:02:51,401 --> 00:02:53,261
 hole and they land on the card,
 
 64
-00:03:00,160 --> 00:03:03,520
+00:02:53,681 --> 00:02:57,041
 priced. Wolf picks its partner right here
 
 65
-00:03:03,520 --> 00:03:05,000
+00:02:57,041 --> 00:02:58,521
 before anybody's hit.
 
 66
-00:03:06,380 --> 00:03:08,180
+00:02:59,901 --> 00:03:01,701
 Nassau presses too:
 
 67
-00:03:08,180 --> 00:03:10,720
+00:03:01,701 --> 00:03:04,241
 take one by hand, or set it
 
 68
-00:03:10,720 --> 00:03:12,820
+00:03:04,241 --> 00:03:06,341
 to press automatically when a side goes
 
 69
-00:03:12,820 --> 00:03:13,460
+00:03:06,341 --> 00:03:06,981
 two down.
 
 70
-00:03:15,120 --> 00:03:17,940
+00:03:07,741 --> 00:03:10,561
 The Board tab is every game at
 
 71
-00:03:17,940 --> 00:03:22,300
+00:03:10,561 --> 00:03:14,921
 once — who's up in the match, who's
 
 72
-00:03:22,300 --> 00:03:25,780
+00:03:14,921 --> 00:03:18,401
 holding skins, where the money actually sits.
 
 73
-00:03:26,780 --> 00:03:28,860
+00:03:19,401 --> 00:03:21,481
 Somebody gave you the wrong handicap on
 
 74
-00:03:28,860 --> 00:03:32,700
+00:03:21,481 --> 00:03:25,321
 the first tee? Fix it here and
 
 75
-00:03:32,700 --> 00:03:35,260
+00:03:25,321 --> 00:03:27,881
 every board behind it recalculates.
 
 76
-00:03:36,460 --> 00:03:39,860
+00:03:28,181 --> 00:03:31,581
 Card is the whole scorecard, eighteen across.
 
 77
-00:03:41,000 --> 00:03:42,900
+00:03:32,721 --> 00:03:34,621
 Tap a number to fix it, tap
 
 78
-00:03:42,900 --> 00:03:45,100
+00:03:34,621 --> 00:03:36,821
 a hole to jump straight back to it.
 
 79
-00:03:46,295 --> 00:03:48,895
+00:03:39,221 --> 00:03:41,821
 Finish the round and Press settles it.
 
 80
-00:03:49,735 --> 00:03:53,435
+00:03:42,661 --> 00:03:46,361
 Winner up top, then the superlatives — Shot
 
 81
-00:03:53,435 --> 00:03:56,535
+00:03:46,361 --> 00:03:49,461
 of the Day, The Snowman, The ATM,
 
 82
-00:03:57,455 --> 00:04:00,255
+00:03:50,381 --> 00:03:53,181
 Sandbagger — and each one cites the number
 
 83
-00:04:00,255 --> 00:04:03,175
+00:03:53,181 --> 00:03:56,101
 it's based on, so the argument is short.
 
 84
-00:04:05,220 --> 00:04:07,740
+00:03:57,245 --> 00:03:59,765
 Then the bit that normally takes ten
 
 85
-00:04:07,740 --> 00:04:08,960
+00:03:59,765 --> 00:04:00,985
 minutes in the car park.
 
 86
-00:04:10,060 --> 00:04:12,340
+00:04:02,085 --> 00:04:04,365
 Press resolves the whole group into the
 
 87
-00:04:12,340 --> 00:04:14,440
+00:04:04,365 --> 00:04:06,465
 fewest payments that settle it.
 
 88
-00:04:15,480 --> 00:04:18,100
+00:04:07,505 --> 00:04:10,125
 Three people pay, not twelve.
 
 89
-00:04:20,680 --> 00:04:22,840
+00:04:11,805 --> 00:04:13,965
 Share gives you the scoreboard as an
 
 90
-00:04:22,840 --> 00:04:25,340
+00:04:13,965 --> 00:04:16,465
 image, or the full card as an
 
 91
-00:04:25,340 --> 00:04:28,220
+00:04:16,465 --> 00:04:19,345
 image — both straight into the group chat.
 
 92
-00:04:29,147 --> 00:04:31,347
+00:04:20,272 --> 00:04:21,739
 And underneath, the round itself.
 
 93
-00:04:32,647 --> 00:04:34,707
+00:04:23,039 --> 00:04:25,099
 The whole thing is packed into the
 
 94
-00:04:34,707 --> 00:04:37,447
+00:04:25,099 --> 00:04:27,839
 link — point another phone's camera at the
 
 95
-00:04:37,447 --> 00:04:39,707
+00:04:27,839 --> 00:04:30,099
 code and it opens in their copy
 
 96
-00:04:39,707 --> 00:04:42,487
+00:04:30,099 --> 00:04:32,879
 of Press. Nothing is uploaded.
 
 97
-00:04:43,087 --> 00:04:44,607
+00:04:33,479 --> 00:04:34,999
 No server ever sees it.
 
 98
-00:04:45,107 --> 00:04:47,547
+00:04:35,499 --> 00:04:38,939
 On their phone it arrives held — sent
 
 99
-00:04:47,547 --> 00:04:50,687
+00:04:38,939 --> 00:04:42,079
 to you, not saved — until they tap
 
 100
-00:04:50,687 --> 00:04:54,267
+00:04:42,079 --> 00:04:45,659
 Keep it. Mid-round, the same link hands
 
 101
-00:04:54,267 --> 00:04:56,287
+00:04:45,659 --> 00:04:47,679
 the card over and they carry on
 
 102
-00:04:56,287 --> 00:04:57,747
+00:04:47,679 --> 00:04:49,139
 scoring from where you stopped.
 
 103
-00:04:58,417 --> 00:04:59,867
+00:04:49,809 --> 00:04:51,259
 And if you both end up keeping
 
 104
-00:04:59,867 --> 00:05:02,327
+00:04:51,259 --> 00:04:53,719
 score, Press puts the two cards side
 
 105
-00:05:02,327 --> 00:05:04,367
+00:04:53,719 --> 00:04:55,759
 by side and asks which one is
 
 106
-00:05:04,367 --> 00:05:06,827
+00:04:55,759 --> 00:04:58,219
 real, instead of picking one on a timestamp.
 
 107
-00:05:08,247 --> 00:05:09,607
+00:04:59,639 --> 00:05:00,098
 Which brings us to the thing that
 
 108
-00:05:09,607 --> 00:05:11,267
+00:05:00,098 --> 00:05:01,758
 actually matters out on the course.
 
 109
-00:05:12,487 --> 00:05:16,087
+00:05:02,978 --> 00:05:06,578
 Watch: I'm killing the network completely.
 
 110
-00:05:17,467 --> 00:05:20,607
+00:05:07,958 --> 00:05:11,098
 Reload. Still there, still scoring.
 
 111
-00:05:21,547 --> 00:05:24,547
+00:05:12,038 --> 00:05:15,038
 Every round, every saved course, every bit
 
 112
-00:05:24,547 --> 00:05:26,407
+00:05:15,038 --> 00:05:16,898
 of history lives on your phone.
 
 113
-00:05:27,287 --> 00:05:30,407
+00:05:17,778 --> 00:05:20,898
 That's the privacy story too — there's no
 
 114
-00:05:30,407 --> 00:05:33,167
+00:05:20,898 --> 00:05:23,658
 account to make, and nothing to leak.
 
 115
-00:05:34,427 --> 00:05:36,587
+00:05:24,918 --> 00:05:26,178
 Add it to your home screen and
 
 116
-00:05:36,587 --> 00:05:38,447
+00:05:26,178 --> 00:05:28,038
 it opens like anything else on your
 
 117
-00:05:38,447 --> 00:05:44,747
+00:05:28,038 --> 00:05:34,338
 phone. It's free, it's at pressgolf.netlify.app, link's
 
 118
-00:05:44,747 --> 00:05:45,527
+00:05:34,338 --> 00:05:35,118
 in the description.
 
 119
-00:05:46,607 --> 00:05:47,727
+00:05:36,198 --> 00:05:37,318
 Now go take their money.

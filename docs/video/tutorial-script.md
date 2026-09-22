@@ -219,18 +219,28 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 
 ## The cut
 
-**https://d2ol7oe51mr4n9.cloudfront.net/user_3F6bhk8rFTvZgCk36sr2niTWDCv/70536771-c961-4066-86c5-1cfb79aaa995.mp4**
+**https://d2ol7oe51mr4n9.cloudfront.net/user_3F6bhk8rFTvZgCk36sr2niTWDCv/eae6f4fc-8e77-4938-aba7-28bd72a1afd7.mp4**
 
-1920×1080, 5:39, 24MB, H.264/AAC, captions burned in. Assembled 2026-09-17 from
-the eighteen takes, the seventeen gated narration clips, and
-`press-tutorial.srt`. Ready to upload; the description and chapter marks are
-below.
+1920×1080, 5:39, 24MB, H.264/AAC, scene titles in Oswald, captions burned in.
+Assembled 2026-09-22 from the eighteen takes, the seventeen gated narration
+clips and `press-tutorial.srt`. Ready to upload; the description and chapter
+marks are below.
 
 This link is the only durable copy. Earlier cuts were assembled in a sandbox
-that is discarded seconds after the command finishes, which is how the previous
+that is discarded seconds after the command finishes, which is how a previous
 version of this video came to exist nowhere at all — the one artifact the whole
 pipeline is for was the one thing never saved. Re-export and re-link after any
 re-cut.
+
+Oswald is not installed in that sandbox and has to be fetched each time:
+
+```
+curl -sSL -o ~/.fonts/Oswald.ttf \
+  'https://github.com/google/fonts/raw/main/ofl/oswald/Oswald%5Bwght%5D.ttf' && fc-cache -f
+```
+
+Skip it and `fc-match` falls back to Montserrat without complaining, which is
+how the first cut of this video shipped in the wrong typeface.
 
 ## How the cut was made
 
@@ -258,6 +268,13 @@ the finished file, transcribe them, and compare each against whichever cue the
 SRT puts on screen over the same span. Spread the probes across the whole
 runtime, because the failure is drift that accumulates — a single probe near
 the start passes on a video that is badly out by the end.
+
+And then **write the corrected file back to the repo.** The first time this was
+fixed it was fixed in the sandbox, burned into the video, and left there: the
+video was right and `press-tutorial.srt` in git was the uncorrected one, up to
+ten seconds adrift from the audio it describes. A caption track is a separate
+deliverable from the burned-in one — it is what gets uploaded alongside the
+video — so it is not done until it is committed.
 
 That last row is deliberate, and it hides the one defect this video shipped
 with. Taking the cue text from the script means the captions are always right —
