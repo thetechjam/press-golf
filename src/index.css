@@ -1851,6 +1851,21 @@ select:focus {
   border-color: var(--fairway);
 }
 
+/* The one-line note under the scores (skins carried onto this hole). Gold,
+   the app's colour for what is in play. */
+.hole-note {
+  margin: 8px 2px 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-align: center;
+}
+.hole-note strong {
+  color: var(--gold-ink);
+  font-weight: 700;
+}
+.hole-par abbr {
+  text-decoration: none;
+}
 .steppers {
   display: flex;
   flex-direction: column;
@@ -2950,12 +2965,28 @@ select:focus {
     animation: none;
   }
 }
-.hcp-dots {
-  color: var(--gold-ink);
-  font-size: var(--fs-2xs);
+/* A handicap stroke on this hole. Gold, the colour the Card tab's stroke dots
+   already use, on a gold tint so it reads as a badge rather than as more of
+   the name. --gold-ink on the 20% mix: 5.5:1 light, 5.6:1 dark. */
+.stroke-pip {
+  flex-shrink: 0;
   margin-left: 6px;
-  letter-spacing: 1px;
-  vertical-align: middle;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--gold) 20%, var(--card));
+  color: var(--gold-ink);
+  font-family: var(--font-display);
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+/* Under 360px the name needs the room; "+1" beside "HCP 14" still says it. */
+@media (max-width: 359px) {
+  .stroke-pip-word {
+    display: none;
+  }
 }
 .stepper-hcp {
   flex-shrink: 0;

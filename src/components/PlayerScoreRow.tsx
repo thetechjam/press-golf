@@ -94,9 +94,18 @@ export function PlayerScoreRow({
             ))}
           </span>
         )}
+        {/* Spelled out rather than a dot: "who gets one here?" is asked on
+            every hole, and a dot was only explained by the legend on the
+            Card tab. */}
         {!matchStrokes && strokesReceived > 0 && (
-          <span className="hcp-dots" aria-label={`${strokesReceived} handicap strokes`}>
-            {'•'.repeat(strokesReceived)}
+          <span
+            className="stroke-pip"
+            aria-label={`Gets ${strokesReceived} handicap stroke${strokesReceived === 1 ? '' : 's'} here`}
+          >
+            +{strokesReceived}
+            <span className="stroke-pip-word" aria-hidden="true">
+              {strokesReceived === 1 ? ' shot' : ' shots'}
+            </span>
           </span>
         )}
         {/* Display only — the chips are the control. Must not be styled as one. */}

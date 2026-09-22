@@ -103,3 +103,22 @@ export function computeSkins(round: Round): GameResult {
           : `${died} died on the ${ordinal(lastHole)} — nobody won ${carry === 1 ? 'it' : 'them'}`,
   };
 }
+
+/**
+ * How many skins the given hole is worth: one, plus whatever the holes before
+ * it carried in. Walks the card exactly as computeSkins does — in hole order,
+ * skipping any hole without a full set of scores — so the number shown on the
+ * hole is the number the engine will pay out when it is won.
+ */
+export function skinsOnHole(round: Round, holeNumber: number): number {
+  const useNet = netFor(round, 'skins');
+  let carry = 0;
+  for (const h of round.holes) {
+    if (h.number === holeNumber) break;
+    const scores = round.players.map((p) => holeScore(round, p.id, h, useNet, 'skins'));
+    if (scores.some((s) => s == null)) continue;
+    const best = Math.min(...(scores as number[]));
+    carry = scores.filter((s) => s === best).length === 1 ? 0 : carry + 1;
+  }
+  return carry + 1;
+}

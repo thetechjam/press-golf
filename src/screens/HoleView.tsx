@@ -8,6 +8,7 @@ import { VegasStrip } from '../components/VegasStrip';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
 import { anyNetScoring } from '../games/scoring';
 import { leagueStrokesOnHole } from '../games/league';
+import { skinsOnHole } from '../games/skins';
 import { playerColor } from '../player';
 import { useEdgeFade } from '../useEdgeFade';
 
@@ -73,6 +74,10 @@ export function HoleView({
   // League strokes are per-match off three different baselines, so a single dot
   // count would be ambiguous — chips name the matches instead. See the spec.
   const chips = round.options.league ? leagueStrokesOnHole(round, hole) : null;
+  // A carried pot is the loudest thing about a hole in a skins game and it was
+  // only on the Board. Worth a line under the scores once it is more than the
+  // one skin every hole carries.
+  const riding = round.games.includes('skins') ? skinsOnHole(round, hole.number) : 1;
 
   return (
     <div className="hole-view" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
@@ -80,7 +85,15 @@ export function HoleView({
         <button className="nav-arrow" onClick={() => onGo(idx - 1)} disabled={idx === 0} aria-label="Previous hole">‹</button>
         <div className="hole-head">
           <div className="hole-num">Hole {hole.number}</div>
-          <div className="hole-par">Par {hole.par}</div>
+          <div className="hole-par">
+            Par {hole.par}
+            {hole.strokeIndex != null && (
+              <>
+                {' · '}
+                <abbr title="Stroke index">SI</abbr> {hole.strokeIndex}
+              </>
+            )}
+          </div>
         </div>
         <button className="nav-arrow" onClick={() => onGo(idx + 1)} disabled={last} aria-label="Next hole">›</button>
       </div>
@@ -129,6 +142,11 @@ export function HoleView({
             />
           ))}
         </section>
+        {riding > 1 && (
+          <p className="hole-note">
+            <strong>{riding} skins</strong> on the line — {riding - 1} carried in
+          </p>
+        )}
       </div>
     </div>
   );
