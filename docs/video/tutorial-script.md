@@ -32,6 +32,12 @@ instead of editing them.
 > Wolf, the lot — and it does the math while you play. No account, no app
 > store, nothing to install. Here's a full round in four minutes.
 
+⚠️ **"four minutes" is wrong, and it is wrong in the published video.** The cut
+runs 5:39. The line was written against an earlier, shorter edit and nobody
+re-checked it when the narration was regenerated and the scenes grew. It is not
+worth a re-upload on its own — but if this is ever re-cut for another reason,
+fix it first. "Here's a full round in under six minutes" scans the same.
+
 ## 02 · Players (0:19–0:36)
 
 *Start New Round. Four names typed in, a handicap beside each.*

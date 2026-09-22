@@ -243,11 +243,10 @@ Still open on the live video:
       re-voice of one clip and a re-cut, then a new upload: YouTube cannot
       swap the file on an existing video.
 
-Where the video wants linking from, none of which is done:
+Where the video is linked from:
 
-- [ ] The app — Settings has a "How to Play" sheet, which is the obvious place
-      for it.
-- [ ] `README.md`, which does not mention the video at all.
+- [x] The app — a row at the top of Settings → How to Play.
+- [x] `README.md`, under the live-app link.
 
 ---
 
