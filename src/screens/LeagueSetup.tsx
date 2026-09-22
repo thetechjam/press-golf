@@ -6,7 +6,6 @@ import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
-import { validSlope, validRating, courseHandicap } from '../games/courseHandicap';
 import { StarIcon, XIcon, GearIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { SetupRow } from '../components/SetupRow';
@@ -32,15 +31,22 @@ const makeHoles = (nine: Nine): Hole[] => {
 
 const newPlayer = (): Player => ({ id: uid(), name: '', handicap: undefined });
 
+/** Whether a team's B player has the lower handicap, and so will play A. */
+const swapped = (t: TeamState): boolean =>
+  t.a.handicap != null && t.b.handicap != null && t.b.handicap < t.a.handicap;
+
+/** The team with its lower handicap in the A slot. */
+const inOrder = (t: TeamState): TeamState => (swapped(t) ? { a: t.b, b: t.a } : t);
+
 export function LeagueSetup({ onCancel, onStart }: Props) {
   const [course, setCourse] = useState('');
   /**
-   * The course's slope and rating, and how many holes that rating covers.
-   *
-   * `ratingHoles` earns its place here more than anywhere: a league night is
-   * nine holes off a course almost always rated over eighteen, so without it
-   * the figure loaded from a saved card is judged against nine holes, fails as
-   * implausible, and every player falls back to a typed stroke count.
+   * The course's slope and rating, carried only so saving a course from here
+   * does not wipe figures it already had. A league night does not use them:
+   * league handicaps are the league's own stroke counts (90% of a player's
+   * recent average over par), not a Handicap Index to convert, so the screen
+   * no longer asks for either — entered, they turned every league handicap
+   * into the wrong number.
    */
   const [slope, setSlope] = useState<number | undefined>();
   const [rating, setRating] = useState<number | undefined>();
@@ -145,27 +151,19 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
     if (allPlayers.some((p) => !p.name.trim()))
       return setError('Name all four players (A and B on each team).');
     // A number to score off is mandatory for a league: every match (A, B,
-    // Team) is net, so a blank must not silently become scratch. Which number
-    // depends on the field actually on screen — on a rated nine that is the
-    // Index, and demanding a stroke count there made the round unstartable.
-    const figure = (p: TeamState['a']) => (rated ? p.index : p.handicap);
-    if (allPlayers.some((p) => figure(p) == null || Number.isNaN(figure(p) as number))) {
-      return setError(
-        rated
-          ? 'Enter a Handicap Index for all four players — league scoring needs it.'
-          : 'Enter a handicap for all four players — league scoring needs it.'
-      );
+    // Team) is net, so a blank must not silently become scratch.
+    if (allPlayers.some((p) => p.handicap == null || Number.isNaN(p.handicap))) {
+      return setError('Enter a handicap for all four players — league scoring needs it.');
     }
 
-    const players: Player[] = allPlayers.map((p) => ({
-      id: p.id,
-      name: p.name.trim(),
-      // Both are carried when present: `courseHandicapFor` prefers the Index
-      // where the course can convert it and falls back to the stroke count,
-      // so a round stays scoreable if its rating is later found to be wrong.
-      handicap: p.handicap,
-      index: p.index,
-    }));
+    // League rule: the low handicap players of each team are matched against
+    // each other. So the lower of each pair plays A, whichever slot they were
+    // typed into; a tie keeps the order entered. The player list follows, so
+    // the Hole tab reads A, B, A, B like the setup did.
+    const ordered = teams.map((t) => inOrder(t));
+    const players: Player[] = ordered
+      .flatMap((t) => [t.a, t.b])
+      .map((p) => ({ id: p.id, name: p.name.trim(), handicap: p.handicap }));
 
     // Rotate holes into play order so the round starts on the chosen hole
     // (e.g. start on 5 → 5,6,7,8,9,1,2,3,4). Navigation, resume, and the
@@ -188,36 +186,17 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
           // League standard: each match (A, B, Team) is worth 1 point.
           pointsPerMatch: 1,
           teams: [
-            { aId: teams[0].a.id, bId: teams[0].b.id },
-            { aId: teams[1].a.id, bId: teams[1].b.id },
+            { aId: ordered[0].a.id, bId: ordered[0].b.id },
+            { aId: ordered[1].a.id, bId: ordered[1].b.id },
           ],
         },
       },
       scores: {},
       wolf: {},
       presses: [],
-      slope: rated ? slope : undefined,
-      rating: rated ? rating : undefined,
-      ratingHoles: rated ? ratingHoles : undefined,
       status: 'in_progress',
     };
     onStart(round);
-  };
-
-  // Judged against the holes the rating covers, not the nine being played.
-  const ratedHoles = ratingHoles ?? holes.length;
-  const rated = validSlope(slope) && validRating(rating, ratedHoles);
-  /** What a player's Index is worth over this nine, for showing beside the field. */
-  const derivedHandicap = (index: number | undefined): number | null => {
-    if (!rated || index == null || Number.isNaN(index)) return null;
-    return courseHandicap({
-      index,
-      slope: slope as number,
-      rating: rating as number,
-      ratingHoles: ratedHoles,
-      playingHoles: holes.length,
-      playingPar: holes.reduce((sum, h) => sum + h.par, 0),
-    });
   };
 
   const siProblem = strokeIndexProblem(holes);
@@ -284,98 +263,33 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
                 placeholder={`${role.toUpperCase()} player`}
                 aria-label={`Name of team ${ti + 1}'s ${role.toUpperCase()} player`}
               />
-              {/* A rated nine can work the strokes out, so the field asks for
-                  the number the player carries between courses and shows what
-                  it is worth here — the same trade as New Round. League's own
-                  rules then run on the result: the low man of the match is
-                  subtracted from it, and the cap still allows one a hole. */}
-              {rated ? (
-                <span className="player-index">
-                  <input
-                    className="player-hcp"
-                    type="number"
-                    inputMode="decimal"
-                    step="0.1"
-                    value={t[role].index ?? ''}
-                    onChange={(e) =>
-                      updatePlayer(ti, role, {
-                        index: e.target.value === '' ? undefined : Number(e.target.value),
-                      })
-                    }
-                    placeholder="Index"
-                    aria-label={`Handicap Index for team ${ti + 1}'s ${role.toUpperCase()} player`}
-                  />
-                  {derivedHandicap(t[role].index) != null && (
-                    <span
-                      className="player-derived"
-                      aria-label={`Plays off ${derivedHandicap(t[role].index)} on this nine`}
-                    >
-                      <span aria-hidden="true" className="player-derived-arrow">
-                        →
-                      </span>
-                      {derivedHandicap(t[role].index)}
-                    </span>
-                  )}
-                </span>
-              ) : (
-                <input
-                  className="player-hcp"
-                  type="number"
-                  inputMode="numeric"
-                  value={t[role].handicap ?? ''}
-                  onChange={(e) =>
-                    updatePlayer(ti, role, {
-                      handicap: e.target.value === '' ? undefined : Number(e.target.value),
-                    })
-                  }
-                  placeholder="HCP"
-                  aria-label={`Handicap for team ${ti + 1}'s ${role.toUpperCase()} player`}
-                />
-              )}
+              <input
+                className="player-hcp"
+                type="number"
+                inputMode="numeric"
+                value={t[role].handicap ?? ''}
+                onChange={(e) =>
+                  updatePlayer(ti, role, {
+                    handicap: e.target.value === '' ? undefined : Number(e.target.value),
+                  })
+                }
+                placeholder="HCP"
+                aria-label={`Handicap for team ${ti + 1}'s ${role.toUpperCase()} player`}
+              />
             </div>
           ))}
+          {swapped(t) && (
+            <p className="hint-inline" role="status">
+              {t.b.name.trim() || 'The B player'} has the lower handicap, so plays A — the low
+              handicaps of each team play each other.
+            </p>
+          )}
         </section>
       ))}
 
       <section className="card">
         <h2>Course · {nine === 'back' ? 'Back 9 (holes 10–18)' : 'Front 9 (holes 1–9)'}</h2>
 
-        <div className="rating-row">
-          <label className="field small">
-            <span>Slope</span>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={55}
-              max={155}
-              value={slope ?? ''}
-              onChange={(e) => setSlope(e.target.value === '' ? undefined : Number(e.target.value))}
-              placeholder="113"
-            />
-          </label>
-          <label className="field small">
-            <span>Rating</span>
-            <input
-              type="number"
-              inputMode="decimal"
-              step="0.1"
-              value={rating ?? ''}
-              onChange={(e) => {
-                setRating(e.target.value === '' ? undefined : Number(e.target.value));
-                // Typed here, it is the rating for the nine on screen.
-                setRatingHoles(holes.length);
-              }}
-              placeholder={`${holes.length * 4}.0`}
-            />
-          </label>
-        </div>
-        <p className="hint-inline">
-          {rated
-            ? ratedHoles === holes.length
-              ? 'Handicap Index converts to strokes for this nine.'
-              : `Rated over ${ratedHoles} holes — an Index converts to strokes for this nine.`
-            : 'Optional — off the card. With both, players can enter a Handicap Index instead of working out their own strokes.'}
-        </p>
         <div className="seg">
           {(['front', 'back'] as const).map((n) => (
             <button

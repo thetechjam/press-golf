@@ -33,9 +33,12 @@ export function nextValue(current: number | null, tapped: number): number | null
   return current === tapped ? null : tapped;
 }
 
-/** Every legal score, for the overflow grid behind the "…" chip. */
-export function overflowRange(): number[] {
-  return Array.from({ length: SCORE_MAX - SCORE_MIN + 1 }, (_, i) => SCORE_MIN + i);
+/**
+ * Every legal score, for the overflow grid behind the "…" chip. `max` lowers
+ * the ceiling where a format has one (a league hole tops out at 9).
+ */
+export function overflowRange(max = SCORE_MAX): number[] {
+  return Array.from({ length: max - SCORE_MIN + 1 }, (_, i) => SCORE_MIN + i);
 }
 
 /**

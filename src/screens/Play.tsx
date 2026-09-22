@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { JunkClaims, Round, WolfChoice } from '../types';
+import { LEAGUE_MAX_SCORE, pickedUp } from '../games/league';
 import { Leaderboard } from '../components/Leaderboard';
 import { Scorecard } from '../components/Scorecard';
 import { LeagueBoard } from '../components/LeagueBoard';
@@ -75,10 +76,45 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     setIdx(clamped);
   };
 
+  /** The round's pick-ups with this player's on this hole set or cleared. */
+  const pickupsWith = (holeNumber: number, playerId: string, on: boolean) => {
+    const here = (round.pickups?.[holeNumber] ?? []).filter((id) => id !== playerId);
+    const next = { ...(round.pickups ?? {}), [holeNumber]: on ? [...here, playerId] : here };
+    if (!next[holeNumber].length) delete next[holeNumber];
+    return Object.keys(next).length ? next : undefined;
+  };
+
   const setScoreAt = (holeNumber: number, playerId: string, value: number | null) => {
     setWarn(null);
-    const holeScores = { ...(round.scores[holeNumber] ?? {}), [playerId]: value };
-    onChange({ ...round, scores: { ...round.scores, [holeNumber]: holeScores } });
+    // League rule: nothing over a 9. The engine caps too; this keeps the card
+    // honest about what was scored.
+    const capped =
+      round.options.league && value != null ? Math.min(value, LEAGUE_MAX_SCORE) : value;
+    const holeScores = { ...(round.scores[holeNumber] ?? {}), [playerId]: capped };
+    const next: Round = { ...round, scores: { ...round.scores, [holeNumber]: holeScores } };
+    // A number entered over an X replaces it: the player did hole out after all.
+    if (pickedUp(round, holeNumber, playerId)) next.pickups = pickupsWith(holeNumber, playerId, false);
+    onChange(next);
+  };
+
+  /**
+   * League: toggle a pick-up. An X is recorded as the league maximum of 9, so
+   * the hole counts as scored and totals stay sane; the flag is what makes
+   * the league engine treat it as a forfeited hole. Toggling it off clears the
+   * score as well, back to a blank.
+   */
+  const togglePickup = (playerId: string) => {
+    setWarn(null);
+    const on = !pickedUp(round, hole.number, playerId);
+    const holeScores = {
+      ...(round.scores[hole.number] ?? {}),
+      [playerId]: on ? LEAGUE_MAX_SCORE : null,
+    };
+    onChange({
+      ...round,
+      scores: { ...round.scores, [hole.number]: holeScores },
+      pickups: pickupsWith(hole.number, playerId, on),
+    });
   };
 
   const setScore = (playerId: string, value: number | null) =>
@@ -216,6 +252,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           holeComplete={holeComplete}
           onGo={go}
           onScore={setScore}
+          onPickup={togglePickup}
           onWolf={setWolf}
           onPresses={setPresses}
           onJunk={setJunk}

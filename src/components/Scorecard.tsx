@@ -2,6 +2,7 @@ import { Fragment, useState } from 'react';
 import type { Round } from '../types';
 import { buildScorecard, formatToPar } from '../scorecardModel';
 import { clampScore } from '../scoreEntry';
+import { LEAGUE_MAX_SCORE, pickedUp } from '../games/league';
 
 interface Props {
   round: Round;
@@ -157,6 +158,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                       : cell.toPar > 0
                         ? ' over'
                         : ' even';
+                const x = !!round.options.league && pickedUp(round, cell.holeNumber, row.playerId);
                 const isEditing =
                   editing?.playerId === row.playerId && editing?.holeNumber === cell.holeNumber;
                 const nine = nineAfter(cellIndex);
@@ -175,7 +177,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                         type="number"
                         inputMode="numeric"
                         min={1}
-                        max={15}
+                        max={round.options.league ? LEAGUE_MAX_SCORE : 15}
                         autoFocus
                         defaultValue={cell.score ?? ''}
                         onBlur={(e) => {
@@ -195,7 +197,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                           setEditing({ playerId: row.playerId, holeNumber: cell.holeNumber })
                         }
                         aria-label={`${row.name}, hole ${cell.holeNumber}${
-                          cell.score != null ? `, ${cell.score}` : ', no score'
+                          x ? ', picked up' : cell.score != null ? `, ${cell.score}` : ', no score'
                         }${
                           cell.dots > 0
                             ? `, ${cell.dots} handicap stroke${cell.dots === 1 ? '' : 's'}`
@@ -206,8 +208,10 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                             : ''
                         }`}
                       >
-                        {cell.score != null && (
-                          <span className={cell.markClass}>{cell.score}</span>
+                        {x ? (
+                          <span className="sc-x">X</span>
+                        ) : (
+                          cell.score != null && <span className={cell.markClass}>{cell.score}</span>
                         )}
                         {cell.dots > 0 && (
                           <span className="sc-dots" aria-hidden="true">

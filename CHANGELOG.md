@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **League pick-ups ("X").** Behind "…" on a league night, a player who picks
+  up (or missed the hole) takes an X: they lose the hole in their singles
+  match, and their partner's ball still plays for the team. It is recorded as
+  a 9, so totals and stats stay sane, and it travels with share links and the
+  mid-round handover.
+
 - **A Resume card on Home.** A round being played had looked the same as a
   finished one in Your Rounds — "thru 18" and "18 holes" are a squint apart,
   and the phone gets locked between every hole. The newest unfinished round
@@ -87,6 +93,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   team match off the low of all four, and still at most one stroke a hole.
 
 ### Changed
+- **Golf League follows the 2025 league rules.** Every match — A, B and team
+  — now plays off the lowest handicap of the foursome, capped at 9 shots,
+  where the singles used to play off the lower of their own two players. No
+  hole takes more than a 9. The lower handicap of each team is put in the A
+  match whichever slot it was typed into, with a note before the round starts.
+  The league screen no longer offers slope/rating and a Handicap Index: league
+  handicaps are the league's own stroke counts, and converting them as an
+  Index made every one wrong.
 - **Saved courses take one compact row each.** On Golf League the delete
   button had dropped onto a line of its own under every course, and New Round
   stacked name, figures and buttons on three lines. Both now show the name and

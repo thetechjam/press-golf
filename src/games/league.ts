@@ -22,6 +22,20 @@ export interface LeagueResult {
 
 export type LeagueMatchKey = 'A' | 'B' | 'T';
 
+/**
+ * The highest score a league hole can take. League rule: the maximum allowable
+ * score on any hole is a 9. Entry stops there, and the engine caps anything
+ * higher that arrives (an old round, a share link) rather than trusting it.
+ */
+export const LEAGUE_MAX_SCORE = 9;
+
+/** League rule: no player gets more than 9 shots in a match. */
+export const LEAGUE_MAX_SHOTS = 9;
+
+/** Whether a player picked up ("X") on a hole. */
+export const pickedUp = (round: Round, holeNumber: number, id: string): boolean =>
+  round.pickups?.[holeNumber]?.includes(id) ?? false;
+
 interface Baselines {
   /** Which singles match a player plays in, or null if they are not in the league. */
   matchOf: (id: string) => 'A' | 'B' | null;
@@ -33,17 +47,29 @@ interface Baselines {
 }
 
 /**
- * The three stroke baselines a league night is scored off — A match off the low
- * of the two A players, B match off the low of the two B players, team match off
- * the low of all four. Extracted so computeLeague and leagueStrokesOnHole cannot
- * drift apart; league.test.ts asserts they agree.
+ * The stroke baseline a league night is scored off: the lowest handicap of
+ * all four players, for every match — A, B and the team.
+ *
+ * League rule: "The player(s) with the lowest handicap among the foursome in
+ * each set of matches gets zero strokes for the matches. The remaining
+ * players will get strokes based upon the difference of their handicap and
+ * the lowest handicap in the foursome. This amount will NOT exceed (9) shots
+ * within the match." Press used to play each singles match off the lower of
+ * its own two players instead; with the 9-shot cap the two readings differ
+ * (two B players of 12 and 16 against a low man of 2 both cap at 9 and play
+ * level), and the league's reading is the one that decides the points.
+ *
+ * Extracted so computeLeague and leagueStrokesOnHole cannot drift apart;
+ * league.test.ts asserts they agree.
  */
 function leagueBaselines(round: Round): Baselines {
   const cfg = round.options.league!;
   const total = round.holes.length;
-  // League rule: at most 1 stroke per hole, so capping the effective handicap at
-  // `total` makes the second-stroke branch of strokesReceivedOnHole unreachable.
-  const capHcp = (v: number) => Math.min(Math.max(0, v), total);
+  // League rule: at most 9 shots in a match, and at most 1 stroke per hole —
+  // capping at `total` too makes the second-stroke branch of
+  // strokesReceivedOnHole unreachable (a league night is nine holes, where the
+  // two caps are the same number).
+  const capHcp = (v: number) => Math.min(Math.max(0, v), total, LEAGUE_MAX_SHOTS);
   /**
    * The strokes a player plays off on these holes.
    *
@@ -64,18 +90,14 @@ function leagueBaselines(round: Round): Baselines {
   };
   const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? '?';
   const [t0, t1] = cfg.teams;
-  const aLow = Math.min(hcp(t0.aId), hcp(t1.aId));
-  const bLow = Math.min(hcp(t0.bId), hcp(t1.bId));
   const low4 = Math.min(hcp(t0.aId), hcp(t0.bId), hcp(t1.aId), hcp(t1.bId));
   const matchOf = (id: string): 'A' | 'B' | null =>
     id === t0.aId || id === t1.aId ? 'A' : id === t0.bId || id === t1.bId ? 'B' : null;
+  const offLow = (id: string) => capHcp(hcp(id) - low4);
   return {
     matchOf,
-    singles: (id) => {
-      const m = matchOf(id);
-      return m == null ? 0 : capHcp(hcp(id) - (m === 'A' ? aLow : bLow));
-    },
-    team: (id) => capHcp(hcp(id) - low4),
+    singles: (id) => (matchOf(id) == null ? 0 : offLow(id)),
+    team: offLow,
     nameOf,
   };
 }
@@ -114,10 +136,15 @@ export function computeLeague(round: Round): LeagueResult {
     t.name?.trim() || `${nameOf(t.aId)} & ${nameOf(t.bId)}` || `Team ${i + 1}`;
 
   // A player's net on a hole given an effective (already-adjusted) handicap.
+  // Gross is capped at the league maximum of 9. A pick-up ("X") is a hole
+  // forfeited, so it nets to Infinity: it loses to any score, halves against
+  // another X, and in the team match drops out of the best-ball min() so the
+  // partner's ball still plays.
   const net = (id: string, hole: Hole, effHcp: number): number | null => {
+    if (pickedUp(round, hole.number, id)) return Infinity;
     const g = round.scores[hole.number]?.[id];
     if (g == null) return null;
-    return g - strokesReceivedOnHole(effHcp, si[hole.number], total);
+    return Math.min(g, LEAGUE_MAX_SCORE) - strokesReceivedOnHole(effHcp, si[hole.number], total);
   };
 
   // Strokes a player actually receives in a match, given their effective
@@ -134,7 +161,7 @@ export function computeLeague(round: Round): LeagueResult {
   const isOver = (seg: { decided: boolean; holesPlayed: number; totalHoles: number }) =>
     seg.decided || (seg.holesPlayed > 0 && seg.holesPlayed === seg.totalHoles);
 
-  // Singles: strokes off the lower handicap of the two.
+  // Singles: strokes off the low of the foursome (see leagueBaselines).
   const singles = (id0: string, id1: string, key: 'A' | 'B'): LeagueMatchResult => {
     const seg = runMatch(
       round.holes,
@@ -158,7 +185,7 @@ export function computeLeague(round: Round): LeagueResult {
   const bMatch = singles(t0.bId, t1.bId, 'B');
 
   // Team match: best ball (the better net of the two partners), strokes off the
-  // lowest of all four so the team plays to the same baseline as the singles.
+  // lowest of all four — the same baseline as the singles.
   // Best ball, not combined total — a partner's blow-up hole is thrown out, and
   // a high-handicapper's stroke-aided holes can carry the team. This matches the
   // app's other team formats (2v2 Match Play, Nassau) and standard league play.

@@ -65,9 +65,13 @@ export function HelpSheet({ onBack }: Props) {
       <section className="help-section">
         <h3>Golf League</h3>
         <p>
-          A separate mode for a recurring weekly league night: two teams, each
-          with an A match, a B match, and a team match, all scored off
-          handicaps. Points accumulate across the season on the League Setup screen.
+          A separate mode for a weekly league night: two teams of two. The low
+          handicaps play each other in the A match, the others in the B match,
+          and each team plays a better-ball team match — a point for each, three
+          a night. Strokes come off the lowest handicap of the four, at most one
+          a hole and nine a match. A 9 is the most any hole can take; a player
+          who picks up takes an X (behind "…") and loses the hole in their
+          match, while their partner's ball still counts for the team.
         </p>
       </section>
     </div>

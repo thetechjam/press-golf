@@ -473,3 +473,43 @@ describe('junk over a link', () => {
     expect(result.round.junk).toBeUndefined();
   });
 });
+
+describe('league pick-ups over a link', () => {
+  const withPickups = (): Round => ({
+    ...makeRound({
+      players: ['Al', 'Bo', 'Cy', 'Di'].map((name, i) => player(`mine-${i}`, name, 5)),
+      holes: holes18().slice(0, 9),
+      options: {
+        league: {
+          pointsPerMatch: 1,
+          teams: [
+            { aId: 'mine-0', bId: 'mine-1' },
+            { aId: 'mine-2', bId: 'mine-3' },
+          ],
+        },
+      },
+      scores: { 1: { 'mine-0': 9, 'mine-1': 4, 'mine-2': 5, 'mine-3': 4 } },
+    }),
+    pickups: { 1: ['mine-0'] },
+  });
+
+  it('arrives against the same player it left', () => {
+    const result = unpackRound(packRound(withPickups())!);
+    if (!result.ok) throw new Error(result.error);
+    const al = result.round.players.find((p) => p.name === 'Al')!.id;
+    expect(result.round.pickups).toEqual({ 1: [al] });
+  });
+
+  it('costs nothing in a round with no pick-ups', () => {
+    const packed = packRound(makeRound({ players: [player('a', 'Al'), player('b', 'Bo')] }));
+    expect('x' in packed!).toBe(false);
+  });
+
+  it('drops a pick-up on a player position nobody occupies', () => {
+    const packed = packRound(withPickups())!;
+    packed.x = { 1: ['9', '2'] };
+    const result = unpackRound(packed);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.round.pickups).toEqual({ 1: [result.round.players[2].id] });
+  });
+});

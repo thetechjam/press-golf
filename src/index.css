@@ -2166,6 +2166,26 @@ select:focus {
   gap: 4px;
   margin-top: 6px;
 }
+/* League pick-up. A full row of its own under the numbers, in the text-safe
+   red, so it reads as a different kind of answer rather than a tenth score. */
+.score-overflow .score-x {
+  grid-column: 1 / -1;
+  color: var(--over-strong);
+  font-weight: 700;
+}
+.score-overflow .score-x.sel {
+  background: var(--over-strong);
+  border-color: var(--over-strong);
+  color: #fff;
+}
+:root.dark .score-overflow .score-x.sel {
+  color: var(--bg);
+}
+/* An X on the scorecard: the forfeit, not a number. */
+.sc-x {
+  font-weight: 800;
+  color: var(--over-strong);
+}
 .score-overflow .score-chip.sel {
   background: var(--green-600);
   border-color: var(--green-ink);

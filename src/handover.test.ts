@@ -245,3 +245,20 @@ describe('junk on a handed-over round', () => {
     expect(compareRounds(withJunk(), withJunk()).kind).toBe('same');
   });
 });
+
+describe('league pick-ups on a handed-over round', () => {
+  const withPickups = (pickups?: Round['pickups']): Round => ({
+    ...makeRound({
+      players: [player('a', 'Al'), player('b', 'Bo')],
+      holes: holes18(),
+      scores: { 1: { a: 9, b: 5 } },
+    }),
+    pickups,
+  });
+
+  it('is not the same round when only one copy has the X', () => {
+    // The score is a 9 either way; the X is what loses Al the hole.
+    expect(compareRounds(withPickups({ 1: ['a'] }), withPickups()).kind).toBe('ahead');
+    expect(compareRounds(withPickups(), withPickups({ 1: ['a'] })).kind).toBe('behind');
+  });
+});

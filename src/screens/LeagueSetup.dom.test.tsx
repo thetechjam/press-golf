@@ -1,19 +1,18 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup, waitFor } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LeagueSetup } from './LeagueSetup';
 import type { Round, SavedCourse } from '../types';
 
 /**
- * A league night off a Handicap Index.
+ * League handicaps on the League Setup screen.
  *
- * League scoring was the one format the handicap work never reached: it read
- * `player.handicap` straight off the player and the screen only ever asked for
- * a stroke count. The engine side is in `games/league.test.ts`; what is here
- * is the screen — including the defect that made the first version of this
- * unshippable, where the rated path collected an Index and the validation
- * still demanded a handicap, so the round could not be started at all.
+ * League handicaps are the league's own stroke counts — 90% of a player's
+ * recent average over par, kept by the league director — not a Handicap Index
+ * to be converted against the course. The screen used to offer the Index route
+ * once a slope and rating were known, which turned every league handicap into
+ * the wrong number; it now asks for a stroke count, always.
  */
 
 const holes = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 4, 3, 5, 4, 4, 3, 4, 5].map((par, i) => ({
@@ -41,13 +40,13 @@ const show = (saved: SavedCourse[] = [course]) => {
 const loadCourse = (user: ReturnType<typeof userEvent.setup>) =>
   user.click(document.querySelector('.saved-course-load')!);
 
-const indexFields = () => screen.getAllByPlaceholderText('Index');
+const hcpFields = () => screen.getAllByPlaceholderText('HCP');
 const nameFields = () => document.querySelectorAll<HTMLInputElement>('.player-name');
 
 async function fillFour(user: ReturnType<typeof userEvent.setup>, values: number[]) {
   const names = ['Al', 'Bo', 'Cy', 'Di'];
   for (const [i, field] of [...nameFields()].entries()) await user.type(field, names[i]);
-  for (const [i, field] of indexFields().entries()) await user.type(field, String(values[i]));
+  for (const [i, field] of hcpFields().entries()) await user.type(field, String(values[i]));
 }
 
 beforeEach(() => localStorage.clear());
@@ -56,84 +55,48 @@ afterEach(() => {
   localStorage.clear();
 });
 
-describe('asking for an Index', () => {
-  it('asks for a stroke count until the course can convert one', () => {
-    show([{ id: 'c2', name: 'Unrated Muni', holes }]);
-    expect(screen.getAllByPlaceholderText('HCP')).toHaveLength(4);
+describe('league handicaps', () => {
+  it('asks for a stroke count, not an Index, even on a rated course', async () => {
+    const user = userEvent.setup();
+    show();
+    await loadCourse(user);
+    expect(hcpFields()).toHaveLength(4);
     expect(screen.queryByPlaceholderText('Index')).toBeNull();
+    expect(screen.queryByText('Slope')).toBeNull();
   });
 
-  it('asks for an Index once the nine is rated', async () => {
-    const user = userEvent.setup();
-    show();
-    await loadCourse(user);
-    expect(indexFields()).toHaveLength(4);
-    expect(screen.queryByPlaceholderText('HCP')).toBeNull();
-  });
-
-  it('says the rating covers eighteen holes while nine are being played', async () => {
-    // The case that makes `ratingHoles` worth storing: without it this rating
-    // is judged against nine holes, fails as implausible, and the Index column
-    // never appears for a league night at all.
-    const user = userEvent.setup();
-    show();
-    await loadCourse(user);
-    expect(
-      screen.getByText('Rated over 18 holes — an Index converts to strokes for this nine.')
-    ).toBeTruthy();
-  });
-
-  it('shows what an Index is worth over this nine', async () => {
-    const user = userEvent.setup();
-    show();
-    await loadCourse(user);
-    // Slope 113 and a rating of 72 over eighteen is par over these nine, so an
-    // Index is worth half of itself here.
-    await user.type(indexFields()[0], '14');
-    expect(screen.getByLabelText('Plays off 7 on this nine')).toBeTruthy();
-    await user.type(indexFields()[1], '6');
-    expect(screen.getByLabelText('Plays off 3 on this nine')).toBeTruthy();
-  });
-});
-
-describe('starting the night', () => {
-  it('starts off Indexes, which the first version of this could not', async () => {
-    // The rated path collected an Index while the guard still demanded a
-    // handicap, so the button did nothing, every time, with no message.
+  it('starts off the stroke counts and carries no rating to convert them', async () => {
     const user = userEvent.setup();
     const started = show();
     await loadCourse(user);
-    await fillFour(user, [14, 6, 16, 4]);
+    await fillFour(user, [4, 9, 6, 12]);
     await user.click(screen.getByRole('button', { name: /Start League Round/ }));
 
-    await waitFor(() => expect(started).toHaveLength(1));
-    const round = started[0];
-    expect(round.players.map((p) => p.index)).toEqual([14, 6, 16, 4]);
-    // Carried so the engine can convert, and so a rating later found wrong
-    // does not leave the round unscoreable.
-    expect(round.slope).toBe(113);
-    expect(round.rating).toBe(72);
-    expect(round.ratingHoles).toBe(18);
-    expect(round.holes).toHaveLength(9);
+    expect(started).toHaveLength(1);
+    const [round] = started;
+    expect(round.players.map((p) => p.handicap)).toEqual([4, 9, 6, 12]);
+    expect(round.slope).toBeUndefined();
+    expect(round.rating).toBeUndefined();
   });
 
-  it('names the field actually on screen when one is blank', async () => {
-    // Asking for "a handicap" under four boxes labelled Index is the same
-    // defect as the par/stroke-index fields.
+  it('puts the lower handicap of each team in the A match, and says so first', async () => {
     const user = userEvent.setup();
     const started = show();
-    await loadCourse(user);
-    await fillFour(user, [14, 6, 16, 4]);
-    await user.clear(indexFields()[0]);
+    // Team 1 typed the wrong way round: Bo (3) in B, Al (9) in A.
+    await fillFour(user, [9, 3, 6, 12]);
+    expect(screen.getByText(/Bo has the lower handicap, so plays A/)).toBeTruthy();
     await user.click(screen.getByRole('button', { name: /Start League Round/ }));
 
-    expect(
-      screen.getByText('Enter a Handicap Index for all four players — league scoring needs it.')
-    ).toBeTruthy();
-    expect(started).toHaveLength(0);
+    const [round] = started;
+    const name = (id: string) => round.players.find((p) => p.id === id)!.name;
+    const [t1, t2] = round.options.league!.teams;
+    expect([name(t1.aId), name(t1.bId)]).toEqual(['Bo', 'Al']);
+    expect([name(t2.aId), name(t2.bId)]).toEqual(['Cy', 'Di']);
+    // And the card lists them in their new slots.
+    expect(round.players.map((p) => p.name)).toEqual(['Bo', 'Al', 'Cy', 'Di']);
   });
 
-  it('still asks for a handicap when there is no rating to convert against', async () => {
+  it('asks for a handicap when one is blank', async () => {
     const user = userEvent.setup();
     const started = show([{ id: 'c2', name: 'Unrated Muni', holes }]);
     await loadCourse(user);

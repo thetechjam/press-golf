@@ -55,6 +55,15 @@ function cells(round: Round): Map<Cell, string> {
       out.set(`j:${hole}:${position}`, [...kinds].sort().join(','));
     }
   }
+  // A pick-up changes who won a league hole without changing the score (it
+  // is recorded as a 9 either way), so two copies that differ only here are
+  // not the same round.
+  for (const [hole, ids] of Object.entries(round.pickups ?? {})) {
+    for (const id of ids) {
+      const position = at.get(id);
+      if (position !== undefined) out.set(`x:${hole}:${position}`, 'X');
+    }
+  }
   return out;
 }
 
