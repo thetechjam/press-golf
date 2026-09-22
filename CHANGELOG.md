@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **A Resume card on Home.** A round being played had looked the same as a
+  finished one in Your Rounds — "thru 18" and "18 holes" are a squint apart,
+  and the phone gets locked between every hole. The newest unfinished round
+  touched in the last day now sits above Start New Round, in felt green, with
+  who is up and the hole the card will open on. Older unfinished rounds stay in
+  the list, where they now carry an "In progress" tag.
+
 - **A tip jar, in one row at the bottom of Settings.** Press is free, has no
   ads and no account, and none of that is changing — so the one thing it asks
   for sits below everything the app is actually for, above the version numbers,
@@ -69,6 +76,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   team match off the low of all four, and still at most one stroke a hole.
 
 ### Changed
+- **The Hole tab's money line fits a four-ball.** Full names pushed the fourth
+  player's total behind the edge of a 390px screen, which is the one figure the
+  line is there for. Each player is now the same monogram badge the score rows
+  lead with, spread across the width, and a four-ball fits down to 360px; five
+  or six players still scroll, with the edge fade as before.
 - **Glare mode and Keep screen awake are set in Settings, not on the scoring
   toolbar.** Both were already in the sheet the gear opens, so the row was
   spending two of its six controls to save a tap on settings that get set once

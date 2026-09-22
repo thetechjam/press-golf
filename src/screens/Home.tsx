@@ -3,6 +3,8 @@ import type { Round } from '../types';
 import { listRounds, deleteRound } from '../storage';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { RoundCard } from '../components/RoundCard';
+import { ResumeCard } from '../components/ResumeCard';
+import { liveRound } from '../roundTitle';
 import { FlagIcon, PressMark, TrophyIcon, GearIcon, ChartIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { countsForStats } from '../stats';
@@ -37,6 +39,12 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
     setShowSettings(true);
   };
 
+  // The live round gets its own card up top, so it is not listed twice; the
+  // list gives up one slot for it and Home stays at ON_HOME rounds in all.
+  const live = liveRound(rounds);
+  const rest = live ? rounds.filter((r) => r !== live) : rounds;
+  const listed = rest.slice(0, live ? ON_HOME - 1 : ON_HOME);
+
   const remove = (id: string) => {
     deleteRound(id);
     setRounds(listRounds());
@@ -69,6 +77,8 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
         <p className="tagline">Track golf side games — the fun way.</p>
       </header>
 
+      {live && <ResumeCard round={live} onResume={() => onResume(live)} />}
+
       <button className="btn-primary big" onClick={onNew}>
         Start New Round
       </button>
@@ -92,7 +102,7 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
         </div>
       )}
 
-      {rounds.length > 0 && (
+      {rest.length > 0 && (
         <section className="saved">
           <div className="saved-head">
             <h2>Your rounds</h2>
@@ -105,7 +115,7 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
               </button>
             )}
           </div>
-          {rounds.slice(0, ON_HOME).map((r) => (
+          {listed.map((r) => (
             <RoundCard
               key={r.id}
               round={r}
@@ -114,7 +124,7 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
             />
           ))}
 
-          {rounds.length > ON_HOME && (
+          {rest.length > listed.length && (
             <button className="btn-ghost saved-all" onClick={onHistory}>
               All {rounds.length} rounds ›
             </button>

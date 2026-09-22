@@ -569,6 +569,20 @@ button:focus-visible {
   vertical-align: middle;
 }
 
+/* Text for assistive tech only — where the visible label is a monogram or a
+   glyph standing in for a name. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---------- Home ---------- */
 .hero {
   text-align: center;
@@ -721,6 +735,86 @@ button:focus-visible {
   padding: 3px 9px;
   text-transform: capitalize;
 }
+/* An unfinished round's tag: gold, the colour the app already uses for what
+   is live and in play, so it does not read as one more game name. 5.5:1
+   light, 5.3:1 dark. */
+.tag.live {
+  background: color-mix(in srgb, var(--gold) 22%, var(--card));
+  color: var(--gold-ink);
+  font-weight: 600;
+}
+
+/* ---- Resume card (Home) ----
+   Felt green in every theme, like the splash and the share card: it is the
+   one surface on Home that stands for the round on the course, and it has to
+   out-shout Start New Round without being mistaken for it. Colours are fixed
+   rather than tokens because the ground is fixed — white is 12.2:1 on
+   --green-900, --gold 6.4:1 (either way round, so the CTA pill too), and the
+   78% white standing line 8.0:1. */
+.resume-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--green-900);
+  border: 1px solid color-mix(in srgb, var(--fairway) 35%, var(--green-900));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(11, 61, 46, 0.28);
+  transition: transform var(--press) var(--ease-out);
+}
+.resume-card:active {
+  transform: scale(0.98);
+}
+.resume-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+.resume-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fairway);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fairway) 30%, transparent);
+}
+.resume-title {
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-4xl);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.resume-standing {
+  font-size: var(--fs-md);
+  color: rgba(255, 255, 255, 0.78);
+}
+.resume-cta {
+  margin-top: 8px;
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+  color: var(--green-900);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .round-del {
   width: 44px;
   color: var(--muted);
@@ -3535,7 +3629,9 @@ select:focus {
 }
 .money-ticker {
   display: flex;
-  gap: 14px;
+  /* 10px, not more: four monogram ticks and the swing face's "Hole 18" label
+     fit in 328px at this gap, which is a 360px phone's content box. */
+  gap: 10px;
   overflow-x: auto;
   scrollbar-width: none;
   /* 4px around a 19px line of read-only text. Nothing in this strip is
@@ -3544,6 +3640,11 @@ select:focus {
   font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  /* Spread across the width when it fits, so the monograms line up roughly
+     over the rows they belong to rather than bunching left. When it does not
+     fit (five or six players), space-between falls back to flex-start and
+     the strip scrolls under useEdgeFade as before. */
+  justify-content: space-between;
 }
 .money-ticker::-webkit-scrollbar {
   display: none;
@@ -3551,21 +3652,8 @@ select:focus {
 .tick {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   flex: 0 0 auto;
-}
-.tick-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: 0 0 auto;
-}
-.tick-name {
-  font-family: var(--font-display);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
 }
 .tick-net {
   font-weight: 700;
@@ -3589,15 +3677,6 @@ select:focus {
   letter-spacing: 0.05em;
   color: var(--muted);
   flex-shrink: 0;
-}
-.swing-net {
-  flex-shrink: 0;
-}
-.swing-net.up {
-  color: var(--under-ink);
-}
-.swing-net.down {
-  color: var(--over-strong);
 }
 
 /* ---- Collapsed game cards (Play → Hole tab) ---- */
