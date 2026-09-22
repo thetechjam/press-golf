@@ -15,6 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   who is up and the hole the card will open on. Older unfinished rounds stay in
   the list, where they now carry an "In progress" tag.
 
+- **Charts on the Stats screen.** Each player's card has a line of score
+  against par by round, which you can tap or arrow along to name a round, and
+  a scoring-mix bar that runs out from par (greens under, reds over), with the
+  count chips as its legend.
+- **Jump chips on the Board tab.** With money and two or more games on the
+  Board, a sticky row of chips jumps to each card and lights the one on screen.
+- **Front 9 / Back 9 / All 18 on the scorecard.** The Card tab opens on the
+  nine being played; a finished round opens on all eighteen.
+- **The skins pot on the hole.** In a skins game, a hole that ties have
+  carried onto says how many skins it is worth, under the scores.
+
 - **A tip jar, in one row at the bottom of Settings.** Press is free, has no
   ads and no account, and none of that is changing — so the one thing it asks
   for sits below everything the app is actually for, above the version numbers,
@@ -76,6 +87,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   team match off the low of all four, and still at most one stroke a hole.
 
 ### Changed
+- **Round cards say who won the money.** "Al won $10 · Bo & Cy paid $5"
+  instead of the first game's status, and "up"/"down" mid-round. Home's cards
+  no longer carry a delete; Round history, now always linked from Home, does.
+  While a round is live, Start New Round steps down to a secondary button.
+- **Handicap strokes are spelled out on the Hole tab.** A "+1 shot" badge
+  beside the handicap replaces the gold dot, and the hole header shows the
+  stroke index next to par.
+- **New Round is shorter.** Games are a two-column grid of names, with each
+  game's blurb moved behind its ⓘ; a hole's par is a tile that steps 3 → 4 →
+  5 → 6 on a tap instead of a dropdown, on New Round and Golf League.
+- **Money moves visibly.** A figure on the Hole tab's money line flips when it
+  has changed since you last saw it, and a Nassau press pops in with two short
+  vibrations (Android).
 - **The Hole tab's money line fits a four-ball.** Full names pushed the fourth
   player's total behind the edge of a 390px screen, which is the one figure the
   line is there for. Each player is now the same monogram badge the score rows
