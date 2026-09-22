@@ -1,5 +1,10 @@
 # Publishing the tutorial to YouTube
 
+> **Published https://youtu.be/YDgTmnR_1eo** on 2026-09-22. What follows is the record of what went
+> into that upload, and the procedure to repeat for the next one. To change
+> something on the video that is already live, edit it in Studio — the fields
+> below are what it was published with.
+
 Everything needed to upload, and the fields to paste into each box. Written to
 be followed top to bottom with YouTube Studio open in the other window.
 
@@ -13,7 +18,8 @@ before publishing rather than reusing what is below.
 
 | Asset | Where | Notes |
 |---|---|---|
-| **Video** | [press-tutorial.mp4](https://d2ol7oe51mr4n9.cloudfront.net/user_3F6bhk8rFTvZgCk36sr2niTWDCv/eae6f4fc-8e77-4938-aba7-28bd72a1afd7.mp4) | 1920×1080, 5:39, 24MB, H.264/AAC |
+| **Published video** | https://youtu.be/YDgTmnR_1eo | live since 2026-09-22 |
+| **Master** | [press-tutorial.mp4](https://d2ol7oe51mr4n9.cloudfront.net/user_3F6bhk8rFTvZgCk36sr2niTWDCv/eae6f4fc-8e77-4938-aba7-28bd72a1afd7.mp4) | 1920×1080, 5:39, 24MB, H.264/AAC |
 | **Thumbnail** | `docs/video/thumbnail-settle-it-on-18.png` | 1280×720, 352KB — see §2 |
 | **Alt thumbnail** | `docs/video/thumbnail-nobody-plays-free.png` | same spec, brand-voice headline |
 | **Captions** | `docs/video/press-tutorial.srt` | 119 cues, English |
@@ -223,17 +229,25 @@ the existing pipeline, so it is a re-render, not a re-cut.
 
 ## 9. After publishing
 
-- **Pin a comment** with the link: `pressgolf.netlify.app`. Descriptions get
-  collapsed; pinned comments do not.
-- **Check the chapters rendered.** They appear as segments on the progress bar
-  within a few minutes. If they did not, the usual cause is the first timestamp
-  not being exactly `0:00`.
-- **Watch the first thirty seconds on a phone** before sharing it anywhere. It
-  is the only way to catch a burned-in caption sitting under the YouTube
-  control bar.
-- **Listen to 5:24 onward.** Scene 17 speaks the URL, and it is the one line in
-  the video a viewer has to hear correctly. It has never been confirmed by ear
-  — see the note in `tutorial-script.md`.
+Still open on the live video:
+
+- [ ] **Pin a comment** with the link: `pressgolf.netlify.app`. Descriptions
+      get collapsed; pinned comments do not.
+- [ ] **Check the chapters rendered** as segments on the progress bar. If they
+      did not, the usual cause is the first timestamp not being exactly `0:00`.
+- [ ] **Watch the first thirty seconds on a phone.** It is the only way to
+      catch a burned-in caption sitting under the YouTube control bar.
+- [ ] **Listen to 5:24 onward.** Scene 17 speaks the URL, and it is the one
+      line a viewer has to hear correctly. It has never been confirmed by ear
+      — see the note in `tutorial-script.md`. If it is wrong, that is a
+      re-voice of one clip and a re-cut, then a new upload: YouTube cannot
+      swap the file on an existing video.
+
+Where the video wants linking from, none of which is done:
+
+- [ ] The app — Settings has a "How to Play" sheet, which is the obvious place
+      for it.
+- [ ] `README.md`, which does not mention the video at all.
 
 ---
 
