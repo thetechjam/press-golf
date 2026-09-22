@@ -24,7 +24,7 @@ export function MoneyBoard({ round, onChange }: Props) {
     .sort((a, b) => b.net - a.net);
 
   return (
-    <section className="board money-board">
+    <section className="board money-board" id="board-money">
       <div className="board-head">
         <span className="board-title">
           <CoinIcon size={16} /> Money

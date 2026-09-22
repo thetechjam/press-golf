@@ -4,6 +4,7 @@ import { Leaderboard } from '../components/Leaderboard';
 import { Scorecard } from '../components/Scorecard';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { MoneyBoard } from '../components/MoneyBoard';
+import { BoardJump } from '../components/BoardJump';
 import { HoleTicker } from '../components/MoneyTicker';
 import { HoleView } from './HoleView';
 import { activeResults } from '../games';
@@ -223,6 +224,15 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
 
       {mode === 'board' && (
         <>
+          {/* Only worth a row once there are three cards to choose between. */}
+          {results.length >= 2 && (
+            <BoardJump
+              targets={[
+                { id: 'board-money', label: 'Money' },
+                ...results.map((r) => ({ id: `board-${r.gameType}`, label: r.title })),
+              ]}
+            />
+          )}
           {!round.options.league && <MoneyBoard round={round} onChange={onChange} />}
           <section className="boards">
             {round.options.league ? (
@@ -231,6 +241,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
               results.map((r) => (
                 <Leaderboard
                   key={r.gameType}
+                  id={`board-${r.gameType}`}
                   result={r}
                   colorOf={(id) => colors[id]}
                   hcpOf={hcpOf}

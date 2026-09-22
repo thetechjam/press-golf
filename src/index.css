@@ -2430,6 +2430,50 @@ select:focus {
 }
 
 /* ---------- Leaderboards ---------- */
+/* ---- Board tab jump chips ----
+   Sticky so it is there wherever the list has been scrolled to; the cards it
+   lands on keep a scroll margin so the row does not cover their titles. */
+.board-jump {
+  position: sticky;
+  /* Under the status bar, not behind it: the page is viewport-fit=cover. */
+  top: env(safe-area-inset-top);
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -16px;
+  padding: 8px 16px;
+  background: var(--bg);
+}
+.board-jump::-webkit-scrollbar {
+  display: none;
+}
+.board-jump-chip {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transition: background-color var(--swap) ease, border-color var(--swap) ease,
+    color var(--swap) ease;
+}
+.board-jump-chip.active {
+  background: var(--green-600);
+  border-color: var(--green-600);
+  color: #fff;
+}
+.board {
+  scroll-margin-top: calc(60px + env(safe-area-inset-top));
+}
 .boards {
   display: flex;
   flex-direction: column;
@@ -5204,7 +5248,8 @@ select:focus {
   .bar .btn-ghost,
   .saved-course-load,
   .par-tile,
-  .resume-card {
+  .resume-card,
+  .board-jump-chip {
     transition: none;
   }
   .seg-btn,
