@@ -32,6 +32,12 @@ instead of editing them.
 > Wolf, the lot — and it does the math while you play. No account, no app
 > store, nothing to install. Here's a full round in four minutes.
 
+⚠️ **"four minutes" is wrong, and it is wrong in the published video.** The cut
+runs 5:39. The line was written against an earlier, shorter edit and nobody
+re-checked it when the narration was regenerated and the scenes grew. It is not
+worth a re-upload on its own — but if this is ever re-cut for another reason,
+fix it first. "Here's a full round in under six minutes" scans the same.
+
 ## 02 · Players (0:19–0:36)
 
 *Start New Round. Four names typed in, a handicap beside each.*
@@ -219,14 +225,16 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 
 ## The cut
 
-**https://d2ol7oe51mr4n9.cloudfront.net/user_3F6bhk8rFTvZgCk36sr2niTWDCv/eae6f4fc-8e77-4938-aba7-28bd72a1afd7.mp4**
+**Published: https://youtu.be/YDgTmnR_1eo** — 2026-09-22.
 
-1920×1080, 5:39, 24MB, H.264/AAC, scene titles in Oswald, captions burned in.
-Assembled 2026-09-22 from the eighteen takes, the seventeen gated narration
-clips and `press-tutorial.srt`. Ready to upload; the description and chapter
-marks are below.
+The master, if it is ever needed again:
+[press-tutorial.mp4](https://d2ol7oe51mr4n9.cloudfront.net/user_3F6bhk8rFTvZgCk36sr2niTWDCv/eae6f4fc-8e77-4938-aba7-28bd72a1afd7.mp4)
+— 1920×1080, 5:39, 24MB, H.264/AAC, scene titles in Oswald, captions burned
+in. Assembled from the eighteen takes, the seventeen gated narration clips and
+`press-tutorial.srt`.
 
-This link is the only durable copy. Earlier cuts were assembled in a sandbox
+YouTube is the durable copy now; the CDN link is a working file and may not
+outlive the account it sits in. Earlier cuts were assembled in a sandbox
 that is discarded seconds after the command finishes, which is how a previous
 version of this video came to exist nowhere at all — the one artifact the whole
 pipeline is for was the one thing never saved. Re-export and re-link after any

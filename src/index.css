@@ -4132,6 +4132,45 @@ select:focus {
   flex-direction: column;
   gap: 8px;
 }
+/* The one row in the help sheet that leaves the app. Carded rather than a
+   bare link so it reads as an offer instead of an aside, and `text-decoration`
+   is cleared because the default underline would be the only one on screen. */
+.help-watch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--green-600) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--green-600) 32%, var(--line));
+  color: inherit;
+  text-decoration: none;
+  min-height: var(--tap);
+}
+.help-watch span {
+  display: flex;
+  flex-direction: column;
+}
+.help-watch strong {
+  font-weight: 600;
+  color: var(--green-ink);
+}
+.help-watch small {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.help-watch-play {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--green-600);
+  color: #fff;
+  font-size: 13px;
+  padding-left: 2px;
+}
 .help-section h3 {
   font-family: var(--font-display);
   font-size: var(--fs-xl);

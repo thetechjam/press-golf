@@ -11,6 +11,8 @@ No accounts, no sign-up, nothing to install from a store. It runs entirely in
 your browser, works offline, and keeps everything on your device.
 
 **▶️ Live app: [pressgolf.netlify.app](https://pressgolf.netlify.app)**
+**📺 Walkthrough: [youtu.be/YDgTmnR_1eo](https://youtu.be/YDgTmnR_1eo)** — a full
+round in under six minutes
 
 ## Games
 

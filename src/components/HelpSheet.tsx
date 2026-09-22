@@ -1,6 +1,15 @@
 import { GAMES } from '../games';
 import { GAME_RULES } from '../games/rules';
 
+/**
+ * The walkthrough, for anyone who would rather be shown than read.
+ *
+ * Exported so a test can pin it: a help link that 404s is worse than no help
+ * link, and this is the one string here that nothing else in the app would
+ * catch if it rotted.
+ */
+export const TUTORIAL_URL = 'https://youtu.be/YDgTmnR_1eo';
+
 interface Props {
   onBack: () => void;
 }
@@ -11,6 +20,24 @@ export function HelpSheet({ onBack }: Props) {
       <button className="btn-ghost fb-back" onClick={onBack}>
         ‹ Settings
       </button>
+
+      {/* Above the text rather than below it: somebody who opens How to Play
+          and would rather watch than read should not have to scroll past the
+          reading to find that out. It leaves the app, so it is an <a> — and
+          unlike the tip jar there is nothing to gate, a tutorial link is not
+          a purchase route. */}
+      <a
+        className="help-watch"
+        href={TUTORIAL_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <span className="help-watch-play" aria-hidden="true">▶</span>
+        <span>
+          <strong>Watch the walkthrough</strong>
+          <small>Under six minutes · YouTube</small>
+        </span>
+      </a>
 
       <section className="help-section">
         <h3>The basics</h3>
