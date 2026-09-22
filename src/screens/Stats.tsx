@@ -13,6 +13,7 @@ import { formatRoundDate } from '../roundDate';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import { playerColor } from '../player';
 import { ChartIcon, XIcon } from '../icons';
+import { MixBar, TrendLine } from '../components/StatCharts';
 
 interface Props {
   onBack: () => void;
@@ -28,19 +29,21 @@ const listNames = (names: string[]): string =>
 
 /** The scoring-mix chips. Zero counts are dropped rather than shown as "0". */
 function Tally({ tally }: { tally: PlayerStats['tally'] }) {
-  const chips: [string, number][] = [
-    ['Eagles', tally.eagles],
-    ['Birdies', tally.birdies],
-    ['Pars', tally.pars],
-    ['Bogeys', tally.bogeys],
-    ['Worse', tally.others],
+  const chips: [string, number, string][] = [
+    ['Eagles', tally.eagles, 'eagles'],
+    ['Birdies', tally.birdies, 'birdies'],
+    ['Pars', tally.pars, 'pars'],
+    ['Bogeys', tally.bogeys, 'bogeys'],
+    ['Worse', tally.others, 'others'],
   ];
   const shown = chips.filter(([, n]) => n > 0);
   if (shown.length === 0) return null;
   return (
     <ul className="stat-tally">
-      {shown.map(([label, n]) => (
+      {shown.map(([label, n, k]) => (
         <li key={label}>
+          {/* The chip is the legend for the mix bar above it. */}
+          <span className={`mix-swatch mix-${k}`} aria-hidden="true" />
           <span className="stat-tally-n">{n}</span>
           <span className="stat-tally-l">{label}</span>
         </li>
@@ -89,6 +92,9 @@ function PlayerCard({ p, color }: { p: PlayerStats; color: string }) {
         )}
       </div>
 
+      <TrendLine points={p.history} color={color} />
+
+      <MixBar tally={p.tally} />
       <Tally tally={p.tally} />
 
       {p.best && (

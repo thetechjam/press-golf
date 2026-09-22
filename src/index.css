@@ -142,6 +142,15 @@
   /* Width of each pinned scorecard total column (Tot, +/−). Fits "118" and
      "+35" at 0.85rem tabular-nums with 4px side padding. */
   --sc-total-w: 46px;
+  /* Scoring mix (Stats): diverging out from par, greens under and reds over.
+     Lightness moves away from the grey midpoint by roughly equal steps on
+     each arm (OKLab L .47/.65 · .84 · .72/.55), so the order reads without
+     the hue. The bar never carries meaning alone — its chips are the legend. */
+  --mix-eagles: #0e6b39;
+  --mix-birdies: #3aa86a;
+  --mix-pars: #c3cec7;
+  --mix-bogeys: #df8577;
+  --mix-others: #c23b2e;
   /* Yardage-book contour lines, tiled behind everything. */
   --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(20,105,78,0.11)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
 }
@@ -165,6 +174,12 @@
   --under-ink: var(--under);
   --gold-ink: var(--gold);
   --green-ink: var(--fairway);
+  /* On the dark card the arms brighten outward instead of darkening. */
+  --mix-eagles: #5fe09a;
+  --mix-birdies: #2f9a5e;
+  --mix-pars: #3b4a43;
+  --mix-bogeys: #b0564c;
+  --mix-others: #ff7a6d;
 }
 
 /* Glare mode: max-contrast light theme for direct daylight, whatever the
@@ -1637,10 +1652,29 @@ select:focus {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+/* Half-width cards put the name on its own line under the tick and the ⓘ:
+   side by side, the ⓘ's 48px target left "Stableford" about 50px and every
+   long name was clipped. The name is the one thing the card can't lose. */
+.game-list .game-card-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'check . info'
+    'text text text';
+  row-gap: 6px;
+}
+.game-list .game-check {
+  grid-area: check;
+}
+.game-list .game-info-btn {
+  grid-area: info;
+  justify-self: end;
+}
+.game-list .game-text {
+  grid-area: text;
+}
 .game-text strong {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.15;
 }
 .game-info-text strong {
   color: var(--ink);
@@ -5020,6 +5054,73 @@ select:focus {
 .stat-tally-l {
   font-size: var(--fs-xs);
   color: var(--muted);
+}
+
+/* ---- Stats charts ---- */
+.mix-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+}
+.mix-seg {
+  flex-basis: 0;
+  min-width: 3px;
+}
+.mix-eagles { background: var(--mix-eagles); }
+.mix-birdies { background: var(--mix-birdies); }
+.mix-pars { background: var(--mix-pars); }
+.mix-bogeys { background: var(--mix-bogeys); }
+.mix-others { background: var(--mix-others); }
+.mix-swatch {
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.trend-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.trend-plot {
+  margin: 4px 0 2px;
+  border-radius: var(--r-sm);
+}
+.trend-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.trend-guide {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+/* The best round keeps a small ring wherever the selection is. */
+.trend-best {
+  fill: var(--card);
+  stroke: var(--gold-ink);
+  stroke-width: 2;
+}
+/* 2px card-coloured ring so the selected point lifts off the line. */
+.trend-dot {
+  stroke: var(--card);
+  stroke-width: 2;
+}
+.trend-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+.trend-caption {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.trend-caption strong {
+  color: var(--ink);
 }
 
 .stat-best {

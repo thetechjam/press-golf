@@ -34,6 +34,14 @@ export interface BestRound {
   holes: number;
 }
 
+/** One fully scored round, for the trend line on a player's card. */
+export interface RoundPoint {
+  date: string;
+  course: string;
+  holes: number;
+  toPar: number;
+}
+
 export interface PlayerStats {
   /** Display spelling from the most recent round, as `roster.ts` resolves it. */
   name: string;
@@ -55,6 +63,12 @@ export interface PlayerStats {
   /** How many of those rounds had money on them — the money line's denominator. */
   moneyRounds: number;
   skins: number;
+  /**
+   * Every fully scored round, oldest first. Partial cards are left out for the
+   * same reason they cannot be a best round: three holes missing would plot as
+   * a good day.
+   */
+  history: RoundPoint[];
 }
 
 export interface Stats {
@@ -174,6 +188,7 @@ export function computeStats(rounds: Round[]): Stats {
           money: 0,
           moneyRounds: 0,
           skins: 0,
+          history: [],
         };
         byKey.set(key, ps);
       }
@@ -195,6 +210,14 @@ export function computeStats(rounds: Round[]): Stats {
       // Only a fully scored round can be somebody's best — a card with three
       // holes missing would win on to-par for the wrong reason. The hole count
       // travels with it so a nine is never silently compared to a full round.
+      if (holesHere === round.holes.length) {
+        ps.history.push({
+          date: round.date,
+          course: round.course || '',
+          holes: holesHere,
+          toPar: toParHere,
+        });
+      }
       if (holesHere === round.holes.length && (!ps.best || toParHere < ps.best.toPar)) {
         ps.best = {
           toPar: toParHere,
@@ -208,6 +231,8 @@ export function computeStats(rounds: Round[]): Stats {
 
   const players = [...byKey.values()];
   for (const ps of players) {
+    // Rounds arrive newest-updated first; a trend reads left to right in time.
+    ps.history.sort((a, b) => a.date.localeCompare(b.date));
     ps.avgToPar = ps.holes ? (ps.toPar / ps.holes) * 18 : null;
     ps.netAvgToPar = ps.holes ? (ps.netToPar / ps.holes) * 18 : null;
   }
