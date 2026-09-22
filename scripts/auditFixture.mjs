@@ -137,7 +137,7 @@ export async function walkScreens({ page, BASE, step, width, settings }) {
   };
   /** The round card for a course, which is not the saved-course row of the same name. */
   const openRound = (course) =>
-    page.locator('.round-card .round-main', { hasText: course }).first().click();
+    page.locator('.round-card .round-main, .resume-card', { hasText: course }).first().click();
 
   await step(at('Home'), home);
 

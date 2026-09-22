@@ -1,18 +1,35 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Round, Hole } from '../types';
 import { computeSettlement, formatMoney } from '../games/settlement';
 import { colorMap } from '../player';
+import { PlayerAvatar } from './PlayerAvatar';
 import { useEdgeFade } from '../useEdgeFade';
 
 /**
  * Glanceable money line for the Hole tab. Player order is fixed, never sorted,
  * so it maps 1:1 to the steppers below and never reshuffles mid-entry.
  * Renders nothing when no stake is set — a friendly round shows no dead $0 bar.
+ *
+ * Each player is their avatar monogram, not their name: with full names a
+ * four-ball ran past 390px and the fourth player's money was behind the edge
+ * fade — the one figure the line exists to show. The monograms are the same
+ * badges the steppers below lead with, so they map without reading, and the
+ * full name is still there for a screen reader.
  */
-export function MoneyTicker({ round }: { round: Round }) {
+export function MoneyTicker({ round, visible = true }: { round: Round; visible?: boolean }) {
   const { ref, edge } = useEdgeFade<HTMLDivElement>();
   const settlement = computeSettlement(round);
   const colors = colorMap(round);
+  // The totals as last seen, so a figure that has moved since can flip like a
+  // score does. "Seen" matters: money only moves when a hole completes, which
+  // is exactly when HoleTicker swaps this face out for the hole's swing — so
+  // the flip is held until this face is back on screen. Nothing flips on the
+  // first render: resuming a round is not news.
+  const prev = useRef<Record<string, number> | null>(null);
+  const before = visible ? prev.current : null;
+  useEffect(() => {
+    if (visible) prev.current = settlement.totals;
+  });
   if (!settlement.active) return null;
 
   return (
@@ -27,9 +44,15 @@ export function MoneyTicker({ round }: { round: Round }) {
         const net = settlement.totals[p.id] ?? 0;
         return (
           <span key={p.id} className={`tick${net > 0 ? ' up' : net < 0 ? ' down' : ''}`}>
-            <span className="tick-dot" style={{ background: colors[p.id] }} aria-hidden="true" />
-            <span className="tick-name">{p.name}</span>
-            <span className="tick-net">{net === 0 ? '—' : formatMoney(net)}</span>
+            <PlayerAvatar name={p.name} color={colors[p.id]} size={22} />
+            <span className="sr-only">{p.name}</span>
+            {/* Keyed by value so a change remounts it and the flip replays. */}
+            <span
+              key={`${net}${visible ? '' : '-hidden'}`}
+              className={`tick-net${before && (before[p.id] ?? 0) !== net ? ' flap' : ''}`}
+            >
+              {net === 0 ? '—' : formatMoney(net)}
+            </span>
           </span>
         );
       })}
@@ -56,6 +79,7 @@ export function SwingTicker({
   swing: Record<string, number>;
 }) {
   const { ref, edge } = useEdgeFade<HTMLDivElement>();
+  const colors = colorMap(round);
   return (
     <div
       className="money-ticker"
@@ -68,8 +92,10 @@ export function SwingTicker({
       {round.players.map((p) => {
         const n = swing[p.id] ?? 0;
         return (
-          <span key={p.id} className={`swing-net${n > 0 ? ' up' : n < 0 ? ' down' : ''}`}>
-            {p.name} {n === 0 ? '—' : formatMoney(n)}
+          <span key={p.id} className={`tick${n > 0 ? ' up' : n < 0 ? ' down' : ''}`}>
+            <PlayerAvatar name={p.name} color={colors[p.id]} size={22} />
+            <span className="sr-only">{p.name}</span>
+            <span className="tick-net">{n === 0 ? '—' : formatMoney(n)}</span>
           </span>
         );
       })}
@@ -114,7 +140,7 @@ export function HoleTicker({
   return (
     <div className="ticker-stack">
       <div className={`ticker-face${swing ? ' out' : ''}`} aria-hidden={!!swing}>
-        <MoneyTicker round={round} />
+        <MoneyTicker round={round} visible={!swing} />
       </div>
       {shown && (
         <div className={`ticker-face${swing ? '' : ' out'}`} aria-hidden={!swing}>

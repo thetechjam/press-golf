@@ -5,12 +5,14 @@ interface Props {
   result: GameResult;
   colorOf?: (playerId: string) => string | undefined;
   hcpOf?: (playerId: string) => number | undefined;
+  /** Anchor for the Board tab's jump chips. */
+  id?: string;
 }
 
-export function Leaderboard({ result, colorOf, hcpOf }: Props) {
+export function Leaderboard({ result, colorOf, hcpOf, id }: Props) {
 
   return (
-    <div className="board">
+    <div className="board" id={id}>
       <div className="board-head">
         <span className="board-title">{result.title}</span>
         <span className="board-status">{result.status}</span>

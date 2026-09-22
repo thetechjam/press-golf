@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Round, Hole } from '../types';
 import { matchSegmentSides } from '../games/matchPlay';
 import { nineHolesFor, endOfNine, nassauTeams, autoPressStarts } from '../games/nassau';
 import { FlagIcon } from '../icons';
+import { buzz } from '../haptics';
 
 interface Props {
   round: Round;
@@ -12,6 +13,15 @@ interface Props {
 
 export function NassauControls({ round, hole, onChange }: Props) {
   const [open, setOpen] = useState(false);
+  // The press just called, so its chip can land with a pop. Held in state and
+  // cleared, rather than animating on mount: this card is remounted on every
+  // hole swipe, and every chip popping in on every swipe would mean nothing.
+  const [justAdded, setJustAdded] = useState<number | null>(null);
+  useEffect(() => {
+    if (justAdded == null) return;
+    const t = setTimeout(() => setJustAdded(null), 600);
+    return () => clearTimeout(t);
+  }, [justAdded]);
   if (round.players.length < 2) return null;
 
   const { a, b } = nassauTeams(round);
@@ -32,7 +42,12 @@ export function NassauControls({ round, hole, onChange }: Props) {
   const canPress = start <= end;
 
   const addPress = () => {
-    if (!alreadyHere && canPress) onChange([...presses, start]);
+    if (!alreadyHere && canPress) {
+      onChange([...presses, start]);
+      setJustAdded(start);
+      // Two firm taps: doubling the bet should be felt, not just seen.
+      buzz([18, 40, 18]);
+    }
   };
   const removePress = (s: number) => onChange(presses.filter((x) => x !== s));
 
@@ -69,7 +84,10 @@ export function NassauControls({ round, hole, onChange }: Props) {
           {allPresses.map((s) => {
             const isAuto = !presses.includes(s);
             return (
-              <span key={s} className={`press-chip${isAuto ? ' auto' : ''}`}>
+              <span
+                key={s}
+                className={`press-chip${isAuto ? ' auto' : ''}${justAdded === s ? ' just-added' : ''}`}
+              >
                 Press {s}–{endOfNine(round, s)}
                 {isAuto ? (
                   <span className="press-auto" title="Started by the 2-down rule">

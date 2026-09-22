@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeSkins } from './skins';
+import { computeSkins, skinsOnHole } from './skins';
 import { makeRound, holes, scoresFrom } from './testFixtures';
 
 function byId(r: ReturnType<typeof computeSkins>) {
@@ -153,5 +153,27 @@ describe('computeSkins', () => {
     const v = byId(r);
     expect(v.p2).toBe(4);
     expect(v.p1).toBe(0);
+  });
+});
+
+describe('skinsOnHole', () => {
+  const hs = holes(4);
+  const round = (a: (number | null)[], b: (number | null)[]) =>
+    makeRound({ holes: hs, games: ['skins'], scores: scoresFrom(hs, { p1: a, p2: b }) });
+
+  it('is one skin with nothing carried in', () => {
+    expect(skinsOnHole(round([], []), 1)).toBe(1);
+  });
+
+  it('adds one for every tie in a row before it', () => {
+    expect(skinsOnHole(round([4, 4], [4, 4]), 3)).toBe(3);
+  });
+
+  it('starts again after a hole is won', () => {
+    expect(skinsOnHole(round([4, 3, 4], [4, 4, 4]), 4)).toBe(2);
+  });
+
+  it('skips a hole without a full set of scores, as the payout does', () => {
+    expect(skinsOnHole(round([4, 5], [4, null]), 3)).toBe(2);
   });
 });

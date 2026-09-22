@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import type { Round } from '../types';
-import { listRounds, deleteRound } from '../storage';
+import { listRounds } from '../storage';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { RoundCard } from '../components/RoundCard';
+import { ResumeCard } from '../components/ResumeCard';
+import { liveRound } from '../roundSummary';
 import { FlagIcon, PressMark, TrophyIcon, GearIcon, ChartIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { countsForStats } from '../stats';
@@ -28,7 +30,7 @@ interface Props {
 }
 
 export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onHistory }: Props) {
-  const [rounds, setRounds] = useState<Round[]>(listRounds());
+  const [rounds] = useState<Round[]>(listRounds);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsView, setSettingsView] = useState<'settings' | 'help'>('settings');
 
@@ -37,10 +39,11 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
     setShowSettings(true);
   };
 
-  const remove = (id: string) => {
-    deleteRound(id);
-    setRounds(listRounds());
-  };
+  // The live round gets its own card up top, so it is not listed twice; the
+  // list gives up one slot for it and Home stays at ON_HOME rounds in all.
+  const live = liveRound(rounds);
+  const rest = live ? rounds.filter((r) => r !== live) : rounds;
+  const listed = rest.slice(0, live ? ON_HOME - 1 : ON_HOME);
 
   return (
     <div className="screen home">
@@ -69,7 +72,11 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
         <p className="tagline">Track golf side games — the fun way.</p>
       </header>
 
-      <button className="btn-primary big" onClick={onNew}>
+      {live && <ResumeCard round={live} onResume={() => onResume(live)} />}
+
+      {/* Mid-round, the Resume card is the thing to press; a second filled
+          button under it would be two primaries arguing. */}
+      <button className={live ? 'btn-secondary big' : 'btn-primary big'} onClick={onNew}>
         Start New Round
       </button>
 
@@ -92,7 +99,7 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
         </div>
       )}
 
-      {rounds.length > 0 && (
+      {rest.length > 0 && (
         <section className="saved">
           <div className="saved-head">
             <h2>Your rounds</h2>
@@ -105,16 +112,17 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
               </button>
             )}
           </div>
-          {rounds.slice(0, ON_HOME).map((r) => (
+          {listed.map((r) => (
             <RoundCard
               key={r.id}
               round={r}
               onOpen={() => (r.status === 'finished' ? onViewResults(r) : onResume(r))}
-              onDelete={() => remove(r.id)}
             />
           ))}
 
-          {rounds.length > ON_HOME && (
+          {/* Always offered, not only past ON_HOME: deleting lives in the
+              history now, so it has to be reachable with two rounds saved. */}
+          {rest.length > 0 && (
             <button className="btn-ghost saved-all" onClick={onHistory}>
               All {rounds.length} rounds ›
             </button>

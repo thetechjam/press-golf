@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { scoreLabel, scoreNumClass } from '../scoreMark';
 import { PlayerAvatar } from './PlayerAvatar';
 import { ScoreChips } from './ScoreChips';
+import { buzz } from '../haptics';
 
 interface Props {
   id?: string;
@@ -21,8 +22,6 @@ interface Props {
   onChange: (value: number | null) => void;
 }
 
-// Vibration API is Android-only (no-op on iOS Safari/PWA); softer for taps, firmer for birdie+.
-const buzz = (pattern: number | number[]) => navigator.vibrate?.(pattern);
 
 export function PlayerScoreRow({
   id,
@@ -94,9 +93,18 @@ export function PlayerScoreRow({
             ))}
           </span>
         )}
+        {/* Spelled out rather than a dot: "who gets one here?" is asked on
+            every hole, and a dot was only explained by the legend on the
+            Card tab. */}
         {!matchStrokes && strokesReceived > 0 && (
-          <span className="hcp-dots" aria-label={`${strokesReceived} handicap strokes`}>
-            {'•'.repeat(strokesReceived)}
+          <span
+            className="stroke-pip"
+            aria-label={`Gets ${strokesReceived} handicap stroke${strokesReceived === 1 ? '' : 's'} here`}
+          >
+            +{strokesReceived}
+            <span className="stroke-pip-word" aria-hidden="true">
+              {strokesReceived === 1 ? ' shot' : ' shots'}
+            </span>
           </span>
         )}
         {/* Display only — the chips are the control. Must not be styled as one. */}

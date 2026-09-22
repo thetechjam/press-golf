@@ -142,6 +142,15 @@
   /* Width of each pinned scorecard total column (Tot, +/−). Fits "118" and
      "+35" at 0.85rem tabular-nums with 4px side padding. */
   --sc-total-w: 46px;
+  /* Scoring mix (Stats): diverging out from par, greens under and reds over.
+     Lightness moves away from the grey midpoint by roughly equal steps on
+     each arm (OKLab L .47/.65 · .84 · .72/.55), so the order reads without
+     the hue. The bar never carries meaning alone — its chips are the legend. */
+  --mix-eagles: #0e6b39;
+  --mix-birdies: #3aa86a;
+  --mix-pars: #c3cec7;
+  --mix-bogeys: #df8577;
+  --mix-others: #c23b2e;
   /* Yardage-book contour lines, tiled behind everything. */
   --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(20,105,78,0.11)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
 }
@@ -165,6 +174,12 @@
   --under-ink: var(--under);
   --gold-ink: var(--gold);
   --green-ink: var(--fairway);
+  /* On the dark card the arms brighten outward instead of darkening. */
+  --mix-eagles: #5fe09a;
+  --mix-birdies: #2f9a5e;
+  --mix-pars: #3b4a43;
+  --mix-bogeys: #b0564c;
+  --mix-others: #ff7a6d;
 }
 
 /* Glare mode: max-contrast light theme for direct daylight, whatever the
@@ -569,6 +584,20 @@ button:focus-visible {
   vertical-align: middle;
 }
 
+/* Text for assistive tech only — where the visible label is a monogram or a
+   glyph standing in for a name. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* ---------- Home ---------- */
 .hero {
   text-align: center;
@@ -699,6 +728,15 @@ button:focus-visible {
   color: var(--green-ink);
   margin-top: 2px;
 }
+/* When the line is about money, who won and who paid are told apart by the
+   same up/down pair the money board uses. The text-safe tokens, since this
+   is 13px body text on --card. */
+.round-result .up {
+  color: var(--under-ink);
+}
+.round-result .down {
+  color: var(--over-strong);
+}
 .round-sub {
   font-size: var(--fs-sm);
   color: var(--muted);
@@ -721,6 +759,86 @@ button:focus-visible {
   padding: 3px 9px;
   text-transform: capitalize;
 }
+/* An unfinished round's tag: gold, the colour the app already uses for what
+   is live and in play, so it does not read as one more game name. 5.5:1
+   light, 5.3:1 dark. */
+.tag.live {
+  background: color-mix(in srgb, var(--gold) 22%, var(--card));
+  color: var(--gold-ink);
+  font-weight: 600;
+}
+
+/* ---- Resume card (Home) ----
+   Felt green in every theme, like the splash and the share card: it is the
+   one surface on Home that stands for the round on the course, and it has to
+   out-shout Start New Round without being mistaken for it. Colours are fixed
+   rather than tokens because the ground is fixed — white is 12.2:1 on
+   --green-900, --gold 6.4:1 (either way round, so the CTA pill too), and the
+   78% white standing line 8.0:1. */
+.resume-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--green-900);
+  border: 1px solid color-mix(in srgb, var(--fairway) 35%, var(--green-900));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(11, 61, 46, 0.28);
+  transition: transform var(--press) var(--ease-out);
+}
+.resume-card:active {
+  transform: scale(0.98);
+}
+.resume-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+.resume-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fairway);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fairway) 30%, transparent);
+}
+.resume-title {
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-4xl);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.resume-standing {
+  font-size: var(--fs-md);
+  color: rgba(255, 255, 255, 0.78);
+}
+.resume-cta {
+  margin-top: 8px;
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+  color: var(--green-900);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
 .round-del {
   width: 44px;
   color: var(--muted);
@@ -1429,23 +1547,44 @@ select:focus {
   padding-bottom: 4px;
   border-bottom: 1px solid var(--line);
 }
-.par-cell select {
-  padding: 8px;
-  min-height: 40px;
-  text-align: center;
+/* A tap target the width of the cell, drawn like the score chips on the Hole
+   tab — the same "tap the number" gesture, so it reads as one. */
+.par-tile {
+  width: 100%;
+  min-height: 44px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-2xl);
+  font-variant-numeric: tabular-nums;
+  transition: transform var(--press) var(--ease-out);
+}
+.par-tile:active {
+  transform: scale(0.94);
 }
 
+/* Two across: the names are short and a menu of nine reads faster as a grid
+   than as a list. A card whose rules are open takes the full row, so the
+   text is not set in a half-width column. */
 .game-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+.game-card.expanded {
+  grid-column: 1 / -1;
 }
 .game-card {
   display: flex;
   flex-direction: column;
+  justify-content: center;
   cursor: pointer;
   text-align: left;
-  padding: 14px;
+  min-height: var(--tap);
+  padding: 10px 12px;
   border-radius: var(--r-lg);
   border: 1px solid var(--line);
   background: var(--bg);
@@ -1457,7 +1596,7 @@ select:focus {
 .game-card-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 .game-info-btn {
   flex-shrink: 0;
@@ -1513,9 +1652,33 @@ select:focus {
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
-.game-text small {
-  color: var(--muted);
-  font-size: var(--fs-xs);
+/* Half-width cards put the name on its own line under the tick and the ⓘ:
+   side by side, the ⓘ's 48px target left "Stableford" about 50px and every
+   long name was clipped. The name is the one thing the card can't lose. */
+.game-list .game-card-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'check . info'
+    'text text text';
+  row-gap: 6px;
+}
+.game-list .game-check {
+  grid-area: check;
+}
+.game-list .game-info-btn {
+  grid-area: info;
+  justify-self: end;
+}
+.game-list .game-text {
+  grid-area: text;
+}
+.game-text strong {
+  line-height: 1.15;
+}
+.game-info-text strong {
+  color: var(--ink);
+  font-weight: 600;
 }
 
 .toggle {
@@ -1748,6 +1911,21 @@ select:focus {
   border-color: var(--fairway);
 }
 
+/* The one-line note under the scores (skins carried onto this hole). Gold,
+   the app's colour for what is in play. */
+.hole-note {
+  margin: 8px 2px 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-align: center;
+}
+.hole-note strong {
+  color: var(--gold-ink);
+  font-weight: 700;
+}
+.hole-par abbr {
+  text-decoration: none;
+}
 .steppers {
   display: flex;
   flex-direction: column;
@@ -2286,6 +2464,50 @@ select:focus {
 }
 
 /* ---------- Leaderboards ---------- */
+/* ---- Board tab jump chips ----
+   Sticky so it is there wherever the list has been scrolled to; the cards it
+   lands on keep a scroll margin so the row does not cover their titles. */
+.board-jump {
+  position: sticky;
+  /* Under the status bar, not behind it: the page is viewport-fit=cover. */
+  top: env(safe-area-inset-top);
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -16px;
+  padding: 8px 16px;
+  background: var(--bg);
+}
+.board-jump::-webkit-scrollbar {
+  display: none;
+}
+.board-jump-chip {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transition: background-color var(--swap) ease, border-color var(--swap) ease,
+    color var(--swap) ease;
+}
+.board-jump-chip.active {
+  background: var(--green-600);
+  border-color: var(--green-600);
+  color: #fff;
+}
+.board {
+  scroll-margin-top: calc(60px + env(safe-area-inset-top));
+}
 .boards {
   display: flex;
   flex-direction: column;
@@ -2842,17 +3064,64 @@ select:focus {
 .score-num.flap {
   animation: flap 0.26s cubic-bezier(0.3, 0.9, 0.4, 1);
 }
+/* The Hole tab's money line flips a figure the same way when it moves. */
+.tick {
+  perspective: 200px;
+}
+.tick-net {
+  display: inline-block;
+  transform-origin: 50% 40%;
+}
+.tick-net.flap {
+  animation: flap 0.32s cubic-bezier(0.3, 0.9, 0.4, 1);
+}
+/* A press just called lands with a pop — the bet doubled. */
+@keyframes press-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.press-chip.just-added {
+  animation: press-pop 0.32s var(--ease-out);
+  border-color: var(--gold);
+}
 @media (prefers-reduced-motion: reduce) {
-  .score-num.flap {
+  .score-num.flap,
+  .tick-net.flap,
+  .press-chip.just-added {
     animation: none;
   }
 }
-.hcp-dots {
-  color: var(--gold-ink);
-  font-size: var(--fs-2xs);
+/* A handicap stroke on this hole. Gold, the colour the Card tab's stroke dots
+   already use, on a gold tint so it reads as a badge rather than as more of
+   the name. --gold-ink on the 20% mix: 5.5:1 light, 5.6:1 dark. */
+.stroke-pip {
+  flex-shrink: 0;
   margin-left: 6px;
-  letter-spacing: 1px;
-  vertical-align: middle;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--gold) 20%, var(--card));
+  color: var(--gold-ink);
+  font-family: var(--font-display);
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+/* Under 360px the name needs the room; "+1" beside "HCP 14" still says it. */
+@media (max-width: 359px) {
+  .stroke-pip-word {
+    display: none;
+  }
 }
 .stepper-hcp {
   flex-shrink: 0;
@@ -2979,6 +3248,15 @@ select:focus {
 }
 
 /* ---------- Scorecard grid ---------- */
+/* Front 9 / Back 9 / All 18 above the grid. The .seg look, a size down: it
+   is a view switch for the card, not the page's tabs. */
+.sc-view .seg-btn {
+  min-height: 38px;
+  font-size: var(--fs-md);
+}
+.sc-view {
+  margin-bottom: 8px;
+}
 .card-scroll {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -3535,7 +3813,9 @@ select:focus {
 }
 .money-ticker {
   display: flex;
-  gap: 14px;
+  /* 10px, not more: four monogram ticks and the swing face's "Hole 18" label
+     fit in 328px at this gap, which is a 360px phone's content box. */
+  gap: 10px;
   overflow-x: auto;
   scrollbar-width: none;
   /* 4px around a 19px line of read-only text. Nothing in this strip is
@@ -3544,6 +3824,11 @@ select:focus {
   font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  /* Spread across the width when it fits, so the monograms line up roughly
+     over the rows they belong to rather than bunching left. When it does not
+     fit (five or six players), space-between falls back to flex-start and
+     the strip scrolls under useEdgeFade as before. */
+  justify-content: space-between;
 }
 .money-ticker::-webkit-scrollbar {
   display: none;
@@ -3551,21 +3836,8 @@ select:focus {
 .tick {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 4px;
   flex: 0 0 auto;
-}
-.tick-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex: 0 0 auto;
-}
-.tick-name {
-  font-family: var(--font-display);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--muted);
 }
 .tick-net {
   font-weight: 700;
@@ -3589,15 +3861,6 @@ select:focus {
   letter-spacing: 0.05em;
   color: var(--muted);
   flex-shrink: 0;
-}
-.swing-net {
-  flex-shrink: 0;
-}
-.swing-net.up {
-  color: var(--under-ink);
-}
-.swing-net.down {
-  color: var(--over-strong);
 }
 
 /* ---- Collapsed game cards (Play → Hole tab) ---- */
@@ -4824,6 +5087,73 @@ select:focus {
   color: var(--muted);
 }
 
+/* ---- Stats charts ---- */
+.mix-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+}
+.mix-seg {
+  flex-basis: 0;
+  min-width: 3px;
+}
+.mix-eagles { background: var(--mix-eagles); }
+.mix-birdies { background: var(--mix-birdies); }
+.mix-pars { background: var(--mix-pars); }
+.mix-bogeys { background: var(--mix-bogeys); }
+.mix-others { background: var(--mix-others); }
+.mix-swatch {
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.trend-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.trend-plot {
+  margin: 4px 0 2px;
+  border-radius: var(--r-sm);
+}
+.trend-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.trend-guide {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+/* The best round keeps a small ring wherever the selection is. */
+.trend-best {
+  fill: var(--card);
+  stroke: var(--gold-ink);
+  stroke-width: 2;
+}
+/* 2px card-coloured ring so the selected point lifts off the line. */
+.trend-dot {
+  stroke: var(--card);
+  stroke-width: 2;
+}
+.trend-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+.trend-caption {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.trend-caption strong {
+  color: var(--ink);
+}
+
 .stat-best {
   font-size: var(--fs-md);
   border-top: 1px solid var(--line);
@@ -5057,7 +5387,10 @@ select:focus {
   .btn-primary,
   .btn-secondary,
   .bar .btn-ghost,
-  .saved-course-load {
+  .saved-course-load,
+  .par-tile,
+  .resume-card,
+  .board-jump-chip {
     transition: none;
   }
   .seg-btn,
@@ -5077,7 +5410,9 @@ select:focus {
   .sheet-close:active,
   .btn-primary:active,
   .btn-secondary:active,
-  .saved-course-load:active {
+  .saved-course-load:active,
+  .par-tile:active,
+  .resume-card:active {
     transform: none;
   }
   /* Higher specificity than the .bar .btn-ghost:active rule it overrides;

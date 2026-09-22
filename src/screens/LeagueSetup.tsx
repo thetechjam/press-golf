@@ -6,11 +6,11 @@ import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
-import { parOptions } from '../courses/parOptions';
 import { validSlope, validRating, courseHandicap } from '../games/courseHandicap';
 import { StarIcon, XIcon, GearIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { SetupRow } from '../components/SetupRow';
+import { ParTile } from '../components/ParTile';
 import { leagueCourseSummary } from '../setupSummary';
 
 interface Props {
@@ -401,17 +401,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
               <div key={h.number} className="par-cell">
                 <span className="par-hole">{h.number}</span>
                 <span className="par-cap">Par</span>
-                <select
-                  value={h.par}
-                  onChange={(e) => setPar(h.number, Number(e.target.value))}
-                  aria-label={`Par for hole ${h.number}`}
-                >
-                  {parOptions(h.par).map((p) => (
-                    <option key={p} value={p}>
-                      {p}
-                    </option>
-                  ))}
-                </select>
+                <ParTile hole={h.number} par={h.par} onChange={(v) => setPar(h.number, v)} />
                 <span className="par-cap">SI</span>
                 <input
                   className="si-input"

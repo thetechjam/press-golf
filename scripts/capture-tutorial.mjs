@@ -497,7 +497,7 @@ const scenes = [
     title: 'Scoring a hole',
     seed: { rounds: [liveRound], courses },
     async run(page) {
-      await tap(page, page.locator('.round-card .round-main', { hasText: 'Cypress Point' }).first(), {
+      await tap(page, page.locator('.round-card .round-main, .resume-card', { hasText: 'Cypress Point' }).first(), {
         settle: 1200,
       });
       await pause(page, 1400);
@@ -513,7 +513,7 @@ const scenes = [
     title: 'The live money ticker',
     seed: { rounds: [liveRound], courses },
     async run(page) {
-      await tap(page, page.locator('.round-card .round-main', { hasText: 'Cypress Point' }).first(), {
+      await tap(page, page.locator('.round-card .round-main, .resume-card', { hasText: 'Cypress Point' }).first(), {
         settle: 1000,
       });
       for (const [i, n] of [4, 5, 3, 5].entries()) {
@@ -530,7 +530,7 @@ const scenes = [
     title: 'Junk, Wolf and presses',
     seed: { rounds: [liveRound, wolfRound], courses },
     async run(page) {
-      await tap(page, page.locator('.round-card .round-main', { hasText: 'Cypress Point' }).first(), {
+      await tap(page, page.locator('.round-card .round-main, .resume-card', { hasText: 'Cypress Point' }).first(), {
         settle: 1000,
       });
       const junk = page.locator('.junk.collapsed').first();
@@ -549,7 +549,7 @@ const scenes = [
       await tap(page, page.getByRole('button', { name: 'Back to rounds' }), { settle: 900 });
       await tap(
         page,
-        page.locator('.round-card .round-main', { hasText: 'Whistling Straits' }).first(),
+        page.locator('.round-card .round-main, .resume-card', { hasText: 'Whistling Straits' }).first(),
         { settle: 1400 }
       );
       await pause(page, 2600);
@@ -561,7 +561,7 @@ const scenes = [
     title: 'The Board — every game at once',
     seed: { rounds: [liveRound], courses },
     async run(page) {
-      await tap(page, page.locator('.round-card .round-main', { hasText: 'Cypress Point' }).first(), {
+      await tap(page, page.locator('.round-card .round-main, .resume-card', { hasText: 'Cypress Point' }).first(), {
         settle: 1000,
       });
       await tap(page, page.getByRole('button', { name: /^Board$/ }), { settle: 1600 });
@@ -579,7 +579,7 @@ const scenes = [
     async run(page) {
       await tap(
         page,
-        page.locator('.round-card .round-main', { hasText: 'Torrey Pines South' }).first(),
+        page.locator('.round-card .round-main, .resume-card', { hasText: 'Torrey Pines South' }).first(),
         { settle: 1200 }
       );
       await tap(page, page.getByRole('button', { name: 'Back to the scorecard' }), { settle: 1400 });
@@ -596,7 +596,7 @@ const scenes = [
     async run(page) {
       await tap(
         page,
-        page.locator('.round-card .round-main', { hasText: 'Torrey Pines South' }).first(),
+        page.locator('.round-card .round-main, .resume-card', { hasText: 'Torrey Pines South' }).first(),
         { settle: 2000 }
       );
       await pause(page, 2400);
@@ -612,7 +612,7 @@ const scenes = [
     async run(page) {
       await tap(
         page,
-        page.locator('.round-card .round-main', { hasText: 'Torrey Pines South' }).first(),
+        page.locator('.round-card .round-main, .resume-card', { hasText: 'Torrey Pines South' }).first(),
         { settle: 1400 }
       );
       await glide(page, null, 620, 2200);
@@ -629,7 +629,7 @@ const scenes = [
     async run(page) {
       await tap(
         page,
-        page.locator('.round-card .round-main', { hasText: 'Torrey Pines South' }).first(),
+        page.locator('.round-card .round-main, .resume-card', { hasText: 'Torrey Pines South' }).first(),
         { settle: 1400 }
       );
       await tap(page, page.getByRole('button', { name: /^Share$/ }), { settle: 1800 });
@@ -646,7 +646,7 @@ const scenes = [
     async run(page) {
       await tap(
         page,
-        page.locator('.round-card .round-main', { hasText: 'Torrey Pines South' }).first(),
+        page.locator('.round-card .round-main, .resume-card', { hasText: 'Torrey Pines South' }).first(),
         { settle: 1200 }
       );
       await tap(page, page.getByRole('button', { name: /^Share$/ }), { settle: 1200 });
@@ -734,7 +734,7 @@ const scenes = [
       await pause(page, 2600);
       await tap(
         page,
-        page.locator('.round-card .round-main', { hasText: 'Cypress Point' }).first(),
+        page.locator('.round-card .round-main, .resume-card', { hasText: 'Cypress Point' }).first(),
         { settle: 1800 }
       );
       await tap(page, page.getByRole('button', { name: /^Board$/ }), { settle: 2400 });

@@ -72,3 +72,37 @@ describe('the junk footer', () => {
     expect(document.querySelector('.sc-junk')).toBeNull();
   });
 });
+
+describe('the nine switch', () => {
+  const holeHeads = () =>
+    [...document.querySelectorAll('.sc-hole')].map((th) => Number(th.textContent));
+
+  it('opens an unfinished card on the nine being played', () => {
+    render(<Scorecard round={makeRound({ players: four, holes: holes18() })} currentHole={12} />);
+    expect(holeHeads()).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    expect(document.querySelector('.sc-nine')?.textContent).toBe('IN');
+  });
+
+  it('opens a finished card on all eighteen', () => {
+    render(
+      <Scorecard round={makeRound({ players: four, holes: holes18(), status: 'finished' })} />
+    );
+    expect(holeHeads()).toHaveLength(18);
+  });
+
+  it('switches nines on a tap', async () => {
+    const { getByRole } = render(
+      <Scorecard round={makeRound({ players: four, holes: holes18() })} currentHole={3} />
+    );
+    expect(holeHeads()).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    getByRole('button', { name: 'Back 9' }).click();
+    await Promise.resolve();
+    expect(holeHeads()[0]).toBe(10);
+  });
+
+  it('is not offered on a nine-hole card', () => {
+    render(<Scorecard round={makeRound({ players: four, holes: holes18().slice(0, 9) })} />);
+    expect(document.querySelector('.sc-view')).toBeNull();
+    expect(holeHeads()).toHaveLength(9);
+  });
+});

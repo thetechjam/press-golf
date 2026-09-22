@@ -134,6 +134,19 @@ describe('computeStats', () => {
     expect(s?.best).toEqual({ toPar: -1, course: 'Links', date: '2026-06-01', holes: 9 });
   });
 
+  it('keeps every fully scored round for the trend, oldest first', () => {
+    const late = round9({ p1: [4, 4, 4, 4, 4, 4, 4, 4, 3] }, { course: 'Links', date: '2026-06-01' });
+    const early = {
+      ...round9({ p1: [5, 5, 5, 5, 5, 5, 5, 5, 5] }, { course: 'Muni', date: '2026-05-01' }),
+      id: 'r2',
+    };
+    const gappy = { ...round9({ p1: [3, 3, 3] }, { date: '2026-05-15' }), id: 'r3' };
+    expect(statsFor([late, early, gappy], 'p1')?.history).toEqual([
+      { date: '2026-05-01', course: 'Muni', holes: 9, toPar: 9 },
+      { date: '2026-06-01', course: 'Links', holes: 9, toPar: -1 },
+    ]);
+  });
+
   it('will not call a partly scored round somebody best', () => {
     // Finished with three holes blank: −3 over the holes played, which would
     // beat the complete round if incomplete cards were eligible.
