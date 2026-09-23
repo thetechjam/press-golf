@@ -20,6 +20,11 @@ export interface LeagueMatchResult {
 export interface LeagueResult {
   /** Set when play was called for darkness or weather: the holes it stood on. */
   endedAfter?: number;
+  /**
+   * First-night players whose handicap is not set yet. While any are listed
+   * the results are provisional: their strokes are still to come.
+   */
+  provisional: { id: string; name: string }[];
   matches: LeagueMatchResult[];
   teams: { name: string; points: number }[]; // [team 0, team 1]
   pointsPerMatch: number;
@@ -37,6 +42,14 @@ export const LEAGUE_MAX_SCORE = 9;
 
 /** League rule: no player gets more than 9 shots in a match. */
 export const LEAGUE_MAX_SHOTS = 9;
+
+/**
+ * Whether a player's handicap is still to be set from tonight's score: marked
+ * as a first league night, with no handicap in yet.
+ */
+export const awaitingHandicap = (round: Round, id: string): boolean =>
+  !!round.options.league?.firstNight?.includes(id) &&
+  round.players.find((p) => p.id === id)?.handicap == null;
 
 /** Whether a player picked up ("X") on a hole. */
 export const pickedUp = (round: Round, holeNumber: number, id: string): boolean =>
@@ -100,10 +113,16 @@ function leagueBaselines(round: Round): Baselines {
   // handicap to be the low man with ("handicaps will be distributed
   // accordingly" — the rule for a team one short).
   const present = [t0.aId, t0.bId, t1.aId, t1.bId].filter(Boolean);
-  const low4 = Math.min(...present.map(hcp));
+  // A first-night player has no handicap until tonight's score sets one, so
+  // they play off the low man meanwhile — no strokes either way — and are
+  // left out of deciding who the low man is.
+  const pending = (id: string) => awaitingHandicap(round, id);
+  const known = present.filter((id) => !pending(id));
+  const low4 = known.length ? Math.min(...known.map(hcp)) : 0;
+  const hcpOf = (id: string) => (pending(id) ? low4 : hcp(id));
   const matchOf = (id: string): 'A' | 'B' | null =>
     !id ? null : id === t0.aId || id === t1.aId ? 'A' : id === t0.bId || id === t1.bId ? 'B' : null;
-  const offLow = (id: string) => capHcp(hcp(id) - low4);
+  const offLow = (id: string) => capHcp(hcpOf(id) - low4);
   return {
     matchOf,
     singles: (id) => (matchOf(id) == null ? 0 : offLow(id)),
@@ -302,6 +321,9 @@ export function computeLeague(round: Round): LeagueResult {
 
   return {
     endedAfter: cfg.ended ? holes.length : undefined,
+    provisional: round.players
+      .filter((p) => awaitingHandicap(round, p.id))
+      .map((p) => ({ id: p.id, name: p.name })),
     matches,
     teams: [
       { name: teamName(t0, 0), points: points[0] },

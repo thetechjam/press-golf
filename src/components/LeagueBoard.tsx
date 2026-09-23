@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Round } from '../types';
 import { canCallLeagueMatch, computeLeague, holesFinishedByAll } from '../games/league';
+import { handicapFromNight } from '../games/leagueHandicap';
 import { TrophyIcon } from '../icons';
 
 const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
@@ -9,6 +10,7 @@ export function LeagueBoard({
   round,
   onEditHandicaps,
   onSetEnded,
+  onSetHandicap,
 }: {
   round: Round;
   /** A league night has no Settlement card, so the edit lives here instead. */
@@ -18,6 +20,8 @@ export function LeagueBoard({
    * Absent where the round cannot be changed, e.g. on Results.
    */
   onSetEnded?: (ended: boolean) => void;
+  /** Sets a first-night player's handicap from tonight's score. */
+  onSetHandicap?: (playerId: string, handicap: number) => void;
 }) {
   const league = computeLeague(round);
   const [confirming, setConfirming] = useState(false);
@@ -40,7 +44,13 @@ export function LeagueBoard({
             </button>
           )}
           <span className="board-status">
-            {league.endedAfter != null ? 'Called' : league.complete ? 'Final' : 'Live'}
+            {league.provisional.length
+              ? 'Provisional'
+              : league.endedAfter != null
+                ? 'Called'
+                : league.complete
+                  ? 'Final'
+                  : 'Live'}
           </span>
         </span>
       </div>
@@ -74,6 +84,36 @@ export function LeagueBoard({
           </div>
         ))}
       </div>
+
+      {/* League rule: a brand-new player's handicap is 70% of their over-par
+          average, and on a first night that average is tonight's score. */}
+      {league.provisional.length > 0 && (
+        <div className="league-called">
+          {league.provisional.map((p) => {
+            const night = handicapFromNight(round, p.id);
+            return (
+              <div key={p.id} className="first-night-row">
+                <p>
+                  <strong>{p.name}</strong>’s handicap comes from tonight’s score, so these
+                  results are provisional.{' '}
+                  {night
+                    ? `Tonight: ${night.overPar > 0 ? '+' : ''}${night.overPar} over par.`
+                    : 'Set it once they have finished.'}
+                </p>
+                {night && onSetHandicap && (
+                  <button
+                    className="btn-secondary hcp-use"
+                    onClick={() => onSetHandicap(p.id, night.handicap)}
+                  >
+                    Set {p.name} to {night.handicap} (70% of {night.overPar > 0 ? '+' : ''}
+                    {night.overPar})
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* League rule: play discontinued for darkness or lightning after 5 or
           more holes is complete, on the holes the whole foursome finished —

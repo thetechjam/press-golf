@@ -11,6 +11,7 @@ import { colorMap } from '../player';
 import { usesHandicaps } from '../games/handicap';
 import { TrophyIcon, ShareIcon } from '../icons';
 import { EditHandicaps } from '../components/EditHandicaps';
+import { setFirstNightHandicap } from '../games/roundEdits';
 import { ShareSheet } from '../components/ShareSheet';
 import { Awards } from '../components/Awards';
 import { formatRoundDate } from '../roundDate';
@@ -191,6 +192,7 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep 
           <LeagueBoard
             round={round}
             onEditHandicaps={() => setShowHcp(true)}
+            onSetHandicap={(id, n) => onChange(setFirstNightHandicap(round, id, n))}
           />
         </section>
       ) : (

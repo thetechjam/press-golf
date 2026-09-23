@@ -543,4 +543,13 @@ describe('a league night one short, called for darkness, over a link', () => {
     expect([name(t2.aId), name(t2.bId)]).toEqual(['Cy', 'Di']);
     expect(result.round.options.league!.ended).toBe(true);
   });
+
+  it("carries a first-night player's flag against the same player", () => {
+    const r = round();
+    r.options.league!.firstNight = ['mine-d'];
+    const result = unpackRound(packRound(r)!);
+    if (!result.ok) throw new Error(result.error);
+    const di = result.round.players.find((p) => p.name === 'Di')!;
+    expect(result.round.options.league!.firstNight).toEqual([di.id]);
+  });
 });

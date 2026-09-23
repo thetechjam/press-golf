@@ -17,6 +17,11 @@ interface Props {
   onUse: (handicap: number) => void;
   /** Offer the calculator. Off once a handicap is typed, to keep rows quiet. */
   offerCalculator?: boolean;
+  /**
+   * A brand-new player's first league night: set their handicap from
+   * tonight's own score once they finish, instead of guessing one now.
+   */
+  onFirstNight?: () => void;
 }
 
 /**
@@ -30,7 +35,13 @@ interface Props {
  * first-timer with no league score yet, the average is an estimate (or the
  * director's call).
  */
-export function LeagueHcpHelper({ who, history, onUse, offerCalculator = true }: Props) {
+export function LeagueHcpHelper({
+  who,
+  history,
+  onUse,
+  offerCalculator = true,
+  onFirstNight,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [avg, setAvg] = useState<number | undefined>();
   const [matches, setMatches] = useState(0);
@@ -88,13 +99,26 @@ export function LeagueHcpHelper({ who, history, onUse, offerCalculator = true }:
           <p className="hint-inline">
             {matches < LEAGUE_FULL_ALLOWANCE_AFTER
               ? `70% until they complete ${LEAGUE_FULL_ALLOWANCE_AFTER} matches${
-                  matches === 0 ? ' — for a first night, use an estimate or the director’s number' : ''
+                  matches === 0 ? ' — with no league score yet, enter an estimate, or set it from tonight' : ''
                 }.`
               : '90% of their last five matches.'}
           </p>
           {result != null && (
             <button type="button" className="btn-secondary hcp-use" onClick={() => onUse(result)}>
               Use {result} ({pct(matches)} of {signed(avg!)})
+            </button>
+          )}
+          {/* No score to average yet: this night is the average. */}
+          {matches === 0 && onFirstNight && !history && (
+            <button
+              type="button"
+              className="link-btn hcp-first-night"
+              onClick={() => {
+                onFirstNight();
+                setOpen(false);
+              }}
+            >
+              First league night? Set it from tonight’s score instead
             </button>
           )}
         </div>

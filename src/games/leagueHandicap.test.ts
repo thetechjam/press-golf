@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Round } from '../types';
-import { leagueAllowance, leagueHandicap, leagueHistory } from './leagueHandicap';
+import { handicapFromNight, leagueAllowance, leagueHandicap, leagueHistory } from './leagueHandicap';
 import { makeRound, player, holes, scoresFrom } from './testFixtures';
 
 describe('the league handicap formula', () => {
@@ -78,5 +78,44 @@ describe("a player's league history on this phone", () => {
 
   it('knows nothing about a player it has never seen', () => {
     expect(leagueHistory([night('2026-05-01', 6)], 'Zed')).toBeNull();
+  });
+});
+
+describe("a first night's own handicap", () => {
+  const hs = holes(9);
+  const round = (card: (number | null)[], ended = false) =>
+    makeRound({
+      players: [{ id: 'p1', name: 'Al' }, player('p2', 'Bo', 5)],
+      holes: hs,
+      options: {
+        league: {
+          pointsPerMatch: 1,
+          ended,
+          firstNight: ['p1'],
+          teams: [
+            { aId: 'p1', bId: '', absent: 'b' },
+            { aId: 'p2', bId: '', absent: 'b' },
+          ],
+        },
+      },
+      scores: scoresFrom(hs, { p1: card, p2: Array(9).fill(4) }),
+    });
+
+  it('is 70% of the night over par', () => {
+    // 47 on a par 36: +11 → 7.7 → 8.
+    const card = [6, 6, 5, 5, 5, 5, 5, 5, 5];
+    expect(handicapFromNight(round(card), 'p1')).toEqual({ overPar: 11, handicap: 8 });
+  });
+
+  it('waits until they have finished', () => {
+    expect(handicapFromNight(round([5, 5, 5, null, null, null, null, null, null]), 'p1')).toBeNull();
+  });
+
+  it('scales a night called for darkness up to the full nine', () => {
+    // +5 over 6 holes is +7.5 over nine → 5.25 → 5.
+    const card = [5, 5, 5, 5, 5, 4, null, null, null];
+    const r = round(card, true);
+    r.scores = scoresFrom(hs, { p1: card, p2: [4, 4, 4, 4, 4, 4, null, null, null] });
+    expect(handicapFromNight(r, 'p1')).toEqual({ overPar: 7.5, handicap: 5 });
   });
 });

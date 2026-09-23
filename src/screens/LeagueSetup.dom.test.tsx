@@ -208,6 +208,26 @@ describe('working out a handicap', () => {
   });
 });
 
+describe("a brand-new player's first night", () => {
+  it('starts with no handicap for them, to be set from tonight', async () => {
+    const user = userEvent.setup();
+    const started = show();
+    await fillFour(user, [4, 9, 6, 12]);
+    // Clear Di's number, then mark it as set from tonight.
+    await user.clear(hcpFields()[3]);
+    await user.click(screen.getAllByRole('button', { name: /Work out handicap/ })[0]);
+    await user.click(screen.getByRole('button', { name: /Set it from tonight/ }));
+    expect(screen.getByRole('button', { name: /set from tonight's score/ })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: /Start League Round/ }));
+
+    expect(started).toHaveLength(1);
+    const [round] = started;
+    const di = round.players.find((p) => p.name === 'Di')!;
+    expect(di.handicap).toBeUndefined();
+    expect(round.options.league!.firstNight).toEqual([di.id]);
+  });
+});
+
 /** The same pinned bar as Setup, for the same reason — see `Setup.dom.test.tsx`. */
 describe('the pinned Start bar', () => {
   it('keeps the button and any refusal in it, announced', async () => {

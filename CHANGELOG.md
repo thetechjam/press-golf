@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **League: a brand-new player's first night sets their handicap.** With no
+  league score to average yet, a new player can be marked "set it from
+  tonight's score" at setup instead of given a guessed number. They play off
+  the low man meanwhile (no strokes either way) and the board says the results
+  are provisional; once they finish, "Set Di to 13 (70% of +18)" applies the
+  new-player allowance to the night and every match is re-scored. A night
+  called for darkness is scaled up to the full nine.
+
 - **League: a team one player short.** "Playing a player short?" on each
   team marks the A or B slot absent. The missing player's match is forfeited
   to their opponent, the partner plays their own match and the team point on

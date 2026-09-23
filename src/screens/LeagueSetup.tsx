@@ -78,6 +78,8 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
   // keeps that toggle reachable without scrolling past 200px of selects.
   const [courseDetailOpen, setCourseDetailOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  /** Brand-new players whose handicap tonight's score will set (by player id). */
+  const [firstNight, setFirstNight] = useState<string[]>([]);
   /** Which teams have the "player short tonight?" control open. */
   const [shortOpen, setShortOpen] = useState<boolean[]>([false, false]);
   // Read once: the league nights this phone has seen, for handicap hints.
@@ -166,7 +168,12 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
       return setError('Name every player who is playing (A and B on each team).');
     // A number to score off is mandatory for a league: every match (A, B,
     // Team) is net, so a blank must not silently become scratch.
-    if (allPlayers.some((p) => p.handicap == null || Number.isNaN(p.handicap))) {
+    const needsNumber = (p: Player) => !firstNight.includes(p.id);
+    if (
+      allPlayers.some(
+        (p) => needsNumber(p) && (p.handicap == null || Number.isNaN(p.handicap))
+      )
+    ) {
       return setError('Enter a handicap for every player — league scoring needs it.');
     }
 
@@ -177,7 +184,12 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
     const ordered = teams.map((t) => inOrder(t));
     const players: Player[] = ordered
       .flatMap((t) => (['a', 'b'] as const).filter((r) => t.absent !== r).map((r) => t[r]))
-      .map((p) => ({ id: p.id, name: p.name.trim(), handicap: p.handicap }));
+      .map((p) => ({
+        id: p.id,
+        name: p.name.trim(),
+        // A first-night player carries no number: tonight's score sets it.
+        handicap: firstNight.includes(p.id) ? undefined : p.handicap,
+      }));
     const leagueTeam = (t: TeamState): LeagueTeam => {
       const team: LeagueTeam = {
         aId: t.absent === 'a' ? '' : t.a.id,
@@ -212,6 +224,12 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
           // League standard: each match (A, B, Team) is worth 1 point.
           pointsPerMatch: 1,
           teams: [leagueTeam(ordered[0]), leagueTeam(ordered[1])],
+          ...(() => {
+            const ids = players
+              .filter((p) => firstNight.includes(p.id))
+              .map((p) => p.id);
+            return ids.length ? { firstNight: ids } : {};
+          })(),
         },
       },
       scores: {},
@@ -292,6 +310,15 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
                   />
                   {away ? (
                     <span className="absent-tag">Absent</span>
+                  ) : firstNight.includes(t[role].id) ? (
+                    <button
+                      type="button"
+                      className="first-night-tag"
+                      aria-label={`${t[role].name || 'This player'}'s handicap is set from tonight's score. Tap to enter one instead.`}
+                      onClick={() => setFirstNight((f) => f.filter((id) => id !== t[role].id))}
+                    >
+                      Tonight <span aria-hidden="true">×</span>
+                    </button>
                   ) : (
                     <input
                       className="player-hcp"
@@ -309,6 +336,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
                   )}
                 </div>
                 {!away &&
+                  !firstNight.includes(t[role].id) &&
                   t[role].name.trim() &&
                   (() => {
                     const history = leagueHistory(pastRounds, t[role].name);
@@ -321,6 +349,10 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
                         history={history}
                         offerCalculator={blank}
                         onUse={(n) => updatePlayer(ti, role, { handicap: n })}
+                        onFirstNight={() => {
+                          updatePlayer(ti, role, { handicap: undefined });
+                          setFirstNight((f) => [...f, t[role].id]);
+                        }}
                       />
                     ) : null;
                   })()}
@@ -364,6 +396,12 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
             >
               Playing a player short?
             </button>
+          )}
+          {(['a', 'b'] as const).some((r) => firstNight.includes(t[r].id) && t.absent !== r) && (
+            <p className="hint-inline">
+              First league night: no strokes either way until they finish, then 70% of
+              tonight’s score over par sets their handicap and every match is re-scored.
+            </p>
           )}
           {swapped(t) && (
             <p className="hint-inline" role="status">
