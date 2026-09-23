@@ -7,7 +7,7 @@ import { JunkControls } from '../components/JunkControls';
 import { VegasStrip } from '../components/VegasStrip';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
 import { anyNetScoring } from '../games/scoring';
-import { LEAGUE_MAX_SCORE, leagueStrokesOnHole, pickedUp } from '../games/league';
+import { LEAGUE_MAX_SCORE, awaitingHandicap, leagueStrokesOnHole, pickedUp } from '../games/league';
 import { skinsOnHole } from '../games/skins';
 import { playerColor } from '../player';
 import { useEdgeFade } from '../useEdgeFade';
@@ -134,7 +134,13 @@ export function HoleView({
               color={playerColor(i)}
               par={hole.par}
               value={round.scores[hole.number]?.[p.id] ?? null}
-              handicap={usesHandicaps(round) ? (p.handicap ?? 0) : undefined}
+              // A first-night league player has no number yet — no badge
+              // rather than a "HCP 0" that looks like a real one.
+              handicap={
+                usesHandicaps(round) && !awaitingHandicap(round, p.id)
+                  ? (p.handicap ?? 0)
+                  : undefined
+              }
               strokesReceived={
                 anyNetScoring(round)
                   ? strokesReceivedOnHole(p.handicap ?? 0, siMap[hole.number], round.holes.length)

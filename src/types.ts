@@ -131,6 +131,13 @@ export interface LeagueSetup {
    * the match is resumed on a later day.
    */
   ended?: boolean;
+  /**
+   * Brand-new players whose handicap is set from this night's own score (70%
+   * of it over par, per the new-player rule) once they have finished. Until
+   * then they have no handicap and play off the low man, and every result on
+   * the board is provisional.
+   */
+  firstNight?: string[];
 }
 
 export interface GameOptions {

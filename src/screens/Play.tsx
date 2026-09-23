@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { JunkClaims, Round, WolfChoice } from '../types';
 import { LEAGUE_MAX_SCORE, pickedUp } from '../games/league';
+import { setFirstNightHandicap } from '../games/roundEdits';
 import { Leaderboard } from '../components/Leaderboard';
 import { Scorecard } from '../components/Scorecard';
 import { LeagueBoard } from '../components/LeagueBoard';
@@ -275,6 +276,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             {round.options.league ? (
               <LeagueBoard
                 round={round}
+                onSetHandicap={(id, n) => onChange(setFirstNightHandicap(round, id, n))}
                 onSetEnded={(ended) => {
                   const league = { ...round.options.league! };
                   if (ended) league.ended = true;

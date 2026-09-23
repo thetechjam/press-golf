@@ -19,7 +19,9 @@ export function validateHandicaps(round: Round, edits: HandicapEdits): string | 
   if (!round.options.league) return null;
   // League scoring is net off these values in all three matches — a blank must
   // not silently become scratch (same rule LeagueSetup enforces at creation).
-  const ok = merged(round, edits).every((p) => p.handicap != null);
+  // A first-night player may stay blank: tonight's score is what sets it.
+  const firstNight = round.options.league.firstNight ?? [];
+  const ok = merged(round, edits).every((p) => p.handicap != null || firstNight.includes(p.id));
   return ok ? null : 'Enter a handicap for every player — league scoring needs it.';
 }
 
@@ -37,4 +39,23 @@ export function applyHandicaps(round: Round, edits: HandicapEdits): Round {
     ? round.options.useNet
     : players.some((p) => (p.handicap ?? 0) > 0);
   return { ...round, players, options: { ...round.options, useNet } };
+}
+
+/**
+ * Settles a first-night league player's handicap: writes it onto the player
+ * and takes them off the first-night list, which turns the board's results
+ * from provisional into scored.
+ */
+export function setFirstNightHandicap(round: Round, playerId: string, handicap: number): Round {
+  const league = round.options.league;
+  if (!league) return round;
+  const firstNight = (league.firstNight ?? []).filter((id) => id !== playerId);
+  const nextLeague = { ...league };
+  if (firstNight.length) nextLeague.firstNight = firstNight;
+  else delete nextLeague.firstNight;
+  return {
+    ...round,
+    players: round.players.map((p) => (p.id === playerId ? { ...p, handicap } : p)),
+    options: { ...round.options, league: nextLeague },
+  };
 }

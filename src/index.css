@@ -1298,6 +1298,35 @@ select:focus {
 .league-slot.absent .ab-badge {
   background: var(--muted);
 }
+/* A first-night player's HCP slot: "set from tonight", tap to undo. */
+.first-night-tag {
+  flex: 0 0 auto;
+  min-width: 76px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: var(--r-md);
+  border: 1px dashed color-mix(in srgb, var(--gold) 60%, var(--line));
+  background: color-mix(in srgb, var(--gold) 14%, var(--card));
+  color: var(--gold-ink);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.link-btn.hcp-first-night {
+  display: block;
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  min-height: 32px;
+  font-size: var(--fs-sm);
+}
+.first-night-row + .first-night-row {
+  margin-top: 10px;
+}
+.first-night-row .hcp-use {
+  margin-top: 4px;
+}
 .absent-tag {
   flex: 0 0 auto;
   min-width: 76px;

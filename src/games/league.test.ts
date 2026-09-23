@@ -638,3 +638,40 @@ describe('a match called for darkness', () => {
     expect(r.complete).toBe(false);
   });
 });
+
+describe("a brand-new player's first league night", () => {
+  const hs = holes(9);
+  const round = () =>
+    makeRound({
+      // Al is new: no handicap. Bo 8, Cy 4, Di 10 — Cy is the low man.
+      players: [
+        { id: 'p1', name: 'Al' },
+        player('p2', 'Bo', 8),
+        player('p3', 'Cy', 4),
+        player('p4', 'Di', 10),
+      ],
+      holes: hs,
+      options: { league: { ...league(1), firstNight: ['p1'] } },
+    });
+
+  it('plays them off the low man until their handicap is set', () => {
+    const a = computeLeague(round()).matches.find((m) => m.key === 'A')!;
+    // Al v Cy: Al plays off Cy's 4, so neither gets a stroke.
+    expect(a.strokes).toEqual([]);
+  });
+
+  it('leaves them out of deciding who the low man is', () => {
+    const b = computeLeague(round()).matches.find((m) => m.key === 'B')!;
+    expect(b.strokes).toEqual([
+      { name: 'Bo', strokes: 4 },
+      { name: 'Di', strokes: 6 },
+    ]);
+  });
+
+  it('marks the night provisional until then', () => {
+    expect(computeLeague(round()).provisional).toEqual([{ id: 'p1', name: 'Al' }]);
+    const set = round();
+    set.players[0] = { ...set.players[0], handicap: 7 };
+    expect(computeLeague(set).provisional).toEqual([]);
+  });
+});

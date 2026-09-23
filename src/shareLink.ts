@@ -151,6 +151,7 @@ function mapPlayerIds<
       }) as LeagueSetup['teams'],
     };
     if (l.ended) out.ended = true;
+    if (l.firstNight?.length) out.firstNight = l.firstNight.map(to);
     return out;
   };
 
@@ -385,6 +386,10 @@ function readLeague(v: unknown, known: (id: unknown) => id is string): LeagueSet
         : 1,
   };
   if (v.ended === true) out.ended = true;
+  if (Array.isArray(v.firstNight)) {
+    const ids = v.firstNight.filter(known);
+    if (ids.length) out.firstNight = ids;
+  }
   return out;
 }
 

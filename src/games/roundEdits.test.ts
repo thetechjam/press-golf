@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { applyHandicaps, validateHandicaps } from './roundEdits';
+import { applyHandicaps, setFirstNightHandicap, validateHandicaps } from './roundEdits';
 import { makeRound, player, holes, scoresFrom } from './testFixtures';
 import type { LeagueSetup } from '../types';
 
@@ -69,5 +69,23 @@ describe('validateHandicaps', () => {
   it('accepts a full set in a league round', () => {
     const r = makeRound({ players: FOUR, options: { league: cfg } });
     expect(validateHandicaps(r, { p2: 12 })).toBeNull();
+  });
+});
+
+describe('first-night league handicaps', () => {
+  const round = () =>
+    makeRound({
+      players: [{ id: 'p1', name: 'Al' }, ...FOUR.slice(1)],
+      options: { league: { ...cfg, firstNight: ['p1'] } },
+    });
+
+  it('lets a first-night player stay blank', () => {
+    expect(validateHandicaps(round(), {})).toBeNull();
+  });
+
+  it('writes the handicap and takes them off the first-night list', () => {
+    const r = setFirstNightHandicap(round(), 'p1', 8);
+    expect(r.players[0].handicap).toBe(8);
+    expect(r.options.league!.firstNight).toBeUndefined();
   });
 });

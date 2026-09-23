@@ -1,5 +1,5 @@
 import type { Round } from '../types';
-import { LEAGUE_MAX_SCORE, pickedUp } from './league';
+import { LEAGUE_MAX_SCORE, holesFinishedByAll, pickedUp } from './league';
 
 /**
  * The league's own handicap system, from the 2025 rule sheet:
@@ -79,4 +79,35 @@ export function leagueHistory(rounds: Round[], name: string): LeagueHistory | nu
     average,
     handicap: leagueHandicap(average, nights.length),
   };
+}
+
+export interface NightHandicap {
+  /** Over par on the night, scaled to the full nine if play was called early. */
+  overPar: number;
+  /** What that plays to at the new-player allowance. */
+  handicap: number;
+}
+
+/**
+ * A brand-new player's handicap from this night's own score: 70% of their
+ * over par, per the new-player rule, since this night is their whole average.
+ * Null until they have finished — every hole, or every hole the group played
+ * if the match was called for darkness, in which case the figure is scaled up
+ * to the full round so a five-hole night is not a five-hole handicap.
+ */
+export function handicapFromNight(round: Round, playerId: string): NightHandicap | null {
+  const cfg = round.options.league;
+  if (!cfg) return null;
+  const holes = cfg.ended ? holesFinishedByAll(round) : round.holes;
+  if (!holes.length) return null;
+  let overPar = 0;
+  for (const h of holes) {
+    const g = pickedUp(round, h.number, playerId)
+      ? LEAGUE_MAX_SCORE
+      : round.scores[h.number]?.[playerId];
+    if (g == null) return null;
+    overPar += Math.min(g, LEAGUE_MAX_SCORE) - h.par;
+  }
+  const scaled = Math.round(((overPar * round.holes.length) / holes.length) * 10) / 10;
+  return { overPar: scaled, handicap: leagueHandicap(scaled, 0) };
 }
