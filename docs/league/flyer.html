@@ -1,0 +1,70 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:Oswald;src:url(../../public/fonts/oswald-latin.woff2) format('woff2');font-weight:500 600}
+@page{size:Letter;margin:0}
+*{box-sizing:border-box;margin:0}
+html,body{width:8.5in;height:11in}
+body{font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#10231b;background:#fff}
+.top{background:radial-gradient(ellipse at 50% 0%,#14694e 0%,#0b3d2e 70%);color:#f4f7f2;padding:.55in .6in .5in;text-align:center}
+.mark{display:inline-flex;align-items:center;gap:14px}
+.mark img{width:64px;height:64px}
+.mark h1{font-family:Oswald;font-weight:600;font-size:64px;letter-spacing:.08em;line-height:1}
+.kicker{margin-top:14px;font-family:Oswald;font-weight:500;font-size:22px;letter-spacing:.12em;color:#e7b53c;text-transform:uppercase}
+.head{margin-top:6px;font-family:Oswald;font-weight:600;font-size:40px;letter-spacing:.03em;text-transform:uppercase;line-height:1.1}
+.body{display:grid;grid-template-columns:1fr 2.6in;gap:.4in;padding:.45in .6in .2in}
+h2{font-family:Oswald;font-weight:600;font-size:20px;letter-spacing:.08em;text-transform:uppercase;color:#14694e;margin-bottom:8px}
+ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:7px;font-size:14.5px;line-height:1.35}
+li{padding-left:22px;position:relative}
+li:before{content:"";position:absolute;left:4px;top:.45em;width:8px;height:8px;border-radius:2px;background:#e7b53c}
+.rules{margin-bottom:22px}
+ol{padding-left:0;list-style:none;counter-reset:s;display:flex;flex-direction:column;gap:8px;font-size:14.5px}
+ol li{counter-increment:s;padding-left:34px}
+ol li:before{content:counter(s);left:0;top:-1px;width:24px;height:24px;border-radius:50%;background:#14694e;color:#fff;font-family:Oswald;font-weight:600;font-size:14px;display:grid;place-items:center}
+.qrbox{text-align:center;border:3px solid #0b3d2e;border-radius:18px;padding:16px 14px 14px;align-self:start}
+.qrbox img{width:2.1in;height:2.1in;display:block;margin:0 auto}
+.qrbox .scan{font-family:Oswald;font-weight:600;font-size:22px;letter-spacing:.06em;text-transform:uppercase;margin-top:8px}
+.qrbox .url{font-size:13px;color:#56675e;margin-top:2px}
+.pills{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+.pill{background:#eef3ee;border-radius:999px;padding:6px 10px;font-size:13px;font-weight:600;color:#14694e}
+.note{margin:.1in .6in 0;padding:12px 16px;border-radius:12px;background:#fbf4e2;border:1px solid #ecd9a3;font-size:13px;line-height:1.4;color:#5a4410}
+.foot{position:absolute;bottom:.4in;left:0;right:0;text-align:center;font-family:Oswald;font-size:15px;letter-spacing:.1em;color:#56675e;text-transform:uppercase}
+</style></head><body>
+<div class="top">
+  <div class="mark"><img src="../../public/app-icon.svg" alt=""><h1>PRESS</h1></div>
+  <div class="kicker">Thursday League · 2025 Rules</div>
+  <div class="head">Score league night on your phone</div>
+</div>
+<div class="body">
+  <div>
+    <div class="rules">
+      <h2>Built to the league rule sheet</h2>
+      <ul>
+        <li>A &amp; B singles plus the better-ball team match — a point each, 3 a night</li>
+        <li>Strokes off the low handicap of the foursome, one a hole, max 9 a match</li>
+        <li>Low handicaps play each other — A/B set automatically</li>
+        <li>Max score of 9, and an <b>X</b> for a pick-up or a missed hole</li>
+        <li>Called for darkness after 5 holes? End the match — or resume it later</li>
+        <li>Playing a player short, subs, and new players' 70% / 90% handicaps</li>
+      </ul>
+    </div>
+    <h2>How it works</h2>
+    <ol>
+      <li>Scan the code and tap <b>Golf League</b></li>
+      <li>Enter your foursome and league handicaps</li>
+      <li>Tap each score as you play — the board shows who's up in every match</li>
+      <li>Hand in your signed card as usual</li>
+    </ol>
+  </div>
+  <div class="qrbox">
+    <img src="qr.svg" alt="QR code for pressgolf.netlify.app">
+    <div class="scan">Scan to play</div>
+    <div class="url">pressgolf.netlify.app</div>
+    <div class="pills">
+      <div class="pill">Free · no ads</div>
+      <div class="pill">No account or download</div>
+      <div class="pill">Works with no signal</div>
+    </div>
+  </div>
+</div>
+<div class="note"><b>A scoring aid, not the official record.</b> Signed scorecards handed in to the league director or the pro shop decide results, as always. Tip: add Press to your home screen for one-tap access on the course.</div>
+<div class="foot">Scored with Press</div>
+</body></html>
