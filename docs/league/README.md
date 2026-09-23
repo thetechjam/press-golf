@@ -1,7 +1,7 @@
 # League rollout kit
 
-Material for introducing Press to the Thursday league. Parked at the end of the
-2025 season; the league starts again in mid-April.
+Material for introducing Press to the Thursday league. Parked in September 2026,
+after the season ended; the league starts again in mid-April 2027.
 
 | File | What it is |
 |---|---|
