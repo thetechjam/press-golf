@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import type { Round } from '../types';
-import { computeLeague } from '../games/league';
+import { canCallLeagueMatch, computeLeague, holesFinishedByAll } from '../games/league';
 import { TrophyIcon } from '../icons';
 
 const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
@@ -7,12 +8,21 @@ const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));
 export function LeagueBoard({
   round,
   onEditHandicaps,
+  onSetEnded,
 }: {
   round: Round;
   /** A league night has no Settlement card, so the edit lives here instead. */
   onEditHandicaps?: () => void;
+  /**
+   * Calls the match for darkness or weather (true), or resumes it (false).
+   * Absent where the round cannot be changed, e.g. on Results.
+   */
+  onSetEnded?: (ended: boolean) => void;
 }) {
   const league = computeLeague(round);
+  const [confirming, setConfirming] = useState(false);
+  const canCall = !!onSetEnded && canCallLeagueMatch(round);
+  const done = holesFinishedByAll(round).length;
   const [t0, t1] = league.teams;
   // Leader is marked by the row highlight alone — no trophy glyph.
   const lead = t0.points === t1.points ? null : t0.points > t1.points ? 0 : 1;
@@ -29,7 +39,9 @@ export function LeagueBoard({
               Edit handicaps
             </button>
           )}
-          <span className="board-status">{league.complete ? 'Final' : 'Live'}</span>
+          <span className="board-status">
+            {league.endedAfter != null ? 'Called' : league.complete ? 'Final' : 'Live'}
+          </span>
         </span>
       </div>
 
@@ -53,13 +65,57 @@ export function LeagueBoard({
             </div>
             <div className={`lmatch-status${m.over ? ' final' : ''}`}>{m.status}</div>
             <div className="lmatch-strokes">
-              {m.strokes.length
-                ? m.strokes.map((s) => `${s.name} gets ${s.strokes}`).join(' · ')
-                : 'No strokes — plays scratch'}
+              {m.forfeit
+                ? 'Forfeit — no match played'
+                : m.strokes.length
+                  ? m.strokes.map((s) => `${s.name} gets ${s.strokes}`).join(' · ')
+                  : 'No strokes — plays scratch'}
             </div>
           </div>
         ))}
       </div>
+
+      {/* League rule: play discontinued for darkness or lightning after 5 or
+          more holes is complete, on the holes the whole foursome finished —
+          and can be picked up again on a later day by the same players. */}
+      {league.endedAfter != null ? (
+        <div className="league-called">
+          <p>
+            Called after {league.endedAfter} holes for darkness or weather. Every match is final
+            as it stood; later holes don't count.
+          </p>
+          {onSetEnded && (
+            <button className="link-btn" onClick={() => onSetEnded(false)}>
+              Resume match
+            </button>
+          )}
+        </div>
+      ) : canCall && !confirming ? (
+        <button className="link-btn league-call" onClick={() => setConfirming(true)}>
+          End match here — darkness or weather
+        </button>
+      ) : canCall ? (
+        <div className="league-called" role="alert">
+          <p>
+            End every match on the {done} holes all four have finished? Points go to whoever is
+            ahead now. You can resume later.
+          </p>
+          <div className="warn-actions">
+            <button className="warn-keep" onClick={() => setConfirming(false)}>
+              Keep playing
+            </button>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                setConfirming(false);
+                onSetEnded!(true);
+              }}
+            >
+              End match
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

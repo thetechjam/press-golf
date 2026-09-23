@@ -273,7 +273,15 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           {!round.options.league && <MoneyBoard round={round} onChange={onChange} />}
           <section className="boards">
             {round.options.league ? (
-              <LeagueBoard round={round} />
+              <LeagueBoard
+                round={round}
+                onSetEnded={(ended) => {
+                  const league = { ...round.options.league! };
+                  if (ended) league.ended = true;
+                  else delete league.ended;
+                  onChange({ ...round, options: { ...round.options, league } });
+                }}
+              />
             ) : (
               results.map((r) => (
                 <Leaderboard

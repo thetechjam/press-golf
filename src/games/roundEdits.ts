@@ -20,7 +20,7 @@ export function validateHandicaps(round: Round, edits: HandicapEdits): string | 
   // League scoring is net off these values in all three matches — a blank must
   // not silently become scratch (same rule LeagueSetup enforces at creation).
   const ok = merged(round, edits).every((p) => p.handicap != null);
-  return ok ? null : 'Enter a handicap for all four players — league scoring needs it.';
+  return ok ? null : 'Enter a handicap for every player — league scoring needs it.';
 }
 
 /**

@@ -513,3 +513,34 @@ describe('league pick-ups over a link', () => {
     expect(result.round.pickups).toEqual({ 1: [result.round.players[2].id] });
   });
 });
+
+describe('a league night one short, called for darkness, over a link', () => {
+  const round = (): Round =>
+    makeRound({
+      players: [player('mine-a', 'Al', 6), player('mine-c', 'Cy', 2), player('mine-d', 'Di', 8)],
+      holes: holes18().slice(0, 9),
+      options: {
+        league: {
+          pointsPerMatch: 1,
+          ended: true,
+          teams: [
+            { aId: 'mine-a', bId: '', absent: 'b', absentName: 'Bo' },
+            { aId: 'mine-c', bId: 'mine-d' },
+          ],
+        },
+      },
+    });
+
+  it('keeps the absent slot empty rather than turning it into the first player', () => {
+    const result = unpackRound(packRound(round())!);
+    if (!result.ok) throw new Error(result.error);
+    const [t1, t2] = result.round.options.league!.teams;
+    const name = (id: string) => result.round.players.find((p) => p.id === id)?.name;
+    expect(t1.bId).toBe('');
+    expect(t1.absent).toBe('b');
+    expect(t1.absentName).toBe('Bo');
+    expect(name(t1.aId)).toBe('Al');
+    expect([name(t2.aId), name(t2.bId)]).toEqual(['Cy', 'Di']);
+    expect(result.round.options.league!.ended).toBe(true);
+  });
+});

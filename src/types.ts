@@ -107,14 +107,30 @@ export interface TeamSetup {
 /** A league team: an A player and a B player. */
 export interface LeagueTeam {
   name?: string;
-  aId: string; // A player id
-  bId: string; // B player id
+  aId: string; // A player id ('' when that slot is absent)
+  bId: string; // B player id ('' when that slot is absent)
+  /**
+   * League rule: a team playing one player short. The absent slot's id is ''
+   * and they are not in `round.players`; their singles match is forfeited to
+   * the opponent, and the partner plays their own match and the team point
+   * alone.
+   */
+  absent?: 'a' | 'b';
+  /** Who was missing, so the board can say so. Optional. */
+  absentName?: string;
 }
 
 /** League night format: A-vs-A, B-vs-B, and a combined team match, scored on points. */
 export interface LeagueSetup {
   teams: [LeagueTeam, LeagueTeam];
   pointsPerMatch: number;
+  /**
+   * League rule: play discontinued for darkness or lightning after 5 or more
+   * holes counts as complete. While set, every match is final on the holes
+   * the whole group finished, and nothing after them counts. Cleared again if
+   * the match is resumed on a later day.
+   */
+  ended?: boolean;
 }
 
 export interface GameOptions {

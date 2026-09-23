@@ -11,9 +11,15 @@ export interface LeagueMatchResult {
   over: boolean;
   /** Players who receive strokes in this match (off the low man), for display. */
   strokes: { name: string; strokes: number }[];
+  /** Decided by a no-show rather than played. */
+  forfeit?: boolean;
+  /** A match nobody could play (both players absent): worth nothing to either side. */
+  void?: boolean;
 }
 
 export interface LeagueResult {
+  /** Set when play was called for darkness or weather: the holes it stood on. */
+  endedAfter?: number;
   matches: LeagueMatchResult[];
   teams: { name: string; points: number }[]; // [team 0, team 1]
   pointsPerMatch: number;
@@ -88,11 +94,15 @@ function leagueBaselines(round: Round): Baselines {
     const player = round.players.find((p) => p.id === id);
     return player ? courseHandicapFor(round, player) : 0;
   };
-  const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? '?';
   const [t0, t1] = cfg.teams;
-  const low4 = Math.min(hcp(t0.aId), hcp(t0.bId), hcp(t1.aId), hcp(t1.bId));
+  const nameOf = (id: string) => round.players.find((p) => p.id === id)?.name ?? '?';
+  // Off the low of the players actually there: an absent player has no
+  // handicap to be the low man with ("handicaps will be distributed
+  // accordingly" — the rule for a team one short).
+  const present = [t0.aId, t0.bId, t1.aId, t1.bId].filter(Boolean);
+  const low4 = Math.min(...present.map(hcp));
   const matchOf = (id: string): 'A' | 'B' | null =>
-    id === t0.aId || id === t1.aId ? 'A' : id === t0.bId || id === t1.bId ? 'B' : null;
+    !id ? null : id === t0.aId || id === t1.aId ? 'A' : id === t0.bId || id === t1.bId ? 'B' : null;
   const offLow = (id: string) => capHcp(hcp(id) - low4);
   return {
     matchOf,
@@ -125,15 +135,52 @@ export function leagueStrokesOnHole(
   return out;
 }
 
+/**
+ * The holes every player in the group has finished — a score or an X.
+ *
+ * League rule: when play is called after 5 or more holes, "shots subsequently
+ * played on the following holes will NOT be counted unless the entire foursome
+ * has completed the hole."
+ */
+export function holesFinishedByAll(round: Round): Hole[] {
+  return round.holes.filter((h) =>
+    round.players.every(
+      (p) => round.scores[h.number]?.[p.id] != null || pickedUp(round, h.number, p.id)
+    )
+  );
+}
+
+/** How many holes must be finished before a called match counts as complete. */
+export const LEAGUE_MIN_HOLES_TO_CALL = 5;
+
+/**
+ * Whether the match can be called for darkness or weather now: a league
+ * round, not already called, with at least five holes finished by everyone
+ * and some still to play.
+ */
+export function canCallLeagueMatch(round: Round): boolean {
+  if (!round.options.league || round.options.league.ended) return false;
+  const done = holesFinishedByAll(round).length;
+  return done >= LEAGUE_MIN_HOLES_TO_CALL && done < round.holes.length;
+}
+
 export function computeLeague(round: Round): LeagueResult {
   const cfg = round.options.league!;
   const si = strokeIndexMap(round);
   const total = round.holes.length;
+  // Called for darkness or weather: only the holes the whole group finished
+  // count, and every match is final on them.
+  const holes = cfg.ended ? holesFinishedByAll(round) : round.holes;
 
   const b = leagueBaselines(round);
-  const { nameOf } = b;
+  /** A slot's player by name — or, for an absent slot, whoever was missing. */
+  const slotName = (t: LeagueTeam, slot: 'a' | 'b') =>
+    t.absent === slot
+      ? t.absentName?.trim() || 'No-show'
+      : b.nameOf(slot === 'a' ? t.aId : t.bId);
+  const nameOf = b.nameOf;
   const teamName = (t: LeagueTeam, i: number) =>
-    t.name?.trim() || `${nameOf(t.aId)} & ${nameOf(t.bId)}` || `Team ${i + 1}`;
+    t.name?.trim() || `${slotName(t, 'a')} & ${slotName(t, 'b')}` || `Team ${i + 1}`;
 
   // A player's net on a hole given an effective (already-adjusted) handicap.
   // Gross is capped at the league maximum of 9. A pick-up ("X") is a hole
@@ -150,30 +197,57 @@ export function computeLeague(round: Round): LeagueResult {
   // Strokes a player actually receives in a match, given their effective
   // (already low-man-adjusted) handicap — at most one per hole here.
   const strokesFor = (effHcp: number): number =>
-    round.holes.reduce((s, h) => s + strokesReceivedOnHole(effHcp, si[h.number], total), 0);
+    holes.reduce((s, h) => s + strokesReceivedOnHole(effHcp, si[h.number], total), 0);
   // The stroke-getters in a match, so the board can show what it scored off of.
   const strokeList = (ids: string[], eff: (id: string) => number) =>
     ids
+      .filter(Boolean)
       .map((id) => ({ name: nameOf(id), strokes: strokesFor(eff(id)) }))
       .filter((s) => s.strokes > 0);
 
   const [t0, t1] = cfg.teams;
   const isOver = (seg: { decided: boolean; holesPlayed: number; totalHoles: number }) =>
-    seg.decided || (seg.holesPlayed > 0 && seg.holesPlayed === seg.totalHoles);
+    !!cfg.ended || seg.decided || (seg.holesPlayed > 0 && seg.holesPlayed === seg.totalHoles);
 
   // Singles: strokes off the low of the foursome (see leagueBaselines).
-  const singles = (id0: string, id1: string, key: 'A' | 'B'): LeagueMatchResult => {
+  const singles = (key: 'A' | 'B'): LeagueMatchResult => {
+    const slot = key === 'A' ? 'a' : 'b';
+    const id0 = slot === 'a' ? t0.aId : t0.bId;
+    const id1 = slot === 'a' ? t1.aId : t1.bId;
+    const n0 = slotName(t0, slot);
+    const n1 = slotName(t1, slot);
+    const label = key === 'A' ? 'A Match' : 'B Match';
+    const matchup = `${n0} v ${n1}`;
+    // League rule: a player who fails to show forfeits the points for their
+    // match. Both missing and nobody gets them.
+    if (!id0 || !id1) {
+      const winner: 'A' | 'B' | null = !id0 && !id1 ? null : id0 ? 'A' : 'B';
+      return {
+        key,
+        label,
+        matchup,
+        status:
+          winner == null
+            ? 'Not played — both absent'
+            : `${winner === 'A' ? n0 : n1} wins — ${winner === 'A' ? n1 : n0} absent`,
+        winner,
+        over: true,
+        strokes: [],
+        forfeit: true,
+        void: winner == null,
+      };
+    }
     const seg = runMatch(
-      round.holes,
+      holes,
       (h) => net(id0, h, b.singles(id0)),
       (h) => net(id1, h, b.singles(id1)),
-      nameOf(id0),
-      nameOf(id1)
+      n0,
+      n1
     );
     return {
       key,
-      label: key === 'A' ? 'A Match' : 'B Match',
-      matchup: `${nameOf(id0)} v ${nameOf(id1)}`,
+      label,
+      matchup,
       status: seg.status,
       winner: seg.winner,
       over: isOver(seg),
@@ -181,8 +255,8 @@ export function computeLeague(round: Round): LeagueResult {
     };
   };
 
-  const aMatch = singles(t0.aId, t1.aId, 'A');
-  const bMatch = singles(t0.bId, t1.bId, 'B');
+  const aMatch = singles('A');
+  const bMatch = singles('B');
 
   // Team match: best ball (the better net of the two partners), strokes off the
   // lowest of all four — the same baseline as the singles.
@@ -196,7 +270,7 @@ export function computeLeague(round: Round): LeagueResult {
     return nets.length ? Math.min(...nets) : null;
   };
   const teamSeg = runMatch(
-    round.holes,
+    holes,
     teamBest(t0),
     teamBest(t1),
     teamName(t0, 0),
@@ -217,7 +291,7 @@ export function computeLeague(round: Round): LeagueResult {
   // Points: winner takes pointsPerMatch; a finished halved match splits it.
   const points = [0, 0];
   for (const m of matches) {
-    if (!m.over) continue;
+    if (!m.over || m.void) continue;
     if (m.winner === 'A') points[0] += cfg.pointsPerMatch;
     else if (m.winner === 'B') points[1] += cfg.pointsPerMatch;
     else {
@@ -227,6 +301,7 @@ export function computeLeague(round: Round): LeagueResult {
   }
 
   return {
+    endedAfter: cfg.ended ? holes.length : undefined,
     matches,
     teams: [
       { name: teamName(t0, 0), points: points[0] },

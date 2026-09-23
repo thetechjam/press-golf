@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeLeague, leagueStrokesOnHole } from './league';
+import { canCallLeagueMatch, computeLeague, leagueStrokesOnHole } from './league';
 import { makeRound, player, holes, scoresFrom } from './testFixtures';
 import type { LeagueSetup } from '../types';
 
@@ -527,5 +527,114 @@ describe('league rules from the 2025 rule sheet', () => {
     });
     const team = computeLeague(r).matches.find((m) => m.key === 'team')!;
     expect(team.winner).toBe('B');
+  });
+});
+
+describe('a team one player short', () => {
+  const hs = holes(9);
+  const flat = (n: number) => Array(9).fill(n);
+  // Team 1 is Al alone (Bo absent). Cy and Di are there.
+  const short = (overrides: { p1?: number[]; p3?: number[]; p4?: number[] } = {}) =>
+    makeRound({
+      players: [player('p1', 'Al', 6), player('p3', 'Cy', 2), player('p4', 'Di', 8)],
+      holes: hs,
+      options: {
+        league: {
+          pointsPerMatch: 1,
+          teams: [
+            { aId: 'p1', bId: '', absent: 'b', absentName: 'Bo' },
+            { aId: 'p3', bId: 'p4' },
+          ],
+        },
+      },
+      scores: scoresFrom(hs, {
+        p1: overrides.p1 ?? flat(4),
+        p3: overrides.p3 ?? flat(4),
+        p4: overrides.p4 ?? flat(4),
+      }),
+    });
+
+  it("forfeits the absent player's match to their opponent", () => {
+    const b = computeLeague(short()).matches.find((m) => m.key === 'B')!;
+    expect(b.winner).toBe('B');
+    expect(b.over).toBe(true);
+    expect(b.status).toBe('Di wins — Bo absent');
+  });
+
+  it('lets the lone player play the team match on his own ball', () => {
+    // Al makes birdie on every hole; Team 2's better ball is par.
+    const team = computeLeague(short({ p1: flat(3) })).matches.find((m) => m.key === 'team')!;
+    expect(team.winner).toBe('A');
+  });
+
+  it('takes strokes off the low of the players who are there', () => {
+    // Cy (2) is the low of the three: Al gets 4, Di 6.
+    const team = computeLeague(short()).matches.find((m) => m.key === 'team')!;
+    expect(team.strokes).toEqual([
+      { name: 'Al', strokes: 4 },
+      { name: 'Di', strokes: 6 },
+    ]);
+  });
+
+  it("names the team with the missing player's name", () => {
+    const r = short();
+    r.options.league!.teams[0].name = undefined;
+    expect(computeLeague(r).teams[0].name).toBe('Al & Bo');
+  });
+
+  it('gives nobody the points when both players in a match are absent', () => {
+    const r = short();
+    r.options.league!.teams[1] = { aId: 'p3', bId: '', absent: 'b' };
+    r.players = r.players.filter((p) => p.id !== 'p4');
+    const b = computeLeague(r).matches.find((m) => m.key === 'B')!;
+    expect(b.void).toBe(true);
+    // The A and team matches are worth a point each, however they went; the
+    // B match adds nothing to either side.
+    const res = computeLeague(r);
+    expect(res.teams[0].points + res.teams[1].points).toBe(2);
+  });
+});
+
+describe('a match called for darkness', () => {
+  const hs = holes(9);
+  const called = (thru: number, ended = true) => {
+    const card = (n: number) => Array.from({ length: 9 }, (_, i) => (i < thru ? n : null));
+    return makeRound({
+      players: FOUR,
+      holes: hs,
+      // Al birdies every hole he plays; everyone else pars.
+      scores: scoresFrom(hs, { p1: card(3), p2: card(4), p3: card(4), p4: card(4) }),
+      options: { league: { ...league(1), ended } },
+    });
+  };
+
+  it('is final on the holes played, once called', () => {
+    const r = computeLeague(called(6));
+    expect(r.endedAfter).toBe(6);
+    expect(r.complete).toBe(true);
+    const a = r.matches.find((m) => m.key === 'A')!;
+    expect(a.status).toBe('Al won 4&2'); // closed out within the six holes played
+    // A and team won; the B match (Bo v Di, all pars) is halved and final.
+    expect(r.teams[0].points).toBe(2.5);
+  });
+
+  it('ignores a hole the whole group did not finish', () => {
+    const r = called(6);
+    // Al alone played on into hole 7.
+    r.scores[7] = { p1: 3 };
+    expect(computeLeague(r).endedAfter).toBe(6);
+  });
+
+  it('is only offered once five holes are finished and some remain', () => {
+    expect(canCallLeagueMatch(called(4, false))).toBe(false);
+    expect(canCallLeagueMatch(called(5, false))).toBe(true);
+    expect(canCallLeagueMatch(called(9, false))).toBe(false);
+    expect(canCallLeagueMatch(called(6, true))).toBe(false);
+  });
+
+  it('plays on as normal when resumed', () => {
+    const r = computeLeague(called(6, false));
+    expect(r.endedAfter).toBeUndefined();
+    expect(r.complete).toBe(false);
   });
 });
