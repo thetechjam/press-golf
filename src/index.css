@@ -1231,6 +1231,83 @@ select:focus {
   margin-bottom: 8px;
   align-items: center;
 }
+
+/* ---- League setup: handicap help, and a team one short ---- */
+.league-slot + .league-slot {
+  margin-top: 4px;
+}
+.hcp-help {
+  margin: -2px 0 8px 34px;
+}
+.hcp-hint {
+  margin: 0 0 4px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.hcp-hint strong {
+  color: var(--ink);
+}
+.link-btn.hcp-help-toggle,
+.link-btn.league-short-toggle {
+  display: block;
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  min-height: 32px;
+  font-size: var(--fs-sm);
+}
+.hcp-calc {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: var(--r-lg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hcp-calc .seg,
+.league-short .seg {
+  margin-bottom: 0;
+}
+.hcp-calc .seg-btn,
+.league-short .seg-btn {
+  padding: 8px 6px;
+  min-height: 40px;
+  font-size: var(--fs-md);
+}
+.hcp-calc-cap {
+  display: block;
+  margin-bottom: 4px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.hcp-calc .hint-inline {
+  margin: 0;
+}
+.btn-secondary.hcp-use {
+  padding: 10px 14px;
+  font-weight: 700;
+}
+.league-short {
+  margin-top: 6px;
+}
+.league-slot.absent .ab-badge {
+  background: var(--muted);
+}
+.absent-tag {
+  flex: 0 0 auto;
+  min-width: 76px;
+  text-align: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--over-strong);
+}
 .player-name {
   flex: 1;
   /* Inputs have an intrinsic min-width; without this the row overflows narrow viewports. */
@@ -2691,6 +2768,24 @@ select:focus {
 /* ---------- League ---------- */
 .league-board {
   border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+}
+/* Called for darkness or weather — and the confirm before it. */
+.league-called {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--gold) 18%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+}
+.league-called p {
+  margin: 0 0 6px;
+  font-size: var(--fs-md);
+}
+.link-btn.league-call {
+  display: block;
+  margin: 8px 0 0;
+  min-height: 44px;
+  padding: 0;
 }
 .league-matches {
   margin-top: 10px;

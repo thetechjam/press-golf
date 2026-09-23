@@ -105,9 +105,106 @@ describe('league handicaps', () => {
     await user.click(screen.getByRole('button', { name: /Start League Round/ }));
 
     expect(
-      screen.getByText('Enter a handicap for all four players — league scoring needs it.')
+      screen.getByText('Enter a handicap for every player — league scoring needs it.')
     ).toBeTruthy();
     expect(started).toHaveLength(0);
+  });
+});
+
+describe('a team one player short', () => {
+  it('starts with the absent slot empty and only the players who are there', async () => {
+    const user = userEvent.setup();
+    const started = show();
+    await user.click(screen.getAllByRole('button', { name: 'Playing a player short?' })[0]);
+    await user.click(screen.getByRole('button', { name: 'B absent' }));
+    // Al (A), the missing Bo (named but no handicap), Cy and Di.
+    const names = [...nameFields()];
+    await user.type(names[0], 'Al');
+    await user.type(names[1], 'Bo');
+    await user.type(names[2], 'Cy');
+    await user.type(names[3], 'Di');
+    const hcps = hcpFields(); // three: the absent slot has none
+    expect(hcps).toHaveLength(3);
+    await user.type(hcps[0], '6');
+    await user.type(hcps[1], '2');
+    await user.type(hcps[2], '8');
+    await user.click(screen.getByRole('button', { name: /Start League Round/ }));
+
+    expect(started).toHaveLength(1);
+    const [round] = started;
+    expect(round.players.map((p) => p.name)).toEqual(['Al', 'Cy', 'Di']);
+    const t1 = round.options.league!.teams[0];
+    expect(t1.bId).toBe('');
+    expect(t1.absent).toBe('b');
+    expect(t1.absentName).toBe('Bo');
+  });
+});
+
+describe('working out a handicap', () => {
+  it('applies 70% for a player with fewer than three matches, and fills it in on request', async () => {
+    const user = userEvent.setup();
+    show();
+    await user.type(nameFields()[0], 'Sub');
+    await user.click(screen.getByRole('button', { name: /Work out handicap/ }));
+    await user.type(screen.getByLabelText('Average over par for Sub'), '6');
+    // 0 matches is the default: 6 × 70% = 4.2 → 4.
+    await user.click(screen.getByRole('button', { name: /Use 4/ }));
+    expect((hcpFields()[0] as HTMLInputElement).value).toBe('4');
+  });
+
+  it('applies 90% once they have three or more', async () => {
+    const user = userEvent.setup();
+    show();
+    await user.type(nameFields()[0], 'Sub');
+    await user.click(screen.getByRole('button', { name: /Work out handicap/ }));
+    await user.type(screen.getByLabelText('Average over par for Sub'), '6');
+    await user.click(screen.getByRole('button', { name: '3+' }));
+    expect(screen.getByRole('button', { name: /Use 5/ })).toBeTruthy(); // 5.4 → 5
+  });
+
+  it("hints at a regular's number from league nights on this phone, without filling it in", async () => {
+    const hs = holes.slice(0, 9);
+    const night = (id: string, date: string): Round => ({
+      id,
+      date,
+      createdAt: 0,
+      updatedAt: 0,
+      players: [
+        { id: 'x1', name: 'Al', handicap: 5 },
+        { id: 'x2', name: 'Bo', handicap: 5 },
+        { id: 'x3', name: 'Cy', handicap: 5 },
+        { id: 'x4', name: 'Di', handicap: 5 },
+      ],
+      holes: hs,
+      games: [],
+      options: {
+        useNet: false,
+        stakes: {},
+        league: {
+          pointsPerMatch: 1,
+          teams: [
+            { aId: 'x1', bId: 'x2' },
+            { aId: 'x3', bId: 'x4' },
+          ],
+        },
+      } as Round['options'],
+      // Al is 6 over par each night: one over on six holes.
+      scores: Object.fromEntries(
+        hs.map((h, i) => [h.number, { x1: h.par + (i < 6 ? 1 : 0), x2: h.par, x3: h.par, x4: h.par }])
+      ),
+      wolf: {},
+      status: 'finished',
+    });
+    localStorage.setItem(
+      'press.rounds.v1',
+      JSON.stringify(['2026-05-01', '2026-05-08', '2026-05-15'].map((d, i) => night(`r${i}`, d)))
+    );
+    const user = userEvent.setup();
+    show();
+    await user.type(nameFields()[0], 'Al');
+    // Three nights, so 90% of +6 = 5.4 → 5.
+    expect(screen.getByText(/Last 3 league nights here/).textContent).toContain('plays off 5');
+    expect((hcpFields()[0] as HTMLInputElement).value).toBe('');
   });
 });
 

@@ -71,7 +71,13 @@ export function HelpSheet({ onBack }: Props) {
           a night. Strokes come off the lowest handicap of the four, at most one
           a hole and nine a match. A 9 is the most any hole can take; a player
           who picks up takes an X (behind "…") and loses the hole in their
-          match, while their partner's ball still counts for the team.
+          match, while their partner's ball still counts for the team. A team
+          one player short still plays: the missing player's match is
+          forfeited, and the partner plays their own match and the team point.
+          Called for darkness or weather after five holes, the Board ends every
+          match as it stands — and can resume it on another day. Handicaps
+          follow the league system: 90% of the average over par of the last
+          five matches, 70% until a player has three.
         </p>
       </section>
     </div>

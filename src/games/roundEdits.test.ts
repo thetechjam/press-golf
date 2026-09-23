@@ -63,7 +63,7 @@ describe('validateHandicaps', () => {
 
   it('rejects a blank in a league round', () => {
     const r = makeRound({ players: FOUR, options: { league: cfg } });
-    expect(validateHandicaps(r, { p2: undefined })).toMatch(/all four/i);
+    expect(validateHandicaps(r, { p2: undefined })).toMatch(/every player/i);
   });
 
   it('accepts a full set in a league round', () => {

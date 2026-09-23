@@ -5,6 +5,7 @@ import type {
   JunkClaims,
   JunkKind,
   LeagueSetup,
+  LeagueTeam,
   Player,
   Round,
   Scores,
@@ -135,12 +136,23 @@ function mapPlayerIds<
   const team = (t: TeamSetup | undefined): TeamSetup | undefined =>
     t && { mode: t.mode, teamA: t.teamA.map(to), teamB: t.teamB.map(to) };
 
-  const league = (l: LeagueSetup | undefined): LeagueSetup | undefined =>
-    l && {
+  // An absent slot's id is '' and must stay '': run through `to` on the way
+  // in, Number('') is 0 and it would come back as the first player.
+  const slot = (id: string) => (id ? to(id) : '');
+  const league = (l: LeagueSetup | undefined): LeagueSetup | undefined => {
+    if (!l) return undefined;
+    const out: LeagueSetup = {
       pointsPerMatch: l.pointsPerMatch,
-      teams: l.teams.map((t) => ({ name: t.name, aId: to(t.aId), bId: to(t.bId) })) as
-        LeagueSetup['teams'],
+      teams: l.teams.map((t) => {
+        const team: LeagueTeam = { name: t.name, aId: slot(t.aId), bId: slot(t.bId) };
+        if (t.absent) team.absent = t.absent;
+        if (t.absentName) team.absentName = t.absentName;
+        return team;
+      }) as LeagueSetup['teams'],
     };
+    if (l.ended) out.ended = true;
+    return out;
+  };
 
   const choice = (c: WolfChoice): WolfChoice =>
     c && c.type === 'partner' ? { type: 'partner', partnerId: to(c.partnerId) } : c;
@@ -343,22 +355,37 @@ function readTeam(v: unknown, known: (id: unknown) => id is string): TeamSetup |
   return teamA && teamB ? { mode: v.mode, teamA, teamB } : null;
 }
 
-/** A league setup, or null unless both teams name both their players. */
+/**
+ * A league setup, or null unless both teams name both their players — or
+ * say which one of them is absent, whose slot is then ''.
+ */
 function readLeague(v: unknown, known: (id: unknown) => id is string): LeagueSetup | null {
   if (!isObject(v) || !Array.isArray(v.teams) || v.teams.length !== 2) return null;
-  const teams = v.teams.map((t) =>
-    isObject(t) && known(t.aId) && known(t.bId)
-      ? { name: typeof t.name === 'string' ? t.name : undefined, aId: t.aId, bId: t.bId }
-      : null
-  );
+  const teams = v.teams.map((t): LeagueTeam | null => {
+    if (!isObject(t)) return null;
+    const absent = t.absent === 'a' || t.absent === 'b' ? t.absent : undefined;
+    const ok = (slot: 'a' | 'b', id: unknown) =>
+      absent === slot ? id === '' : known(id);
+    if (!ok('a', t.aId) || !ok('b', t.bId)) return null;
+    const team: LeagueTeam = {
+      name: typeof t.name === 'string' ? t.name : undefined,
+      aId: t.aId as string,
+      bId: t.bId as string,
+    };
+    if (absent) team.absent = absent;
+    if (absent && typeof t.absentName === 'string') team.absentName = t.absentName;
+    return team;
+  });
   if (teams.some((t) => t === null)) return null;
-  return {
+  const out: LeagueSetup = {
     teams: teams as LeagueSetup['teams'],
     pointsPerMatch:
       typeof v.pointsPerMatch === 'number' && Number.isFinite(v.pointsPerMatch)
         ? v.pointsPerMatch
         : 1,
   };
+  if (v.ended === true) out.ended = true;
+  return out;
 }
 
 /** The Wolf assignments, keeping only holes whose entry is intact. */

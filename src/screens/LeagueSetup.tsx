@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import type { Round, Player, Hole, SavedCourse } from '../types';
+import { useMemo, useState } from 'react';
+import type { Round, Player, Hole, SavedCourse, LeagueTeam } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
-import { uid, listCourses, saveCourse, deleteCourse } from '../storage';
+import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
 import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
@@ -10,6 +10,8 @@ import { StarIcon, XIcon, GearIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { SetupRow } from '../components/SetupRow';
 import { ParTile } from '../components/ParTile';
+import { LeagueHcpHelper } from '../components/LeagueHcpHelper';
+import { leagueHistory } from '../games/leagueHandicap';
 import { leagueCourseSummary } from '../setupSummary';
 
 interface Props {
@@ -20,6 +22,8 @@ interface Props {
 interface TeamState {
   a: Player;
   b: Player;
+  /** League rule: a team one short. That slot plays no match of its own. */
+  absent?: 'a' | 'b';
 }
 
 type Nine = 'front' | 'back';
@@ -31,9 +35,12 @@ const makeHoles = (nine: Nine): Hole[] => {
 
 const newPlayer = (): Player => ({ id: uid(), name: '', handicap: undefined });
 
-/** Whether a team's B player has the lower handicap, and so will play A. */
+/**
+ * Whether a team's B player has the lower handicap, and so will play A. Never
+ * for a team one short: the one player there plays their original opponent.
+ */
 const swapped = (t: TeamState): boolean =>
-  t.a.handicap != null && t.b.handicap != null && t.b.handicap < t.a.handicap;
+  !t.absent && t.a.handicap != null && t.b.handicap != null && t.b.handicap < t.a.handicap;
 
 /** The team with its lower handicap in the A slot. */
 const inOrder = (t: TeamState): TeamState => (swapped(t) ? { a: t.b, b: t.a } : t);
@@ -71,6 +78,10 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
   // keeps that toggle reachable without scrolling past 200px of selects.
   const [courseDetailOpen, setCourseDetailOpen] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  /** Which teams have the "player short tonight?" control open. */
+  const [shortOpen, setShortOpen] = useState<boolean[]>([false, false]);
+  // Read once: the league nights this phone has seen, for handicap hints.
+  const pastRounds = useMemo(() => listRounds(), []);
 
   const switchNine = (n: Nine) => {
     setNine(n);
@@ -147,13 +158,16 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
   };
 
   const start = () => {
-    const allPlayers = teams.flatMap((t) => [t.a, t.b]);
+    // Everyone who is actually there. An absent slot needs no name or number.
+    const allPlayers = teams.flatMap((t) =>
+      (['a', 'b'] as const).filter((r) => t.absent !== r).map((r) => t[r])
+    );
     if (allPlayers.some((p) => !p.name.trim()))
-      return setError('Name all four players (A and B on each team).');
+      return setError('Name every player who is playing (A and B on each team).');
     // A number to score off is mandatory for a league: every match (A, B,
     // Team) is net, so a blank must not silently become scratch.
     if (allPlayers.some((p) => p.handicap == null || Number.isNaN(p.handicap))) {
-      return setError('Enter a handicap for all four players — league scoring needs it.');
+      return setError('Enter a handicap for every player — league scoring needs it.');
     }
 
     // League rule: the low handicap players of each team are matched against
@@ -162,8 +176,20 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
     // the Hole tab reads A, B, A, B like the setup did.
     const ordered = teams.map((t) => inOrder(t));
     const players: Player[] = ordered
-      .flatMap((t) => [t.a, t.b])
+      .flatMap((t) => (['a', 'b'] as const).filter((r) => t.absent !== r).map((r) => t[r]))
       .map((p) => ({ id: p.id, name: p.name.trim(), handicap: p.handicap }));
+    const leagueTeam = (t: TeamState): LeagueTeam => {
+      const team: LeagueTeam = {
+        aId: t.absent === 'a' ? '' : t.a.id,
+        bId: t.absent === 'b' ? '' : t.b.id,
+      };
+      if (t.absent) {
+        team.absent = t.absent;
+        const missing = t[t.absent].name.trim();
+        if (missing) team.absentName = missing;
+      }
+      return team;
+    };
 
     // Rotate holes into play order so the round starts on the chosen hole
     // (e.g. start on 5 → 5,6,7,8,9,1,2,3,4). Navigation, resume, and the
@@ -185,10 +211,7 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
         league: {
           // League standard: each match (A, B, Team) is worth 1 point.
           pointsPerMatch: 1,
-          teams: [
-            { aId: ordered[0].a.id, bId: ordered[0].b.id },
-            { aId: ordered[1].a.id, bId: ordered[1].b.id },
-          ],
+          teams: [leagueTeam(ordered[0]), leagueTeam(ordered[1])],
         },
       },
       scores: {},
@@ -249,35 +272,99 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
       {teams.map((t, ti) => (
         <section key={ti} className="card">
           <h2>Team {ti + 1}</h2>
-          {(['a', 'b'] as const).map((role) => (
-            <div key={role} className="player-row">
-              <span className="ab-badge">{role.toUpperCase()}</span>
-              {/* Named, because a placeholder is not an accessible name and
-                  goes the moment somebody types. There are four of each of
-                  these on the screen, so the name has to say which team and
-                  which slot, not just "player". */}
-              <input
-                className="player-name"
-                value={t[role].name}
-                onChange={(e) => updatePlayer(ti, role, { name: e.target.value })}
-                placeholder={`${role.toUpperCase()} player`}
-                aria-label={`Name of team ${ti + 1}'s ${role.toUpperCase()} player`}
-              />
-              <input
-                className="player-hcp"
-                type="number"
-                inputMode="numeric"
-                value={t[role].handicap ?? ''}
-                onChange={(e) =>
-                  updatePlayer(ti, role, {
-                    handicap: e.target.value === '' ? undefined : Number(e.target.value),
-                  })
-                }
-                placeholder="HCP"
-                aria-label={`Handicap for team ${ti + 1}'s ${role.toUpperCase()} player`}
-              />
+          {(['a', 'b'] as const).map((role) => {
+            const away = t.absent === role;
+            const who = `team ${ti + 1}'s ${role.toUpperCase()} player`;
+            return (
+              <div key={role} className={`league-slot${away ? ' absent' : ''}`}>
+                <div className="player-row">
+                  <span className="ab-badge">{role.toUpperCase()}</span>
+                  {/* Named, because a placeholder is not an accessible name and
+                      goes the moment somebody types. There are four of each of
+                      these on the screen, so the name has to say which team and
+                      which slot, not just "player". */}
+                  <input
+                    className="player-name"
+                    value={t[role].name}
+                    onChange={(e) => updatePlayer(ti, role, { name: e.target.value })}
+                    placeholder={away ? 'Who’s missing? (optional)' : `${role.toUpperCase()} player`}
+                    aria-label={`Name of ${who}`}
+                  />
+                  {away ? (
+                    <span className="absent-tag">Absent</span>
+                  ) : (
+                    <input
+                      className="player-hcp"
+                      type="number"
+                      inputMode="numeric"
+                      value={t[role].handicap ?? ''}
+                      onChange={(e) =>
+                        updatePlayer(ti, role, {
+                          handicap: e.target.value === '' ? undefined : Number(e.target.value),
+                        })
+                      }
+                      placeholder="HCP"
+                      aria-label={`Handicap for ${who}`}
+                    />
+                  )}
+                </div>
+                {!away &&
+                  t[role].name.trim() &&
+                  (() => {
+                    const history = leagueHistory(pastRounds, t[role].name);
+                    const blank = t[role].handicap == null;
+                    // Quiet once a number is in, unless there is history to
+                    // compare it with.
+                    return blank || history ? (
+                      <LeagueHcpHelper
+                        who={t[role].name.trim()}
+                        history={history}
+                        offerCalculator={blank}
+                        onUse={(n) => updatePlayer(ti, role, { handicap: n })}
+                      />
+                    ) : null;
+                  })()}
+              </div>
+            );
+          })}
+          {/* League rule: a team one player short still plays. The one who
+              is there plays their own opponent and the team point; the
+              missing player's match is forfeited. */}
+          {shortOpen[ti] || t.absent ? (
+            <div className="league-short">
+              <span className="hcp-calc-cap">Anyone missing tonight?</span>
+              <div className="seg" role="group" aria-label={`Who is missing from team ${ti + 1}`}>
+                {([undefined, 'a', 'b'] as const).map((slot) => (
+                  <button
+                    key={slot ?? 'none'}
+                    type="button"
+                    className={`seg-btn${t.absent === slot ? ' active' : ''}`}
+                    aria-pressed={t.absent === slot}
+                    onClick={() =>
+                      setTeams((ts) => ts.map((x, i) => (i === ti ? { ...x, absent: slot } : x)))
+                    }
+                  >
+                    {slot ? `${slot.toUpperCase()} absent` : 'Both here'}
+                  </button>
+                ))}
+              </div>
+              {t.absent && (
+                <p className="hint-inline">
+                  {t.absent.toUpperCase()} match is forfeited. The{' '}
+                  {t.absent === 'a' ? 'B' : 'A'} player plays their own match and the team point
+                  alone.
+                </p>
+              )}
             </div>
-          ))}
+          ) : (
+            <button
+              type="button"
+              className="link-btn league-short-toggle"
+              onClick={() => setShortOpen((o) => o.map((v, i) => (i === ti ? true : v)))}
+            >
+              Playing a player short?
+            </button>
+          )}
           {swapped(t) && (
             <p className="hint-inline" role="status">
               {t.b.name.trim() || 'The B player'} has the lower handicap, so plays A — the low

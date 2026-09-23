@@ -8,6 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **League: a team one player short.** "Playing a player short?" on each
+  team marks the A or B slot absent. The missing player's match is forfeited
+  to their opponent, the partner plays their own match and the team point on
+  their own ball, and strokes come off the low of the players who are there.
+- **League: end a match for darkness or weather.** Once all four have
+  finished five holes, the Board offers "End match here". Every match is then
+  final on the holes the whole group finished, and nothing after them counts;
+  "Resume match" picks it back up on another day.
+- **League handicaps worked out the league's way.** Under each player, a
+  calculator for a sub or new player takes their average over par and how
+  many league matches they have played and applies the rule sheet's 70% (under
+  three matches) or 90%, rounded. A regular whose league nights are on the
+  phone gets a hint of what their last five play to — shown, not filled in,
+  since the league director's number is the official one.
+
 - **League pick-ups ("X").** Behind "…" on a league night, a player who picks
   up (or missed the hole) takes an X: they lose the hole in their singles
   match, and their partner's ball still plays for the team. It is recorded as
