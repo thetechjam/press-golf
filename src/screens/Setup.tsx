@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import type { Round, Player, GameType, Hole, SavedCourse, TeamSetup } from '../types';
+import { useMemo, useState } from 'react';
+import type { Round, Player, GameType, Hole, SavedCourse, TeamSetup, RoundTrip } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { GAMES, gameMeta } from '../games';
 import { GAME_RULES } from '../games/rules';
@@ -11,6 +11,8 @@ import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
 import { SetupRow } from '../components/SetupRow';
+import { TripPicker } from '../components/TripPicker';
+import { activeTrip, listTrips } from '../trips';
 import { ParTile } from '../components/ParTile';
 import { courseSummary, holesSummary, gamesSummary, stakesSummary } from '../setupSummary';
 import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry, placePlayer } from '../roster';
@@ -116,6 +118,15 @@ export function Setup({ onCancel, onStart }: Props) {
   // past rounds — which rows open, the crew chip, the recent chips — reads this
   // and not localStorage, so the screen cannot shift while the user is typing.
   const [savedRounds] = useState(() => listRounds());
+
+  // The trip this round is part of. Starts on the trip being played this week,
+  // if there is one: the second round of a trip is the common case, and
+  // forgetting to pick it would settle that round on its own.
+  const trips = useMemo(() => listTrips(savedRounds), [savedRounds]);
+  const [trip, setTrip] = useState<RoundTrip | null>(() => {
+    const t = activeTrip(savedRounds);
+    return t ? { id: t.id, name: t.name } : null;
+  });
 
   // Which rows are expanded. Independent flags, not an accordion.
   // Games opens on a first-ever round: collapsing it is the one part of this
@@ -435,6 +446,7 @@ export function Setup({ onCancel, onStart }: Props) {
       scores: {},
       wolf: {},
       presses: [],
+      ...(trip ? { trip } : {}),
       status: 'in_progress',
     };
 
@@ -1041,6 +1053,15 @@ export function Setup({ onCancel, onStart }: Props) {
               Board.
             </p>
           </section>
+        </SetupRow>
+
+        <SetupRow
+          label="Trip"
+          summary={trip?.name ?? 'None'}
+          open={!!openRows.trip}
+          onToggle={() => toggleRow('trip')}
+        >
+          <TripPicker trips={trips} value={trip} onChange={setTrip} />
         </SetupRow>
       </div>
 

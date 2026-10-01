@@ -45,6 +45,7 @@ function haystack(round: Round): string {
       // A league night's `games` is empty, so without this "league" found
       // nothing — on the one kind of round people most often go looking for.
       isLeagueRound(round) ? 'league' : '',
+      round.trip?.name ?? '',
     ].join(' ')
   );
 }

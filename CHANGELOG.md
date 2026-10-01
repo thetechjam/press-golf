@@ -8,6 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Trip mode.** A buddies trip is four rounds in three days, and settling
+  each one on the eighteenth green is a dozen payments where the trip needed
+  three. New Round has a Trip row: no trip, the trip you are on, or "+ New
+  trip" and a name. A round on a trip still shows its own settlement, with a
+  line under it pointing to the trip's; the trip screen adds every round up by
+  player and settles the sum once — "Alex pays Casey $254" — with a button
+  that sends the settle-up to the group chat as text. While a trip is being
+  played (a round in the last four days) it has a card on Home, and New Round
+  starts on it, so the second round of a trip cannot quietly settle on its
+  own. Rounds can be put on a trip or taken off afterwards, a trip can be
+  renamed, its name shows on its rounds' cards and finds them in search, and
+  it travels with share links and backups. League nights stay out: they
+  settle on points.
+
 - **League season standings.** "Season standings" at the top of Golf League
   opens the season so far: teams ranked on points with their won–lost–halved
   record night by night, each player's own A or B match record with their

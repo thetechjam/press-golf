@@ -19,6 +19,8 @@ interface Props {
    */
   selected?: boolean;
   onToggleSelect?: () => void;
+  /** On the Trip screen, where every card is on the same trip, its tag says nothing. */
+  hideTrip?: boolean;
 }
 
 /**
@@ -28,7 +30,7 @@ interface Props {
  * and another in the history is the same round described twice, and the second
  * description is the one that will go stale.
  */
-export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect }: Props) {
+export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect, hideTrip }: Props) {
   const selecting = onToggleSelect !== undefined;
   const thru = completedHoleCount(round);
   const result = standingLine(round);
@@ -82,6 +84,7 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect }:
             {/* "thru 18" reads like a finished card at a glance; this is the
                 tell that it is not. */}
             {round.status !== 'finished' && <span className="tag live">In progress</span>}
+            {round.trip && !hideTrip && <span className="tag trip">{round.trip.name}</span>}
             {round.games.map((g) => (
               <span key={g} className="tag">
                 {GAMES.find((m) => m.id === g)?.label ?? g}

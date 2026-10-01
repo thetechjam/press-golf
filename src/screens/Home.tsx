@@ -4,6 +4,8 @@ import { listRounds } from '../storage';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { RoundCard } from '../components/RoundCard';
 import { ResumeCard } from '../components/ResumeCard';
+import { TripCard } from '../components/TripCard';
+import { activeTrip } from '../trips';
 import { liveRound } from '../roundSummary';
 import { FlagIcon, PressMark, TrophyIcon, GearIcon, ChartIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
@@ -27,9 +29,18 @@ interface Props {
   onViewResults: (round: Round) => void;
   onStats: () => void;
   onHistory: () => void;
+  onTrip?: (tripId: string) => void;
 }
 
-export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onHistory }: Props) {
+export function Home({
+  onNew,
+  onNewLeague,
+  onResume,
+  onViewResults,
+  onStats,
+  onHistory,
+  onTrip,
+}: Props) {
   const [rounds] = useState<Round[]>(listRounds);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsView, setSettingsView] = useState<'settings' | 'help'>('settings');
@@ -44,6 +55,7 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
   const live = liveRound(rounds);
   const rest = live ? rounds.filter((r) => r !== live) : rounds;
   const listed = rest.slice(0, live ? ON_HOME - 1 : ON_HOME);
+  const trip = activeTrip(rounds);
 
   return (
     <div className="screen home">
@@ -73,6 +85,8 @@ export function Home({ onNew, onNewLeague, onResume, onViewResults, onStats, onH
       </header>
 
       {live && <ResumeCard round={live} onResume={() => onResume(live)} />}
+
+      {trip && onTrip && <TripCard trip={trip} onOpen={() => onTrip(trip.id)} />}
 
       {/* Mid-round, the Resume card is the thing to press; a second filled
           button under it would be two primaries arguing. */}

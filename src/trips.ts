@@ -1,5 +1,5 @@
 import type { Round, RoundTrip } from './types';
-import { computeSettlement, settleBalances, type Transaction } from './games/settlement';
+import { computeSettlement, formatMoney, settleBalances, type Transaction } from './games/settlement';
 
 /**
  * Trips: several rounds that settle their money once, at the end.
@@ -139,3 +139,41 @@ export const withTrip = (round: Round, trip: RoundTrip | null): Round => {
   const { trip: _old, ...rest } = round;
   return trip ? { ...rest, trip: { id: trip.id, name: trip.name.trim() } } : rest;
 };
+
+/** How far either side of a trip's dates a round can be offered for it. */
+const NEARBY_DAYS = 7;
+
+/**
+ * Rounds that could be put on this trip: ones played within a week of it
+ * that are not on another trip. League nights are left out — they settle on
+ * points, not money, and belong to the league's season.
+ */
+export function tripCandidates(rounds: Round[], trip: Trip): Round[] {
+  const ms = (d: string) => Date.parse(`${d}T12:00:00Z`);
+  const from = ms(trip.first) - NEARBY_DAYS * 864e5;
+  const to = ms(trip.last) + NEARBY_DAYS * 864e5;
+  return rounds
+    .filter((r) => !r.options.league)
+    .filter((r) => r.trip?.id === trip.id || (!r.trip && ms(r.date) >= from && ms(r.date) <= to))
+    .sort(newestFirst);
+}
+
+/**
+ * The trip's settle-up as text for the group chat: who is up, who is down,
+ * and the payments. Plain text, because that is what every chat app takes.
+ */
+export function tripSettleText(trip: Trip, ledger: TripLedger): string {
+  const lines = [`${trip.name} — trip settle-up`];
+  const n = trip.rounds.length;
+  lines.push(`${n} ${n === 1 ? 'round' : 'rounds'}${ledger.unfinished ? ` (${ledger.unfinished} still being played)` : ''}`);
+  lines.push('');
+  for (const p of ledger.players) {
+    lines.push(`${p.name}: ${p.total === 0 ? 'even' : formatMoney(p.total)}`);
+  }
+  if (ledger.transactions.length) {
+    lines.push('');
+    for (const t of ledger.transactions) lines.push(`${t.from} pays ${t.to} ${formatMoney(t.amount)}`);
+  }
+  lines.push('', 'Scored with Press');
+  return lines.join('\n');
+}
