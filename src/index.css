@@ -706,6 +706,32 @@ button:focus-visible {
   border-color: var(--green-ink);
 }
 
+/* A league night, told apart before the card is read: a felt edge down the
+   left, and a "League night" line over the title. Green rather than gold —
+   gold already means a round still in play, and a league night can be both. */
+.round-card.league {
+  /* A border, not an inset shadow: the card's button paints its hover tint
+     over anything drawn inside the card, and the edge went with it. */
+  border-left: 4px solid var(--green-ink);
+}
+/* The 3px the edge adds over the usual 1px border comes back off the inside,
+   so the text keeps the column every other card's text is on. */
+.round-card.league .round-main {
+  padding-left: 13px;
+}
+.round-kind {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 2px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--green-ink);
+}
+
 .round-title {
   font-family: var(--font-display);
   font-weight: 500;
@@ -5432,7 +5458,7 @@ select:focus {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
 }
 .history-search {
   position: relative;
@@ -5467,6 +5493,9 @@ select:focus {
 }
 .history-filter {
   width: 100%;
+  /* The tools column's gap spaces the rows; the .seg margin on top of it
+     put the League / Regular row a full button's breath below the first. */
+  margin-bottom: 0;
 }
 
 .history-count {

@@ -94,6 +94,31 @@ const rounds = [
         updatedAt: Date.now() - (i + 2) * 1e6,
       })
   ),
+  // A league night, so the card's league flag and the Rounds screen's
+  // League / Regular filter are drawn and measured like everything else.
+  round({
+    id: 'lg1',
+    course: 'Thursday Night League',
+    date: '2026-07-16',
+    games: [],
+    junk: {},
+    holes: holes.slice(0, 9),
+    updatedAt: Date.now() - 7e6,
+    options: {
+      useNet: true,
+      stablefordMode: 'standard',
+      loneWolfMultiplier: 2,
+      blindWolfMultiplier: 3,
+      stakes: {},
+      league: {
+        teams: [
+          { aId: ids[2], bId: ids[1] },
+          { aId: ids[0], bId: ids[3] },
+        ],
+        pointsPerMatch: 1,
+      },
+    },
+  }),
   // One from a previous season, so the Stats screen's year filter has more
   // than one year to offer and its row gets measured like anything else.
   round({

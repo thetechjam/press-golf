@@ -2,8 +2,15 @@ import { useMemo, useState } from 'react';
 import type { Round } from '../types';
 import { listRounds, deleteRound } from '../storage';
 import { RoundCard } from '../components/RoundCard';
-import { searchRounds, filterByStatus, groupByMonth, describeEmpty } from '../history';
-import type { StatusFilter } from '../history';
+import {
+  searchRounds,
+  filterByStatus,
+  filterByKind,
+  groupByMonth,
+  describeEmpty,
+  isLeagueRound,
+} from '../history';
+import type { KindFilter, StatusFilter } from '../history';
 import { XIcon } from '../icons';
 
 interface Props {
@@ -21,6 +28,13 @@ const FILTERS: { id: StatusFilter; label: string }[] = [
   { id: 'all', label: 'All' },
   { id: 'in_progress', label: 'Unfinished' },
   { id: 'finished', label: 'Finished' },
+];
+
+/** "All rounds" rather than "All", so it is not the same word twice in two rows. */
+const KINDS: { id: KindFilter; label: string }[] = [
+  { id: 'all', label: 'All rounds' },
+  { id: 'league', label: 'League' },
+  { id: 'regular', label: 'Regular' },
 ];
 
 /**
@@ -42,14 +56,23 @@ export function History({ onBack, onResume, onViewResults }: Props) {
   const [rounds, setRounds] = useState<Round[]>(listRounds);
   const [query, setQuery] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
+  const [kind, setKind] = useState<KindFilter>('all');
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
 
   const shown = useMemo(
-    () => filterByStatus(searchRounds(rounds, query), status),
-    [rounds, query, status]
+    () => filterByKind(filterByStatus(searchRounds(rounds, query), status), kind),
+    [rounds, query, status, kind]
   );
+  // Only offered when there is something to tell apart: somebody who has
+  // never played a league night does not need a League filter, and somebody
+  // who only plays them does not need a Regular one. Kept up while a filter
+  // is set, so deleting the last of one kind cannot strand it.
+  const mixed = useMemo(() => {
+    const league = rounds.filter(isLeagueRound).length;
+    return league > 0 && league < rounds.length;
+  }, [rounds]);
   const groups = useMemo(() => groupByMonth(shown), [shown]);
 
   const open = (round: Round) =>
@@ -134,11 +157,26 @@ export function History({ onBack, onResume, onViewResults }: Props) {
               </button>
             ))}
           </div>
+
+          {(mixed || kind !== 'all') && (
+            <div className="seg history-filter" role="group" aria-label="Kind of round">
+              {KINDS.map((k) => (
+                <button
+                  key={k.id}
+                  className={`seg-btn${kind === k.id ? ' active' : ''}`}
+                  aria-pressed={kind === k.id}
+                  onClick={() => setKind(k.id)}
+                >
+                  {k.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {shown.length === 0 ? (
-        <p className="history-empty">{describeEmpty(query, status)}</p>
+        <p className="history-empty">{describeEmpty(query, status, kind)}</p>
       ) : (
         <>
           {/* Said once, above the list: a count is the answer to "did the

@@ -20,7 +20,7 @@ export function ResumeCard({ round, onResume }: { round: Round; onResume: () => 
     <button className="resume-card" onClick={onResume}>
       <span className="resume-eyebrow">
         <span className="resume-dot" aria-hidden="true" />
-        In progress · {thru === 0 ? 'not started' : `thru ${thru} of ${round.holes.length}`}
+        {round.options.league ? 'League night' : 'In progress'} · {thru === 0 ? 'not started' : `thru ${thru} of ${round.holes.length}`}
       </span>
       <span className="resume-title">{roundTitle(round)}</span>
       {standing && <span className="resume-standing">{standing.text}</span>}

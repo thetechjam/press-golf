@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **League nights stand out in your rounds.** A league round had one more
+  pill among the game tags — "League", which read like the name of a game. Its
+  card now has a felt-green edge and a "League night" line with the trophy over
+  the course name, on Home and in Rounds, and the Resume card says "League
+  night" where it said "In progress". Once there are both kinds on the phone,
+  Rounds adds an All rounds / League / Regular filter beside the status one,
+  and searching "league" finds them — it found nothing before, because a
+  league night lists no games.
+
 - **League: a brand-new player's first night sets their handicap.** With no
   league score to average yet, a new player can be marked "set it from
   tonight's score" at setup instead of given a guessed number. They play off

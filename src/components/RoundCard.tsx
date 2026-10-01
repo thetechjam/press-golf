@@ -2,7 +2,7 @@ import type { Round } from '../types';
 import { completedHoleCount } from '../games/util';
 import { GAMES } from '../games';
 import { DeleteButton } from './DeleteButton';
-import { XIcon } from '../icons';
+import { TrophyIcon, XIcon } from '../icons';
 import { formatRoundDate } from '../roundDate';
 import { roundTitle, standingLine } from '../roundSummary';
 
@@ -32,9 +32,12 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect }:
   const selecting = onToggleSelect !== undefined;
   const thru = completedHoleCount(round);
   const result = standingLine(round);
+  const league = !!round.options.league;
 
   return (
-    <div className={`round-card${selecting ? ' selecting' : ''}${selected ? ' selected' : ''}`}>
+    <div
+      className={`round-card${league ? ' league' : ''}${selecting ? ' selecting' : ''}${selected ? ' selected' : ''}`}
+    >
       <button
         className="round-main"
         onClick={selecting ? onToggleSelect : onOpen}
@@ -46,6 +49,13 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect }:
           </span>
         )}
         <span className="round-body">
+          {/* Above the title rather than one more pill among the game tags,
+              where a plain "League" looked like the name of a game. */}
+          {league && (
+            <span className="round-kind">
+              <TrophyIcon size={13} /> League night
+            </span>
+          )}
           <span className="round-title">{roundTitle(round)}</span>
           <span className="round-sub">
             {formatRoundDate(round.date)} · {round.players.length} players ·{' '}
@@ -72,7 +82,6 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect }:
             {/* "thru 18" reads like a finished card at a glance; this is the
                 tell that it is not. */}
             {round.status !== 'finished' && <span className="tag live">In progress</span>}
-            {round.options.league && <span className="tag">League</span>}
             {round.games.map((g) => (
               <span key={g} className="tag">
                 {GAMES.find((m) => m.id === g)?.label ?? g}

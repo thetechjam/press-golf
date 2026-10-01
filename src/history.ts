@@ -15,6 +15,15 @@ import type { Round } from './types';
 
 export type StatusFilter = 'all' | 'in_progress' | 'finished';
 
+/**
+ * League nights and every other round. A league round has no entry in
+ * `games` — its format lives in `options.league` — so it can only be told
+ * apart by that.
+ */
+export type KindFilter = 'all' | 'league' | 'regular';
+
+export const isLeagueRound = (round: Round): boolean => !!round.options.league;
+
 /** Lower-cased, trimmed, and with runs of space collapsed. */
 const norm = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
@@ -29,7 +38,14 @@ const norm = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, ' ');
  */
 function haystack(round: Round): string {
   return norm(
-    [round.course ?? '', ...round.players.map((p) => p.name), ...round.games].join(' ')
+    [
+      round.course ?? '',
+      ...round.players.map((p) => p.name),
+      ...round.games,
+      // A league night's `games` is empty, so without this "league" found
+      // nothing — on the one kind of round people most often go looking for.
+      isLeagueRound(round) ? 'league' : '',
+    ].join(' ')
   );
 }
 
@@ -55,6 +71,13 @@ export function searchRounds(rounds: Round[], query: string): Round[] {
 /** Rounds in the given state; 'all' passes everything through. */
 export function filterByStatus(rounds: Round[], status: StatusFilter): Round[] {
   return status === 'all' ? rounds : rounds.filter((r) => r.status === status);
+}
+
+/** League nights, the rest, or both. */
+export function filterByKind(rounds: Round[], kind: KindFilter): Round[] {
+  if (kind === 'all') return rounds;
+  const league = kind === 'league';
+  return rounds.filter((r) => isLeagueRound(r) === league);
 }
 
 export interface RoundGroup {
@@ -114,15 +137,18 @@ function monthLabel(key: string, now: Date): string {
  * waiting to happen; naming the filter that hid them is what turns it back
  * into a list they can recover.
  */
-export function describeEmpty(query: string, status: StatusFilter): string {
-  const searched = query.trim().length > 0;
-  if (searched && status !== 'all') {
-    return `No ${status === 'finished' ? 'finished' : 'unfinished'} rounds match “${query.trim()}”.`;
-  }
-  if (searched) return `No rounds match “${query.trim()}”.`;
-  if (status === 'finished') return 'No finished rounds yet.';
-  if (status === 'in_progress') return 'No rounds in progress.';
-  return 'No rounds yet.';
+export function describeEmpty(
+  query: string,
+  status: StatusFilter,
+  kind: KindFilter = 'all'
+): string {
+  const q = query.trim();
+  const state = status === 'finished' ? 'finished' : status === 'in_progress' ? 'unfinished' : '';
+  const sort = kind === 'all' ? '' : kind;
+  if (q) return `No ${[state, sort, 'rounds'].filter(Boolean).join(' ')} match “${q}”.`;
+  // With nothing searched, the in-progress case keeps the wording it had.
+  if (status === 'in_progress') return `No ${[sort, 'rounds'].filter(Boolean).join(' ')} in progress.`;
+  return `No ${[state, sort, 'rounds'].filter(Boolean).join(' ')} yet.`;
 }
 
 /**
