@@ -5,6 +5,8 @@ import {
   filterByStatus,
   groupByMonth,
   describeEmpty,
+  filterByKind,
+  isLeagueRound,
   roundYears,
   filterByYear,
   describeNoMatches,
@@ -242,5 +244,50 @@ describe('narrowing the players a search was about', () => {
   it('leaves the list alone when no word named anybody', () => {
     // "pebble" found Pebble Beach rounds; whoever played them all still count.
     expect(named('pebble')).toEqual(['Alex', 'Sam Whitfield', 'Casey']);
+  });
+});
+
+describe('league nights', () => {
+  const night = round({
+    id: 'L',
+    course: 'Thursday Night League',
+    date: '2026-09-10',
+    games: [],
+    options: {
+      ...torrey.options,
+      league: {
+        teams: [
+          { aId: 'p1', bId: 'p2' },
+          { aId: 'p3', bId: 'p4' },
+        ],
+        pointsPerMatch: 1,
+      },
+    },
+  });
+  const mixed = [torrey, night, pebble];
+
+  it('tells a league round from the rest by its league setup', () => {
+    expect(isLeagueRound(night)).toBe(true);
+    expect(isLeagueRound(torrey)).toBe(false);
+  });
+
+  it('filters to one kind or the other', () => {
+    expect(ids(filterByKind(mixed, 'league'))).toEqual(['L']);
+    expect(ids(filterByKind(mixed, 'regular'))).toEqual(['a', 'b']);
+    expect(ids(filterByKind(mixed, 'all'))).toEqual(['a', 'L', 'b']);
+  });
+
+  it('finds a league night by searching "league", though it lists no games', () => {
+    const plain = round({ ...night, course: 'Rolling Hills' });
+    expect(ids(searchRounds([torrey, plain], 'league'))).toEqual(['L']);
+  });
+
+  it('names the kind in an empty result', () => {
+    expect(describeEmpty('', 'all', 'league')).toBe('No league rounds yet.');
+    expect(describeEmpty('', 'finished', 'regular')).toBe('No finished regular rounds yet.');
+    expect(describeEmpty('', 'in_progress', 'league')).toBe('No league rounds in progress.');
+    expect(describeEmpty('sam', 'in_progress', 'league')).toBe(
+      'No unfinished league rounds match “sam”.'
+    );
   });
 });

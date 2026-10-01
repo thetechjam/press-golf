@@ -217,3 +217,55 @@ describe('opening one', () => {
     expect(opened).toEqual(['resume:b', 'results:c']);
   });
 });
+
+describe('league nights', () => {
+  const night = round({
+    id: 'L',
+    course: 'Thursday Night League',
+    date: '2026-09-10',
+    updatedAt: 6,
+    games: [],
+    players: [
+      { id: 'p1', name: 'Alex' },
+      { id: 'p2', name: 'Sam' },
+      { id: 'p3', name: 'Jordan' },
+      { id: 'p4', name: 'Casey' },
+    ],
+    options: {
+      ...ROUNDS[0].options,
+      league: {
+        teams: [
+          { aId: 'p1', bId: 'p2' },
+          { aId: 'p3', bId: 'p4' },
+        ],
+        pointsPerMatch: 1,
+      },
+    },
+  });
+
+  it('flags a league night on its card, and only that card', () => {
+    show([...ROUNDS, night]);
+    const flagged = [...document.querySelectorAll('.round-card.league')];
+    expect(flagged).toHaveLength(1);
+    expect(flagged[0].textContent).toContain('League night');
+    expect(flagged[0].textContent).toContain('Thursday Night League');
+  });
+
+  it('offers League / Regular only when there are both', () => {
+    show(ROUNDS);
+    expect(screen.queryByRole('group', { name: 'Kind of round' })).toBeNull();
+    cleanup();
+    show([...ROUNDS, night]);
+    expect(screen.getByRole('group', { name: 'Kind of round' })).toBeTruthy();
+  });
+
+  it('narrows the list to league nights, and back out to the rest', async () => {
+    const user = userEvent.setup();
+    show([...ROUNDS, night]);
+    await user.click(screen.getByRole('button', { name: 'League' }));
+    expect(titles()).toEqual(['Thursday Night League']);
+    await user.click(screen.getByRole('button', { name: 'Regular' }));
+    expect(titles()).not.toContain('Thursday Night League');
+    expect(titles()).toHaveLength(3);
+  });
+});

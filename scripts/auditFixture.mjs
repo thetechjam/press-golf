@@ -94,6 +94,62 @@ const rounds = [
         updatedAt: Date.now() - (i + 2) * 1e6,
       })
   ),
+  // A league night, so the card's league flag and the Rounds screen's
+  // League / Regular filter are drawn and measured like everything else.
+  round({
+    id: 'lg1',
+    course: 'Thursday Night League',
+    date: '2026-07-16',
+    games: [],
+    junk: {},
+    holes: holes.slice(0, 9),
+    updatedAt: Date.now() - 7e6,
+    options: {
+      useNet: true,
+      stablefordMode: 'standard',
+      loneWolfMultiplier: 2,
+      blindWolfMultiplier: 3,
+      stakes: {},
+      league: {
+        teams: [
+          { aId: ids[2], bId: ids[1] },
+          { aId: ids[0], bId: ids[3] },
+        ],
+        pointsPerMatch: 1,
+      },
+    },
+  }),
+  // Two more, so Standings has a season to add up: different pairings, one
+  // team with a name of its own, and enough rows to measure.
+  ...[
+    { id: 'lg2', date: '2026-07-23', teams: [[0, 1], [2, 3]], name: 'Sandbaggers' },
+    { id: 'lg3', date: '2026-07-30', teams: [[0, 3], [1, 2]] },
+  ].map(({ id, date, teams, name }) =>
+    round({
+      id,
+      course: 'Thursday Night League',
+      date,
+      games: [],
+      junk: {},
+      holes: holes.slice(0, 9),
+      updatedAt: Date.now() - 7e6,
+      options: {
+        useNet: true,
+        stablefordMode: 'standard',
+        loneWolfMultiplier: 2,
+        blindWolfMultiplier: 3,
+        stakes: {},
+        league: {
+          teams: teams.map(([a, b], i) => ({
+            aId: ids[a],
+            bId: ids[b],
+            ...(i === 0 && name ? { name } : {}),
+          })),
+          pointsPerMatch: 1,
+        },
+      },
+    })
+  ),
   // One from a previous season, so the Stats screen's year filter has more
   // than one year to offer and its row gets measured like anything else.
   round({
@@ -171,6 +227,17 @@ export async function walkScreens({ page, BASE, step, width, settings }) {
     async () => {
       await home();
       await page.getByRole('button', { name: /Golf League/i }).click();
+      await page.waitForTimeout(500);
+    }
+  );
+
+  await step(
+    at('Standings'),
+    async () => {
+      await home();
+      await page.getByRole('button', { name: /Golf League/i }).click();
+      await page.waitForTimeout(400);
+      await page.getByRole('button', { name: /Season standings/i }).click();
       await page.waitForTimeout(500);
     }
   );

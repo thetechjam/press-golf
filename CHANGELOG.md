@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **League season standings.** "Season standings" at the top of Golf League
+  opens the season so far: teams ranked on points with their won–lost–halved
+  record night by night, each player's own A or B match record with their
+  scoring average and what their last five league nights play to, and the
+  nights themselves, each opening its results. Teams are matched by their two
+  players whichever slot each was typed into, and a night a player missed
+  counts for their usual team. A season switch appears once there is more than
+  one. Each foursome scores on its own phone, so the screen says plainly that
+  it only knows the nights scored on (or shared to) this phone, and that the
+  league director's sheet is the official table.
+
+- **League nights stand out in your rounds.** A league round had one more
+  pill among the game tags — "League", which read like the name of a game. Its
+  card now has a felt-green edge and a "League night" line with the trophy over
+  the course name, on Home and in Rounds, and the Resume card says "League
+  night" where it said "In progress". Once there are both kinds on the phone,
+  Rounds adds an All rounds / League / Regular filter beside the status one,
+  and searching "league" finds them — it found nothing before, because a
+  league night lists no games.
+
 - **League: a brand-new player's first night sets their handicap.** With no
   league score to average yet, a new player can be marked "set it from
   tonight's score" at setup instead of given a guessed number. They play off
@@ -116,6 +136,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   team match off the low of all four, and still at most one stroke a hole.
 
 ### Changed
+- **Money over $999 gets a comma.** A season on Stats easily runs past a
+  thousand, and "$1648 changed hands" read as a code rather than a sum. Every
+  amount now groups its thousands — "$1,648", "−$1,320" — the same way on
+  every phone, whatever its number format.
+- **A spacing and alignment pass.** On New Round, the handicap line sat flush
+  against the recall chips (a `margin-top: auto` meant for Home, which comes
+  out as nothing in a card), and "Load a saved course" ran straight into the
+  course-data credit; both now have room, and the hints inside a card start
+  where its controls do instead of centring under them. "Quick set" no longer
+  crowds the slope/rating note. On the Board and Results, "Edit stakes" sits on
+  the line of the heading beside it rather than a few pixels under it, and the
+  money rows line up with the payments below. On League, the pars & stroke
+  index row lines up with the Front 9 / Back 9 buttons. On Stats, the
+  round-by-round chart gets a breath of space under the figures above it.
 - **Golf League follows the 2025 league rules.** Every match — A, B and team
   — now plays off the lowest handicap of the foursome, capped at 9 shots,
   where the singles used to play off the lower of their own two players. No
