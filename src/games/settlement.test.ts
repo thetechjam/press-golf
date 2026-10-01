@@ -47,6 +47,12 @@ describe('formatMoney', () => {
     expect(formatMoney(-5)).toBe('−$5');
     expect(formatMoney(-2.5)).toBe('−$2.50');
   });
+  it('groups thousands, which a season total on Stats reaches', () => {
+    expect(formatMoney(1648)).toBe('$1,648');
+    expect(formatMoney(-1320)).toBe('−$1,320');
+    expect(formatMoney(1234567.5)).toBe('$1,234,567.50');
+    expect(formatMoney(999)).toBe('$999');
+  });
 });
 
 describe('computeSettlement — inactive / no stakes', () => {

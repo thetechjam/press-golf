@@ -72,9 +72,16 @@ export function unitFor(round: Round, game: GameType): string {
   return `bet (×${bets})`;
 }
 
+/**
+ * `$5`, `$2.50`, `−$165`, `$1,648`. Grouped by hand rather than through
+ * toLocaleString: the unicode minus and the dropped `.00` are already ours, and
+ * a phone set to a comma-decimal locale would otherwise print `$1.648` on the
+ * Stats screen — a different number to anyone reading it.
+ */
 export function formatMoney(n: number): string {
   const abs = Math.abs(n);
-  const s = Number.isInteger(abs) ? `$${abs}` : `$${abs.toFixed(2)}`;
+  const [whole, cents] = (Number.isInteger(abs) ? String(abs) : abs.toFixed(2)).split('.');
+  const s = `$${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}${cents ? `.${cents}` : ''}`;
   return n < 0 ? `−${s}` : s;
 }
 

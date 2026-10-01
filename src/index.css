@@ -856,6 +856,16 @@ button:focus-visible {
 .card > .hint:last-child {
   margin-bottom: 0;
 }
+/* `margin-top: auto` is for Home, whose column pushes the tip to the foot of
+   the screen. In a card it resolves to 0 — which is what had the handicap
+   line on New Round sitting flush against the recall chips above it. And a
+   card's hint reads as the caption to the controls above it, so it starts
+   where they do rather than centring under a left-aligned column. */
+.card .hint,
+.course-search .hint {
+  margin-top: 10px;
+  text-align: start;
+}
 
 /* ---------- Empty state (Home, no rounds) ---------- */
 .empty-state {
@@ -1094,6 +1104,7 @@ select:focus {
 }
 .cs-attribution {
   font-size: var(--fs-2xs);
+  text-align: start;
   /* No opacity on top of --muted. --muted is already the tuned quiet colour;
      multiplying it by 0.75 took an attribution line that has to stay legible
      for licence reasons from 5.4:1 down to 3.46:1, which is the one thing it
@@ -2648,7 +2659,10 @@ select:focus {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: baseline;
+  /* Centre, not baseline: a title with an icon is an inline-flex box whose
+     baseline is the icon's bottom edge, which dropped "Edit stakes" a few
+     pixels below MONEY and SETTLEMENT. */
+  align-items: center;
   gap: 4px 8px;
   margin-bottom: 8px;
 }
@@ -2920,7 +2934,9 @@ select:focus {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 6px;
+  /* No side inset: these rows carry no highlight to sit inside, so 6px only
+     put the avatars and amounts off the column the payments below use. */
+  padding: 7px 0;
 }
 .net-name {
   flex: 1;
@@ -3354,6 +3370,7 @@ select:focus {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+  margin-top: 12px;
   margin-bottom: 12px;
   font-size: var(--fs-sm);
   color: var(--muted);
@@ -4929,6 +4946,20 @@ select:focus {
   border-radius: 0;
   padding: 0;
 }
+/* Unframed, the saved-course list loses the card margin that separated it
+   from the search above, and its heading ran straight into the attribution
+   line. */
+.setup-row-body .course-search + .course-picker {
+  margin-top: 18px;
+}
+/* A disclosure row inside an ordinary card (League's pars & stroke index)
+   takes the card's padding as its own; the row's inset is for the edge-to-edge
+   list on New Round and put this one 14px inside the buttons above it. */
+.card > .setup-row .setup-row-head,
+.card > .setup-row .setup-row-body {
+  padding-left: 0;
+  padding-right: 0;
+}
 @media (prefers-reduced-motion: reduce) {
   .setup-row-chevron {
     transition: none;
@@ -5250,6 +5281,11 @@ select:focus {
   border-radius: 2px;
 }
 
+.trend {
+  /* The figures above end in a caption and this starts with one; the card's
+     10px gap alone ran OVER 8 ROUNDS straight into VS PAR BY ROUND. */
+  margin-top: 6px;
+}
 .trend-head {
   display: flex;
   justify-content: space-between;
