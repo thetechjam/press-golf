@@ -111,6 +111,8 @@ interface PackedRound {
   pr?: number[];
   sl?: number;
   ra?: number;
+  /** The trip, as [id, name]. */
+  t?: [string, string];
 }
 
 /* ------------------------------------------------------------------ *
@@ -257,6 +259,7 @@ export function packRound(round: Round): PackedRound | null {
   if (round.presses?.length) packed.pr = round.presses;
   if (typeof round.slope === 'number') packed.sl = round.slope;
   if (typeof round.rating === 'number') packed.ra = round.rating;
+  if (round.trip) packed.t = [round.trip.id, round.trip.name];
   return packed;
 }
 
@@ -575,6 +578,17 @@ export function unpackRound(raw: unknown): UnpackResult {
   const rating = num(raw.ra);
   if (slope !== undefined) round.slope = slope;
   if (rating !== undefined) round.rating = rating;
+  // Optional, and ignored rather than refused when malformed: a round is
+  // whole without its trip, where it is not whole without a score.
+  if (
+    Array.isArray(raw.t) &&
+    typeof raw.t[0] === 'string' &&
+    raw.t[0] &&
+    typeof raw.t[1] === 'string' &&
+    raw.t[1].trim()
+  ) {
+    round.trip = { id: raw.t[0], name: raw.t[1].trim() };
+  }
   return { ok: true, round };
 }
 

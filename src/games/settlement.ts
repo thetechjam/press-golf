@@ -262,6 +262,16 @@ const fromCents = (ids: string[], cents: Record<string, number>): Record<string,
   return out;
 };
 
+/**
+ * Who pays whom for balances already keyed by name — the trip ledger's, which
+ * adds up several rounds whose player ids have nothing to do with each other.
+ */
+export function settleBalances(byName: Record<string, number>): Transaction[] {
+  const names: Record<string, string> = {};
+  for (const n of Object.keys(byName)) names[n] = n;
+  return settleTransactions(byName, names);
+}
+
 /** Greedy minimum-transaction settlement from net balances. */
 function settleTransactions(
   totals: Record<string, number>,

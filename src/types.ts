@@ -191,6 +191,19 @@ export interface GameOptions {
   league?: LeagueSetup;
 }
 
+/**
+ * The trip a round belongs to: a buddies trip of several rounds that settles
+ * its money once, at the end. Carried on the round itself rather than in a
+ * store of its own, so a backup, a share link and a handover all take it along
+ * with nothing new to keep in step — and a trip is simply the rounds that
+ * name it. The name rides along so a round that arrives on another phone can
+ * say which trip it was part of.
+ */
+export interface RoundTrip {
+  id: string;
+  name: string;
+}
+
 export interface Round {
   id: string;
   course?: string;
@@ -238,6 +251,7 @@ export interface Round {
    * saved before this recorded and what a hand-typed rating means.
    */
   ratingHoles?: number;
+  trip?: RoundTrip;
   status: 'in_progress' | 'finished';
 }
 
