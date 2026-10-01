@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **League season standings.** "Season standings" at the top of Golf League
+  opens the season so far: teams ranked on points with their won–lost–halved
+  record night by night, each player's own A or B match record with their
+  scoring average and what their last five league nights play to, and the
+  nights themselves, each opening its results. Teams are matched by their two
+  players whichever slot each was typed into, and a night a player missed
+  counts for their usual team. A season switch appears once there is more than
+  one. Each foursome scores on its own phone, so the screen says plainly that
+  it only knows the nights scored on (or shared to) this phone, and that the
+  league director's sheet is the official table.
+
 - **League nights stand out in your rounds.** A league round had one more
   pill among the game tags — "League", which read like the name of a game. Its
   card now has a felt-green edge and a "League night" line with the trophy over

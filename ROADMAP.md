@@ -88,6 +88,13 @@ what's deferred, and how to expand without a rewrite.
   figures come from, so "how do I score at Torrey" and "was last season
   better" are the same screen asked twice.
 
+- **League season standings** (`src/games/leagueSeason.ts`,
+  `src/screens/LeagueStandings.tsx`): team points and records, player singles
+  records, and the nights, added up from the league rounds on the phone. Local
+  only, and says so: one phone holds one foursome's nights, so a whole-league
+  table is the league director's sheet until rounds can be pooled — which is
+  the sync work below.
+
 ## Where data lives today
 
 Everything is in **localStorage**, per browser, per device:

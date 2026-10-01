@@ -6,6 +6,7 @@ import { LeagueSetup } from './screens/LeagueSetup';
 import { Play } from './screens/Play';
 import { Results } from './screens/Results';
 import { Stats } from './screens/Stats';
+import { LeagueStandings } from './screens/LeagueStandings';
 import { History } from './screens/History';
 import { saveRound, getRound, listCourses, saveCourse } from './storage';
 import { UpdatePrompt } from './components/UpdatePrompt';
@@ -17,7 +18,7 @@ import { ArrivingCourse, type CourseChoice } from './screens/ArrivingCourse';
 import { compareRounds, forkRound, type Arrival as ArrivalState } from './handover';
 import { Arrival, type Resolution } from './screens/Arrival';
 
-const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats', 'history'] as const;
+const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats', 'history', 'standings'] as const;
 type View = (typeof VIEWS)[number];
 
 const isView = (v: unknown): v is View =>
@@ -333,6 +334,16 @@ export default function App() {
         />
       )}
 
+      {view === 'standings' && (
+        <LeagueStandings
+          onBack={() => goTo('leagueSetup')}
+          onViewResults={(r) => {
+            load(r);
+            goTo('results');
+          }}
+        />
+      )}
+
       {view === 'setup' && (
         <Setup
           onCancel={() => goTo('home')}
@@ -347,6 +358,7 @@ export default function App() {
       {view === 'leagueSetup' && (
         <LeagueSetup
           onCancel={() => goTo('home')}
+          onStandings={() => goTo('standings')}
           onStart={(r) => {
             load(r);
             saveRound(r);

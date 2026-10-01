@@ -5432,6 +5432,120 @@ select:focus {
   }
 }
 
+/* ---- League standings ----
+   Built from the Board's rows so a season reads like a night: same rank
+   column, same leader tint, same scoreboard type for names. What it adds is a
+   second line under each name (record, team, average) and the nights list. */
+.standings .board-title {
+  margin: 0;
+}
+.standings .board + .board {
+  margin-top: 4px;
+}
+.standings-row {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+}
+.standings-who {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.standings-sub {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.standings-unit {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+.standings-source {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.standings-nights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.standings-nights li + li {
+  border-top: 1px solid var(--line);
+}
+.standings-night {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 0;
+  text-align: left;
+}
+.standings-night-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.standings-night-score {
+  font-size: var(--fs-md);
+  color: var(--muted);
+}
+.standings-night-score .won {
+  color: var(--ink);
+  font-weight: 700;
+}
+.standings-night-pts {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+/* The way in, at the top of Golf League: one row in the setup-row voice. */
+.standings-link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--green-ink);
+  transition: transform var(--press) var(--ease-out);
+}
+.standings-link:active {
+  transform: scale(0.98);
+}
+.standings-link-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.standings-link-summary {
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+@media (hover: hover) {
+  .standings-link:hover,
+  .standings-night:hover {
+    background: color-mix(in srgb, var(--fairway) 7%, var(--card));
+  }
+}
+
 /* ---------- Reduced motion: every press transform in the app ----------
    Deliberately the LAST rule in this file. It is cross-cutting, and several of
    its targets (.bar .btn-ghost:active, .saved-course-load:active,
@@ -5594,7 +5708,8 @@ select:focus {
   .saved-course-load,
   .par-tile,
   .resume-card,
-  .board-jump-chip {
+  .board-jump-chip,
+  .standings-link {
     transition: none;
   }
   .seg-btn,
@@ -5616,7 +5731,8 @@ select:focus {
   .btn-secondary:active,
   .saved-course-load:active,
   .par-tile:active,
-  .resume-card:active {
+  .resume-card:active,
+  .standings-link:active {
     transform: none;
   }
   /* Higher specificity than the .bar .btn-ghost:active rule it overrides;

@@ -6,7 +6,7 @@ import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
-import { StarIcon, XIcon, GearIcon } from '../icons';
+import { StarIcon, XIcon, GearIcon, TrophyIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { SetupRow } from '../components/SetupRow';
 import { ParTile } from '../components/ParTile';
@@ -17,6 +17,8 @@ import { leagueCourseSummary } from '../setupSummary';
 interface Props {
   onCancel: () => void;
   onStart: (round: Round) => void;
+  /** Absent where there is nowhere to go, e.g. in tests that do not need it. */
+  onStandings?: () => void;
 }
 
 interface TeamState {
@@ -45,7 +47,12 @@ const swapped = (t: TeamState): boolean =>
 /** The team with its lower handicap in the A slot. */
 const inOrder = (t: TeamState): TeamState => (swapped(t) ? { a: t.b, b: t.a } : t);
 
-export function LeagueSetup({ onCancel, onStart }: Props) {
+export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
+  // The way to the season table, offered once there is a season to show.
+  const leagueNights = useMemo(
+    () => listRounds().filter((r) => r.options.league && r.status === 'finished').length,
+    []
+  );
   const [course, setCourse] = useState('');
   /**
    * The course's slope and rating, carried only so saving a course from here
@@ -253,6 +260,19 @@ export function LeagueSetup({ onCancel, onStart }: Props) {
           <GearIcon size={20} />
         </button>
       </header>
+
+      {onStandings && leagueNights > 0 && (
+        <button className="standings-link" onClick={onStandings}>
+          <TrophyIcon size={18} />
+          <span className="standings-link-label">Season standings</span>
+          <span className="standings-link-summary">
+            {leagueNights} {leagueNights === 1 ? 'night' : 'nights'}
+          </span>
+          <span className="setup-row-chevron" aria-hidden="true">
+            ›
+          </span>
+        </button>
+      )}
 
       <CourseSearch
         value={course}
