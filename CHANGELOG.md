@@ -173,6 +173,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   team match off the low of all four, and still at most one stroke a hole.
 
 ### Changed
+- **A cleanup pass across the screens.**
+  - **Nassau reads bet first.** FRONT, BACK and TOTAL lead each row and the
+    result reads as their answer; the sentence had outweighed the bet, and the
+    1-2-3 beside them read as a ranking of bets.
+  - **Status pills speak in the scoreboard face**, like the titles beside
+    them, and long ones ("Jordan & Casey lead 3–0") fit without truncating.
+  - **The scorecard's names line up.** A broader rule was centring the name
+    column, so ALEX and JORDAN started at different places; Tot and +/− now
+    match HOLE and PAR.
+  - **Stats chart labels stay whole.** With a nine in the mix, "per 18" pushed
+    both labels into breaking mid-phrase; the second now drops below instead.
+  - **"Same person?" answers sit side by side**, the kept name moving into the
+    sentence so the buttons can be short.
+  - **The selected player in junk keeps their badge.** Alex's green vanished
+    into the selected fill; a ring keeps every badge visible.
+  - **Golf League's course field is in a card**, with the saved courses
+    under it, as New Round's Course row has them.
+  - **"Set hole difficulty" and "Save this course" start in one column.**
+  - **Hovering a round or saved course tints the whole row** rather than
+    stopping short of its delete button.
+  - **Settings rows no longer squeeze.** A long sheet shrank every row to
+    its minimum, so a two-line row overflowed into the gap below it.
+
 - **Money over $999 gets a comma.** A season on Stats easily runs past a
   thousand, and "$1648 changed hands" read as a code rather than a sum. Every
   amount now groups its thousands — "$1,648", "−$1,320" — the same way on

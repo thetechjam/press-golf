@@ -371,6 +371,10 @@ button {
   justify-content: center;
   gap: 8px;
 }
+.add-glyph {
+  flex: 0 0 16px;
+  text-align: center;
+}
 /* The big CTAs speak in the scoreboard voice too. */
 .btn-primary.big,
 .btn-secondary.big {
@@ -1140,8 +1144,14 @@ select:focus {
   margin: 2px 0 0;
 }
 
-.course-picker {
-  border-color: color-mix(in srgb, var(--fairway) 40%, var(--line));
+/* Inside League's course card the saved courses sit unframed, as they do
+   inside New Round's Course row, rather than as a card within a card. */
+.league-course .course-picker {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin-top: 18px;
 }
 .saved-course-list {
   display: flex;
@@ -1170,8 +1180,8 @@ select:focus {
   padding: 8px 6px 8px 12px;
   min-height: 44px;
   border: none;
-  /* The row's own left corners, so the hover tint (pointer devices only)
-     sits inside the rounded row instead of squaring it off. */
+  /* The row's own left corners, so the focus ring follows the rounded row
+     instead of squaring it off. (Hover tints the whole row now.) */
   border-radius: var(--r-lg) 0 0 var(--r-lg);
   background: none;
   transition: transform var(--press) var(--ease-out);
@@ -2468,6 +2478,11 @@ select:focus {
   color: #fff;
   border-color: var(--green-ink);
 }
+/* A player whose colour is the felt green vanished into the selected fill,
+   leaving "AL" as loose text. A ring keeps every badge a badge. */
+.junk-chip.active .avatar {
+  box-shadow: 0 0 0 2px #fff;
+}
 /* How many this player is already holding on this hole — so the row answers
    "who has what" without opening each one in turn. */
 .junk-count {
@@ -2705,11 +2720,15 @@ select:focus {
 }
 /* "LIVE" / "FINAL" reads as a scoreboard flag. */
 .board-status {
-  font-size: var(--fs-2xs);
+  /* The scoreboard face, like the title beside it. Widely tracked body text
+     was a third type voice on every board, and Oswald's narrower letters fit
+     "JORDAN & CASEY LEAD 3–0" on a phone where the old setting truncated. */
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
   color: var(--green-ink);
-  font-weight: 700;
+  font-weight: 500;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.06em;
   border: 1.5px solid currentColor;
   border-radius: var(--r-pill);
   padding: 3px 9px;
@@ -2783,6 +2802,21 @@ select:focus {
   text-wrap: balance;
 }
 .board-row.leader .board-detail {
+  color: var(--ink);
+}
+/* Nassau's rows are bets, not places: FRONT, BACK and TOTAL, each with a
+   sentence for its result. Numbered and set in the heavy detail weight, the
+   sentence outweighed the bet it belongs to and the 1-2-3 read as a ranking.
+   The bet leads now, and the sentence reads as its answer. */
+.board-nassau .board-row {
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+}
+.board-nassau .board-rank {
+  display: none;
+}
+.board-nassau .board-detail {
+  font-weight: 500;
+  font-size: var(--fs-md);
   color: var(--ink);
 }
 .board-note,
@@ -3578,6 +3612,22 @@ select:focus {
 /* Selector must out-specify `.scorecard th, .scorecard td` (0,2,1) below, or
    that rule's min-width and padding win and the widths here never apply —
    which is exactly what left a gap between the two pinned columns. */
+/* `.scorecard th` above centres every header cell and outranks the plain
+   .sc-name / .sc-corner rule that asked for left, so names sat centred in
+   their column — ALEX and JORDAN starting at different places — and the
+   row labels with them. Said at the same weight, so it holds. */
+.scorecard th.sc-name,
+.scorecard th.sc-corner {
+  text-align: left;
+}
+/* The column headings in the scoreboard voice, like HOLE and PAR beside
+   them; "Tot" and "+/−" were the only header cells left in the body face. */
+.scorecard thead th.sc-total {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 .scorecard th.sc-total,
 .scorecard td.sc-total {
   font-weight: 700;
@@ -4167,6 +4217,13 @@ select:focus {
      so neither is affected by this. --sheet-exit because a release is the
      system answering the user, the same beat as a dismissal. */
   transition: transform var(--sheet-exit, 200ms) var(--ease-sheet);
+}
+/* The sheet scrolls rather than squeezing. As a capped-height flex column,
+   its rows were shrunk to their 48px minimum once the content outgrew 85vh,
+   and a row whose hint runs to two lines — "Buy me a coffee" — overflowed its
+   own box into the gap below and looked cramped against the next. */
+.sheet > * {
+  flex-shrink: 0;
 }
 /* While a finger is on it the sheet must track that finger exactly — a
    transition here would put the panel behind the drag by its own duration. */
@@ -5315,8 +5372,15 @@ select:focus {
 }
 .trend-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: 8px;
+  gap: 2px 8px;
+}
+/* Each label whole, on one line: when both do not fit — "· per 18" once a
+   nine is in the mix — the second drops below rather than both breaking
+   mid-phrase and stranding "18" and "WORST" on lines of their own. */
+.trend-head > span {
+  white-space: nowrap;
 }
 .trend-plot {
   margin: 4px 0 2px;
@@ -5396,8 +5460,7 @@ select:focus {
   .btn-secondary:hover,
   .btn-ghost:hover,
   .cs-hit:hover:not(:disabled),
-  .saved-course-load:hover,
-  .round-main:hover,
+  .round-card:has(> .round-main:hover),
   .press-btn:hover:not(:disabled),
   .set-action:hover,
   .hero-settings:hover,
@@ -5409,6 +5472,12 @@ select:focus {
   .game-card:hover:not(.active),
   .score-chip:hover:not([aria-checked='true']) {
     background: color-mix(in srgb, var(--fairway) 7%, var(--card));
+  }
+  /* The whole row tints, not the main button inside it: tinting the button
+     alone stopped short of the delete column and split the row in two. A
+     saved course row sits on --bg, so its tint mixes from that. */
+  .saved-course-row:has(> .saved-course-load:hover) {
+    background: color-mix(in srgb, var(--fairway) 9%, var(--bg));
   }
   /* .btn-ghost is bare text with no box of its own, so the tint needs a shape
      to land in. It only exists on hover, so nothing is rounded at rest. */
