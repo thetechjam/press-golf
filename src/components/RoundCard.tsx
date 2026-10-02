@@ -59,14 +59,19 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect, h
             </span>
           )}
           <span className="round-title">{roundTitle(round)}</span>
+          {/* Each part held together with no-break spaces, so on a narrow
+              phone the line wraps between "·" parts and never inside one —
+              "thru" on one line and "18" alone on the next. */}
           <span className="round-sub">
-            {formatRoundDate(round.date)} · {round.players.length} players ·{' '}
-            {round.holes.length} holes
-            {round.status === 'finished'
-              ? ''
-              : thru === 0
-                ? ' · not started'
-                : ` · thru ${thru}`}
+            {[
+              formatRoundDate(round.date),
+              `${round.players.length} players`,
+              `${round.holes.length} holes`,
+              round.status === 'finished' ? null : thru === 0 ? 'not started' : `thru ${thru}`,
+            ]
+              .filter(Boolean)
+              .map((part) => part!.replace(/ /g, '\u00a0'))
+              .join(' · ')}
           </span>
           {result && (
             <span className="round-result">

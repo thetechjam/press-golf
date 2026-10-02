@@ -85,7 +85,10 @@ export function LeagueStandings({ onBack, onViewResults }: Props) {
           <p className="standings-source">
             {season.nights.length === 0
               ? `No finished league nights in ${season.year} on this phone.`
-              : `From the ${season.nights.length} league ${season.nights.length === 1 ? 'night' : 'nights'} scored on this phone in ${season.year}.`}
+              : // Short enough for one line on a 360px phone; the long form
+                // ("…scored on this phone in 2026.") left the year alone on
+                // a second line. The footer says why it is only this phone.
+                `${season.nights.length} league ${season.nights.length === 1 ? 'night' : 'nights'} in ${season.year}, from this phone.`}
             {season.unfinished > 0 &&
               ` ${season.unfinished} more ${season.unfinished === 1 ? 'is' : 'are'} still being played and not counted yet.`}
           </p>
@@ -149,6 +152,8 @@ export function LeagueStandings({ onBack, onViewResults }: Props) {
                           p.playsTo != null ? `plays to ${p.playsTo}` : null,
                         ]
                           .filter(Boolean)
+                          // Whole parts, so a wrap never leaves "to 8" alone.
+                          .map((part) => part!.replace(/ /g, '\u00a0'))
                           .join(' · ')}
                       </span>
                     </span>

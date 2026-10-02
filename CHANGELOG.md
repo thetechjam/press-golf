@@ -177,6 +177,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   team match off the low of all four, and still at most one stroke a hole.
 
 ### Changed
+- **Small phones read whole.** A pass at 360px wide, where several lines cut
+  off or broke mid-phrase:
+  - A round in progress showed "th…" instead of "thru 18" on its card, and
+    Standings cut "plays to 8" — the handicap hint — to "pla…". Both lines now
+    wrap, and only between their "·" parts, so nothing is lost and no "18" or
+    "to 8" is left alone on a line. Saved courses' "stroke index set" too.
+  - The Rounds filter's "All rounds" wrapped onto two lines and made its row
+    taller than the one above; it is now "Both".
+  - THE MAGPIE no longer splits beside its long haul; the haul moves below.
+  - Standings opens with one line, "3 league nights in 2026, from this
+    phone.", where the old sentence left the year on a line of its own.
+  - Standings' nights show a › like every other row that opens something.
+
 - **A cleanup pass across the screens.**
   - **Nassau reads bet first.** FRONT, BACK and TOTAL lead each row and the
     result reads as their answer; the sentence had outweighed the bet, and the
