@@ -63,6 +63,29 @@ export function HelpSheet({ onBack }: Props) {
       </section>
 
       <section className="help-section">
+        <h3>Trips</h3>
+        <p>
+          Playing several rounds over a long weekend? Put them on a trip and
+          settle the money once at the end, instead of after every round. In
+          New Round, open the <strong>Trip</strong> row and choose{' '}
+          <strong>+ New trip</strong> to name it. While the trip is going, the
+          next round you start is already on it.
+        </p>
+        <p>
+          Each round still shows its own settlement. The trip screen — from the
+          trip card on Home, or the link under a round's results — adds every
+          round up by player and works out the fewest payments for the whole
+          trip, with a button to send them to the group. Rounds can be put on a
+          trip or taken off it later, and league nights stay out of trips.
+        </p>
+        <p>
+          Players are matched by name from round to round. If somebody was typed
+          two ways — Al and Alex — Press asks whether they are the same person
+          before adding their money together.
+        </p>
+      </section>
+
+      <section className="help-section">
         <h3>Golf League</h3>
         <p>
           A separate mode for a weekly league night: two teams of two. The low

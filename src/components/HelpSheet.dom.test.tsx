@@ -74,3 +74,15 @@ describe('the walkthrough link', () => {
     expect(seconds).toBeGreaterThan(5 * 60);
   });
 });
+
+describe('the trips section', () => {
+  it('explains trips, between the games and the league', () => {
+    render(<HelpSheet onBack={() => {}} />);
+    const trips = screen.getByRole('heading', { name: 'Trips' });
+    const games = screen.getByRole('heading', { name: 'Games' });
+    const league = screen.getByRole('heading', { name: 'Golf League' });
+    expect(games.compareDocumentPosition(trips) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(trips.compareDocumentPosition(league) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(trips.closest('section')?.textContent).toMatch(/settle the money once/);
+  });
+});

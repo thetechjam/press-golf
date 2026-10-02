@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **How to Play explains trips**: putting rounds on a trip, where the trip
+  settle-up lives, and that Press asks before counting two spellings of a
+  name as one person.
+
 - **One person, one name.** Press follows people from round to round by name,
   so "Al" and "Alex" were two people — on Stats, in league standings, and in a
   trip's settle-up, where it could have Alex owing himself. Now:
