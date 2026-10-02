@@ -8,6 +8,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **One person, one name.** Press follows people from round to round by name,
+  so "Al" and "Alex" were two people — on Stats, in league standings, and in a
+  trip's settle-up, where it could have Alex owing himself. Now:
+  - New Round's name fields suggest everyone the phone has scored.
+  - At Start, a typed name that looks like somebody already known — "Al" and
+    Alex, "Mike" and Michael, "Jordon" and Jordan — asks "Is “Al” Alex from
+    your earlier rounds?". Yes plays them as Alex and remembers it; no starts
+    the round as typed and does not ask again.
+  - Stats and the trip screen offer to merge a likely pair ("Al and Alex might
+    be the same person"), and any Stats card can be merged into another player
+    by hand for the names nothing could guess. A merge rewrites past rounds to
+    the one spelling and is remembered, so a round that arrives later with
+    the old spelling — typed, shared or restored — is brought into line.
+  - Nothing is ever merged without a yes, and two players who have shared a
+    card are never offered as one.
+  - Backups carry it: the merged names and the "two people" answers go in the
+    file and come back on restore, in the same all-or-nothing write as the
+    rounds, so a restored phone renames the old spelling just as before — and
+    a merge made on the other phone renames this one's rounds too. Where the
+    two phones disagree, this phone's answer stands. Older backup files, and
+    older versions of Press reading new ones, work exactly as they did.
+  - Every screen now compares names the same way, in one place.
+
+- **Trip mode.** A buddies trip is four rounds in three days, and settling
+  each one on the eighteenth green is a dozen payments where the trip needed
+  three. New Round has a Trip row: no trip, the trip you are on, or "+ New
+  trip" and a name. A round on a trip still shows its own settlement, with a
+  line under it pointing to the trip's; the trip screen adds every round up by
+  player and settles the sum once — "Alex pays Casey $254" — with a button
+  that sends the settle-up to the group chat as text. While a trip is being
+  played (a round in the last four days) it has a card on Home, and New Round
+  starts on it, so the second round of a trip cannot quietly settle on its
+  own. Rounds can be put on a trip or taken off afterwards, a trip can be
+  renamed, its name shows on its rounds' cards and finds them in search, and
+  it travels with share links and backups. League nights stay out: they
+  settle on points.
+
 - **League season standings.** "Season standings" at the top of Golf League
   opens the season so far: teams ranked on points with their won–lost–halved
   record night by night, each player's own A or B match record with their

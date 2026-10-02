@@ -63,6 +63,8 @@ const courses = [
   { id: 'c2', name: 'Royal County Down Championship Links', holes: holes.slice(0, 9) },
 ];
 
+const TRIP = { id: 'trip1', name: 'Monterey Weekend' };
+
 /**
  * Two rounds, deliberately distinguishable.
  *
@@ -73,11 +75,14 @@ const courses = [
  * Results.
  */
 const rounds = [
-  round({ id: 'r1', course: 'Torrey Pines South', updatedAt: Date.now() }),
+  // These two are a trip, so Home draws its trip card, the round cards carry
+  // the trip tag, and the Trip screen has a settle-up to measure.
+  round({ id: 'r1', course: 'Torrey Pines South', updatedAt: Date.now(), trip: TRIP }),
   round({
     id: 'r2',
     course: 'Cypress Point',
     status: 'in_progress',
+    trip: TRIP,
     date: '2026-08-01',
     updatedAt: Date.now() - 1e6,
   }),
@@ -155,6 +160,9 @@ const rounds = [
   round({
     id: 'f5',
     course: 'Shinnecock Hills',
+    // Alex typed as "Al" that day, so Stats offers to merge the two and the
+    // audits measure that prompt.
+    players: players.map((p) => (p.name === 'Alex' ? { ...p, name: 'Al' } : p)),
     date: '2025-09-10',
     updatedAt: Date.now() - 8e6,
   }),
@@ -227,6 +235,15 @@ export async function walkScreens({ page, BASE, step, width, settings }) {
     async () => {
       await home();
       await page.getByRole('button', { name: /Golf League/i }).click();
+      await page.waitForTimeout(500);
+    }
+  );
+
+  await step(
+    at('Trip'),
+    async () => {
+      await home();
+      await page.locator('.trip-card').click();
       await page.waitForTimeout(500);
     }
   );

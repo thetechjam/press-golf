@@ -246,3 +246,92 @@ describe('restoreBackup', () => {
     if (r.ok) expect(r.dropped).toBe(1);
   });
 });
+
+describe('who is who travels with the backup', () => {
+  beforeEach(() => store.clear());
+
+  const people = { aliases: { al: 'Alex' }, distinct: ['jordan|jordy'] };
+  const names = () =>
+    (JSON.parse(store.get('press.rounds.v1') as string) as Round[]).map((r) => r.players[0].name);
+
+  it('is written when there is some, and left out when there is none', () => {
+    expect(buildBackup([], [], '1', new Date(), people).people).toEqual(people);
+    expect(buildBackup([], [], '1', new Date(), { aliases: {}, distinct: [] })).not.toHaveProperty(
+      'people'
+    );
+  });
+
+  it('reads back only well-formed entries', () => {
+    const parsed = parseBackup(
+      text({
+        app: 'press',
+        format: BACKUP_FORMAT,
+        rounds: [],
+        courses: [],
+        people: { aliases: { al: 'Alex', bad: 4, '': 'X' }, distinct: ['a|b', 'nope', 7] },
+      })
+    );
+    expect(parsed.ok && parsed.file.people).toEqual({ aliases: { al: 'Alex' }, distinct: ['a|b'] });
+  });
+
+  it('restores merged names, and renames the rounds on this phone to match', () => {
+    store.set('press.rounds.v1', text([round('a', 1)])); // Al and Bo, typed here
+    const r = restoreBackup(text(buildBackup([], [], '1', new Date(), people)));
+    expect(r.ok && r.people).toBe(1);
+    expect(names()).toEqual(['Alex']);
+    expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ al: 'Alex' });
+    expect(JSON.parse(store.get('press.distinct.v1') as string)).toEqual(['jordan|jordy']);
+  });
+
+  it('keeps this phone’s own answer when the two disagree', () => {
+    store.set('press.aliases.v1', text({ al: 'Albert' }));
+    const r = restoreBackup(text(buildBackup([round('a', 1)], [], '1', new Date(), people)));
+    expect(r.ok && r.people).toBe(0);
+    expect(names()).toEqual(['Albert']);
+  });
+
+  it('will not restore a merge that loops against one made here', () => {
+    store.set('press.aliases.v1', text({ alex: 'Al' }));
+    restoreBackup(text(buildBackup([], [], '1', new Date(), people)));
+    expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ alex: 'Al' });
+  });
+
+  it('drops a "two people" answer for a pair since merged', () => {
+    store.set('press.distinct.v1', text(['al|alex']));
+    restoreBackup(text(buildBackup([], [], '1', new Date(), people)));
+    expect(JSON.parse(store.get('press.distinct.v1') as string)).toEqual(['jordan|jordy']);
+  });
+
+  it('restores an older file with no people data exactly as before', () => {
+    store.set('press.aliases.v1', text({ al: 'Alex' }));
+    const r = restoreBackup(text({ app: 'press', format: 1, rounds: [round('b', 1)], courses: [] }));
+    expect(r.ok && r.people).toBe(0);
+    expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ al: 'Alex' });
+  });
+
+  it('puts the names back when the rounds write fails after they were written', () => {
+    store.set('press.aliases.v1', text({ bo: 'Bob' }));
+    const real = localStorage.setItem;
+    const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation((k, v) => {
+      if (k === 'press.rounds.v1') throw new DOMException('quota', 'QuotaExceededError');
+      real(k, v);
+    });
+    const r = restoreBackup(text(buildBackup([round('b', 1)], [], '1', new Date(), people)));
+    setItem.mockRestore();
+    expect(r.ok).toBe(false);
+    expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ bo: 'Bob' });
+    expect(store.has('press.distinct.v1')).toBe(false);
+  });
+
+  it('leaves the names untouched too when the write does not fit', () => {
+    store.set('press.aliases.v1', text({ bo: 'Bob' }));
+    const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
+      throw new DOMException('quota', 'QuotaExceededError');
+    });
+    const r = restoreBackup(text(buildBackup([round('b', 1)], [], '1', new Date(), people)));
+    setItem.mockRestore();
+    expect(r.ok).toBe(false);
+    expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ bo: 'Bob' });
+    expect(store.has('press.distinct.v1')).toBe(false);
+  });
+});

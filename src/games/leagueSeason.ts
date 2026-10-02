@@ -1,6 +1,7 @@
 import type { LeagueTeam, Round } from '../types';
 import { LEAGUE_MAX_SCORE, computeLeague, pickedUp } from './league';
 import { leagueHistory } from './leagueHandicap';
+import { nameKey } from '../people';
 
 /**
  * A league season, added up from the league nights on this phone.
@@ -74,7 +75,7 @@ export interface LeagueSeason {
   players: PlayerStanding[];
 }
 
-const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+const norm = nameKey;
 const yearOf = (r: Round) => Number(/^(\d{4})-/.exec(r.date)?.[1]);
 const isLeague = (r: Round) => !!r.options.league;
 

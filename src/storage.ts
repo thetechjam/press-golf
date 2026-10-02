@@ -1,5 +1,6 @@
 import type { Round, SavedCourse } from './types';
 import { kv } from './kv';
+import { applyAliases, withAlias, mergeInRounds, pairKey, type Aliases, type PeopleData } from './people';
 
 /**
  * Exported because a native build has to hydrate every one of them before the
@@ -10,6 +11,8 @@ import { kv } from './kv';
 export const ROUNDS_KEY = 'press.rounds.v1';
 export const COURSES_KEY = 'press.courses.v1';
 export const SETTINGS_KEY = 'press.settings.v1';
+export const ALIASES_KEY = 'press.aliases.v1';
+export const DISTINCT_KEY = 'press.distinct.v1';
 
 export type Theme = 'system' | 'light' | 'dark';
 
@@ -86,9 +89,55 @@ export function getRound(id: string): Round | undefined {
   return listRounds().find((r) => r.id === id);
 }
 
+/** Spellings the user has merged into one person: old spelling's key → name. */
+export function getAliases(): Aliases {
+  try {
+    const raw = kv.getItem(ALIASES_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : {};
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+    const out: Aliases = {};
+    for (const [k, v] of Object.entries(parsed)) if (typeof v === 'string' && v.trim()) out[k] = v;
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+/** Pairs of names the user has said are two people, so they are not asked about again. */
+export function getDistinct(): Set<string> {
+  try {
+    const parsed = JSON.parse(kv.getItem(DISTINCT_KEY) ?? '[]') as unknown;
+    return new Set(Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function markDistinct(a: string, b: string): void {
+  const set = getDistinct();
+  set.add(pairKey(a, b));
+  kv.setItem(DISTINCT_KEY, JSON.stringify([...set]));
+}
+
+/**
+ * Makes `from` the same person as `into`: every saved round is rewritten to
+ * the one spelling, and the alias is kept so a round that arrives later with
+ * the old one — typed, shared, restored — is brought into line as it saves.
+ */
+export function mergePeople(from: string, into: string): void {
+  kv.setItem(ALIASES_KEY, JSON.stringify(withAlias(getAliases(), from, into)));
+  const before = listRounds();
+  const after = mergeInRounds(before, from, into);
+  const now = Date.now();
+  // A changed round counts as changed, so a restore's newest-wins merge keeps
+  // the merged spelling over an older backup's.
+  const stamped = after.map((r, i) => (r === before[i] ? r : { ...r, updatedAt: now }));
+  kv.setItem(ROUNDS_KEY, JSON.stringify(stamped));
+}
+
 export function saveRound(round: Round): void {
   const rounds = listRounds().filter((r) => r.id !== round.id);
-  rounds.push({ ...round, updatedAt: Date.now() });
+  rounds.push({ ...applyAliases(round, getAliases()), updatedAt: Date.now() });
   kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
 }
 
@@ -132,17 +181,28 @@ export function deleteCourse(id: string): void {
  *
  * Re-throws so the caller can tell a failed restore from a successful one.
  */
-export function writeAll(rounds: Round[], courses: SavedCourse[]): void {
+export function writeAll(rounds: Round[], courses: SavedCourse[], people?: PeopleData): void {
   const prevRounds = kv.getItem(ROUNDS_KEY);
   const prevCourses = kv.getItem(COURSES_KEY);
+  const prevAliases = kv.getItem(ALIASES_KEY);
+  const prevDistinct = kv.getItem(DISTINCT_KEY);
   const restore = (key: string, prev: string | null) =>
     prev === null ? kv.removeItem(key) : kv.setItem(key, prev);
   try {
-    kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
+    // Names from the people data being written, not the old: a merge made on
+    // the other phone renames this phone's rounds too.
+    const aliases = people?.aliases ?? getAliases();
+    if (people) {
+      kv.setItem(ALIASES_KEY, JSON.stringify(people.aliases));
+      kv.setItem(DISTINCT_KEY, JSON.stringify(people.distinct));
+    }
+    kv.setItem(ROUNDS_KEY, JSON.stringify(rounds.map((r) => applyAliases(r, aliases))));
     kv.setItem(COURSES_KEY, JSON.stringify(courses));
   } catch (err) {
     restore(ROUNDS_KEY, prevRounds);
     restore(COURSES_KEY, prevCourses);
+    restore(ALIASES_KEY, prevAliases);
+    restore(DISTINCT_KEY, prevDistinct);
     throw err;
   }
 }

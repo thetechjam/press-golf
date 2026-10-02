@@ -613,16 +613,17 @@ describe('every field says what it is', () => {
   it('names the player inputs, which a placeholder alone does not', async () => {
     // A placeholder is not an accessible name, and it disappears the moment
     // somebody types into the field. Every other input on this screen had an
-    // aria-label; the first one on it did not.
+    // aria-label; the first one on it did not. A combobox rather than a
+    // textbox: the field suggests names already on the phone.
     const user = userEvent.setup();
     render(<Setup onCancel={() => {}} onStart={() => {}} />);
 
-    expect(screen.getByRole('textbox', { name: 'Name of player 1' })).toBeTruthy();
-    expect(screen.getByRole('textbox', { name: 'Name of player 2' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Name of player 1' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Name of player 2' })).toBeTruthy();
 
-    await user.type(screen.getByRole('textbox', { name: 'Name of player 1' }), 'Alex');
+    await user.type(screen.getByRole('combobox', { name: 'Name of player 1' }), 'Alex');
     // Still named after the placeholder has gone.
-    expect(screen.getByRole('textbox', { name: 'Name of player 1' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Name of player 1' })).toBeTruthy();
   });
 
   it('leaves no input on the screen without a name', async () => {

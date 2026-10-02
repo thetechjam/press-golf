@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import type { Round, Player, GameType, Hole, SavedCourse, TeamSetup } from '../types';
+import { useMemo, useRef, useState } from 'react';
+import type { Round, Player, GameType, Hole, SavedCourse, TeamSetup, RoundTrip } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { GAMES, gameMeta } from '../games';
 import { GAME_RULES } from '../games/rules';
@@ -9,8 +9,18 @@ import { scorecardIssues } from '../courses/validate';
 import { validSlope, validRating, courseHandicap } from '../games/courseHandicap';
 import { wolfForHole } from '../games/wolf';
 import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
-import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
+import {
+  uid,
+  listCourses,
+  saveCourse,
+  deleteCourse,
+  listRounds,
+  getAliases,
+  mergePeople,
+} from '../storage';
 import { SetupRow } from '../components/SetupRow';
+import { TripPicker } from '../components/TripPicker';
+import { activeTrip, listTrips } from '../trips';
 import { ParTile } from '../components/ParTile';
 import { courseSummary, holesSummary, gamesSummary, stakesSummary } from '../setupSummary';
 import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry, placePlayer } from '../roster';
@@ -24,6 +34,7 @@ import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 import { StarIcon, XIcon, GearIcon, QrIcon } from '../icons';
 import { StakesEditor } from '../components/StakesEditor';
 import { SettingsSheet } from '../components/SettingsSheet';
+import { nameKey, nearMatches, resolveName } from '../people';
 
 interface Props {
   onCancel: () => void;
@@ -116,6 +127,15 @@ export function Setup({ onCancel, onStart }: Props) {
   // past rounds — which rows open, the crew chip, the recent chips — reads this
   // and not localStorage, so the screen cannot shift while the user is typing.
   const [savedRounds] = useState(() => listRounds());
+
+  // The trip this round is part of. Starts on the trip being played this week,
+  // if there is one: the second round of a trip is the common case, and
+  // forgetting to pick it would settle that round on its own.
+  const trips = useMemo(() => listTrips(savedRounds), [savedRounds]);
+  const [trip, setTrip] = useState<RoundTrip | null>(() => {
+    const t = activeTrip(savedRounds);
+    return t ? { id: t.id, name: t.name } : null;
+  });
 
   // Which rows are expanded. Independent flags, not an accordion.
   // Games opens on a first-ever round: collapsing it is the one part of this
@@ -271,8 +291,31 @@ export function Setup({ onCancel, onStart }: Props) {
   const crew = lastCrew(savedRounds);
   const roster = buildRoster(savedRounds);
 
-  const inForm = new Set(players.map((p) => p.name.trim().toLowerCase()).filter(Boolean));
-  const recent = roster.filter((e) => !inForm.has(e.name.toLowerCase()));
+  // Every name this phone has seen, most recent spelling — for the name
+  // field's suggestions and the "is this the same person?" check. Not the
+  // roster, which stops at a chip row's worth.
+  const knownNames = useMemo(() => {
+    const seen = new Map<string, string>();
+    for (const r of savedRounds)
+      for (const p of r.players) {
+        const k = nameKey(p.name);
+        if (k && !seen.has(k)) seen.set(k, p.name.trim());
+      }
+    return [...seen.values()];
+  }, [savedRounds]);
+  const knownKeys = useMemo(() => new Set(knownNames.map(nameKey)), [knownNames]);
+
+  /**
+   * A typed name that is probably somebody already on the phone: "Al" when
+   * there is an Alex. Asked once at Start rather than while typing, which
+   * would interrupt every name on its way to being finished.
+   */
+  const [askSame, setAskSame] = useState<{ id: string; typed: string; known: string } | null>(null);
+  // Answered "no, someone new" this visit: not asked again for that name.
+  const declined = useRef(new Set<string>());
+
+  const inForm = new Set(players.map((p) => nameKey(p.name)).filter(Boolean));
+  const recent = roster.filter((e) => !inForm.has(nameKey(e.name)));
 
   // The crew chip is a shortcut, not a merge: replacing is predictable, merging
   // is not. Hidden once the list already matches, so it never offers a no-op.
@@ -353,8 +396,28 @@ export function Setup({ onCancel, onStart }: Props) {
       : [];
   const canTeams = namedPlayers.length >= 4;
 
-  const start = () => {
+  const start = (answer?: { id: string; name: string }) => {
     if (namedPlayers.length < 1) return setError('Add at least one player.');
+
+    // Names merged before come through as the spelling they were merged
+    // into, and a "yes, that's Alex" just given applies here — state set a
+    // moment ago is not in `players` yet.
+    const aliases = getAliases();
+    const nameFor = (p: Player) =>
+      answer?.id === p.id ? answer.name : resolveName(p.name, aliases);
+    for (const p of namedPlayers) {
+      const typed = nameFor(p);
+      const k = nameKey(typed);
+      if (knownKeys.has(k) || declined.current.has(k)) continue;
+      const others = new Set(namedPlayers.filter((q) => q.id !== p.id).map((q) => nameKey(nameFor(q))));
+      const known = nearMatches(typed, knownNames).find((n) => !others.has(nameKey(n)));
+      if (known) {
+        setAskSame({ id: p.id, typed, known });
+        return;
+      }
+    }
+    setAskSame(null);
+
     if (games.length === 0) return gamesError('Pick at least one game.');
     for (const g of games) {
       const meta = GAMES.find((m) => m.id === g)!;
@@ -365,7 +428,7 @@ export function Setup({ onCancel, onStart }: Props) {
 
     const cleanPlayers = namedPlayers.map((p) => ({
       ...p,
-      name: p.name.trim(),
+      name: nameFor(p).trim(),
       handicap: showNet ? p.handicap : undefined,
       index: showNet ? p.index : undefined,
     }));
@@ -435,6 +498,7 @@ export function Setup({ onCancel, onStart }: Props) {
       scores: {},
       wolf: {},
       presses: [],
+      ...(trip ? { trip } : {}),
       status: 'in_progress',
     };
 
@@ -475,6 +539,8 @@ export function Setup({ onCancel, onStart }: Props) {
               className="player-name"
               value={p.name}
               onChange={(e) => updatePlayer(p.id, { name: e.target.value })}
+              list="press-known-names"
+              autoComplete="off"
               placeholder={`Player ${i + 1}`}
               aria-label={`Name of player ${i + 1}`}
             />
@@ -1042,6 +1108,15 @@ export function Setup({ onCancel, onStart }: Props) {
             </p>
           </section>
         </SetupRow>
+
+        <SetupRow
+          label="Trip"
+          summary={trip?.name ?? 'None'}
+          open={!!openRows.trip}
+          onToggle={() => toggleRow('trip')}
+        >
+          <TripPicker trips={trips} value={trip} onChange={setTrip} />
+        </SetupRow>
       </div>
 
       <div className="screen-foot">
@@ -1056,10 +1131,47 @@ export function Setup({ onCancel, onStart }: Props) {
             {error}
           </p>
         )}
-        <button className="btn-primary big" onClick={start}>
+        {askSame && (
+          <div className="same-person" role="alert">
+            <p>
+              Is “{askSame.typed}” <strong>{askSame.known}</strong> from your earlier rounds?
+            </p>
+            <div className="same-person-actions">
+              <button
+                className="btn-secondary"
+                onClick={() => {
+                  // Yes: one person from now on, in past rounds too.
+                  mergePeople(askSame.typed, askSame.known);
+                  updatePlayer(askSame.id, { name: askSame.known });
+                  start({ id: askSame.id, name: askSame.known });
+                }}
+              >
+                Yes, {askSame.known}
+              </button>
+              <button
+                className="btn-ghost"
+                onClick={() => {
+                  declined.current.add(nameKey(askSame.typed));
+                  setAskSame(null);
+                  start();
+                }}
+              >
+                No, someone new
+              </button>
+            </div>
+          </div>
+        )}
+        <button className="btn-primary big" onClick={() => start()}>
           Start Round →
         </button>
       </div>
+
+      {/* The name field's suggestions: everyone this phone has scored. */}
+      <datalist id="press-known-names">
+        {knownNames.map((n) => (
+          <option key={n} value={n} />
+        ))}
+      </datalist>
 
       {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} screen="setup" />}
 

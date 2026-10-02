@@ -7,6 +7,7 @@ import { Play } from './screens/Play';
 import { Results } from './screens/Results';
 import { Stats } from './screens/Stats';
 import { LeagueStandings } from './screens/LeagueStandings';
+import { TripScreen } from './screens/TripScreen';
 import { History } from './screens/History';
 import { saveRound, getRound, listCourses, saveCourse } from './storage';
 import { UpdatePrompt } from './components/UpdatePrompt';
@@ -18,7 +19,7 @@ import { ArrivingCourse, type CourseChoice } from './screens/ArrivingCourse';
 import { compareRounds, forkRound, type Arrival as ArrivalState } from './handover';
 import { Arrival, type Resolution } from './screens/Arrival';
 
-const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats', 'history', 'standings'] as const;
+const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats', 'history', 'standings', 'trip'] as const;
 type View = (typeof VIEWS)[number];
 
 const isView = (v: unknown): v is View =>
@@ -36,6 +37,9 @@ type Incoming =
 
 export default function App() {
   const [view, setView] = useState<View>('home');
+  // Which trip the Trip screen shows. Held here rather than in the view name,
+  // which the history stack keeps as a fixed set of screens.
+  const [tripId, setTripId] = useState<string | null>(null);
   const [round, setRound] = useState<Round | null>(null);
   // Read synchronously so the first paint is the shared round opening rather
   // than the Home screen flashing up and being replaced a frame later.
@@ -171,6 +175,10 @@ export default function App() {
   }, [nav]);
 
   const goTo = (next: View) => nav.goTo(next);
+  const openTrip = (id: string) => {
+    setTripId(id);
+    goTo('trip');
+  };
 
   /**
    * Puts a different round on screen.
@@ -315,6 +323,7 @@ export default function App() {
           }}
           onStats={() => goTo('stats')}
           onHistory={() => goTo('history')}
+          onTrip={openTrip}
         />
       )}
 
@@ -340,6 +349,17 @@ export default function App() {
           onViewResults={(r) => {
             load(r);
             goTo('results');
+          }}
+        />
+      )}
+
+      {view === 'trip' && tripId && (
+        <TripScreen
+          tripId={tripId}
+          onBack={() => goTo('home')}
+          onOpenRound={(r) => {
+            load(r);
+            goTo(r.status === 'finished' ? 'results' : 'play');
           }}
         />
       )}
@@ -379,6 +399,7 @@ export default function App() {
           onBackToPlay={() => goTo('play')}
           unkept={unkept}
           onKeep={keep}
+          onTrip={openTrip}
         />
       )}
     </div>

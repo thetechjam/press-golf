@@ -66,6 +66,8 @@ interface Props {
   /** True when this round arrived by link and is not on this device yet. */
   unkept?: boolean;
   onKeep?: () => void;
+  /** Opens the trip this round is part of. */
+  onTrip?: (tripId: string) => void;
 }
 
 function buildSummary(round: Round): string {
@@ -118,7 +120,7 @@ function buildSummary(round: Round): string {
   return lines.join('\n');
 }
 
-export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep }: Props) {
+export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep, onTrip }: Props) {
   const [showHcp, setShowHcp] = useState(false);
   const [sharing, setSharing] = useState(false);
   const results = activeResults(round);
@@ -202,6 +204,16 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep 
             onChange={onChange}
             onEditHandicaps={() => setShowHcp(true)}
           />
+          {/* On a trip, this round's payments are not the ones to make: the
+              trip settles once, across every round. Said right under them. */}
+          {round.trip && onTrip && !unkept && (
+            <button className="trip-link" onClick={() => onTrip(round.trip!.id)}>
+              <span>
+                Part of <strong>{round.trip.name}</strong> — settle up across the trip
+              </span>
+              <span aria-hidden="true">›</span>
+            </button>
+          )}
           <section className="boards">
             {results.map((r) => (
               <Leaderboard

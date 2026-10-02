@@ -1,4 +1,5 @@
 import type { Round, Player } from './types';
+import { nameKey } from './people';
 
 /** A remembered player, derived from saved rounds rather than stored. */
 export interface RosterEntry {
@@ -48,7 +49,7 @@ export function buildRoster(rounds: Round[]): RosterEntry[] {
       // rounds are full of them. They must never reach the roster.
       if (!name) continue;
 
-      const key = name.toLowerCase();
+      const key = nameKey(name);
       const seen = byKey.get(key);
 
       if (!seen) {

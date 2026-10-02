@@ -251,3 +251,48 @@ describe('filtering the stats', () => {
     expect(document.querySelector('.history-tools')).toBeNull();
   });
 });
+
+describe('one person under two names', () => {
+  const split = [
+    round({ id: 'a', updatedAt: 5, players: [{ id: 'p1', name: 'Alex' }] }),
+    round({ id: 'b', updatedAt: 4, players: [{ id: 'p1', name: 'Al' }] }),
+    round({ id: 'c', updatedAt: 3, players: [{ id: 'p1', name: 'Big Mike' }] }),
+  ];
+
+  it('suggests a likely pair, and merging makes one card of two', async () => {
+    const user = userEvent.setup();
+    show(split);
+    expect(names()).toEqual(expect.arrayContaining(['Alex', 'Al']));
+    await user.click(screen.getByRole('button', { name: /Same person — use Alex/ }));
+    expect(names()).not.toContain('Al');
+    expect(document.querySelector('.same-person')).toBeNull();
+  });
+
+  it('merges by hand a pair nothing could guess', async () => {
+    const user = userEvent.setup();
+    show(split);
+    const card = [...document.querySelectorAll('.stat-card')].find((c) =>
+      c.textContent?.includes('Big Mike')
+    ) as HTMLElement;
+    await user.click(card.querySelector('.merge-open') as HTMLElement);
+    await user.click(screen.getByRole('button', { name: 'Alex' }));
+    await user.click(screen.getByRole('button', { name: 'Merge into Alex' }));
+    expect(names()).not.toContain('Big Mike');
+  });
+});
+
+describe('merging by hand', () => {
+  it('never offers somebody who has played on the same card', async () => {
+    const user = userEvent.setup();
+    show([
+      round({ id: 'a', updatedAt: 5, players: [{ id: 'p1', name: 'Alex' }, { id: 'p2', name: 'Casey' }] }),
+      round({ id: 'b', updatedAt: 4, players: [{ id: 'p1', name: 'Big Mike' }] }),
+    ]);
+    const card = [...document.querySelectorAll('.stat-card')].find((c) =>
+      c.textContent?.startsWith('CA')
+    ) as HTMLElement;
+    await user.click(card.querySelector('.merge-open') as HTMLElement);
+    const offered = [...card.querySelectorAll('.merge-into .recent-chip')].map((b) => b.textContent);
+    expect(offered).toEqual(['Big Mike']);
+  });
+});

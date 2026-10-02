@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { listRounds, listCourses } from '../storage';
-import { buildBackup, backupFilename, restoreBackup, type MergeReport } from '../backup';
+import { buildBackup, backupFilename, currentPeople, restoreBackup, type MergeReport } from '../backup';
 
 /**
  * The Settings sheet's "Your rounds" block: write a backup file, or merge one
@@ -14,11 +14,12 @@ import { buildBackup, backupFilename, restoreBackup, type MergeReport } from '..
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
 /** "Added 3 rounds, updated 1 · 2 already up to date" — only the parts that happened. */
-function describe(rounds: MergeReport, courses: MergeReport, dropped: number): string {
+function describe(rounds: MergeReport, courses: MergeReport, dropped: number, people = 0): string {
   const changes: string[] = [];
   if (rounds.added) changes.push(`added ${plural(rounds.added, 'round')}`);
   if (rounds.updated) changes.push(`updated ${plural(rounds.updated, 'round')}`);
   if (courses.added) changes.push(`added ${plural(courses.added, 'course')}`);
+  if (people) changes.push(`matched ${plural(people, 'merged name')}`);
 
   const untouched = rounds.kept + courses.kept;
   const parts: string[] = [];
@@ -44,7 +45,7 @@ export function BackupRows() {
   };
 
   const exportBackup = async () => {
-    const file = buildBackup(listRounds(), listCourses(), __APP_VERSION__);
+    const file = buildBackup(listRounds(), listCourses(), __APP_VERSION__, new Date(), currentPeople());
     const name = backupFilename();
     const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
     const asFile = new File([blob], name, { type: 'application/json' });
@@ -93,7 +94,7 @@ export function BackupRows() {
       say(result.error, true);
       return;
     }
-    say(describe(result.rounds, result.courses, result.dropped));
+    say(describe(result.rounds, result.courses, result.dropped, result.people));
   };
 
   return (

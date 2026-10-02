@@ -95,6 +95,12 @@ what's deferred, and how to expand without a rewrite.
   table is the league director's sheet until rounds can be pooled — which is
   the sync work below.
 
+- **Trip mode** (`src/trips.ts`, `src/screens/TripScreen.tsx`): several
+  rounds settled once. A trip is not stored on its own — it is the rounds
+  whose `trip.id` matches, so backups, share links and handovers carry it with
+  nothing new to keep in step. Players are matched across rounds by name, the
+  sum is kept in cents, and the same fewest-payments settle runs on it.
+
 ## Where data lives today
 
 Everything is in **localStorage**, per browser, per device:

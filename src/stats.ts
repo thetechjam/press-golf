@@ -2,6 +2,7 @@ import type { Round } from './types';
 import { computeSettlement } from './games/settlement';
 import { computeSkins } from './games/skins';
 import { holeScore } from './games/handicap';
+import { nameKey } from './people';
 
 /**
  * Cross-round history, derived from the rounds already on the device.
@@ -171,7 +172,7 @@ export function computeStats(rounds: Round[]): Stats {
       }
       if (holesHere === 0) continue;
 
-      const key = name.toLowerCase();
+      const key = nameKey(name);
       let ps = byKey.get(key);
       if (!ps) {
         ps = {
