@@ -23,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     the old spelling — typed, shared or restored — is brought into line.
   - Nothing is ever merged without a yes, and two players who have shared a
     card are never offered as one.
+  - Backups carry it: the merged names and the "two people" answers go in the
+    file and come back on restore, in the same all-or-nothing write as the
+    rounds, so a restored phone renames the old spelling just as before — and
+    a merge made on the other phone renames this one's rounds too. Where the
+    two phones disagree, this phone's answer stands. Older backup files, and
+    older versions of Press reading new ones, work exactly as they did.
   - Every screen now compares names the same way, in one place.
 
 - **Trip mode.** A buddies trip is four rounds in three days, and settling

@@ -1,6 +1,6 @@
 import type { Round, SavedCourse } from './types';
 import { kv } from './kv';
-import { applyAliases, withAlias, mergeInRounds, pairKey, type Aliases } from './people';
+import { applyAliases, withAlias, mergeInRounds, pairKey, type Aliases, type PeopleData } from './people';
 
 /**
  * Exported because a native build has to hydrate every one of them before the
@@ -181,18 +181,28 @@ export function deleteCourse(id: string): void {
  *
  * Re-throws so the caller can tell a failed restore from a successful one.
  */
-export function writeAll(rounds: Round[], courses: SavedCourse[]): void {
+export function writeAll(rounds: Round[], courses: SavedCourse[], people?: PeopleData): void {
   const prevRounds = kv.getItem(ROUNDS_KEY);
   const prevCourses = kv.getItem(COURSES_KEY);
+  const prevAliases = kv.getItem(ALIASES_KEY);
+  const prevDistinct = kv.getItem(DISTINCT_KEY);
   const restore = (key: string, prev: string | null) =>
     prev === null ? kv.removeItem(key) : kv.setItem(key, prev);
   try {
-    const aliases = getAliases();
+    // Names from the people data being written, not the old: a merge made on
+    // the other phone renames this phone's rounds too.
+    const aliases = people?.aliases ?? getAliases();
+    if (people) {
+      kv.setItem(ALIASES_KEY, JSON.stringify(people.aliases));
+      kv.setItem(DISTINCT_KEY, JSON.stringify(people.distinct));
+    }
     kv.setItem(ROUNDS_KEY, JSON.stringify(rounds.map((r) => applyAliases(r, aliases))));
     kv.setItem(COURSES_KEY, JSON.stringify(courses));
   } catch (err) {
     restore(ROUNDS_KEY, prevRounds);
     restore(COURSES_KEY, prevCourses);
+    restore(ALIASES_KEY, prevAliases);
+    restore(DISTINCT_KEY, prevDistinct);
     throw err;
   }
 }

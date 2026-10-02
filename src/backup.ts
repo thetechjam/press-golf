@@ -1,5 +1,6 @@
 import type { Round, SavedCourse } from './types';
-import { listRounds, listCourses, writeAll } from './storage';
+import { listRounds, listCourses, writeAll, getAliases, getDistinct } from './storage';
+import { mergePeopleData, type PeopleData } from './people';
 import { GAMES } from './games';
 
 /**
@@ -35,15 +36,23 @@ export interface BackupFile {
   appVersion: string;
   rounds: Round[];
   courses: SavedCourse[];
+  /**
+   * Who is who: spellings merged into one person and pairs answered "two
+   * people". Optional, and added without a format bump — a reader that
+   * predates it ignores it and loses nothing it knew how to use, and a file
+   * that predates it simply has none to restore.
+   */
+  people?: PeopleData;
 }
 
 export function buildBackup(
   rounds: Round[],
   courses: SavedCourse[],
   appVersion: string,
-  now: Date = new Date()
+  now: Date = new Date(),
+  people?: PeopleData
 ): BackupFile {
-  return {
+  const file: BackupFile = {
     app: 'press',
     format: BACKUP_FORMAT,
     exportedAt: now.toISOString(),
@@ -51,6 +60,30 @@ export function buildBackup(
     rounds,
     courses,
   };
+  if (people && (Object.keys(people.aliases).length || people.distinct.length)) file.people = people;
+  return file;
+}
+
+/** The phone's people data as it stands, for a backup. */
+export const currentPeople = (): PeopleData => ({ aliases: getAliases(), distinct: [...getDistinct()] });
+
+/**
+ * The people data in a file, keeping only well-formed entries: a string
+ * target for each alias, a two-name key for each answer. Like a damaged
+ * round, a damaged entry is dropped rather than costing the rest.
+ */
+function readPeople(v: unknown): PeopleData | undefined {
+  if (!isObject(v)) return undefined;
+  const aliases: PeopleData['aliases'] = {};
+  if (isObject(v.aliases)) {
+    for (const [k, to] of Object.entries(v.aliases)) {
+      if (k.trim() && typeof to === 'string' && to.trim()) aliases[k] = to.trim();
+    }
+  }
+  const distinct = Array.isArray(v.distinct)
+    ? v.distinct.filter((k): k is string => typeof k === 'string' && /^[^|]+\|[^|]+$/.test(k))
+    : [];
+  return { aliases, distinct };
 }
 
 /** `press-backup-2026-09-11.json` — sorts chronologically in a downloads folder. */
@@ -142,6 +175,7 @@ export function parseBackup(text: string): ParseResult {
   const rawCourses = Array.isArray(raw.courses) ? raw.courses : [];
   const rounds = rawRounds.filter(isRound);
   const courses = rawCourses.filter(isCourse);
+  const people = readPeople(raw.people);
 
   return {
     ok: true,
@@ -154,6 +188,7 @@ export function parseBackup(text: string): ParseResult {
       appVersion: typeof raw.appVersion === 'string' ? raw.appVersion : '',
       rounds,
       courses,
+      ...(people ? { people } : {}),
     },
   };
 }
@@ -229,7 +264,14 @@ export function mergeCourses(
 }
 
 export type RestoreResult =
-  | { ok: true; rounds: MergeReport; courses: MergeReport; dropped: number }
+  | {
+      ok: true;
+      rounds: MergeReport;
+      courses: MergeReport;
+      dropped: number;
+      /** Merged names the file brought that this phone did not have. */
+      people: number;
+    }
   | { ok: false; error: string };
 
 /**
@@ -244,9 +286,13 @@ export function restoreBackup(text: string): RestoreResult {
 
   const rounds = mergeRounds(listRounds(), parsed.file.rounds);
   const courses = mergeCourses(listCourses(), parsed.file.courses);
+  const people = parsed.file.people
+    ? mergePeopleData(currentPeople(), parsed.file.people)
+    : { people: undefined, added: 0 };
 
   try {
-    writeAll(rounds.rounds, courses.courses);
+    // One write for all of it, so the names merge with the rounds or not at all.
+    writeAll(rounds.rounds, courses.courses, people.people);
   } catch {
     return {
       ok: false,
@@ -259,5 +305,6 @@ export function restoreBackup(text: string): RestoreResult {
     rounds: rounds.report,
     courses: courses.report,
     dropped: parsed.droppedRounds + parsed.droppedCourses,
+    people: people.added,
   };
 }

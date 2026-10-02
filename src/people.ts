@@ -216,3 +216,40 @@ export function likelySame(rounds: Round[], distinct: Set<string> = new Set()): 
     }
   return out;
 }
+
+/**
+ * What the phone knows about who is who, beyond the names on the rounds: the
+ * spellings merged into one person, and the pairs answered "two people".
+ */
+export interface PeopleData {
+  aliases: Aliases;
+  /** `pairKey`s. */
+  distinct: string[];
+}
+
+/**
+ * Two phones' people data as one, for a restore. The phone's own answers win:
+ * an alias this phone already has keeps its target, and an incoming one that
+ * would undo or loop against it is dropped. "Two people" answers are unioned —
+ * except a pair one side has since merged, which is no longer two people.
+ */
+export function mergePeopleData(
+  local: PeopleData,
+  incoming: PeopleData
+): { people: PeopleData; added: number } {
+  let aliases = { ...local.aliases };
+  let added = 0;
+  for (const [from, into] of Object.entries(incoming.aliases)) {
+    if (aliases[from]) continue;
+    // Following the local chain from `into` back to `from` would make a loop.
+    if (nameKey(resolveName(into, aliases)) === from) continue;
+    aliases = withAlias(aliases, from, into);
+    added += 1;
+  }
+  const merged = (k: string) => {
+    const [a, b] = k.split('|');
+    return nameKey(resolveName(a, aliases)) === nameKey(resolveName(b, aliases));
+  };
+  const distinct = [...new Set([...local.distinct, ...incoming.distinct])].filter((k) => !merged(k));
+  return { people: { aliases, distinct }, added };
+}
