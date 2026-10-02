@@ -294,8 +294,9 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
                   <button className="saved-course-load" onClick={() => loadCourse(c)}>
                     <span className="saved-course-name">{c.name}</span>
                     <span className="saved-course-meta">
-                      {c.holes.length} holes · par {c.holes.reduce((s, h) => s + h.par, 0)}
-                      {c.holes.some((h) => h.strokeIndex) ? ' · stroke index set' : ''}
+                      {/* No-break spaces inside each part, so a wrap falls between parts. */}
+                      {c.holes.length}{'\u00a0'}holes · par{'\u00a0'}{c.holes.reduce((s, h) => s + h.par, 0)}
+                      {c.holes.some((h) => h.strokeIndex) ? ' · stroke\u00a0index\u00a0set' : ''}
                     </span>
                   </button>
                   <DeleteButton

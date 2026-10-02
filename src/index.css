@@ -771,9 +771,10 @@ button:focus-visible {
   font-size: var(--fs-sm);
   color: var(--muted);
   margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wraps rather than ellipsizing: on a 360px phone the line for a round in
+     progress ran out at "th…", cutting off "thru 18" — the one part of it
+     that changes while you play. */
+  overflow-wrap: anywhere;
 }
 .round-games {
   margin-top: 8px;
@@ -1201,9 +1202,10 @@ select:focus {
   font-size: var(--fs-xs);
   color: var(--muted);
   max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Wraps, like the name above it: with the share and delete buttons beside
+     it, 360px left "stroke ind…" — and whether the index is set is the
+     reason to read this line. */
+  overflow-wrap: anywhere;
 }
 .saved-course-del {
   width: 44px;
@@ -4735,8 +4737,15 @@ select:focus {
    citation keeps the joke and its evidence together at every width. */
 .award-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
-  gap: 10px;
+  gap: 0 10px;
+}
+/* The award's name stays whole; a long detail ("a greenie · a sandie · a
+   barkie · a polie") goes to the next line instead of squeezing THE MAGPIE
+   onto two. */
+.award-title {
+  white-space: nowrap;
 }
 .award-title {
   font-family: var(--font-display);
@@ -5525,9 +5534,9 @@ select:focus {
   font-size: var(--fs-xs);
   color: var(--muted);
   font-variant-numeric: tabular-nums;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  /* Wraps: at 360px the player line ended "pla…", and "plays to 8" is the
+     figure a player opens this screen for. */
+  overflow-wrap: anywhere;
 }
 .standings-unit {
   font-size: var(--fs-xs);
@@ -5548,13 +5557,27 @@ select:focus {
   border-top: 1px solid var(--line);
 }
 .standings-night {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 2px;
   width: 100%;
   min-height: var(--tap);
-  padding: 10px 0;
+  /* Room on the right for the chevron below. */
+  padding: 10px 22px 10px 0;
   text-align: left;
+}
+/* Each night opens its results, and nothing said so: the rows read as a
+   list to look at. The same › the setup rows and the Standings link use. */
+.standings-night::after {
+  content: '›';
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  color: var(--muted);
 }
 .standings-night-when {
   display: flex;

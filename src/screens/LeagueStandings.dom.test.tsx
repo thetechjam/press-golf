@@ -54,7 +54,7 @@ describe('League standings', () => {
     expect(rows[0].textContent).toContain('4½');
     expect(rows[0].textContent).toContain('1–0–1');
     expect(rows[1].textContent).toContain('Cy & Di');
-    expect(screen.getByText(/From the 2 league nights scored on this phone in 2026/)).toBeTruthy();
+    expect(screen.getByText(/2 league nights in 2026, from this phone/)).toBeTruthy();
   });
 
   it('opens a night’s results from the list', async () => {

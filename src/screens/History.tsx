@@ -30,9 +30,13 @@ const FILTERS: { id: StatusFilter; label: string }[] = [
   { id: 'finished', label: 'Finished' },
 ];
 
-/** "All rounds" rather than "All", so it is not the same word twice in two rows. */
+/**
+ * "Both" rather than "All", so it is not the same word twice in two rows —
+ * and rather than "All rounds", which wrapped to two lines on a 360px phone
+ * and made this row taller than the one above it.
+ */
 const KINDS: { id: KindFilter; label: string }[] = [
-  { id: 'all', label: 'All rounds' },
+  { id: 'all', label: 'Both' },
   { id: 'league', label: 'League' },
   { id: 'regular', label: 'Regular' },
 ];
