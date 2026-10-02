@@ -1,5 +1,6 @@
 import type { Round, RoundTrip } from './types';
 import { computeSettlement, formatMoney, settleBalances, type Transaction } from './games/settlement';
+import { nameKey } from './people';
 
 /**
  * Trips: several rounds that settle their money once, at the end.
@@ -24,7 +25,7 @@ export interface Trip extends RoundTrip {
   touched: number;
 }
 
-const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
+const norm = nameKey;
 const newestFirst = (a: Round, b: Round) =>
   b.date.localeCompare(a.date) || b.updatedAt - a.updatedAt;
 

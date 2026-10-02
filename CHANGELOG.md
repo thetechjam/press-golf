@@ -8,6 +8,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **One person, one name.** Press follows people from round to round by name,
+  so "Al" and "Alex" were two people — on Stats, in league standings, and in a
+  trip's settle-up, where it could have Alex owing himself. Now:
+  - New Round's name fields suggest everyone the phone has scored.
+  - At Start, a typed name that looks like somebody already known — "Al" and
+    Alex, "Mike" and Michael, "Jordon" and Jordan — asks "Is “Al” Alex from
+    your earlier rounds?". Yes plays them as Alex and remembers it; no starts
+    the round as typed and does not ask again.
+  - Stats and the trip screen offer to merge a likely pair ("Al and Alex might
+    be the same person"), and any Stats card can be merged into another player
+    by hand for the names nothing could guess. A merge rewrites past rounds to
+    the one spelling and is remembered, so a round that arrives later with
+    the old spelling — typed, shared or restored — is brought into line.
+  - Nothing is ever merged without a yes, and two players who have shared a
+    card are never offered as one.
+  - Every screen now compares names the same way, in one place.
+
 - **Trip mode.** A buddies trip is four rounds in three days, and settling
   each one on the eighteenth green is a dozen payments where the trip needed
   three. New Round has a Trip row: no trip, the trip you are on, or "+ New

@@ -107,6 +107,29 @@ describe('Trip screen', () => {
   });
 });
 
+describe('one person under two names', () => {
+  it('asks above the payments, and merging settles them as one', async () => {
+    const user = userEvent.setup();
+    store([round('a', { Alex: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })]);
+    show();
+    expect(document.querySelector('.same-person')?.textContent).toContain('might be the same person');
+    expect(document.querySelectorAll('.net-row')).toHaveLength(3);
+    await user.click(screen.getByRole('button', { name: /Same person/ }));
+    expect(document.querySelector('.same-person')).toBeNull();
+    expect(document.querySelectorAll('.net-row')).toHaveLength(2);
+  });
+
+  it('"two people" is remembered', async () => {
+    const user = userEvent.setup();
+    store([round('a', { Alex: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })]);
+    show();
+    await user.click(screen.getByRole('button', { name: 'Two people' }));
+    cleanup();
+    show();
+    expect(document.querySelector('.same-person')).toBeNull();
+  });
+});
+
 describe('the ways in', () => {
   const homeProps = {
     onNew: () => {},

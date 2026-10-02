@@ -1,5 +1,6 @@
 import type { Round } from '../types';
 import { LEAGUE_MAX_SCORE, holesFinishedByAll, pickedUp } from './league';
+import { nameKey } from '../people';
 
 /**
  * The league's own handicap system, from the 2025 rule sheet:
@@ -48,13 +49,13 @@ export interface LeagueHistory {
  * league maximum of 9, the number the card holds for it.
  */
 export function leagueHistory(rounds: Round[], name: string): LeagueHistory | null {
-  const key = name.trim().toLowerCase();
+  const key = nameKey(name);
   if (!key) return null;
 
   const nights: { date: string; at: number; overPar: number }[] = [];
   for (const r of rounds) {
     if (!r.options.league) continue;
-    const p = r.players.find((x) => x.name.trim().toLowerCase() === key);
+    const p = r.players.find((x) => nameKey(x.name) === key);
     if (!p) continue;
     let overPar = 0;
     let complete = true;

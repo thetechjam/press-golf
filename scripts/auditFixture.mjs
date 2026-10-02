@@ -160,6 +160,9 @@ const rounds = [
   round({
     id: 'f5',
     course: 'Shinnecock Hills',
+    // Alex typed as "Al" that day, so Stats offers to merge the two and the
+    // audits measure that prompt.
+    players: players.map((p) => (p.name === 'Alex' ? { ...p, name: 'Al' } : p)),
     date: '2025-09-10',
     updatedAt: Date.now() - 8e6,
   }),

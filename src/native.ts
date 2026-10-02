@@ -1,5 +1,5 @@
 import { setBackend, snapshotBackend } from './kv';
-import { ROUNDS_KEY, COURSES_KEY, SETTINGS_KEY } from './storage';
+import { ROUNDS_KEY, COURSES_KEY, SETTINGS_KEY, ALIASES_KEY, DISTINCT_KEY } from './storage';
 import { QUEUE_KEY } from './feedback';
 
 /**
@@ -48,7 +48,7 @@ export const isNative = (): boolean => bridge()?.isNativePlatform?.() === true;
  * worst shape a bug can have. `native.test.ts` checks this list against what
  * those files actually write.
  */
-export const PERSISTED_KEYS = [ROUNDS_KEY, COURSES_KEY, SETTINGS_KEY, QUEUE_KEY] as const;
+export const PERSISTED_KEYS = [ROUNDS_KEY, COURSES_KEY, SETTINGS_KEY, ALIASES_KEY, DISTINCT_KEY, QUEUE_KEY] as const;
 
 /**
  * Hydrates from the native store and points the app at it. Awaited once,

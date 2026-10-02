@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import type { Round } from '../types';
-import { listRounds, saveRound } from '../storage';
+import { getDistinct, listRounds, markDistinct, mergePeople, saveRound } from '../storage';
+import { SamePersonNudge } from '../components/SamePerson';
+import { likelySame } from '../people';
 import { findTrip, tripCandidates, tripLedger, tripSettleText, withTrip } from '../trips';
 import { formatMoney } from '../games/settlement';
 import { playerColor } from '../player';
@@ -8,6 +10,7 @@ import { formatRoundDate } from '../roundDate';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import { RoundCard } from '../components/RoundCard';
 import { CoinIcon, ShareIcon } from '../icons';
+import { nameKey } from '../people';
 
 interface Props {
   tripId: string;
@@ -64,6 +67,13 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
   const [draft, setDraft] = useState('');
   const [choosing, setChoosing] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [distinct, setDistinct] = useState(getDistinct);
+  // The one place a split name costs real money: "Al" owing "Alex" what
+  // "Alex" owes himself. Asked here, above the payments it would change.
+  const suggestion = useMemo(
+    () => (trip ? (likelySame(trip.rounds, distinct)[0] ?? null) : null),
+    [trip, distinct]
+  );
 
   /** Writes every changed round and re-reads, so the screen shows what was saved. */
   const save = (changed: Round[]) => {
@@ -105,9 +115,9 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
   // Each player's badge colour from the latest round they are in, so Casey is
   // the same colour here as on the card the group has been looking at all day.
   const colorOf = (name: string, i: number) => {
-    const key = name.trim().toLowerCase();
+    const key = nameKey(name);
     for (const r of trip.rounds) {
-      const at = r.players.findIndex((p) => p.name.trim().toLowerCase() === key);
+      const at = r.players.findIndex((p) => nameKey(p.name) === key);
       if (at >= 0) return playerColor(at);
     }
     return playerColor(i);
@@ -154,6 +164,20 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
         {n} {n === 1 ? 'round' : 'rounds'} · {tripDates(trip.first, trip.last)}
         {ledger.unfinished > 0 && ` · ${ledger.unfinished} still in play`}
       </p>
+
+      {suggestion && (
+        <SamePersonNudge
+          pair={suggestion}
+          onMerge={() => {
+            mergePeople(suggestion.from, suggestion.into);
+            setRounds(listRounds());
+          }}
+          onDistinct={() => {
+            markDistinct(suggestion.from, suggestion.into);
+            setDistinct(getDistinct());
+          }}
+        />
+      )}
 
       <section className="board settlement trip-settle">
         <div className="board-head">

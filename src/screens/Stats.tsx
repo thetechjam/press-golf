@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
-import { listRounds } from '../storage';
+import { getDistinct, listRounds, markDistinct, mergePeople } from '../storage';
+import { MergeInto, SamePersonNudge } from '../components/SamePerson';
+import { likelySame, pairKey } from '../people';
 import { computeStats, countsForStats, formatToPar, type PlayerStats } from '../stats';
 import {
   searchRounds,
@@ -14,6 +16,7 @@ import { PlayerAvatar } from '../components/PlayerAvatar';
 import { playerColor } from '../player';
 import { ChartIcon, XIcon } from '../icons';
 import { MixBar, TrendLine } from '../components/StatCharts';
+import { nameKey } from '../people';
 
 interface Props {
   onBack: () => void;
@@ -52,7 +55,18 @@ function Tally({ tally }: { tally: PlayerStats['tally'] }) {
   );
 }
 
-function PlayerCard({ p, color }: { p: PlayerStats; color: string }) {
+function PlayerCard({
+  p,
+  color,
+  others,
+  onMerge,
+}: {
+  p: PlayerStats;
+  color: string;
+  /** Everybody else on the screen, for merging this player into one of them. */
+  others: string[];
+  onMerge: (into: string) => void;
+}) {
   // Net is only worth a second line when handicaps actually moved the number —
   // in a gross round the two are identical and printing both reads as a bug.
   const showNet = p.netAvgToPar != null && p.avgToPar != null && Math.abs(p.netAvgToPar - p.avgToPar) >= 0.05;
@@ -111,20 +125,36 @@ function PlayerCard({ p, color }: { p: PlayerStats; color: string }) {
       <div className="stat-foot">
         {plural(p.holes, 'hole')} scored · average shown per 18
       </div>
+      <MergeInto name={p.name} others={others} onMerge={onMerge} />
     </section>
   );
 }
 
 export function Stats({ onBack }: Props) {
-  // Read storage once per mount. Nothing on this screen writes a round, so
-  // there is nothing to invalidate while it is open.
+  // Read storage once per mount, and again after a merge — the one thing on
+  // this screen that writes rounds.
   //
   // Narrowed to the rounds that count for stats before anything is filtered,
   // even though `computeStats` applies the same test itself: the search and
   // the year have to work over the same population the numbers come from, or
   // "4 of 31 rounds" counts rounds that contributed nothing to a single figure
   // on screen.
-  const counted = useMemo(() => listRounds().filter(countsForStats), []);
+  const read = () => listRounds().filter(countsForStats);
+  const [counted, setCounted] = useState(read);
+  const [distinct, setDistinct] = useState(getDistinct);
+  const suggestion = useMemo(() => likelySame(counted, distinct)[0] ?? null, [counted, distinct]);
+  // Names that have shared a card. Two players in one round are two people,
+  // so neither is offered as the other in a merge.
+  const together = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of counted)
+      for (const a of r.players) for (const b of r.players) if (a !== b) set.add(pairKey(a.name, b.name));
+    return set;
+  }, [counted]);
+  const merge = (from: string, into: string) => {
+    mergePeople(from, into);
+    setCounted(read());
+  };
   const [query, setQuery] = useState('');
   const [year, setYear] = useState<number | 'all'>('all');
 
@@ -156,7 +186,7 @@ export function Stats({ onBack }: Props) {
     const theirs = matched.filter((round) =>
       round.players.some(
         (p) =>
-          keys.has(p.name.trim().toLowerCase()) &&
+          keys.has(nameKey(p.name)) &&
           round.holes.some((h) => round.scores[h.number]?.[p.id] != null)
       )
     );
@@ -278,8 +308,27 @@ export function Stats({ onBack }: Props) {
                 )}
               </div>
 
+              {suggestion && (
+                <SamePersonNudge
+                  pair={suggestion}
+                  onMerge={() => merge(suggestion.from, suggestion.into)}
+                  onDistinct={() => {
+                    markDistinct(suggestion.from, suggestion.into);
+                    setDistinct(getDistinct());
+                  }}
+                />
+              )}
+
               {cards.map(({ p, color }) => (
-                <PlayerCard key={p.key} p={p} color={color} />
+                <PlayerCard
+                  key={p.key}
+                  p={p}
+                  color={color}
+                  others={stats.players
+                    .filter((q) => q.key !== p.key && !together.has(pairKey(p.name, q.name)))
+                    .map((q) => q.name)}
+                  onMerge={(into) => merge(p.name, into)}
+                />
               ))}
 
               <p className="hint">

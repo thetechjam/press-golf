@@ -1,4 +1,5 @@
 import type { Round } from './types';
+import { nameKey } from './people';
 
 /**
  * Finding one round among many.
@@ -25,7 +26,7 @@ export type KindFilter = 'all' | 'league' | 'regular';
 export const isLeagueRound = (round: Round): boolean => !!round.options.league;
 
 /** Lower-cased, trimmed, and with runs of space collapsed. */
-const norm = (s: string): string => s.trim().toLowerCase().replace(/\s+/g, ' ');
+const norm = nameKey;
 
 /**
  * Every word worth matching a round on: the course, the players, and the
