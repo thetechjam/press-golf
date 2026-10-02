@@ -19,12 +19,12 @@ export function SamePersonNudge({
   return (
     <div className="same-person nudge">
       <p>
-        <strong>{pair.from}</strong> and <strong>{pair.into}</strong> might be the same person.
-        Counted as one, their rounds and money add up together.
+        <strong>{pair.from}</strong> and <strong>{pair.into}</strong> might be the same person. As
+        one, they would show as {pair.into}, with their rounds and money added together.
       </p>
       <div className="same-person-actions">
         <button className="btn-secondary" onClick={onMerge}>
-          Same person — use {pair.into}
+          Same person
         </button>
         <button className="btn-ghost" onClick={onDistinct}>
           Two people

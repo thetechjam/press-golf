@@ -12,7 +12,7 @@ interface Props {
 export function Leaderboard({ result, colorOf, hcpOf, id }: Props) {
 
   return (
-    <div className="board" id={id}>
+    <div className={`board board-${result.gameType}`} id={id}>
       <div className="board-head">
         <span className="board-title">{result.title}</span>
         <span className="board-status">{result.status}</span>

@@ -263,7 +263,7 @@ describe('one person under two names', () => {
     const user = userEvent.setup();
     show(split);
     expect(names()).toEqual(expect.arrayContaining(['Alex', 'Al']));
-    await user.click(screen.getByRole('button', { name: /Same person — use Alex/ }));
+    await user.click(screen.getByRole('button', { name: 'Same person' }));
     expect(names()).not.toContain('Al');
     expect(document.querySelector('.same-person')).toBeNull();
   });

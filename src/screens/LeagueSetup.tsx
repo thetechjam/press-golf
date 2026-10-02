@@ -274,38 +274,43 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
         </button>
       )}
 
-      <CourseSearch
-        value={course}
-        onChange={setCourse}
-        onPick={loadFromApi}
-        placeholder="Thursday Night League"
-      />
+      {/* One card for where you are playing, as New Round's Course row is:
+          the field and the saved courses under it. Bare on the page, the
+          field read as belonging to nothing. */}
+      <section className="card league-course">
+        <CourseSearch
+          value={course}
+          onChange={setCourse}
+          onPick={loadFromApi}
+          placeholder="Thursday Night League"
+        />
 
-      {courses.length > 0 && (
-        <section className="card course-picker">
-          <h2>Load a saved course</h2>
-          <div className="saved-course-list">
-            {courses.map((c) => (
-              <div key={c.id} className="saved-course-row">
-                <button className="saved-course-load" onClick={() => loadCourse(c)}>
-                  <span className="saved-course-name">{c.name}</span>
-                  <span className="saved-course-meta">
-                    {c.holes.length} holes · par {c.holes.reduce((s, h) => s + h.par, 0)}
-                    {c.holes.some((h) => h.strokeIndex) ? ' · stroke index set' : ''}
-                  </span>
-                </button>
-                <DeleteButton
-                  className="saved-course-del"
-                  label={`saved course ${c.name}`}
-                  onDelete={() => removeCourse(c.id)}
-                >
-                  <XIcon />
-                </DeleteButton>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+        {courses.length > 0 && (
+          <section className="card course-picker">
+            <h2>Load a saved course</h2>
+            <div className="saved-course-list">
+              {courses.map((c) => (
+                <div key={c.id} className="saved-course-row">
+                  <button className="saved-course-load" onClick={() => loadCourse(c)}>
+                    <span className="saved-course-name">{c.name}</span>
+                    <span className="saved-course-meta">
+                      {c.holes.length} holes · par {c.holes.reduce((s, h) => s + h.par, 0)}
+                      {c.holes.some((h) => h.strokeIndex) ? ' · stroke index set' : ''}
+                    </span>
+                  </button>
+                  <DeleteButton
+                    className="saved-course-del"
+                    label={`saved course ${c.name}`}
+                    onDelete={() => removeCourse(c.id)}
+                  >
+                    <XIcon />
+                  </DeleteButton>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+      </section>
 
       {teams.map((t, ti) => (
         <section key={ti} className="card">

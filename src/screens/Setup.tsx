@@ -1064,7 +1064,12 @@ export function Setup({ onCancel, onStart }: Props) {
               </p>
             )}
             <button className="btn-ghost add" onClick={toggleAdvanced}>
-              {advancedHoles ? '− Hide hole difficulty' : '+ Set hole difficulty (stroke index)'}
+              {/* The sign in a 16px box, the star icon's size, so this and
+                  "Save this course" below start their words in one column. */}
+              <span className="add-glyph" aria-hidden="true">
+                {advancedHoles ? '−' : '+'}
+              </span>
+              {advancedHoles ? 'Hide hole difficulty' : 'Set hole difficulty (stroke index)'}
             </button>
             {advancedHoles && (
               <p className="hint-inline">
