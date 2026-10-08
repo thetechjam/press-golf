@@ -133,6 +133,34 @@ function isRound(v: unknown): v is Round {
   return v.players.every((p) => isObject(p) && typeof p.id === 'string' && typeof p.name === 'string');
 }
 
+/**
+ * The optional-but-dereferenced fields, filled in where a file left them out.
+ *
+ * `isRound` admits a round without `wolf`, `presses` or `junk` — an older
+ * backup, or a hand-edited one — and the Wolf engine then threw on
+ * `round.wolf[h.number]`. Each is given its empty value here, and a field of
+ * the wrong shape is treated as absent rather than trusted: a validator that
+ * is lenient about presence has to be strict about shape, or the leniency
+ * just moves the crash.
+ */
+function repairRound(v: Round): Round {
+  const r = v as unknown as Record<string, unknown>;
+  const obj = (x: unknown) => (isObject(x) ? x : {});
+  return {
+    ...v,
+    holes: v.holes.filter((h) => isObject(h) && typeof h.number === 'number' && typeof h.par === 'number'),
+    scores: Object.fromEntries(
+      Object.entries(v.scores).map(([hole, byPlayer]) => [hole, obj(byPlayer)])
+    ) as Round['scores'],
+    wolf: obj(r.wolf) as Round['wolf'],
+    ...(r.presses === undefined
+      ? {}
+      : { presses: Array.isArray(r.presses) ? r.presses.filter((p) => typeof p === 'number') : [] }),
+    ...(r.junk === undefined ? {} : { junk: obj(r.junk) as Round['junk'] }),
+    ...(r.pickups === undefined ? {} : { pickups: obj(r.pickups) as Round['pickups'] }),
+  };
+}
+
 function isCourse(v: unknown): v is SavedCourse {
   if (!isObject(v)) return false;
   if (typeof v.id !== 'string' || !v.id) return false;
@@ -173,7 +201,7 @@ export function parseBackup(text: string): ParseResult {
 
   const rawRounds = Array.isArray(raw.rounds) ? raw.rounds : [];
   const rawCourses = Array.isArray(raw.courses) ? raw.courses : [];
-  const rounds = rawRounds.filter(isRound);
+  const rounds = rawRounds.filter(isRound).map(repairRound);
   const courses = rawCourses.filter(isCourse);
   const people = readPeople(raw.people);
 

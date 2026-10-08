@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getSettings, saveSettings, DEFAULT_SETTINGS } from './storage';
+import { getSettings, saveSettings, DEFAULT_SETTINGS, listRounds, listCourses } from './storage';
+import { makeRound, player } from './games/testFixtures';
 
 // Vitest runs in node — back localStorage with a Map.
 const store = new Map<string, string>();
@@ -86,5 +87,27 @@ describe('settings', () => {
     saveSettings({ reporterName: 'Bo' });
     saveSettings({ keepAwake: false });
     expect(getSettings().reporterName).toBe('Bo');
+  });
+});
+
+describe('a damaged list', () => {
+  // One bad entry used to take the whole list with it: a null threw on
+  // Home, and a course with a non-string name threw inside the sort.
+  it('keeps the rounds around a null entry', () => {
+    const good = makeRound({ players: [player('p1', 'Al')] });
+    localStorage.setItem('press.rounds.v1', JSON.stringify([null, good, 5]));
+    expect(listRounds().map((r) => r.id)).toEqual([good.id]);
+  });
+
+  it('keeps the courses around one with no name', () => {
+    localStorage.setItem(
+      'press.courses.v1',
+      JSON.stringify([
+        { id: 'a', name: 'Zed', holes: [] },
+        { id: 'b', holes: [] },
+        { id: 'c', name: 'Able', holes: [] },
+      ])
+    );
+    expect(listCourses().map((c) => c.id)).toEqual(['b', 'c', 'a']);
   });
 });

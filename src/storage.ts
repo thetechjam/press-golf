@@ -78,11 +78,20 @@ export function listRounds(): Round[] {
   try {
     const raw = kv.getItem(ROUNDS_KEY);
     if (!raw) return [];
-    const rounds = JSON.parse(raw) as Round[];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // One entry that is not a round (a null from a bad write, say) used to
+    // pass this parse and throw on the Home screen, taking every round down
+    // with it. It is left out; the rest are still the user's rounds.
+    const rounds = parsed.filter(
+      (r): r is Round => !!r && typeof r === 'object' && typeof (r as Round).id === 'string'
+    );
     // Newest day played first; the round touched last breaks a tie. A list
     // that read Jun 4 above Jun 7 because the earlier one had been edited
     // since was ordered by something the reader could not see.
-    return rounds.sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt - a.updatedAt);
+    return rounds.sort(
+      (a, b) => String(b.date ?? '').localeCompare(String(a.date ?? '')) || b.updatedAt - a.updatedAt
+    );
   } catch {
     return [];
   }
@@ -153,7 +162,14 @@ export function listCourses(): SavedCourse[] {
   try {
     const raw = kv.getItem(COURSES_KEY);
     if (!raw) return [];
-    return (JSON.parse(raw) as SavedCourse[]).sort((a, b) => a.name.localeCompare(b.name));
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // As listRounds: one bad entry must not empty the list, and a course
+    // whose name is not a string must not throw inside the sort and do the
+    // same.
+    return parsed
+      .filter((c): c is SavedCourse => !!c && typeof c === 'object' && typeof (c as SavedCourse).id === 'string')
+      .sort((a, b) => String(a.name ?? '').localeCompare(String(b.name ?? '')));
   } catch {
     return [];
   }
