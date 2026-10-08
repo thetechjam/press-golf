@@ -53,11 +53,28 @@ export function TrendLine({ points, color }: { points: RoundPoint[]; color: stri
   const ys = points.map(per18);
   const lo = Math.min(...ys);
   const hi = Math.max(...ys);
-  const span = hi - lo;
+
+  // The same number every time is a fact, not a trend: a flat line under a
+  // "+18 best · +18 worst" heading took a chart's room to say one thing.
+  if (hi - lo < 0.5) {
+    return (
+      <div className="trend">
+        <span className="stat-cap">Vs par by round{points.some((q) => q.holes !== 18) ? ' · per 18' : ''}</span>
+        <p className="trend-caption">
+          <strong>{formatToPar(lo)}</strong> in each of {points.length} rounds
+        </p>
+      </div>
+    );
+  }
+
+  // At least four strokes of height, so 81-82-81 reads as steady rather than
+  // as a line swinging from the top edge to the bottom.
+  const mid = (hi + lo) / 2;
+  const span = Math.max(hi - lo, 4);
+  const top = mid - span / 2;
+  const avg = ys.reduce((a, b) => a + b, 0) / ys.length;
   const x = (k: number) => PAD + (k * (W - 2 * PAD)) / (points.length - 1);
-  // A player who shot the same number every time is a flat line through the
-  // middle, not one pinned to the top edge.
-  const y = (v: number) => (span ? PAD + ((v - lo) / span) * (H - 2 * PAD) : H / 2);
+  const y = (v: number) => PAD + ((v - top) / span) * (H - 2 * PAD);
   const path = ys.map((v, k) => `${k ? 'L' : 'M'}${x(k).toFixed(1)},${y(v).toFixed(1)}`).join('');
   const mixed = points.some((p) => p.holes !== 18);
   const step = (W - 2 * PAD) / (points.length - 1);
@@ -86,8 +103,15 @@ export function TrendLine({ points, color }: { points: RoundPoint[]; color: stri
         }}
       >
         <svg viewBox={`0 0 ${W} ${H}`} aria-hidden="true">
+          {/* The player's average, so each round reads as a good or bad day
+              for them rather than only as higher or lower than the last. */}
+          <line className="trend-avg" x1={PAD} x2={W - PAD} y1={y(avg)} y2={y(avg)} />
           <line className="trend-guide" x1={x(i)} x2={x(i)} y1={0} y2={H} />
           <path d={path} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" />
+          {/* A dot per round while there is room for one; past twenty they
+              merge into the line and only add noise. */}
+          {points.length <= 20 &&
+            ys.map((v, k) => <circle key={k} cx={x(k)} cy={y(v)} r={2} fill={color} />)}
           <circle className="trend-best" cx={x(bestK)} cy={y(lo)} r={3} />
           <circle className="trend-dot" cx={x(i)} cy={y(ys[i])} r={5} fill={color} />
           {points.map((_, k) => (

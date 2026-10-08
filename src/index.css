@@ -5452,6 +5452,12 @@ select:focus {
   height: auto;
   overflow: visible;
 }
+.trend-avg {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: 0.6;
+}
 .trend-guide {
   stroke: var(--line);
   stroke-width: 1;
