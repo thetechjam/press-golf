@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { rankStandings, ordinal, firstIncompleteHole, completedHoleCount } from './util';
+import { rankStandings, ordinal, firstIncompleteHole, completedHoleCount, resumeHole, isHolePartial } from './util';
 import { makeRound, holes, scoresFrom } from './testFixtures';
 import type { GameStanding } from '../types';
 
@@ -134,5 +134,37 @@ describe('ordinal', () => {
     expect(ordinal(22)).toBe('22nd');
     expect(ordinal(101)).toBe('101st');
     expect(ordinal(111)).toBe('111th');
+  });
+});
+
+describe('resumeHole', () => {
+  it('returns 0 for an unstarted round', () => {
+    expect(resumeHole(makeRound())).toBe(0);
+  });
+
+  it('opens after the furthest scored hole, not on a blank that was skipped', () => {
+    const hs = holes(18);
+    const al = Array(12).fill(4);
+    const bo = Array(12).fill(4);
+    bo[6] = null; // Bo's blank on the 7th, skipped on purpose
+    const round = makeRound({ holes: hs, scores: scoresFrom(hs, { p1: al, p2: bo }) });
+    expect(firstIncompleteHole(round)).toBe(6);
+    expect(resumeHole(round)).toBe(12);
+    expect(isHolePartial(round, 7)).toBe(true);
+    expect(isHolePartial(round, 8)).toBe(false);
+    expect(isHolePartial(round, 13)).toBe(false);
+  });
+
+  it('stays on the furthest hole while it is part-scored', () => {
+    const hs = holes(9);
+    const round = makeRound({ holes: hs, scores: scoresFrom(hs, { p1: [4, 4, 4], p2: [4, 4] }) });
+    expect(resumeHole(round)).toBe(2);
+  });
+
+  it('lands on the last hole once everything is scored', () => {
+    const hs = holes(9);
+    const full = Array(9).fill(4);
+    const round = makeRound({ holes: hs, scores: scoresFrom(hs, { p1: full, p2: full }) });
+    expect(resumeHole(round)).toBe(8);
   });
 });

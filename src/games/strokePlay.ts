@@ -1,7 +1,7 @@
 import type { Round, Hole, GameResult, GameStanding } from '../types';
 import { strokesReceivedOver } from './handicap';
 import { netFor } from './scoring';
-import { rankStandings } from './util';
+import { rankPlayed } from './util';
 
 export function computeStrokePlay(round: Round): GameResult {
   const useNet = netFor(round, 'strokePlay');
@@ -31,7 +31,10 @@ export function computeStrokePlay(round: Round): GameResult {
     };
   });
 
-  const sorted = rankStandings(standings, true);
+  // A player with no scores yet has no figure to rank — ranked on the 0
+  // they would otherwise carry they led stroke play before anyone else had
+  // teed off, and quota once the field was under pace. Last, and not a leader.
+  const sorted = rankPlayed(round, standings, true);
   const leader = sorted.find((s) => s.isLeader);
   const anyScores = round.players.some((p) =>
     round.holes.some((h) => round.scores[h.number]?.[p.id] != null)

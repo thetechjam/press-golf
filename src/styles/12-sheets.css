@@ -569,3 +569,11 @@
   font-weight: 600;
   font-size: var(--fs-md);
 }
+/* On a rated round the sheet edits an Index and shows what it plays off,
+   the way New Round's player rows do. The two numbers stay together at the
+   end of the row, so the name keeps the start. */
+.hcp-edit-row .player-index {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

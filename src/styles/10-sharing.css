@@ -185,3 +185,17 @@
 .screen.arriving .btn-secondary {
   width: min(320px, 100%);
 }
+
+/* A save that failed. Same shape as the unkept notice above, in the error
+   colour: it is the one message in the app that means "what you are doing
+   right now is not being written down". */
+.unsaved {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--over-strong);
+  border-radius: var(--r-lg);
+  padding: 12px 14px;
+  margin: 12px 16px 0;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+}

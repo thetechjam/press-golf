@@ -60,6 +60,12 @@ export default function App() {
    * the round and deleting it.
    */
   const [unkept, setUnkept] = useState(false);
+  /**
+   * True from a save that failed until one succeeds. Storage full is the
+   * realistic cause, and the one thing worse than losing the round on
+   * reload is doing so after an hour of scoring that looked saved.
+   */
+  const [unsaved, setUnsaved] = useState(false);
 
   // The history/back-gesture logic lives in navigation.ts, where it can be
   // tested against a history double that models asynchronous traversal — a DOM
@@ -231,7 +237,7 @@ export default function App() {
     // An unkept round is edited on screen but not written down — correcting a
     // score before deciding whether to keep it is reasonable; being given a
     // round in the history because you fixed somebody's typo is not.
-    if (!unkept) saveRound(next);
+    if (!unkept) setUnsaved(!saveRound(next));
   };
 
   /**
@@ -344,6 +350,14 @@ export default function App() {
       {/* Mounted on every view so the service worker registers on every load;
           the prompt itself stays hidden while a round is being scored. */}
       <UpdatePrompt suppressed={view === 'play'} />
+
+      {unsaved && (
+        <div className="unsaved" role="alert">
+          <strong>Not saved.</strong> This phone’s storage is full, so scores entered now will be
+          lost if Press is closed. Back up from Settings, then delete old rounds from Rounds to
+          make room.
+        </div>
+      )}
 
       {/* No fallback: the chunks are preloaded at idle, so the wait is a frame
           or two at most, and a spinner flashing for that long is worse than

@@ -10,11 +10,11 @@ import { BoardJump } from '../components/BoardJump';
 import { HoleTicker } from '../components/MoneyTicker';
 import { HoleView } from './HoleView';
 import { activeResults } from '../games';
-import { firstIncompleteHole } from '../games/util';
+import { isHolePartial, resumeHole } from '../games/util';
 import { visibleSwing } from '../games/money';
 import { wolfForHole } from '../games/wolf';
 import { colorMap } from '../player';
-import { usesHandicaps } from '../games/handicap';
+import { courseHandicapFor, usesHandicaps } from '../games/handicap';
 import { getSettings } from '../storage';
 import { useWakeLock } from '../useWakeLock';
 import { GearIcon, PencilIcon } from '../icons';
@@ -33,7 +33,7 @@ interface Props {
 
 export function Play({ round, onChange, onFinish, onExit }: Props) {
   // Resume where scoring left off, not on hole 1.
-  const [idx, setIdx] = useState(() => firstIncompleteHole(round));
+  const [idx, setIdx] = useState(() => resumeHole(round));
   // A finished round opens on the scorecard — you're reviewing, not scoring.
   const [mode, setMode] = useState<PlayMode>(round.status === 'finished' ? 'card' : 'hole');
   const [warn, setWarn] = useState<'next' | 'finish' | null>(null);
@@ -75,6 +75,13 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     const clamped = Math.max(0, Math.min(round.holes.length - 1, next));
     setDir(clamped >= idx ? 'next' : 'prev');
     setIdx(clamped);
+    // Next Hole from the Board or Card moved the hole with nothing to show
+    // for it, and a second press skipped one. A new hole is shown on the
+    // Hole tab, from its top: with six players, or a strip open, the page
+    // was left scrolled to where the last chips had been, with the new
+    // hole's header and an open Wolf call above the fold.
+    setMode('hole');
+    if (window.scrollY > 0) window.scrollTo({ top: 0 });
   };
 
   /** The round's pick-ups with this player's on this hole set or cleared. */
@@ -143,8 +150,37 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     round.players.some((p) => round.scores[h.number]?.[p.id] == null)
   ).length;
 
-  const tryNext = () => (missing.length ? setWarn('next') : go(idx + 1));
-  const tryFinish = () => (incompleteHoles > 0 ? setWarn('finish') : onFinish());
+  // Wolf: a hole scored by everybody but with no call made counts for nothing
+  // in the game, and used to go by without a word. Only fully scored holes —
+  // one nobody played is already reported as missing scores.
+  const wolfCallMissing = (h: typeof hole) =>
+    round.games.includes('wolf') &&
+    !round.wolf[h.number]?.choice &&
+    round.players.every((p) => round.scores[h.number]?.[p.id] != null);
+  const noCallHere = wolfCallMissing(hole);
+  const noCallHoles = round.holes.filter(wolfCallMissing).length;
+
+  const tryNext = () => (missing.length || noCallHere ? setWarn('next') : go(idx + 1));
+  const tryFinish = () =>
+    incompleteHoles > 0 || noCallHoles > 0 ? setWarn('finish') : onFinish();
+
+  const nextWarning = [
+    missing.length ? `No score yet for ${missing.join(', ')}.` : '',
+    noCallHere ? 'No Wolf call on this hole.' : '',
+    'Move to the next hole anyway?',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const finishWarning = [
+    incompleteHoles > 0
+      ? `${incompleteHoles} ${incompleteHoles === 1 ? 'hole is' : 'holes are'} missing scores`
+      : '',
+    noCallHoles > 0
+      ? `${noCallHoles} ${noCallHoles === 1 ? 'hole has' : 'holes have'} no Wolf call`
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' and ');
   const confirmProceed = () => {
     if (warn === 'next') go(idx + 1);
     else onFinish();
@@ -178,6 +214,9 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   const holeComplete = round.holes.map((h) =>
     round.players.every((p) => round.scores[h.number]?.[p.id] != null)
   );
+  // Some scores but not all — a hole skipped with a blank on it looked like
+  // one not reached yet, so there was no finding the gap from the strip.
+  const holePartial = round.holes.map((h) => isHolePartial(round, h.number));
 
   // Only the Board tab's non-league leaderboards need these — skip the work
   // on the other two tabs, and for league rounds (which render LeagueBoard).
@@ -188,8 +227,12 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     colors = colorMap(round);
   }
 
-  const hcpOf = (id: string) =>
-    usesHandicaps(round) ? (round.players.find((p) => p.id === id)?.handicap ?? 0) : undefined;
+  // The course handicap, not the stored stroke count: an Index player's
+  // badge read "0" while they were getting strokes.
+  const hcpOf = (id: string) => {
+    const p = round.players.find((q) => q.id === id);
+    return usesHandicaps(round) && p ? courseHandicapFor(round, p) : undefined;
+  };
 
   // The most recently completed hole's money swing, gated exactly by
   // games/money.ts's visibleSwing — null falls back to the running ticker.
@@ -251,6 +294,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           dir={dir}
           highlightId={highlightId}
           holeComplete={holeComplete}
+          holePartial={holePartial}
           onGo={go}
           onScore={setScore}
           onPickup={togglePickup}
@@ -317,13 +361,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       <div className="screen-foot play-foot">
         {warn && (
           <div className="warn-banner" role="alert">
-            <p>
-              {warn === 'next'
-                ? `No score yet for ${missing.join(', ')}. Move to the next hole anyway?`
-                : `${incompleteHoles} ${
-                    incompleteHoles === 1 ? 'hole is' : 'holes are'
-                  } missing scores. Finish the round anyway?`}
-            </p>
+            <p>{warn === 'next' ? nextWarning : `${finishWarning}. Finish the round anyway?`}</p>
             <div className="warn-actions">
               <button className="warn-keep" onClick={keepScoring}>
                 Keep scoring
@@ -334,7 +372,14 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             </div>
           </div>
         )}
-        {last ? (
+        {round.status === 'finished' ? (
+          // Reopened from Results to fix a score: it is not being finished
+          // again, and "Finish Round" on a finished round asked a question
+          // that had been answered.
+          <button className="btn-primary big" onClick={onFinish}>
+            Back to results →
+          </button>
+        ) : last ? (
           <button className="btn-primary big" onClick={tryFinish}>
             Finish Round →
           </button>

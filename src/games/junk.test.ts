@@ -203,3 +203,25 @@ describe('the six', () => {
     expect(isJunkKind('snake')).toBe(false);
   });
 });
+
+describe('one greenie a hole', () => {
+  it('moves the greenie to the player it is claimed for', () => {
+    const hs = holes18();
+    const r = makeRound({ players: four, holes: hs, games: ['junk'] });
+    const al = { ...r, junk: toggleJunk(r, 3, 'p1', 'greenie') };
+    const bo = { ...al, junk: toggleJunk(al, 3, 'p2', 'greenie') };
+    expect(hasClaim(bo, 3, 'p1', 'greenie')).toBe(false);
+    expect(hasClaim(bo, 3, 'p2', 'greenie')).toBe(true);
+  });
+
+  it('leaves the other player’s other junk, and lets two hold a sandie', () => {
+    const hs = holes18();
+    const r = makeRound({ players: four, holes: hs, games: ['junk'] });
+    let junk = toggleJunk(r, 3, 'p1', 'greenie');
+    junk = toggleJunk({ ...r, junk }, 3, 'p1', 'sandie');
+    junk = toggleJunk({ ...r, junk }, 3, 'p2', 'sandie');
+    junk = toggleJunk({ ...r, junk }, 3, 'p2', 'greenie');
+    expect(claimsOn({ ...r, junk }, 3, 'p1')).toEqual(['sandie']);
+    expect(claimsOn({ ...r, junk }, 3, 'p2')).toEqual(['greenie', 'sandie']);
+  });
+});

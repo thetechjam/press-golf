@@ -33,7 +33,7 @@ function describe(rounds: MergeReport, courses: MergeReport, dropped: number, pe
   return s.charAt(0).toUpperCase() + s.slice(1) + '.';
 }
 
-export function BackupRows() {
+export function BackupRows({ onRestored }: { onRestored?: () => void } = {}) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
@@ -95,6 +95,7 @@ export function BackupRows() {
       return;
     }
     say(describe(result.rounds, result.courses, result.dropped, result.people));
+    onRestored?.();
   };
 
   return (

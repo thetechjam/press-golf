@@ -133,3 +133,20 @@ describe('visibleSwing', () => {
     expect(visibleSwing(round, hs[1])).toBeNull();
   });
 });
+
+describe('holeSwing and junk', () => {
+  it('counts the junk claimed on the hole as part of its swing', () => {
+    const hs = holes(3);
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo')],
+      holes: hs,
+      games: ['junk'],
+      options: { stakes: { junk: 2 } },
+      scores: scoresFrom(hs, { p1: [4, 4, 4], p2: [4, 4, 4] }),
+      junk: { 3: { p1: ['sandie'] } },
+    });
+    // Junk was the only money that moved on the 3rd, and it did not show.
+    expect(holeSwing(round, 3)).toEqual({ p1: 2, p2: -2 });
+    expect(holeSwing(round, 2)).toEqual({ p1: 0, p2: 0 });
+  });
+});

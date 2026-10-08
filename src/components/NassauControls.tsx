@@ -30,8 +30,12 @@ export function NassauControls({ round, hole, onChange }: Props) {
   const nineLabel = !hasBackNine ? 'Match' : hole.number <= 9 ? 'Front' : 'Back';
   const seg = matchSegmentSides(round, nine, a, b, 'nassau');
   const end = endOfNine(round, hole.number);
-  // A press starts even on the remaining holes of this nine, i.e. the next hole.
-  const start = hole.number + 1;
+  // A press starts on the holes still to be played. Scoring runs a hole
+  // behind the golf — hole 4 is entered, Next, and somebody presses on the
+  // 5th tee with the 5th on screen — so a hole nobody has a score on yet is
+  // one the press can still cover; one already being scored is not.
+  const unscored = round.players.every((p) => round.scores[hole.number]?.[p.id] == null);
+  const start = unscored ? hole.number : hole.number + 1;
 
   const presses = round.presses ?? [];
   // Derived from the card, so they appear and disappear as scores are entered
@@ -59,7 +63,9 @@ export function NassauControls({ round, hole, onChange }: Props) {
           {nineLabel}: {seg.status}
         </span>
         <span className="collapsed-hint">
-          {allPresses.length ? `${allPresses.length} press` : 'Press'}
+          {allPresses.length
+            ? `${allPresses.length} ${allPresses.length === 1 ? 'press' : 'presses'}`
+            : 'Press'}
         </span>
       </button>
     );
@@ -69,6 +75,11 @@ export function NassauControls({ round, hole, onChange }: Props) {
     <div className="nassau">
       <div className="nassau-head">
         <FlagIcon size={14} /> Nassau · {nineLabel}: <strong>{seg.status}</strong>
+        {/* Nothing closed this panel once it was open, and open it is a
+            hundred pixels of a screen that has four players to fit. */}
+        <button type="button" className="junk-done" onClick={() => setOpen(false)}>
+          Done
+        </button>
       </div>
       <button className="press-btn" onClick={addPress} disabled={alreadyHere || !canPress}>
         {alreadyHere

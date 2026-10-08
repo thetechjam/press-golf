@@ -1,5 +1,5 @@
 import type { Round } from '../types';
-import { completedHoleCount, firstIncompleteHole } from '../games/util';
+import { completedHoleCount, resumeHole } from '../games/util';
 import { roundTitle, standingLine } from '../roundSummary';
 
 /**
@@ -13,7 +13,7 @@ import { roundTitle, standingLine } from '../roundSummary';
  */
 export function ResumeCard({ round, onResume }: { round: Round; onResume: () => void }) {
   const thru = completedHoleCount(round);
-  const next = round.holes[firstIncompleteHole(round)]?.number;
+  const next = round.holes[resumeHole(round)]?.number;
   const standing = standingLine(round);
 
   return (

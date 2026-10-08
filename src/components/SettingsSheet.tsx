@@ -72,6 +72,8 @@ interface Props {
   initialView?: 'settings' | 'help';
   /** Offered only mid-round, and only when there is a round to hand over. */
   onHandOver?: () => void;
+  /** Called after a restore changed what is stored, so the screen behind can re-read it. */
+  onDataChanged?: () => void;
 }
 
 export function SettingsSheet({
@@ -80,6 +82,7 @@ export function SettingsSheet({
   round,
   initialView = 'settings',
   onHandOver,
+  onDataChanged,
 }: Props) {
   const [view, setView] = useState<'settings' | 'feedback' | 'help'>(initialView);
   const [queued, setQueued] = useState(() => listQueue().length);
@@ -180,7 +183,7 @@ export function SettingsSheet({
             </button>
           )}
 
-          <BackupRows />
+          <BackupRows onRestored={onDataChanged} />
 
           <button className="set-row set-action" onClick={() => setView('help')}>
             <span>

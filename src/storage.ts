@@ -147,10 +147,22 @@ export function mergePeople(from: string, into: string): void {
   kv.setItem(ROUNDS_KEY, JSON.stringify(stamped));
 }
 
-export function saveRound(round: Round): void {
+/**
+ * Writes a round. False when the write failed — storage full, or a browser
+ * mode that refuses writes — which used to throw out of the score handler
+ * after the screen had already updated: scoring looked normal and nothing
+ * was kept. The caller says so; this does not, because it is also called
+ * from places that have nowhere to say it.
+ */
+export function saveRound(round: Round): boolean {
   const rounds = listRounds().filter((r) => r.id !== round.id);
   rounds.push({ ...applyAliases(round, getAliases()), updatedAt: Date.now() });
-  kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
+  try {
+    kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function deleteRound(id: string): void {

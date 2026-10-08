@@ -46,6 +46,43 @@ export function formatRoundDate(iso: string, now: Date = new Date()): string {
   });
 }
 
+/** The `Round.date` fields as a local Date, or null when they are not a date. */
+export function parseRoundDate(iso: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return null;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(y, mo - 1, d);
+  if (date.getFullYear() !== y || date.getMonth() !== mo - 1 || date.getDate() !== d) return null;
+  return date;
+}
+
+/**
+ * Whole days from the round's date to today, in the phone's calendar: 0 for
+ * a round dated today, 1 for yesterday. Null when the date cannot be read.
+ */
+export function daysSince(iso: string, now: Date = new Date()): number | null {
+  const date = parseRoundDate(iso);
+  if (!date) return null;
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.round((startOfDay(now).getTime() - startOfDay(date).getTime()) / 86_400_000);
+}
+
+/**
+ * The date in full, for text that leaves the phone — "Thu, Oct 8, 2026".
+ * "Today" is true when it is written and wrong by the time the group chat
+ * is read back, and the raw ISO form was what went out before.
+ */
+export function formatRoundDateAbsolute(iso: string): string {
+  const date = parseRoundDate(iso);
+  if (!date) return iso;
+  return date.toLocaleDateString(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+}
+
 /**
  * Today as a `Round.date`, in the phone's own calendar.
  *

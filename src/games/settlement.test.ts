@@ -519,6 +519,39 @@ describe('computeSettlement — cents', () => {
     assertTransactionsSettle(s.totals, nameMap(round), s.transactions);
   });
 
+  it('does not lose a cent to float noise on a 30-cent stake', () => {
+    // 0.3 × 3 × 100 is 89.999999… in floating point; truncated, both
+    // players read $0.89 and nothing was left over to put the cent back.
+    const hs = holes(3, 4);
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo')],
+      holes: hs,
+      games: ['stableford'],
+      options: { stakes: { stableford: 0.3 } },
+      // Al 3 pars (6 pts), Bo 3 bogeys (3 pts): a margin of 3 points.
+      scores: scoresFrom(hs, { p1: [4, 4, 4], p2: [5, 5, 5] }),
+    });
+    const s = computeSettlement(round);
+    expect(s.totals).toEqual({ p1: 0.9, p2: -0.9 });
+  });
+
+  it('leaves a player with no scores out of a points game', () => {
+    const hs = holes(9);
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo'), player('p3', 'Cy')],
+      holes: hs,
+      games: ['quota'],
+      options: { stakes: { quota: 1 } },
+      // Al and Bo both under pace; Cy never teed off and used to collect
+      // from both on a "0" that was not zero points.
+      scores: scoresFrom(hs, { p1: Array(9).fill(5), p2: Array(9).fill(6) }),
+    });
+    const s = computeSettlement(round);
+    expect(s.totals.p3).toBe(0);
+    expect(s.totals.p1).toBeGreaterThan(0);
+    expect(s.totals.p1 + s.totals.p2).toBe(0);
+  });
+
   it('splits ten dollars three ways the way a person would', () => {
     const { s } = threeWayTie(10);
     expect([s.totals.p1, s.totals.p2, s.totals.p3].sort()).toEqual([3.33, 3.33, 3.34]);

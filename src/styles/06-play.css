@@ -724,3 +724,24 @@
     font-size: var(--fs-3xl);
   }
 }
+
+/* A hole with some scores in but not everyone's: half-filled, so a gap left
+   with "Skip anyway" can be found from the strip. A hole not reached yet
+   stays hollow and a finished one solid. */
+.hole-dot.partial::before {
+  background: linear-gradient(90deg, var(--fairway) 50%, var(--bg) 50%);
+  border-color: var(--fairway);
+}
+/* The remove button is 22px drawn; its tap target is not. Reaches the 44px
+   a thumb needs without changing what the chip looks like. */
+.press-chip button {
+  position: relative;
+}
+.press-chip button::before {
+  content: '';
+  position: absolute;
+  inset: -11px;
+}
+.nassau-head .junk-done {
+  margin-left: auto;
+}

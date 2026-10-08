@@ -49,10 +49,14 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
   const nineAfter = (i: number) => model.nines.find((n) => n.afterIndex === i);
 
   // Clamped to the 1..15 range clampScore enforces below; empty clears the score.
-  const commit = (playerId: string, holeNumber: number, raw: string) => {
+  const commit = (playerId: string, holeNumber: number, raw: string, current: number | null) => {
     if (!onScore) return;
     const value = clampScore(raw);
     if (value === undefined) return;
+    // Tapping a cell to look at it and tapping away is not an entry. It was
+    // being committed anyway, and on a league card that turned a pick-up —
+    // stored as a 9 — into a real 9 that could halve the hole.
+    if (value === current) return;
     onScore(holeNumber, playerId, value);
   };
 
@@ -206,7 +210,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                         autoFocus
                         defaultValue={cell.score ?? ''}
                         onBlur={(e) => {
-                          commit(row.playerId, cell.holeNumber, e.target.value);
+                          commit(row.playerId, cell.holeNumber, e.target.value, cell.score);
                           setEditing(null);
                         }}
                         onKeyDown={(e) => {

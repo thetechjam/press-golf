@@ -20,6 +20,8 @@ interface Props {
   dir: 'next' | 'prev';
   highlightId: string | null;
   holeComplete: boolean[];
+  /** Some scores in, not everyone's. */
+  holePartial?: boolean[];
   onGo: (index: number) => void;
   onScore: (playerId: string, value: number | null) => void;
   /** League only: toggle a pick-up ("X") for a player on this hole. */
@@ -30,8 +32,8 @@ interface Props {
 }
 
 export function HoleView({
-  round, hole, idx, dir, highlightId, holeComplete, onGo, onScore, onPickup, onWolf, onPresses,
-  onJunk,
+  round, hole, idx, dir, highlightId, holeComplete, holePartial, onGo, onScore, onPickup, onWolf,
+  onPresses, onJunk,
 }: Props) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   // One ref serves both jobs: keeping the current dot centred, and measuring
@@ -117,9 +119,9 @@ export function HoleView({
         {round.holes.map((h, i) => (
           <button
             key={h.number}
-            className={`hole-dot${i === idx ? ' current' : ''}${holeComplete[i] ? ' done' : ''}`}
+            className={`hole-dot${i === idx ? ' current' : ''}${holeComplete[i] ? ' done' : ''}${holePartial?.[i] ? ' partial' : ''}`}
             onClick={() => onGo(i)}
-            aria-label={`Hole ${h.number}${holeComplete[i] ? ', complete' : ''}`}
+            aria-label={`Hole ${h.number}${holeComplete[i] ? ', complete' : holePartial?.[i] ? ', some scores missing' : ''}`}
             aria-current={i === idx ? 'true' : undefined}
           />
         ))}
