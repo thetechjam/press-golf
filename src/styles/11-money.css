@@ -1,0 +1,184 @@
+/* ---- Money board (Play → Board tab) ---- */
+.money-board {
+  margin-bottom: 12px;
+}
+.pergame-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.pergame-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.pergame-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--fs-sm);
+}
+.pergame-stake {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.pergame-nets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 4px;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+.pg-name {
+  color: var(--muted);
+  margin-right: 4px;
+}
+.pg-net.up {
+  color: var(--under-ink);
+}
+.pg-net.down {
+  color: var(--over-strong);
+}
+
+/* ---- Money ticker (Play → Hole tab) ---- */
+/* Both faces of the ticker occupy ONE grid cell, so the running total and a
+   hole's swing can cross-fade instead of hard-cutting between two unrelated
+   sets of text in the same rectangle. Stacking them also fixes the box height
+   at the taller of the two rather than at whichever is currently mounted, so
+   the swap cannot move the steppers below it even by a pixel. */
+.ticker-stack {
+  display: grid;
+}
+.ticker-face {
+  grid-area: 1 / 1;
+  /* Both faces are horizontal scrollers; without this the wider one sets the
+     grid column's min-content width and pushes the stack past the screen. */
+  min-width: 0;
+  transition: opacity var(--swap) ease, filter var(--swap) ease;
+}
+/* The blur is what makes this read as one line updating rather than two lists
+   swapping: it dissolves the outgoing glyphs instead of dimming them, so the
+   eye never resolves the two as separate objects. 2px — far under the ~20px
+   where Safari's blur cost starts to show. */
+.ticker-face.out {
+  opacity: 0;
+  filter: blur(2px);
+  pointer-events: none;
+}
+/* The swing face is only mounted once a hole has actually been completed, so
+   the first swing of a round would otherwise appear at full opacity with no
+   transition to run — a half crossfade, money fading out under a face that
+   snapped in. Where @starting-style is unsupported that is exactly what still
+   happens; it degrades to today's behaviour rather than to anything broken. */
+@starting-style {
+  .ticker-face {
+    opacity: 0;
+    filter: blur(2px);
+  }
+}
+.money-ticker {
+  display: flex;
+  /* 10px, not more: four monogram ticks and the swing face's "Hole 18" label
+     fit in 328px at this gap, which is a 360px phone's content box. */
+  gap: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* 4px around a 19px line of read-only text. Nothing in this strip is
+     tappable, so its height is type and air, and the air was the larger half. */
+  padding: 4px 2px;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  /* Spread across the width when it fits, so the monograms line up roughly
+     over the rows they belong to rather than bunching left. When it does not
+     fit (five or six players), space-between falls back to flex-start and
+     the strip scrolls under useEdgeFade as before. */
+  justify-content: space-between;
+}
+.money-ticker::-webkit-scrollbar {
+  display: none;
+}
+.tick {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+}
+.tick-net {
+  font-weight: 700;
+}
+.tick.up .tick-net {
+  color: var(--under-ink);
+}
+.tick.down .tick-net {
+  color: var(--over-strong);
+}
+
+/* ---- Per-hole money swing (Play → Hole tab) ----
+   Renders inside the very same .money-ticker box the running total normally
+   occupies, above .hole-nav — the two are mutually exclusive per hole (see
+   games/money.ts's visibleSwing), so swapping one for the other costs no
+   extra height and never pushes the steppers or footer. */
+.swing-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+/* ---- Collapsed game cards (Play → Hole tab) ---- */
+.wolf.collapsed,
+.nassau.collapsed,
+.junk.collapsed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 0;
+  padding: 9px 12px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  text-align: left;
+}
+.collapsed-text {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collapsed-hint {
+  flex: 0 0 auto;
+  color: var(--green-ink);
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--fs-2xs);
+}
+
+/* Two or more collapsed strips in a row (Wolf, Nassau, Junk) read as one
+   grouped list rather than a stack of separate bars: they share a border and
+   drop the gap between them, which also pulls the score rows up the screen.
+   Portrait only — landscape lays the strips side by side instead. */
+@media (orientation: portrait) {
+  .hole-body > .collapsed + .collapsed {
+    margin-top: -11px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+  .hole-body > .collapsed:has(+ .collapsed) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}

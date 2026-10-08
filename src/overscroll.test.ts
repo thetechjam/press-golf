@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-const css = readFileSync(fileURLToPath(new URL('./index.css', import.meta.url)), 'utf8');
+/** index.css is a list of @imports; this is the stylesheet they make, in order. */
+const read = (rel: string) => readFileSync(fileURLToPath(new URL(rel, import.meta.url)), 'utf8');
+const css = [...read('./index.css').matchAll(/@import '([^']+)'/g)].map((m) => read(m[1])).join('\n');
 
 /**
  * The pull-to-refresh guard is a single CSS declaration whose two failure

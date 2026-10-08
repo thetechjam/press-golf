@@ -1,0 +1,261 @@
+/* ---------- Results ---------- */
+.results-meta {
+  text-align: center;
+}
+
+/* Winner payoff hero. */
+.winner-hero {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+  background: color-mix(in srgb, var(--gold) 14%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+  border-radius: var(--radius);
+  padding: 22px 20px;
+}
+/* One light sweep across the hero when Results opens — then still. */
+.winner-hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 58%
+  );
+  transform: translateX(-130%);
+  animation: sheen 1s ease-out 0.35s 1 forwards;
+  pointer-events: none;
+}
+@keyframes sheen {
+  to {
+    transform: translateX(130%);
+  }
+}
+.confetti {
+  position: absolute;
+  top: -12px;
+  left: calc(6% + var(--i) * 7.5%);
+  width: 7px;
+  height: 12px;
+  border-radius: var(--r-2xs);
+  background: var(--fairway);
+  opacity: 0;
+  animation: confetti-fall 1.5s ease-in calc(var(--i) * 0.07s) 1 both;
+  pointer-events: none;
+}
+.confetti:nth-child(3n) {
+  background: var(--gold);
+  width: 6px;
+  height: 10px;
+}
+.confetti:nth-child(3n + 1) {
+  background: var(--green-500);
+}
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg);
+  }
+  12% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(230px) rotate(520deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .winner-hero::after,
+  .confetti {
+    animation: none;
+    display: none;
+  }
+}
+.winner-avatars {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.winner-avatars .avatar {
+  box-shadow: 0 0 0 3px var(--card), 0 0 0 5px color-mix(in srgb, var(--gold) 60%, transparent);
+  animation: winner-pop 0.5s ease-out;
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.results > * {
+  animation: rise-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+.results > *:nth-child(2) {
+  animation-delay: 0.04s;
+}
+.results > *:nth-child(3) {
+  animation-delay: 0.08s;
+}
+.results > *:nth-child(4) {
+  animation-delay: 0.12s;
+}
+.results > *:nth-child(5) {
+  animation-delay: 0.16s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .results > * {
+    animation: none;
+  }
+}
+.winner-emoji {
+  line-height: 1;
+  color: var(--gold-ink);
+  animation: winner-pop 0.5s ease-out;
+}
+@keyframes winner-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .winner-avatars .avatar,
+  .winner-emoji {
+    animation: none;
+  }
+}
+.winner-line {
+  font-family: var(--font-display);
+  font-size: var(--fs-4xl);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.winner-sub {
+  color: var(--muted);
+  font-size: var(--fs-md);
+  text-transform: capitalize;
+  margin-top: 2px;
+}
+.results-course {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.results-sub {
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+
+/* ---------- Polish: animation & feedback ---------- */
+/* Split-flap: a new score flips down like a clubhouse scoreboard tile.
+   The stepper-value wrapper supplies the perspective. */
+@keyframes flap {
+  0% {
+    transform: rotateX(-88deg);
+    opacity: 0.3;
+  }
+  55% {
+    transform: rotateX(14deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotateX(0);
+  }
+}
+.score-num {
+  transform-origin: 50% 40%;
+  backface-visibility: hidden;
+}
+/* Gated to .flap, set by PlayerScoreRow only on a real score commit. It used
+   to sit on .score-num itself and so fired on mount — and .hole-body is keyed
+   by hole number, so every swipe remounted every row and flipped all four
+   dashes down on top of the 0.2s slide. The flap now means one thing: a score
+   just landed. Precedence over .celebrate is decided in scoreNumClass(), which
+   never emits both. */
+.score-num.flap {
+  animation: flap 0.26s cubic-bezier(0.3, 0.9, 0.4, 1);
+}
+/* The Hole tab's money line flips a figure the same way when it moves. */
+.tick {
+  perspective: 200px;
+}
+.tick-net {
+  display: inline-block;
+  transform-origin: 50% 40%;
+}
+.tick-net.flap {
+  animation: flap 0.32s cubic-bezier(0.3, 0.9, 0.4, 1);
+}
+/* A press just called lands with a pop — the bet doubled. */
+@keyframes press-pop {
+  0% {
+    transform: scale(0.6);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.press-chip.just-added {
+  animation: press-pop 0.32s var(--ease-out);
+  border-color: var(--gold);
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-num.flap,
+  .tick-net.flap,
+  .press-chip.just-added {
+    animation: none;
+  }
+}
+/* A handicap stroke on this hole. Gold, the colour the Card tab's stroke dots
+   already use, on a gold tint so it reads as a badge rather than as more of
+   the name. --gold-ink on the 20% mix: 5.5:1 light, 5.6:1 dark. */
+.stroke-pip {
+  flex-shrink: 0;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--gold) 20%, var(--card));
+  color: var(--gold-ink);
+  font-family: var(--font-display);
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+/* Under 360px the name needs the room; "+1" beside "HCP 14" still says it. */
+@media (max-width: 359px) {
+  .stroke-pip-word {
+    display: none;
+  }
+}
+.stepper-hcp {
+  flex-shrink: 0;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  font-family: var(--font-display);
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  white-space: nowrap;
+}

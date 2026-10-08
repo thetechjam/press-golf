@@ -1,0 +1,266 @@
+/* ---------- Buttons ---------- */
+button {
+  font: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+.btn-primary {
+  background: var(--green-600);
+  color: #fff;
+  border-radius: var(--radius);
+  font-weight: 700;
+  padding: 14px 20px;
+  box-shadow: 0 3px 12px rgba(26, 125, 94, 0.22);
+  transition: transform var(--press) var(--ease-out);
+}
+.btn-primary:active {
+  transform: scale(0.98);
+}
+.btn-primary.big {
+  font-size: var(--fs-2xl);
+  padding: 18px;
+  min-height: var(--tap);
+}
+/* Buttons and titles that lead with an inline SVG icon. */
+.btn-primary.big,
+.btn-secondary.big,
+.btn-ghost.add,
+.btn-ghost.edit-hcp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.add-glyph {
+  flex: 0 0 16px;
+  text-align: center;
+}
+/* The big CTAs speak in the scoreboard voice too. */
+.btn-primary.big,
+.btn-secondary.big {
+  font-family: var(--font-display);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+/* Setup's and Golf League's CTA is pinned so it is reachable from anywhere on
+   a long screen, and that part is right — but the button was doing it alone,
+   which made it an opaque slab dropped on the middle of a list. Course search
+   results were sliced in half by it with no sign there were four more below;
+   an expanded row's last field disappeared the same way; and a saturated
+   full-width green block floating over the cards competed for attention with
+   the selections it was asking to be made after.
+   So stick the footer instead, the way Play's does — an opaque bar the
+   content scrolls behind rather than a button that hovers over it. Same reason
+   .play-foot exists rather than a sticky button there: a button's own
+   containing block is only as tall as the button, so it has nowhere to move. */
+.screen-foot {
+  position: sticky;
+  bottom: 0;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  /* `auto`, not a length: .screen fills the viewport (see .app), so this takes
+     whatever height the content did not and puts the bar on the floor. On a
+     screen long enough to scroll there is no free space and it resolves to
+     nothing, leaving .screen's own 8px gap — so the bar sits at the bottom of
+     the phone whether the page scrolls or not, instead of wherever the content
+     happened to stop. Deliberately not the 4px copied from .play-foot, which
+     made this the one seam on the screen spaced unlike every other. */
+  margin-top: auto;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  background: var(--bg);
+}
+/* A fade above the bar, not a hairline. A rule drawn across the bottom of a
+   list says "the list ends here", which is the thing that was wrong: what the
+   edge has to say is "there is more of this, keep scrolling". Same sentence
+   the horizontal strips say with their mask, said the same way.
+   Deliberately outside the bar's own box (bottom: 100%) so it never tints the
+   button, and untappable so it never eats a press on the row beneath it. */
+.screen-foot::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  /* 28px, the same distance the horizontal strips fade over. */
+  height: 28px;
+  background: linear-gradient(to top, var(--bg), transparent);
+  pointer-events: none;
+}
+/* The screen's own bottom padding sits below the sticky bar, where it is dead
+   space no content can reach — the bar is the bottom of these screens now. */
+.screen:has(> .screen-foot) {
+  padding-bottom: 0;
+}
+/* Anything the browser scrolls into view of its own accord — a field taking
+   focus, most of all — is placed flush against the bottom of the scrollport,
+   which on these screens is behind the bar. Measured: tapping the last stakes
+   field left it 31px under the button. This reserves the bar's height for
+   every browser-driven scroll at once, which is the only kind that gets this
+   wrong; a person scrolling by hand can already see where they are going.
+   The number is the bar: a .btn-primary.big is 63px, plus 12px of bar padding,
+   plus the 28px fade above it, rounded up for air. */
+html:has(.screen-foot) {
+  scroll-padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
+
+.btn-ghost {
+  color: var(--green-ink);
+  font-weight: 600;
+  padding: 8px 6px;
+  min-height: var(--tap);
+}
+
+.btn-secondary {
+  background: var(--card);
+  color: var(--green-ink);
+  border: 1.5px solid var(--green-600);
+  border-radius: var(--radius);
+  font-weight: 700;
+  padding: 14px 20px;
+  cursor: pointer;
+  transition: transform var(--press) var(--ease-out);
+}
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+.btn-secondary.big {
+  font-size: var(--fs-2xl);
+  padding: 16px;
+  min-height: var(--tap);
+}
+:root.dark .btn-secondary {
+  color: var(--fairway);
+}
+/* The light-mode drop shadow reads muddy on a dark bg — soften to a subtle glow. */
+:root.dark .btn-primary {
+  box-shadow: 0 2px 12px rgba(47, 191, 134, 0.28);
+}
+
+/* Disabled primaries must stop looking tappable. Results' Share buttons relabel
+   to "Building…" while they render the card, and until now kept their full fill
+   and drop shadow the whole time.
+   [aria-disabled] is matched alongside :disabled because those buttons now use
+   aria-disabled — `disabled` was dropping them out of the tab order mid-press.
+   Declarations unchanged; only the selector widened. */
+.btn-primary:disabled,
+.btn-primary[aria-disabled='true'] {
+  opacity: 0.5;
+  box-shadow: none;
+  cursor: default;
+}
+
+/* Keyboard focus ring. :focus-visible, never :focus — a plain :focus ring
+   sticks to the last-tapped button on touch, which is what made every prior
+   attempt at this get reverted. WCAG 2.4.7. */
+button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+/* The one place a ring is wrong. Each screen's <h1> carries tabIndex={-1}
+   purely so App.tsx can drop focus there on navigation (see the effect that
+   does it) — it is a landing pad, not a control, and nothing can Tab to it.
+   A ring there marks a place the user never went. Left alone it is also the
+   UA's own hairline rather than --focus, and on Home, where the heading is
+   the full-width flex wordmark, that draws a black box across the top of the
+   app after every back gesture. WCAG 2.4.7 governs keyboard-operable
+   components; a -1 heading is not one. */
+.screen h1:focus {
+  outline: none;
+}
+
+/* ---------- Press feedback for otherwise-unstyled pressables ----------
+   The global `-webkit-tap-highlight-color: transparent` removes the browser's
+   own flash, so anything without an :active rule acknowledges a tap with
+   nothing at all. These are all primary interactions and all had none.
+   Classes with a bespoke :active (.btn-primary, .btn-secondary,
+   .bar .btn-ghost, .cs-hit, .saved-course-load, .score-chip) keep theirs. */
+.seg-btn:active,
+.view-tool:active,
+.nav-arrow:active,
+.game-card:active,
+.round-main:active,
+.hole-dot:active,
+.round-del:active,
+.saved-course-del:active,
+.game-info-btn:active,
+.sheet-close:active {
+  transform: scale(0.97);
+}
+.view-tool,
+.nav-arrow,
+.round-main,
+.hole-dot,
+.game-info-btn,
+.sheet-close {
+  transition: transform var(--press) var(--ease-out);
+}
+/* .round-del and .saved-course-del are absent above for the same reason
+   .seg-btn and .game-card are below: arming them animates more than the press,
+   and the file keeps one `transition` declaration per selector. Theirs is in
+   the armed-delete rule. */
+/* .seg-btn and .game-card also carry a selected state (.active) that was an
+   instant colour jump; --swap gives the fill somewhere to travel. Their press
+   transition lives here rather than in the list above so there is only ever
+   one `transition` declaration per selector. */
+.seg-btn,
+.game-card {
+  transition: transform var(--press) var(--ease-out),
+    background-color var(--swap) ease, border-color var(--swap) ease,
+    color var(--swap) ease;
+}
+/* A disabled arrow or tab is not a pressable — don't let it shrink. */
+.seg-btn:disabled:active,
+.nav-arrow:disabled:active {
+  transform: none;
+}
+/* Reduced-motion suppression for all of the above lives in the block at the
+   very bottom of this file, not here — see the comment on it for why. */
+
+.ab-badge {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: var(--r-sm);
+  background: var(--green-600);
+  color: #fff;
+  font-weight: 800;
+  font-size: var(--fs-sm);
+  display: grid;
+  place-items: center;
+}
+
+/* Player identity badge — colored monogram, consistent across every screen. */
+.avatar {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 800;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Text for assistive tech only — where the visible label is a monogram or a
+   glyph standing in for a name. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}

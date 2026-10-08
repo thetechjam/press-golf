@@ -1,0 +1,718 @@
+/* ---------- Play ---------- */
+/* The Hole tab is a one-screen task: four players, six chips each, and a
+   button. What competes with it is everything above — bar, tabs, ticker, hole
+   nav, dots, and a strip per side game — which on a 360x780 phone with four
+   players and both strips added up to 57px more than the screen had, putting
+   the fourth player's chips under the bar on every one of eighteen holes.
+   Nothing here gives up a tap target or a number. What went is the spacing
+   that was wider than the rest of the app: these two gaps were 10 and 16 on a
+   screen whose own rhythm is 8. */
+.hole-view {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hole-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+@keyframes hole-in-next {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+@keyframes hole-in-prev {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+}
+.slide-next {
+  animation: hole-in-next 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.slide-prev {
+  animation: hole-in-prev 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .slide-next,
+  .slide-prev {
+    animation: none;
+  }
+}
+.hole-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ink);
+  padding: 0 14px;
+}
+.nav-arrow {
+  width: 52px;
+  height: 44px;
+  font-size: var(--fs-4xl);
+  color: var(--green-ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+}
+.nav-arrow:disabled {
+  opacity: 0.3;
+}
+/* One line, not two. Stacked, "Hole 18" over "Par 4" made a 52px block beside
+   44px arrows — taller than the controls it sits between, for six words. On
+   one line it also reads the way it is said. */
+.hole-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+}
+.hole-num {
+  font-family: var(--font-display);
+  font-size: var(--fs-4xl);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.hole-par {
+  font-size: var(--fs-md);
+  color: var(--muted);
+  white-space: nowrap;
+}
+.progress {
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin-top: -8px;
+}
+
+/* Glanceable per-hole progress strip. Dots are small, but each button is a
+   full 24px WCAG 2.5.8 tap target; the visual dot lives in ::before. */
+/* Both scrollers hide their scrollbar, so at 375px the 18th dot and the last
+   player's money were simply cut off with nothing to say more existed. The
+   mask fades the overflowing edge, which reads as "keep scrolling". */
+.hole-dots {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+  gap: 1px;
+  padding: 2px 0;
+  margin-top: -6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.hole-dots::-webkit-scrollbar {
+  display: none;
+}
+.hole-dot {
+  width: 24px;
+  height: 24px;
+  min-height: 0;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  display: grid;
+  place-items: center;
+}
+.hole-dot::before {
+  content: '';
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1.5px solid var(--line);
+  transition: transform var(--press) var(--ease-out);
+}
+.hole-dot.done::before {
+  background: var(--fairway);
+  border-color: var(--fairway);
+}
+.hole-dot.current::before {
+  border-color: var(--green-ink);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--fairway) 45%, transparent);
+  transform: scale(1.3);
+}
+:root.dark .hole-dot.current::before {
+  border-color: var(--fairway);
+}
+
+/* The one-line note under the scores (skins carried onto this hole). Gold,
+   the app's colour for what is in play. */
+.hole-note {
+  margin: 8px 2px 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-align: center;
+}
+.hole-note strong {
+  color: var(--gold-ink);
+  font-weight: 700;
+}
+.hole-par abbr {
+  text-decoration: none;
+}
+.steppers {
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+/* 6px of padding and a 4px gap, against a 44px chip row and a 28px name row:
+   22px of air per player was 29% of a stepper, and four of them is most of a
+   fifth row. The rows are already separated by a hairline and a 5px colour
+   bar, so the air was not doing the separating. */
+.stepper {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  border-left: 5px solid var(--line);
+  padding: 6px 14px 6px 11px;
+}
+.stepper + .stepper {
+  border-top: 1px solid var(--line);
+}
+.stepper.tone-under {
+  border-left-color: var(--under);
+}
+.stepper.tone-over {
+  border-left-color: var(--over);
+}
+.stepper.tone-even {
+  border-left-color: var(--muted);
+}
+@keyframes flash {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+  30% {
+    box-shadow: inset 0 0 0 3px var(--fairway);
+  }
+}
+.stepper.highlight {
+  animation: flash 1.2s ease;
+  border-color: var(--fairway);
+}
+@media (prefers-reduced-motion: reduce) {
+  .stepper.highlight {
+    animation: none;
+    box-shadow: inset 0 0 0 3px var(--fairway);
+  }
+}
+.stepper-name {
+  display: flex;
+  flex-wrap: wrap;
+  row-gap: 2px;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xl);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 0;
+}
+.stepper-name-text {
+  /* A hard floor so the name survives sharing the row with the HCP badge and
+     league chips — without it, flex-shrink's default min-content-size-0 (a
+     side effect of overflow:hidden) lets those wider, non-shrinking siblings
+     crush this down to nothing on a 375px phone. Anything that still doesn't
+     fit wraps to a second line instead of hiding the player's name. */
+  min-width: 2.4em;
+  flex-shrink: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stepper-value {
+  /* Pushed to the end of the name row; the chips sit on the row below. */
+  margin-left: auto;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  text-align: right;
+  perspective: 260px;
+}
+.score-num {
+  font-family: var(--font-display);
+  /* 1.75rem, so the number stands 28px tall and the name row is sized by the
+     avatar beside it rather than by the number overshooting it by three
+     pixels. Still nearly twice the name's 1rem, which is the job it does. */
+  font-size: var(--fs-5xl);
+  font-weight: 600;
+  line-height: 1;
+}
+.tone-under .score-num {
+  color: var(--under);
+}
+.tone-over .score-num {
+  color: var(--over);
+}
+.scorecard,
+.score-num,
+.hole-num,
+.board-detail,
+.stepper-value,
+.lmatch-status,
+.player-hcp {
+  font-variant-numeric: tabular-nums;
+}
+.score-tag {
+  font-size: var(--fs-3xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* ---------- Quick-pick score chips ---------- */
+/* .score-chips-wrap is the actual flex child of .stepper (align-items:
+   stretch) — .score-chips and .score-overflow are both its children, so
+   capping the wrap, not .score-chips alone, clamps both surfaces to the same
+   width: six columns * 72px chips + five 4px gaps. Below this width the wrap
+   stretches to fill .stepper same as always (portrait is well under the
+   cap); above it, the flex-stretch from .stepper's align-items: stretch is
+   clamped here, so both the chip row and the overflow grid stop growing in
+   landscape instead of the chips blowing up to 120px+ while the grid keeps
+   stretching past them, and both fall back to left-aligned instead of
+   stretching edge to edge. */
+.score-chips-wrap {
+  max-width: 452px;
+}
+.score-chips {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+/* A real, boxed subgrid element — not display:contents — so the
+   role="radiogroup" in ScoreChips.tsx sits on an element engines reliably
+   expose. subgrid aligns its five children to .score-chips's own column
+   tracks, so the row still reads as six equal columns. grid-column: span 5
+   here, and .score-more's grid-column: 6 below, are both coupled to
+   chipRange's fixed length of 5 (BELOW_PAR + ABOVE_PAR + 1 in
+   src/scoreChips.ts) and to the parent's repeat(6, 1fr) — if those constants
+   change, these two rules need to move with them. scoreChips.test.ts's
+   `toHaveLength(5)` assertion is the tripwire. */
+.score-chip-group {
+  grid-column: span 5;
+  display: grid;
+  grid-template-columns: subgrid;
+}
+.score-chip {
+  min-width: 0;
+  /* 44px, and the floor of this screen's layout. The Hole tab is a vertical
+     budget with four players in it, so the next person who needs it to fit
+     will start here — and this is the one number that must not move. Take it
+     out of the spacing instead; see .stepper and .hole-view. */
+  height: 44px;
+  border-radius: var(--r-md);
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: var(--fs-2xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  /* The most-tapped control in the app — roughly 72 taps a round. Without
+     this the :active scale below snapped in and out with no ramp at all. */
+  transition: transform var(--press) var(--ease-out);
+}
+/* Par gets a quiet anchor so the row is readable without counting. */
+.score-chip.par {
+  border-color: color-mix(in srgb, var(--muted) 40%, var(--line));
+  background: var(--card);
+}
+.score-chip[aria-checked='true'] {
+  background: var(--green-600);
+  border-color: var(--green-ink);
+  color: #fff;
+}
+/* Light mode: white text on --under (#1a8f4c) measures 4.14:1, short of
+   AA's 4.5:1. green-600 keeps the selected fill at the base rule's proven
+   5.07:1; the birdie/par distinction still reads via .tone-under's left
+   border and the name row's .score-num color, both using --under as a
+   foreground — its documented role (see the --under-ink comment near the
+   top of this file). Dark mode's --under has the headroom to stay itself;
+   see the override below. */
+.tone-under .score-chip[aria-checked='true'] {
+  background: var(--green-600);
+  border-color: var(--green-ink);
+}
+.tone-over .score-chip[aria-checked='true'] {
+  background: var(--over-strong);
+  border-color: var(--over-strong);
+}
+/* Dark mode: white text on --under (1.95:1) and on --over-strong (2.79:1)
+   both fail AA. var(--bg) clears both (9.55:1, 6.66:1) — same near-black-
+   text-on-bright-fill pattern as .round-del.armed above. */
+:root.dark .tone-under .score-chip[aria-checked='true'] {
+  background: var(--under);
+  border-color: var(--under);
+  color: var(--bg);
+}
+:root.dark .tone-over .score-chip[aria-checked='true'] {
+  color: var(--bg);
+}
+.score-chip:active {
+  transform: scale(0.96);
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-chip {
+    transition: none;
+  }
+  .score-chip:active {
+    transform: none;
+  }
+}
+.score-more {
+  /* Explicit placement, not auto-placement, so it doesn't depend on there
+     being exactly one preceding sibling (.score-chip-group, span 5) to land
+     in the last column. */
+  grid-column: 6;
+  color: var(--muted);
+  letter-spacing: 0.08em;
+}
+.score-more.has-value {
+  border-color: var(--green-ink);
+  color: var(--green-ink);
+  background: var(--card);
+}
+/* Dark mode: --green-700 (unchanged from light) on dark --card measures
+   2.43:1, well short of AA. --fairway clears it at 6.84:1 there. --fairway
+   isn't used in light mode because it only measures 2.35:1 on the light
+   --card — green-700's 6.64:1 already covers light mode. */
+:root.dark .score-more.has-value {
+  color: var(--fairway);
+}
+.score-overflow {
+  display: grid;
+  /* Five columns × three rows fits 1–15 exactly. Measured 59px wide each on
+     a 375px phone — comfortably above the 44px touch minimum. Row width
+     tracks .score-chips-wrap's cap above, same as the inline chip row. */
+  grid-template-columns: repeat(5, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+/* League pick-up. A full row of its own under the numbers, in the text-safe
+   red, so it reads as a different kind of answer rather than a tenth score. */
+.score-overflow .score-x {
+  grid-column: 1 / -1;
+  color: var(--over-strong);
+  font-weight: 700;
+}
+.score-overflow .score-x.sel {
+  background: var(--over-strong);
+  border-color: var(--over-strong);
+  color: #fff;
+}
+:root.dark .score-overflow .score-x.sel {
+  color: var(--bg);
+}
+/* An X on the scorecard: the forfeit, not a number. */
+.sc-x {
+  font-weight: 800;
+  color: var(--over-strong);
+}
+.score-overflow .score-chip.sel {
+  background: var(--green-600);
+  border-color: var(--green-ink);
+  color: #fff;
+}
+/* Same over/under tone language as the inline chips above, so a score like 9
+   on a par 4 — no inline chip checked, only reachable through the overflow
+   grid — doesn't read as a birdie just because it's selected. Specificity
+   trap: `.score-overflow .score-chip.sel` is (0,3,0); a sibling-shaped
+   `.tone-over .score-chip.sel` would tie it and lose on source order, so
+   these chain through both `.tone-*` and `.score-overflow` for (0,4,0). */
+.tone-under .score-overflow .score-chip.sel {
+  background: var(--green-600);
+  border-color: var(--green-ink);
+}
+.tone-over .score-overflow .score-chip.sel {
+  background: var(--over-strong);
+  border-color: var(--over-strong);
+}
+:root.dark .tone-under .score-overflow .score-chip.sel {
+  background: var(--under);
+  border-color: var(--under);
+  color: var(--bg);
+}
+:root.dark .tone-over .score-overflow .score-chip.sel {
+  color: var(--bg);
+}
+
+/* ---------- Wolf ---------- */
+.wolf {
+  background: color-mix(in srgb, var(--gold) 16%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.wolf-head {
+  font-size: var(--fs-lg);
+  line-height: 1.6;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.wolf-head svg {
+  flex-shrink: 0;
+}
+.wolf-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.wolf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px 8px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--card);
+  font-weight: 600;
+  font-size: var(--fs-md);
+  min-height: 40px;
+}
+/* Lone/Blind chips have no avatar — keep them evenly padded. */
+.wolf-chip.lone {
+  padding: 8px 14px;
+}
+.wolf-chip.lone {
+  border-style: dashed;
+}
+.wolf-chip.active {
+  background: var(--green-600);
+  color: #fff;
+  border-color: var(--green-ink);
+}
+
+/* ---------- Junk ---------- */
+/* A third strip on the Hole tab, so it takes the shape of the two beside it
+   rather than inventing one. Its own tint, because a scorekeeper glancing down
+   should be able to tell which strip is asking a question. */
+.junk {
+  background: color-mix(in srgb, var(--gold) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 30%, var(--line));
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+.junk-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-lg);
+  margin-bottom: 10px;
+}
+.junk-head svg {
+  flex-shrink: 0;
+}
+/* Pushed to the end of its row; the only way out of the panel, since tapping a
+   claim has to stay a claim rather than doubling as a dismissal. */
+.junk-done {
+  margin-left: auto;
+  min-height: 32px;
+  padding: 4px 10px;
+  border: none;
+  background: none;
+  color: var(--green-ink);
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: var(--fs-2xs);
+}
+.junk-players,
+.junk-kinds {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.junk-players {
+  margin-bottom: 10px;
+}
+.junk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px 8px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--card);
+  font-weight: 600;
+  font-size: var(--fs-md);
+  min-height: 40px;
+}
+.junk-chip.active {
+  background: var(--green-600);
+  color: #fff;
+  border-color: var(--green-ink);
+}
+/* A player whose colour is the felt green vanished into the selected fill,
+   leaving "AL" as loose text. A ring keeps every badge a badge. */
+.junk-chip.active .avatar {
+  box-shadow: 0 0 0 2px #fff;
+}
+/* How many this player is already holding on this hole — so the row answers
+   "who has what" without opening each one in turn. */
+.junk-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--ink) 12%, transparent);
+  font-size: var(--fs-2xs);
+  line-height: 18px;
+  text-align: center;
+}
+.junk-chip.active .junk-count {
+  background: color-mix(in srgb, #fff 28%, transparent);
+}
+/* The six. Six across does not fit a phone, so they wrap to two rows of three
+   — which is why they are sized by their labels rather than stretched to a
+   grid: "Chip-in" and "Arnie" in equal columns wastes the row on the short
+   one. */
+.junk-kind {
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--card);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-md);
+  letter-spacing: 0.02em;
+}
+.junk-kind.active {
+  background: var(--green-600);
+  color: #fff;
+  border-color: var(--green-ink);
+}
+.junk-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+
+/* ---------- Nassau press ---------- */
+.nassau {
+  background: color-mix(in srgb, var(--green-500) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--green-500) 30%, var(--line));
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+/* Vegas reads out rather than asks, so it borrows the Nassau strip's collapsed
+   shape without being a button. */
+.vegas-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-size: var(--fs-sm);
+}
+.vegas-nums {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+}
+.vegas-num {
+  font-size: var(--fs-xl);
+  font-weight: 500;
+  color: var(--muted);
+}
+/* The lower number took the hole — the one fact worth colouring. */
+.vegas-num.won {
+  color: var(--under-ink);
+  font-weight: 700;
+}
+/* A flipped number is the one thing here that looks like a bug if unexplained:
+   you wrote a 4 and a 5 and the board says 54. The underline marks it, and the
+   accessible name on the pair says "flipped" outright. */
+.vegas-num.flipped {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}
+.vegas-dash {
+  color: var(--muted);
+}
+
+.nassau-head {
+  font-size: var(--fs-lg);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.press-btn {
+  width: 100%;
+  padding: 11px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--green-600);
+  background: var(--card);
+  color: var(--green-ink);
+  font-weight: 700;
+  min-height: 44px;
+  cursor: pointer;
+}
+.press-btn:disabled {
+  opacity: 0.55;
+  color: var(--muted);
+  border-color: var(--line);
+  cursor: default;
+}
+.press-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.press-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 5px 6px 5px 12px;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+/* An automatic press has no × to press, so the chip closes up to where the
+   button's tap target used to end. Without this it sits with a hole in it. */
+.press-chip.auto {
+  padding-right: 12px;
+}
+.press-auto {
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.press-chip button {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--ink);
+  font-size: var(--fs-md);
+  line-height: 1;
+  cursor: pointer;
+}

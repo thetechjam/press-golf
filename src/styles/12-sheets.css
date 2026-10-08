@@ -1,0 +1,571 @@
+/* ---------- Sheet ----------
+   .sheet-backdrop is a <dialog> (see Sheet.tsx), so the first half of this
+   rule is undoing the UA's box for it: a dialog defaults to fit-content
+   sized, auto-margined, bordered and Canvas-filled, none of which survives
+   being a full-viewport scrim. */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  /* `visible`, and it has to be spelled out because the UA gives a dialog
+     `overflow: auto`. Neither the default nor the `hidden` that replaced it
+     works here.
+
+     `auto` makes the dialog a scroll container, and the panel's own enter
+     animation is what fills it: this box is the viewport with the panel flush
+     at its bottom edge, so translateY(100%) puts the panel entirely below the
+     box and creates scrollable overflow the scrim could then be dragged
+     against. `hidden` stops that by CLIPPING the overflow — which is the same
+     region the enter and exit animations travel through, so the sheet stopped
+     rising altogether and simply faded into place with the scrim, the page
+     showing through it on the way. That shipped, and this is the fix.
+
+     `visible` is neither: no scroll container, so there is nothing to scroll,
+     and no clip, so the panel can travel the full height of its own box. The
+     panel is still the only scroller in here — it keeps its own overflow-y —
+     and nothing paints outside the viewport that was not already off-screen. */
+  overflow: visible;
+  background: rgba(4, 17, 11, 0.5);
+  color: inherit;
+  /* Irrelevant while modal — the top layer paints above every z-index — and
+     load-bearing for the 200ms after Sheet.tsx closes the dialog to end its
+     inertness, when the exiting node is an ordinary positioned element again.
+     50 is the value .update-banner is documented against; see its rule. */
+  z-index: 50;
+  animation: sheet-fade var(--sheet) var(--ease-out);
+}
+/* Scoped to the states where the dialog should be visible, and it has to be:
+   an author `display` beats the UA's `dialog:not([open]) { display: none }`
+   whatever the specificity, because author origin wins — so declaring
+   `display: flex` on .sheet-backdrop alone would paint every closed sheet
+   over the app forever. .closing is the deliberate exception: the exit runs
+   on a dialog that is already closed. */
+.sheet-backdrop[open],
+.sheet-backdrop.closing {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+/* The scrim is painted by the element itself rather than by ::backdrop,
+   because ::backdrop exists only while the dialog is modal — and the exit
+   deliberately is not. Chrome's UA ::backdrop is a 10% black wash, so left
+   alone it would double the scrim for the enter and then drop away at the
+   exact moment the sheet starts sliding out. */
+.sheet-backdrop::backdrop {
+  background: transparent;
+}
+.sheet {
+  /* A long Settings sheet scrolls itself; `contain` stops that scroll chaining
+     to the page behind once it hits either end. */
+  overscroll-behavior: contain;
+  background: var(--card);
+  border-radius: var(--radius) var(--radius) 0 0;
+  width: 100%;
+  max-width: 540px;
+  padding: 16px calc(16px + env(safe-area-inset-right))
+    calc(24px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 85vh;
+  overflow-y: auto;
+  /* translateY(100%) rather than a pixel offset: it is height-agnostic, so the
+     tall Settings sheet and the short Help sheet both travel exactly their own
+     height with no per-sheet math. --ease-sheet decelerates harder than
+     --ease-out; see its declaration in :root. */
+  animation: sheet-in var(--sheet) var(--ease-sheet);
+  /* The spring back from a drag that did not go far enough to dismiss (see
+     Sheet.tsx). Only ever animates the inline transform the drag leaves
+     behind: the enter and the exit are animations, which outrank a transition,
+     so neither is affected by this. --sheet-exit because a release is the
+     system answering the user, the same beat as a dismissal. */
+  transition: transform var(--sheet-exit, 200ms) var(--ease-sheet);
+}
+/* The sheet scrolls rather than squeezing. As a capped-height flex column,
+   its rows were shrunk to their 48px minimum once the content outgrew 85vh,
+   and a row whose hint runs to two lines — "Buy me a coffee" — overflowed its
+   own box into the gap below and looked cramped against the next. */
+.sheet > * {
+  flex-shrink: 0;
+}
+/* While a finger is on it the sheet must track that finger exactly — a
+   transition here would put the panel behind the drag by its own duration. */
+.sheet.dragging {
+  transition: none;
+}
+/* The grab handle, and the only thing that says the sheet can be pushed back
+   down. Shown under any-pointer: coarse rather than unconditionally, because
+   the gesture behind it is touch-only (Sheet.tsx says why) and an affordance
+   for something a mouse cannot do is a lie. A laptop with a touchscreen
+   reports a fine PRIMARY pointer and a coarse any-pointer, which is exactly
+   the case that should still get it. */
+.sheet-grab {
+  display: none;
+  width: 36px;
+  height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--line);
+  /* Pulls up into the panel's own top padding so the handle costs no height
+     that the sheet's contents would otherwise have. */
+  margin: -6px auto -2px;
+  flex: 0 0 auto;
+}
+@media (any-pointer: coarse) {
+  .sheet-grab {
+    display: block;
+  }
+}
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+}
+/* The exit gets its OWN keyframe names, and that is the whole point of it.
+   Per CSS Animations L1 an animation only restarts when `animation-name`
+   changes; every other longhand updates the running animation in place. The
+   first version of this reused `sheet-fade`/`sheet-in` and merely flipped
+   direction and duration — so on a sheet that had been open longer than
+   --sheet, the enter animation was already `finished` with currentTime pinned
+   past the new 200ms duration, the fill applied the reversed end value on the
+   very next frame, and the exit produced zero intermediate frames. It only
+   looked correct if you dismissed within 280ms of opening.
+
+   --sheet-exit is not declared in :root. Sheet.tsx sets it inline from its own
+   EXIT_MS, so the unmount timer and the animation duration cannot drift. The
+   fallback is not decoration: an undefined custom property in a shorthand
+   makes the whole declaration invalid at computed-value time, and
+   animation-duration lands on 0s — which reproduces the exact bug above,
+   silently. Anything that stops the inline style reaching .sheet-backdrop (a
+   wrapper, a portal, a props refactor) now degrades to the correct 200ms
+   instead of to an instant snap. */
+@keyframes sheet-fade-out {
+  to {
+    opacity: 0;
+  }
+}
+@keyframes sheet-out {
+  to {
+    transform: translateY(100%);
+  }
+}
+.sheet-backdrop.closing {
+  animation: sheet-fade-out var(--sheet-exit, 200ms) var(--ease-out) forwards;
+  /* The node outlives the user's gesture by EXIT_MS. Without this it stays in
+     the hit-test tree the whole time, invisible, eating the next tap — a
+     dropped tap one-handed on a course. Sheet.tsx closing the dialog at the
+     start of the exit is the other half of the same fix and does not replace
+     this one: that ends the document's inertness, which pointer-events cannot
+     touch, while this one gets the exiting scrim itself out of the way. */
+  pointer-events: none;
+}
+.sheet-backdrop.closing .sheet {
+  animation: sheet-out var(--sheet-exit, 200ms) var(--ease-sheet) forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-backdrop,
+  .sheet,
+  .sheet-backdrop.closing,
+  .sheet-backdrop.closing .sheet {
+    animation: none;
+  }
+  /* The drag itself is direct manipulation and stays — the sheet follows the
+     finger either way. What goes is the spring back from a drag that did not
+     dismiss: with no transition the panel simply is where it belongs again. */
+  .sheet {
+    transition: none;
+  }
+  /* With the exit animation gone there is nothing to hold the sheet at
+     opacity 0, so it would sit there fully drawn for the unmount delay.
+     Hide it outright — the delay then happens off-screen. */
+  .sheet-backdrop.closing {
+    display: none;
+  }
+}
+
+/* Sheets carry their own cap and must track .app's, or they look pinched
+   against a wider page in landscape. */
+@media (orientation: landscape) {
+  .sheet {
+    max-width: 900px;
+  }
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+/* Screen titles are Oswald 500 uppercase everywhere else; the sheet heading
+   sat at the default h2 weight of 700, outside the face's 500–600 range, and
+   in sentence case — so it read as a different typeface from the screen it
+   opened over. */
+.sheet-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.sheet-close {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  min-width: var(--tap);
+  min-height: var(--tap);
+}
+.set-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--tap);
+}
+.set-row span {
+  display: flex;
+  flex-direction: column;
+}
+.set-label {
+  font-weight: 600;
+}
+.set-hint {
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+
+/* Bare `input[type=checkbox]` rendered as the OS control — on iOS that meant
+   a system-blue tick sitting in an otherwise all-green app, the loudest
+   off-brand element in the UI. Also 20px in a 48px row, well under a
+   comfortable target for a gloved hand. */
+.switch {
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 32px;
+  /* Both are load-bearing: the global `input, select` rule sets
+     `min-height: var(--tap)` and `padding: 12px`, and min-height beats height,
+     so without these the track rendered 52×48 — a circle at this radius, with
+     the knob stranded near the top. */
+  min-height: 0;
+  padding: 0;
+  border-radius: var(--r-pill);
+  background: var(--line);
+  border: 1px solid color-mix(in srgb, var(--ink) 12%, transparent);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--swap) ease, border-color var(--swap) ease;
+}
+.switch::after {
+  content: '';
+  position: absolute;
+  /* Anchored to the midline, not a fixed top offset — the offset is what made
+     the misalignment visible rather than merely wrong. */
+  top: 50%;
+  left: 3px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-pill);
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(4, 17, 11, 0.35);
+  transform: translateY(-50%);
+  transition: transform var(--swap) ease;
+}
+.switch:checked {
+  background: var(--green-600);
+  border-color: var(--green-ink);
+}
+.switch:checked::after {
+  transform: translate(20px, -50%);
+}
+.switch:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .switch,
+  .switch::after {
+    transition: none;
+  }
+}
+.set-override {
+  background: none;
+  border: 0;
+  text-align: left;
+  padding: 0;
+  color: var(--gold-ink);
+  font-size: var(--fs-md);
+  text-decoration: underline;
+  min-height: var(--tap);
+}
+.hero-settings {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+.home .hero {
+  position: relative;
+}
+
+.sc-name-text {
+  margin-right: 4px;
+}
+.sc-hcp,
+.board-hcp {
+  display: inline-block;
+  flex-shrink: 0;
+  font-size: var(--fs-2xs);
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--fairway) var(--tint), transparent);
+  color: var(--muted);
+  vertical-align: middle;
+}
+.board-hcp {
+  margin-left: 6px;
+}
+
+.lg-chips {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: 6px;
+}
+.lg-chip {
+  font-size: var(--fs-3xs);
+  font-weight: 700;
+  line-height: 1;
+  padding: 3px 5px;
+  border-radius: var(--r-xs);
+  /* --gold is invisible on light backgrounds (see bbaca25) — ink in light and
+     glare, bright gold only where the surface is dark. */
+  color: var(--gold-ink);
+  border: 1px solid currentColor;
+}
+:root.dark .lg-chip {
+  color: var(--gold);
+}
+
+.hcp-edit-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--tap);
+}
+.hcp-edit-name {
+  font-weight: 600;
+}
+
+.sc-cell-btn {
+  background: none;
+  border: 0;
+  color: inherit;
+  font: inherit;
+  padding: 8px 6px;
+  width: 100%;
+  min-height: 28px;
+  cursor: pointer;
+}
+.sc-input {
+  width: 34px;
+  padding: 2px;
+  text-align: center;
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 2px solid var(--fairway);
+  border-radius: var(--r-xs);
+}
+.sc-cell .sc-input {
+  margin: 6px 3px;
+}
+
+/* ---------- About ---------- */
+.about {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+.about-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+  font-size: var(--fs-lg);
+}
+.about-ver {
+  color: var(--muted);
+  font-weight: 500;
+}
+.about-line {
+  line-height: 1.4;
+}
+
+/* ---------- Feedback ---------- */
+.feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.fb-back {
+  align-self: flex-start;
+  padding: 0;
+  min-height: var(--tap);
+}
+.fb-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.fb-input,
+.fb-text {
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 10px;
+  width: 100%;
+}
+.fb-text {
+  resize: vertical;
+  min-height: 96px;
+}
+.fb-status {
+  margin: 0;
+  color: var(--under-ink);
+  font-size: var(--fs-md);
+}
+/* A backup or restore that failed has to read differently from one that
+   worked, and Press has no red anywhere — the warning gold `warn-banner`
+   already uses is the app's established "this needs your attention" color.
+   Mixed toward the ink because flat gold on the card is unreadable at
+   0.9rem. */
+.fb-status.bad {
+  color: color-mix(in srgb, var(--gold) 55%, var(--ink));
+  font-weight: 600;
+}
+.set-action {
+  width: 100%;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  /* One row is an <a> rather than a <button> — it leaves the app — and two
+     browser defaults would otherwise make it the odd one out: an underlined
+     label, and 6px less indent than its neighbours, because a <button> picks
+     up UA padding an <a> does not. Zeroed rather than matched, so every row
+     in this sheet starts on the same line as the toggles above them. */
+  padding: 0;
+  text-decoration: none;
+}
+.set-clear-queue {
+  align-self: flex-start;
+  background: none;
+  border: 0;
+  padding: 0;
+  margin-top: -6px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  text-decoration: underline;
+  min-height: var(--tap);
+}
+
+/* ---------- Help / How to Play ---------- */
+.help-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* The one row in the help sheet that leaves the app. Carded rather than a
+   bare link so it reads as an offer instead of an aside, and `text-decoration`
+   is cleared because the default underline would be the only one on screen. */
+.help-watch {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--green-600) 10%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--green-600) 32%, var(--line));
+  color: inherit;
+  text-decoration: none;
+  min-height: var(--tap);
+}
+.help-watch span {
+  display: flex;
+  flex-direction: column;
+}
+.help-watch strong {
+  font-weight: 600;
+  color: var(--green-ink);
+}
+.help-watch small {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.help-watch-play {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--green-600);
+  color: #fff;
+  font-size: 13px;
+  padding-left: 2px;
+}
+.help-section h3 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  margin: 0;
+}
+.help-section p {
+  margin: 0;
+  color: var(--under-ink);
+  font-size: var(--fs-md);
+  line-height: 1.45;
+}
+.help-game {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.help-game:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.help-game-label {
+  font-weight: 600;
+  font-size: var(--fs-md);
+}

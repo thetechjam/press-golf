@@ -1,0 +1,145 @@
+/* ---------- Top bar ---------- */
+/* Actions are sized to their content and the title takes what's left. With
+   the title on `auto` and the actions on `1fr`, a long course name squeezed
+   the side columns until "‹ Rounds" wrapped to two lines and grew the header
+   — a title is the thing that should give, not a control. */
+.bar {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+.bar h1 {
+  font-family: var(--font-display);
+  font-size: var(--fs-xl);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* The header actions read as text links, which undersold them — Finish ends
+   the round and Rounds abandons the screen, and neither looked pressable.
+   They take the same bordered-pill vocabulary as the Play toolbar's icon
+   toggles directly beneath, so the top of the screen reads as one control
+   system. Height is unchanged: .btn-ghost already reserved var(--tap), so
+   this paints the box that was always being occupied. */
+.bar .btn-ghost {
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--card);
+  /* 44px: a thumb's size, and the same as the icon buttons sitting next to
+     them in the same bar — 44 beside 38 was worse than either. Still short of
+     the 48px toolbar tabs directly beneath, which is what the original 38 was
+     avoiding: these are navigation, not the screen's primary controls, and two
+     button rows of equal height read as one crowded slab. */
+  min-height: 44px;
+  padding: 0 12px;
+  font-size: var(--fs-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  white-space: nowrap;
+  position: relative;
+  transition: transform var(--press) var(--ease-out),
+    border-color var(--press) var(--ease-out);
+}
+/* The visible pill is 44px, a touch under the 48px var(--tap) the screen's
+   primary controls get — this grows the hit area to the full 48 without
+   painting anything. The 38px this was written against is what .bar .btn-ghost
+   used before the header resize; left as 38 it reached 54px and spilled
+   further over the toolbar tabs directly beneath than it recovers. Still
+   deliberately without a z-index, so those tabs keep the overlap. */
+.bar .btn-ghost::after {
+  content: '';
+  position: absolute;
+  inset: calc((44px - var(--tap)) / 2) 0;
+}
+/* 1fr side columns would stretch a bordered button across the whole gutter. */
+.bar .btn-ghost:first-child {
+  justify-self: start;
+}
+.bar .btn-ghost:last-child {
+  justify-self: end;
+}
+.bar .btn-ghost:active {
+  transform: scale(0.97);
+  border-color: var(--green-ink);
+}
+/* Icon-only header buttons stay square, matching the toolbar toggles. */
+/* 44px, the size a thumb is drawn for. These were 38 and passed WCAG 2.5.8 AA
+   (which asks 24x24) but were the smallest targets in the app, on every
+   screen's header, and a size nothing else here uses. */
+.bar .btn-ghost.icon,
+.hero-settings {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  color: var(--muted);
+}
+/* Back is the one action whose destination is obvious from context, so it
+   drops its label and gives the width to the course name. The destination
+   still rides in the accessible name. */
+.bar .btn-ghost.back {
+  font-size: var(--fs-4xl);
+  line-height: 1;
+  padding-bottom: 3px;
+  color: var(--green-ink);
+}
+.hero-settings {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ---------- Cards & fields ---------- */
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+/* Section headers are quiet labels (matches "Your rounds" on Home);
+   the content inside the card carries the weight. */
+.card h2 {
+  margin: 0 0 12px;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field > span {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+input,
+select {
+  font: inherit;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 12px;
+  min-height: var(--tap);
+}
+input:focus,
+select:focus {
+  outline: 2px solid var(--focus);
+}

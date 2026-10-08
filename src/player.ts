@@ -1,4 +1,5 @@
 import type { Round } from './types';
+import { nameKey } from './people';
 
 // Distinct badge hues, assigned by player order so colors never collide within a
 // round. Every entry carries white monogram text, so every entry must clear
@@ -36,4 +37,19 @@ export function colorMap(round: Round): Record<string, string> {
     map[p.id] = playerColor(i);
   });
   return map;
+}
+
+/**
+ * A person's badge color across rounds: the seat they had in the most recent
+ * round they played, so the badge on Stats or a trip matches the one on the
+ * card the group last looked at. `rounds` must be newest first; `fallback` is
+ * used for someone in none of them.
+ */
+export function seatColor(rounds: Round[], name: string, fallback: number): string {
+  const key = nameKey(name);
+  for (const r of rounds) {
+    const at = r.players.findIndex((p) => nameKey(p.name) === key);
+    if (at >= 0) return playerColor(at);
+  }
+  return playerColor(fallback);
 }

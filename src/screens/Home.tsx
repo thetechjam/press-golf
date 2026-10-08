@@ -89,14 +89,19 @@ export function Home({
       {trip && onTrip && <TripCard trip={trip} onOpen={() => onTrip(trip.id)} />}
 
       {/* Mid-round, the Resume card is the thing to press; a second filled
-          button under it would be two primaries arguing. */}
-      <button className={live ? 'btn-secondary big' : 'btn-primary big'} onClick={onNew}>
-        Start New Round
-      </button>
-
-      <button className="btn-secondary big" onClick={onNewLeague}>
-        <TrophyIcon size={19} /> Golf League
-      </button>
+          button under it would be two primaries arguing. League night is the
+          weekly special case, so it rides alongside rather than taking a
+          second full-width slab of equal weight. */}
+      <div className="home-actions">
+        <button className={live ? 'btn-secondary big' : 'btn-primary big'} onClick={onNew}>
+          Start New Round
+        </button>
+        {/* The visible word is in the name, so voice control still finds it. */}
+        <button className="btn-secondary big home-league" onClick={onNewLeague} aria-label="Golf League">
+          <TrophyIcon size={20} />
+          League
+        </button>
+      </div>
 
       <InstallPrompt />
 

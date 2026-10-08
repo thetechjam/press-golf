@@ -1,0 +1,847 @@
+/* ---------- Course search (OpenGolfAPI) ---------- */
+.course-search {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cs-status {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin: 0;
+}
+/* The status line is a live region, so it stays mounted with nothing to say
+   for most of the search's life (see CourseSearch.tsx). Out of flow while
+   empty, because .course-search is a flex column with a gap and an empty
+   child still claims one — 6px of dead space above every result list.
+   `display: none` would be the obvious fix and is the wrong one: it takes the
+   region out of the accessibility tree, so its first message arrives as an
+   insertion, which is the exact case the live region exists to avoid. */
+.cs-status:empty {
+  position: absolute;
+}
+.cs-error {
+  color: var(--over-strong);
+}
+.cs-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--card);
+  padding: 6px;
+}
+.cs-hit {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  text-align: left;
+  padding: 10px 12px;
+  min-height: var(--tap);
+  border-radius: var(--r-md);
+  background: var(--bg);
+}
+.cs-hit:active {
+  background: color-mix(in srgb, var(--fairway) 12%, var(--card));
+}
+.cs-hit:disabled {
+  opacity: 0.5;
+}
+.cs-hit-name {
+  font-weight: 700;
+  color: var(--green-ink);
+}
+.cs-hit-meta {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.cs-attribution {
+  font-size: var(--fs-2xs);
+  text-align: start;
+  /* No opacity on top of --muted. --muted is already the tuned quiet colour;
+     multiplying it by 0.75 took an attribution line that has to stay legible
+     for licence reasons from 5.4:1 down to 3.46:1, which is the one thing it
+     was not allowed to do. */
+  color: var(--muted);
+  margin: 2px 0 0;
+}
+
+/* Inside League's course card the saved courses sit unframed, as they do
+   inside New Round's Course row, rather than as a card within a card. */
+.league-course .course-picker {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin-top: 18px;
+}
+.saved-course-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* One compact row per course: name and figures stacked in the load button,
+   which takes the width, and the actions at the end. The name wraps rather
+   than truncating, so it can share the line with them. */
+.saved-course-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--bg);
+  padding: 2px 4px 2px 0;
+}
+.saved-course-load {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: left;
+  padding: 8px 6px 8px 12px;
+  min-height: 44px;
+  border: none;
+  /* The row's own left corners, so the focus ring follows the rounded row
+     instead of squaring it off. (Hover tints the whole row now.) */
+  border-radius: var(--r-lg) 0 0 var(--r-lg);
+  background: none;
+  transition: transform var(--press) var(--ease-out);
+}
+.saved-course-load:active {
+  transform: scale(0.99);
+}
+.saved-course-name {
+  font-weight: 700;
+  color: var(--green-ink);
+  line-height: 1.25;
+  /* Wraps rather than truncating: a course name cut off mid-word is the one
+     thing this row must not do. */
+  overflow-wrap: anywhere;
+}
+.saved-course-meta {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  max-width: 100%;
+  /* Wraps, like the name above it: with the share and delete buttons beside
+     it, 360px left "stroke ind…" — and whether the index is set is the
+     reason to read this line. */
+  overflow-wrap: anywhere;
+}
+.saved-course-del {
+  width: 44px;
+  /* Explicit: the row centres its items rather than stretching them, so
+     without this it would be as tall as its glyph. */
+  min-height: 44px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-3xl);
+  line-height: 1;
+  cursor: pointer;
+}
+
+/* ---- Armed two-tap delete: first tap arms this state, second tap commits ----
+   Both hosts are stretch rows (.round-card, .saved-course-row), so the button
+   takes its height from the row and nothing here can change it. */
+.round-del,
+.saved-course-del {
+  position: relative;
+  transition: transform var(--press) var(--ease-out), width var(--swap) var(--ease-in-out),
+    background-color var(--swap) ease, border-color var(--swap) ease;
+}
+/* Both faces sit on top of each other so arming can cross-fade them. Absolute,
+   not stacked in flow: in flow the glyph and the word would each claim their
+   own line box and the button would size to both at once. */
+.del-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition: opacity var(--swap) ease;
+}
+/* The word is styled here rather than on .armed, and that is what keeps the
+   glyph's size out of the transition: setting font-size on the button itself
+   would resize the outgoing glyph mid-fade. */
+.del-word {
+  font-size: var(--fs-md);
+  font-weight: 700;
+  white-space: nowrap;
+  opacity: 0;
+}
+.armed .del-glyph {
+  opacity: 0;
+}
+.armed .del-word {
+  opacity: 1;
+}
+.round-del.armed,
+.saved-course-del.armed {
+  /* A FIXED width, where this was `auto`: `auto` cannot be interpolated, so
+     the row was shoved sideways in a single frame. Sized to clear "Delete?"
+     at 0.85rem/700 with room to spare — the label is centred by the grid
+     above, so an unusually large root font-size overflows the button rather
+     than being clipped by it. Both rows are built to absorb the growth (see
+     the min-width: 0 notes on .round-main and .saved-course-load). */
+  width: 82px;
+  background: var(--over-strong);
+  border-color: var(--over-strong);
+  color: #fff;
+}
+/* White on the dark-mode --over fails contrast; the near-black bg clears it. */
+:root.dark .round-del.armed,
+:root.dark .saved-course-del.armed {
+  color: var(--bg);
+}
+
+.player-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+/* ---- League setup: handicap help, and a team one short ---- */
+.league-slot + .league-slot {
+  margin-top: 4px;
+}
+.hcp-help {
+  margin: -2px 0 8px 34px;
+}
+.hcp-hint {
+  margin: 0 0 4px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.hcp-hint strong {
+  color: var(--ink);
+}
+.link-btn.hcp-help-toggle,
+.link-btn.league-short-toggle {
+  display: block;
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  min-height: 32px;
+  font-size: var(--fs-sm);
+}
+.hcp-calc {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: var(--r-lg);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.hcp-calc .seg,
+.league-short .seg {
+  margin-bottom: 0;
+}
+.hcp-calc .seg-btn,
+.league-short .seg-btn {
+  padding: 8px 6px;
+  min-height: 40px;
+  font-size: var(--fs-md);
+}
+.hcp-calc-cap {
+  display: block;
+  margin-bottom: 4px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.hcp-calc .hint-inline {
+  margin: 0;
+}
+.btn-secondary.hcp-use {
+  padding: 10px 14px;
+  font-weight: 700;
+}
+.league-short {
+  margin-top: 6px;
+}
+.league-slot.absent .ab-badge {
+  background: var(--muted);
+}
+/* A first-night player's HCP slot: "set from tonight", tap to undo. */
+.first-night-tag {
+  flex: 0 0 auto;
+  min-width: 76px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: var(--r-md);
+  border: 1px dashed color-mix(in srgb, var(--gold) 60%, var(--line));
+  background: color-mix(in srgb, var(--gold) 14%, var(--card));
+  color: var(--gold-ink);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.link-btn.hcp-first-night {
+  display: block;
+  text-align: left;
+  margin: 0;
+  padding: 0;
+  min-height: 32px;
+  font-size: var(--fs-sm);
+}
+.first-night-row + .first-night-row {
+  margin-top: 10px;
+}
+.first-night-row .hcp-use {
+  margin-top: 4px;
+}
+.absent-tag {
+  flex: 0 0 auto;
+  min-width: 76px;
+  text-align: center;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--over-strong);
+}
+.player-name {
+  flex: 1;
+  /* Inputs have an intrinsic min-width; without this the row overflows narrow viewports. */
+  min-width: 0;
+}
+.player-hcp {
+  width: 76px;
+  text-align: center;
+}
+/* The Index field and what it is worth on these holes, as one unit — the
+   second number is an answer to the first, not another thing to fill in. */
+.player-index {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+.player-index .player-hcp {
+  /* Wide enough for its own placeholder. "Index" measures 45px in this face,
+     and 68px minus the input's padding did not give it that, so the field
+     asked a question it could not finish. */
+  width: 80px;
+}
+.player-derived {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+  min-width: 26px;
+  text-align: center;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--green-ink);
+}
+.player-derived-arrow {
+  color: var(--muted);
+  font-weight: 400;
+}
+/* Slope and rating sit side by side: two short numbers off the same card. */
+.rating-row {
+  display: flex;
+  gap: 10px;
+}
+.rating-row .field {
+  flex: 1;
+  min-width: 0;
+}
+/* Slope and rating are three and four characters — "129" and "74.6" — where
+   the shared .field.small input is sized for the single digits the Wolf
+   multipliers hold. At 64px both were clipped at every width the app runs at. */
+.rating-row .field.small input {
+  width: 84px;
+}
+.allowance-select {
+  flex: 0 0 auto;
+  width: 84px;
+  min-height: 38px;
+  padding: 6px 8px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.player-del {
+  width: 44px;
+  flex-shrink: 0;
+  min-height: var(--tap);
+  color: var(--muted);
+}
+.add {
+  margin-top: 4px;
+}
+
+.seg {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.seg-btn {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  min-height: var(--tap);
+}
+.seg-btn.active {
+  background: var(--green-600);
+  color: #fff;
+  border-color: var(--green-ink);
+}
+/* Play's toggle already sits in .screen's 16px flex gap — no extra margin. */
+/* A grid, not a flex row, and that is the whole fix.
+   Three attempts at this row failed the same way. Flex decides where to break
+   a line, and whether an item may shrink, from values that are only sometimes
+   what you think they are — so the tabs refused to go under "BOARD", the line
+   never broke, and the Settings gear ended up off the side of an iPhone.
+   `max-width: 100%` did not save it either: it clamps this element's own box,
+   and the buttons inside carried on overflowing that box, which is why the
+   screenshot showed the gear 26pt past every other row on the screen while the
+   Layout readout, which measures boxes, reported nothing wrong.
+   A grid track cannot do that. `minmax(0, 1fr)` says the tabs take what is
+   left after the icons and may go below their own content to do it; the two
+   columns therefore sum to exactly this element's width, whatever that width
+   turns out to be, on any engine. The worst case is a tab label a character
+   short — and at any real phone width there is room to spare, so it never
+   arises. */
+.seg.view-toggle {
+  margin-bottom: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  /* 6px rather than the .seg default of 8: it is one gap now, but the tabs
+     inside use the same figure and the row should read as one rhythm. */
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+}
+/* Three tabs + three icon toggles. The tabs need 158px between them at their
+   narrowest, so the row fits one line down to 360px: 158 + 6 + the 144px the
+   icon group takes = 308, against 328px of content width. At 375px, where this
+   was originally tuned, it had one pixel spare — which is how 360 came to
+   wrap.
+
+   `min-width: 0` is the load-bearing declaration, and it is here because of
+   what happens when that arithmetic is wrong on a phone I cannot measure.
+   These tabs are `flex: 1`, so their flex-basis is 0 — and WebKit decides
+   where to break a flex line from the basis, not from the text's real width.
+   With a basis of 0 nothing ever forces a wrap, the tabs then refuse to shrink
+   below "BOARD" (min-width: auto is min-content), and the row overflows: the
+   last control in it, Settings, hangs off the right edge of an iPhone.
+   Blink accounts for that automatic minimum when it breaks the line and wraps
+   instead, which is why every width I could measure looked fine.
+   The fix is .view-tabs below, not a minimum on the tabs themselves: an
+   explicit min-width *replaces* the content-based one, so any value small
+   enough to keep the row from overflowing is also small enough to cut "BOARD"
+   down to "BOAR…" on a 344px phone. Grouping them instead gives the flex line
+   a real width to break on and leaves each tab's own minimum alone. */
+.view-toggle .seg-btn {
+  /* 2px of side padding, not 4. Equal columns cost width: the grid's minimum
+     is three times its widest label, so "BOARD" sets all three and the padding
+     is paid three times over. The box is still the tap target and the label is
+     still centred in it — what went is air beside the widest word. Those 12px
+     are what keep the row on one line at 360px. */
+  padding: 9px 2px;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+/* The three tabs as one flex item, carrying the width of all three. A grid
+   rather than a nested flex row so the columns stay exactly equal however much
+   the group grows — which is what `flex: 1` on each tab used to do, at the
+   cost of telling the line-breaking algorithm they were zero wide. `1fr` is
+   `minmax(auto, 1fr)`, so a column still will not go under its label.
+
+   The max-width is the landscape cap: at the 900px layout width the tabs would
+   otherwise blow out to ~200px each, three enormous slabs next to three small
+   squares. It belongs on the group, not on each button — capping the buttons
+   inside equal columns leaves each stranded at the left of a column wider than
+   itself, which reads as three scattered buttons rather than one control.
+   3 x 140 plus the two gaps between them. */
+.view-tabs {
+  display: grid;
+  /* minmax(0, 1fr), not 1fr: a bare `1fr` is `minmax(auto, 1fr)`, which will
+     not go under a column's own content — the same floor that kept this row
+     from fitting in the first place, one level down. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+  max-width: 432px;
+}
+/* The three icon toggles as one flex item, so when the row does run out (320px
+   and below) they wrap together instead of stranding whichever one happened to
+   be last on a line of its own — and once one had wrapped, the three tabs
+   expanded to fill the line it left, so it could never wrap back. */
+/* The `auto` column of the toolbar grid: Settings, on its own. 44px, the size
+   the header icons settled on rather than the 48px var(--tap) the tabs beside
+   it use — it is the row's secondary control and reads as one.
+   This was .view-tool, and carried an "on" state and an off-state diagonal
+   strike, because Glare and Keep screen awake sat here too. Both are in the
+   sheet this button opens, so the states went with them. */
+.view-tool {
+  min-width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--bg);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+
+/* Starting-hole picker: seg-style buttons that wrap on narrow phones so each
+   stays a comfortable tap target (one row on wider screens). */
+.start-hole-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.start-hole-grid .seg-btn {
+  padding: 10px 0;
+  min-height: var(--tap);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Course-search data needs checking, and the place to say so is beside the
+   numbers themselves — not in the status line at the foot of the screen, which
+   is nowhere near the fields it is talking about. Gold, matching warn-banner:
+   this is "look at this", not "something went wrong". */
+/* The same shape as the course-search caveat, but this one is about numbers
+   that cannot be used rather than numbers worth double-checking. */
+/* Each named problem on its own line: run together they read as one long
+   sentence and the reader cannot tell how many things are wrong. */
+.issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 6px;
+}
+.issue-list > span::before {
+  content: '· ';
+}
+/* Sits inside the call-out, so it reads as the answer to it rather than as
+   another control that happens to be nearby. */
+.check-save {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 8px 12px;
+  min-height: var(--tap);
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--green-600) 35%, var(--line));
+  background: var(--card);
+  color: var(--green-ink);
+  font: inherit;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.check-note.bad {
+  background: color-mix(in srgb, var(--over-strong) 10%, var(--card));
+  border-color: color-mix(in srgb, var(--over-strong) 40%, var(--line));
+}
+/* What the gold note becomes once the user has vouched for the card. Green,
+   because this is settled rather than outstanding — the same slot so the
+   answer lands where the question was, and the same shape so the row does not
+   jump when one replaces the other. */
+.check-note.saved {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: color-mix(in srgb, var(--green-600) 10%, var(--card));
+  border-color: color-mix(in srgb, var(--green-600) 35%, var(--line));
+  color: var(--green-ink);
+  font-weight: 600;
+}
+.check-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--gold) 16%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+
+.par-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(54px, 1fr));
+  gap: 8px;
+}
+.par-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.par-cell > .par-hole {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+/* Only drawn when there are two boxes in the cell to tell apart. Sized down
+   hard and letter-spaced so it reads as a caption on the field below rather
+   than as another value in the column. */
+.par-cap {
+  font-size: var(--fs-3xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  line-height: 1;
+  align-self: stretch;
+  text-align: center;
+}
+/* The hole number needs to separate from the first caption under it, which
+   the flex gap alone does not do once the captions are in. */
+.par-grid.with-si .par-hole {
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.par-grid.with-si .par-cell {
+  gap: 3px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--line);
+}
+/* A tap target the width of the cell, drawn like the score chips on the Hole
+   tab — the same "tap the number" gesture, so it reads as one. */
+.par-tile {
+  width: 100%;
+  min-height: 44px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-2xl);
+  font-variant-numeric: tabular-nums;
+  transition: transform var(--press) var(--ease-out);
+}
+.par-tile:active {
+  transform: scale(0.94);
+}
+
+/* Two across: the names are short and a menu of nine reads faster as a grid
+   than as a list. A card whose rules are open takes the full row, so the
+   text is not set in a half-width column. */
+.game-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.game-card.expanded {
+  grid-column: 1 / -1;
+}
+.game-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  cursor: pointer;
+  text-align: left;
+  min-height: var(--tap);
+  padding: 10px 12px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+.game-card.active {
+  border-color: var(--fairway);
+  background: color-mix(in srgb, var(--fairway) 12%, var(--card));
+}
+.game-card-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.game-info-btn {
+  flex-shrink: 0;
+  width: var(--tap);
+  height: var(--tap);
+  margin: calc(var(--tap) / -2) calc(var(--tap) / -4) calc(var(--tap) / -2) 0;
+  border-radius: 50%;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  display: grid;
+  place-items: center;
+}
+.game-info-text {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  color: var(--under-ink);
+  font-size: var(--fs-md);
+  line-height: 1.45;
+}
+.game-check {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--r-sm);
+  border: 2px solid var(--line);
+  display: grid;
+  place-items: center;
+  /* The tick sits on --fairway, which is the same bright green in every theme,
+     so its ink cannot be a theme token. Pinned to the light theme's --ink:
+     white measured 2.35:1 on that fill and this measures 6.98:1. */
+  color: #10231b;
+  font-size: var(--fs-md);
+  flex-shrink: 0;
+}
+.game-card.active .game-check {
+  background: var(--fairway);
+  border-color: var(--fairway);
+}
+.game-text {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+/* Game names read like a betting menu; the blurbs stay conversational. */
+.game-text strong {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xl);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+/* Half-width cards put the name on its own line under the tick and the ⓘ:
+   side by side, the ⓘ's 48px target left "Stableford" about 50px and every
+   long name was clipped. The name is the one thing the card can't lose. */
+.game-list .game-card-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'check . info'
+    'text text text';
+  row-gap: 6px;
+}
+.game-list .game-check {
+  grid-area: check;
+}
+.game-list .game-info-btn {
+  grid-area: info;
+  justify-self: end;
+}
+.game-list .game-text {
+  grid-area: text;
+}
+.game-text strong {
+  line-height: 1.15;
+}
+.game-info-text strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+}
+.toggle input {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+}
+.wolf-opts {
+  display: flex;
+  gap: 12px;
+}
+
+/* No opacity on the wrapping .seg — each seg-btn already dims itself via
+   :disabled below. Stacking opacity on the wrapper too would multiply
+   (0.45 × 0.45 ≈ 0.2), washing the SYSTEM/LIGHT labels out to near-illegible
+   right when the override messaging needs to be readable. */
+.seg-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.seg.small {
+  gap: 6px;
+  margin-bottom: 0;
+}
+.seg.small .seg-btn {
+  padding: 8px 6px;
+  font-size: var(--fs-sm);
+  min-height: 40px;
+}
+.nassau-1v1 {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.nassau-1v1 .field {
+  flex: 1;
+}
+.nassau-1v1 .vs {
+  color: var(--muted);
+  font-weight: 700;
+  padding-bottom: 14px;
+}
+.team-assign {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.assign-row,
+.score-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.score-mode-name {
+  flex: 1;
+  font-weight: 600;
+  min-width: 0;
+}
+.assign-name {
+  flex: 1;
+  font-weight: 600;
+}
+.assign-row .seg {
+  flex: 0 0 auto;
+  width: 190px;
+}
+.field.small {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.field.small input {
+  width: 64px;
+  text-align: center;
+}
+
+.error {
+  color: var(--over-strong);
+  font-weight: 600;
+  text-align: center;
+  margin: 0;
+}

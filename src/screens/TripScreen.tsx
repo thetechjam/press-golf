@@ -5,12 +5,11 @@ import { SamePersonNudge } from '../components/SamePerson';
 import { likelySame } from '../people';
 import { findTrip, tripCandidates, tripLedger, tripSettleText, withTrip } from '../trips';
 import { formatMoney } from '../games/settlement';
-import { playerColor } from '../player';
+import { seatColor } from '../player';
 import { formatRoundDate } from '../roundDate';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import { RoundCard } from '../components/RoundCard';
 import { CoinIcon, ShareIcon } from '../icons';
-import { nameKey } from '../people';
 
 interface Props {
   tripId: string;
@@ -114,14 +113,7 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
 
   // Each player's badge colour from the latest round they are in, so Casey is
   // the same colour here as on the card the group has been looking at all day.
-  const colorOf = (name: string, i: number) => {
-    const key = nameKey(name);
-    for (const r of trip.rounds) {
-      const at = r.players.findIndex((p) => nameKey(p.name) === key);
-      if (at >= 0) return playerColor(at);
-    }
-    return playerColor(i);
-  };
+  const colorOf = (name: string, i: number) => seatColor(trip.rounds, name, i);
   const n = trip.rounds.length;
 
   return (

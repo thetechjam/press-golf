@@ -1,0 +1,21 @@
+/* ---------- Reduced motion: every press transform in the app ----------
+   Deliberately the LAST rule in this file. It is cross-cutting, and several of
+   its targets (.bar .btn-ghost:active, .saved-course-load:active,
+   .hole-dot::before) are declared at equal specificity further up — at any
+   earlier position the later declaration wins and the suppression silently
+   does nothing. Anything added to this block must stay below its target.
+
+   Same stance the rest of this file already takes on press
+   feedback (see .score-chip:active) — drop the movement, keep the
+   colour swap, which carries the state change and is not motion.
+
+   This block covers EVERY press transform in the app, not only the ones added
+   alongside it. .btn-primary, .btn-secondary, .bar .btn-ghost and
+   .saved-course-load predate it, but retuning them from 0.08s to --press made
+   each one 75% longer, and a rule that suppresses press feedback everywhere
+   except the primary CTA is not a rule.
+
+   .hole-dot::before is listed separately and that is the trap: `transition`
+   does not inherit, so nulling .hole-dot leaves the pseudo-element — the thing
+   that actually scales to 1.3 — still animating. The 1.3 end state stays; it
+   marks the current hole and is information, not motion. */
