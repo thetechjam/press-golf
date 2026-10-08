@@ -250,3 +250,43 @@ describe('handlePop', () => {
     expect(history.goCalls).toEqual([]);
   });
 });
+
+describe('replace', () => {
+  const make = () => {
+    const history = new FakeHistory();
+    const views: string[] = [];
+    const nav = createNavigator<View>({ history, home: 'home', isView, onView: (v) => views.push(v) });
+    history.listen((state) => nav.handlePop(state));
+    nav.start();
+    return { history, views, nav };
+  };
+
+  it('swaps the current entry rather than adding one', () => {
+    const { history, nav } = make();
+    nav.goTo('setup');
+    nav.replace('play');
+    expect(history.entries.length).toBe(2);
+    expect((history.state as NavEntry).view).toBe('play');
+    expect((history.state as NavEntry).depth).toBe(1);
+  });
+
+  it('so Back from the replacement goes where Back would have gone', () => {
+    const { history, views, nav } = make();
+    nav.goTo('play');
+    nav.replace('results');
+    nav.replace('play');
+    nav.replace('results');
+    history.go(-1);
+    history.settle();
+    expect(views[views.length - 1]).toBe('home');
+    expect(history.index).toBe(0);
+  });
+
+  it('collapses to the bottom entry when asked to replace with home', () => {
+    const { history, nav } = make();
+    nav.goTo('setup');
+    nav.goTo('play');
+    nav.replace('home');
+    expect(history.goCalls).toEqual([-2]);
+  });
+});

@@ -124,9 +124,11 @@ describe('App navigation', () => {
     expect(onHome()).toBe(true);
   });
 
-  it('collapses two entries in a single jump, not one pop per entry', async () => {
-    // A finished round opens on Results, and Results can go back to Play —
-    // two entries deep — before the Home button is used.
+  it('collapses in a single jump, not one pop per entry', async () => {
+    // A finished round opens on Results, and Results can go back to Play.
+    // That step replaces the Results entry rather than stacking on it (a
+    // Finish/Back cycle used to add two entries each time), so the app is one
+    // deep when the Home button is used.
     //
     // The depth counter is resynced from the state object each popstate rather
     // than decremented, because one history.go(-2) fires exactly one popstate
@@ -143,7 +145,7 @@ describe('App navigation', () => {
 
     await user.click(screen.getByRole('button', { name: 'Back to the scorecard' }));
     expect(await screen.findByRole('button', { name: 'Finish' })).toBeTruthy();
-    expect(history.state).toMatchObject({ view: 'play', depth: 2 });
+    expect(history.state).toMatchObject({ view: 'play', depth: 1 });
 
     const pops = await countingPops(async () => {
       await user.click(screen.getByRole('button', { name: 'Back to rounds' }));
@@ -203,7 +205,7 @@ describe('App navigation', () => {
     doubleTap(exit);
     await waitFor(() => expect(onHome()).toBe(true));
 
-    expect(go).toHaveBeenCalledWith(-2);
+    expect(go).toHaveBeenCalledWith(-1);
     go.mockRestore();
 
     expect(history.state).toMatchObject({ view: 'home', depth: 0 });

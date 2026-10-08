@@ -42,6 +42,13 @@ export interface Navigator<V extends string> {
   /** Seeds the bottom entry so it carries a view. Call once, on mount. */
   start(): void;
   goTo(view: V): void;
+  /**
+   * Shows `view` in place of the current entry rather than on top of it, so
+   * Back from there goes where Back from the current screen would have gone.
+   * For transitions that are a step along the same path, not a new place:
+   * Setup becoming the round it started, a round becoming its results.
+   */
+  replace(view: V): void;
   /** Feed it `event.state` from a popstate listener. */
   handlePop(state: unknown): void;
 }
@@ -115,5 +122,15 @@ export function createNavigator<V extends string>({
     history.pushState({ view: next, depth } satisfies NavEntry, '');
   };
 
-  return { start, goTo, handlePop };
+  const replace = (next: V) => {
+    if (next === view) return;
+    // Home is the seeded bottom entry; replacing the current one with it
+    // would leave the real bottom underneath. Collapse instead.
+    if (next === home) return goTo(next);
+    view = next;
+    onView(next);
+    history.replaceState({ view: next, depth } satisfies NavEntry, '');
+  };
+
+  return { start, goTo, replace, handlePop };
 }
