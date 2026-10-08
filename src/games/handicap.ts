@@ -94,6 +94,9 @@ export function playingHandicap(round: Round, playerId: string, game?: GameType)
   return allowance === 100 ? base : withAllowance(base, allowance);
 }
 
+/** A handicap for display: a plus player's negative number reads as "+3". */
+export const formatHandicap = (n: number): string => (n < 0 ? `+${-n}` : `${n}`);
+
 /**
  * Strokes a player receives on a single hole given their course handicap.
  *

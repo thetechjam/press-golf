@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { StrictMode } from 'react';
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
@@ -292,6 +293,22 @@ describe('a link tapped while Press is already open', () => {
 
     await waitFor(() => expect(screen.getByText('Someone Else’s Club')).toBeTruthy());
     expect(screen.getByText('Sent to you')).toBeTruthy();
+    expect(window.location.hash).toBe('');
+  });
+});
+
+describe('under StrictMode', () => {
+  // The effect runs, is cleaned up and runs again. The first run had already
+  // stripped the payload from the URL, so the second found nothing and a
+  // shared link stayed on "Opening round…" in development for good.
+  it('still opens the round', async () => {
+    window.history.replaceState(null, '', `/#r=${await encodeRound(sent)}`);
+    render(
+      <StrictMode>
+        <App />
+      </StrictMode>
+    );
+    expect(await screen.findByRole('heading', { name: 'Results' })).toBeTruthy();
     expect(window.location.hash).toBe('');
   });
 });

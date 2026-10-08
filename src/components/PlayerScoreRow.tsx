@@ -1,3 +1,4 @@
+import { formatHandicap } from '../games/handicap';
 import { useRef, useState } from 'react';
 import { scoreLabel, scoreNumClass } from '../scoreMark';
 import { PlayerAvatar } from './PlayerAvatar';
@@ -86,8 +87,8 @@ export function PlayerScoreRow({
         <PlayerAvatar name={name} color={color} />
         <span className="stepper-name-text">{name}</span>
         {handicap != null && (
-          <span className="stepper-hcp" aria-label={`Handicap ${handicap}`}>
-            HCP {handicap}
+          <span className="stepper-hcp" aria-label={`Handicap ${formatHandicap(handicap)}`}>
+            HCP {formatHandicap(handicap)}
           </span>
         )}
         {matchStrokes && matchStrokes.length > 0 && (

@@ -4,6 +4,7 @@ import { buildScorecard, formatToPar } from '../scorecardModel';
 import { clampScore } from '../scoreEntry';
 import { LEAGUE_MAX_SCORE, pickedUp } from '../games/league';
 import { playerColor } from '../player';
+import { formatHandicap } from '../games/handicap';
 import { PlayerAvatar } from './PlayerAvatar';
 
 interface Props {
@@ -167,8 +168,8 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                   <span className="sc-name-text">{row.name}</span>
                 )}
                 {model.showHandicap && (
-                  <span className="sc-hcp" aria-label={`Handicap ${row.handicap}`}>
-                    {row.handicap}
+                  <span className="sc-hcp" aria-label={`Handicap ${formatHandicap(row.handicap)}`}>
+                    {formatHandicap(row.handicap)}
                   </span>
                 )}
               </th>

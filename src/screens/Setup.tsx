@@ -5,6 +5,7 @@ import { DEFAULT_OPTIONS } from '../types';
 import { GAMES, gameMeta } from '../games';
 import { GAME_RULES } from '../games/rules';
 import { usesHandicap, canScoreNet } from '../games/scoring';
+import { formatHandicap } from '../games/handicap';
 import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
 import { scorecardIssues } from '../courses/validate';
 import { validSlope, validRating, courseHandicap } from '../games/courseHandicap';
@@ -172,17 +173,29 @@ export function Setup({ onCancel, onStart }: Props) {
    * only search data is second-guessed.
    */
   const loadCourse = (c: SavedCourse) => {
+    // A 27-hole card can arrive by link. The round is a nine or an eighteen —
+    // Nassau's nines, the Front/Back split and the rating all assume it — so
+    // anything longer plays as its first eighteen.
+    const applied =
+      c.holes.length > 18 ? sliceCourseHoles(c.holes, 18) : c.holes.map((h) => ({ ...h }));
     setCourse(c.name);
-    setHoleCount(c.holes.length);
-    setHoles(c.holes.map((h) => ({ ...h })));
-    setAdvancedHoles(c.holes.some((h) => h.strokeIndex));
+    setHoleCount(applied.length);
+    setHoles(applied);
+    setAdvancedHoles(applied.some((h) => h.strokeIndex));
     setHolesSource('saved');
     setImported(null);
     setSlope(c.slope);
-    setRating(c.rating);
-    setRatingHoles(c.holes.length);
+    // The rating describes the whole card; it is not carried onto a cut one.
+    setRating(c.holes.length > 18 ? undefined : c.rating);
+    setRatingHoles(applied.length);
     openRow('holes');
-    setSavedNote({ text: `Loaded "${c.name}"`, row: 'course' });
+    setSavedNote({
+      text:
+        c.holes.length > 18
+          ? `Loaded the first 18 of "${c.name}" (${c.holes.length} holes)`
+          : `Loaded "${c.name}"`,
+      row: 'course',
+    });
   };
 
   const loadFromApi = (c: FetchedCourse) => {
@@ -557,10 +570,12 @@ export function Setup({ onCancel, onStart }: Props) {
                    and shows what it is worth here. Asking for both would be
                    asking the same question twice. */
                 <span className="player-index">
+                  {/* No inputMode: iOS's decimal and numeric pads have no
+                      minus key, and a plus player's Index is negative. The
+                      number keyboard type=number brings up on its own does. */}
                   <input
                     className="player-hcp"
                     type="number"
-                    inputMode="decimal"
                     step="0.1"
                     value={p.index ?? ''}
                     onChange={(e) =>
@@ -574,7 +589,7 @@ export function Setup({ onCancel, onStart }: Props) {
                   {derivedHandicap(p.index) != null && (
                     <span
                       className="player-derived"
-                      aria-label={`Plays off ${derivedHandicap(p.index)} on these holes`}
+                      aria-label={`Plays off ${formatHandicap(derivedHandicap(p.index)!)} on these holes`}
                     >
                       {/* The arrow is doing real work: without it this is a
                           second number beside the first with nothing to say
@@ -582,7 +597,7 @@ export function Setup({ onCancel, onStart }: Props) {
                       <span aria-hidden="true" className="player-derived-arrow">
                         →
                       </span>
-                      {derivedHandicap(p.index)}
+                      {formatHandicap(derivedHandicap(p.index)!)}
                     </span>
                   )}
                 </span>
@@ -590,7 +605,6 @@ export function Setup({ onCancel, onStart }: Props) {
                 <input
                   className="player-hcp"
                   type="number"
-                  inputMode="numeric"
                   value={p.handicap ?? ''}
                   onChange={(e) =>
                     updatePlayer(p.id, {
@@ -935,6 +949,7 @@ export function Setup({ onCancel, onStart }: Props) {
                 <button
                   key={n}
                   className={`seg-btn${holeCount === n ? ' active' : ''}`}
+                  aria-pressed={holeCount === n}
                   onClick={() => setHoleCountAndPars(n)}
                 >
                   {n} holes

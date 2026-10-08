@@ -1037,6 +1037,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Nine or more players each get their own colour (the palette is 12 hues).
 - The Hole tab hides a stroke index the strokes are not actually using (a
   card with duplicate or missing indexes falls back to hole order).
+- A course of more than 18 holes (a 27-hole card can arrive by link) now
+  loads as its first 18, and the note says so. Nassau's nines and the
+  Front/Back split assumed a nine or an eighteen and treated holes 10–27 as
+  one back nine.
+- Plus handicaps can be typed on iPhones: the handicap and Index fields use
+  the number keyboard that has a minus key, and a plus handicap displays as
+  "+3" on the Hole tab, the card and the boards.
+- In development (StrictMode), a shared link no longer sticks on "Opening
+  round…".
 - On 320px phones: the hole header stays on one line, the HCP field gives
   the name field room for its placeholder, and a nine on the scorecard
   fits without clipping hole 18.

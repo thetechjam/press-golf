@@ -98,6 +98,8 @@ export default function App() {
    * position is wrong.
    */
   const navigated = useRef(false);
+  /** A shared payload taken out of the URL but not yet opened — see below. */
+  const pendingShare = useRef<ReturnType<typeof sharedFromHash>>(null);
   useEffect(() => {
     // Not on first paint — nothing has been navigated away from yet, and
     // taking focus on load only fights whatever the user is already doing.
@@ -153,14 +155,22 @@ export default function App() {
     let live = true;
 
     const open = () => {
-      const shared = sharedFromHash(window.location.hash);
+      // The payload is read from the URL once and then held here, because the
+      // URL is stripped below. Under StrictMode the effect runs, is cleaned up
+      // and runs again: the first run had already stripped the hash and its
+      // result was discarded as stale, so the second found nothing to open
+      // and a shared link sat on "Opening round…" for good. The second run
+      // now picks the payload up from here and finishes the job.
+      const shared = sharedFromHash(window.location.hash) ?? pendingShare.current;
       if (!shared) return;
+      pendingShare.current = shared;
       window.history.replaceState(null, '', window.location.pathname + window.location.search);
       setIncoming({ state: 'opening' });
 
       if (shared.kind === 'course') {
         void decodeCourse(shared.payload).then((result) => {
           if (!live) return;
+          pendingShare.current = null;
           if (!result.ok) return setIncoming({ state: 'failed', message: result.error });
           setIncoming({
             state: 'course',
@@ -173,6 +183,7 @@ export default function App() {
 
       void decodeRound(shared.payload).then((result) => {
         if (!live) return;
+        pendingShare.current = null;
         if (!result.ok) return setIncoming({ state: 'failed', message: result.error });
 
         // A round this device has never seen is simply shown, unkept. One it
