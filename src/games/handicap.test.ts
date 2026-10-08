@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   strokeIndexMap,
   strokesReceivedOnHole,
+  formatHandicap,
   holeScore,
   totalStrokesReceived,
   usesHandicaps,
@@ -181,5 +182,13 @@ describe('usesHandicaps', () => {
     const r = makeRound({ options: { league: cfg } });
     expect(r.options.useNet).toBe(false);
     expect(usesHandicaps(r)).toBe(true);
+  });
+});
+
+describe('formatHandicap', () => {
+  it('writes a plus handicap the way golfers do', () => {
+    expect(formatHandicap(12)).toBe('12');
+    expect(formatHandicap(0)).toBe('0');
+    expect(formatHandicap(-3)).toBe('+3');
   });
 });

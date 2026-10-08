@@ -738,3 +738,28 @@ describe('the players card shortcuts', () => {
     for (const row of ['Course', 'Games', 'Holes & pars', 'Money']) expect(rowOpen(row)).toBe(false);
   });
 });
+
+describe('a course with more than eighteen holes', () => {
+  // A 27-hole card can arrive by link and be saved. The round is a nine or an
+  // eighteen — Nassau's nines and the Front/Back split assume it — so it plays
+  // as its first eighteen, and the note says so.
+  it('loads as its first eighteen', async () => {
+    const card = realCard18();
+    const saved: SavedCourse = {
+      id: 'c27',
+      name: 'Three Nines',
+      holes: [...card, ...card.slice(0, 9).map((h) => ({ ...h, number: h.number + 18 }))],
+      slope: 120,
+      rating: 100,
+    };
+    localStorage.setItem('press.courses.v1', JSON.stringify([saved]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.click(document.querySelector('.saved-course-load')!);
+
+    await screen.findByText('Loaded the first 18 of "Three Nines" (27 holes)');
+    expect(screen.getByRole('button', { name: '18 holes' }).getAttribute('aria-pressed')).toBe('true');
+    expect(document.querySelectorAll('.par-tile').length).toBe(18);
+  });
+});

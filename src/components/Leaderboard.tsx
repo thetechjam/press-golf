@@ -1,3 +1,4 @@
+import { formatHandicap } from '../games/handicap';
 import type { GameResult } from '../types';
 import { PlayerAvatar } from './PlayerAvatar';
 
@@ -33,8 +34,8 @@ export function Leaderboard({ result, colorOf, hcpOf, id }: Props) {
                   {color && <PlayerAvatar name={s.label} color={color} size={22} />}
                   <span className="board-name-text">{s.label}</span>
                   {s.playerId && hcpOf?.(s.playerId) != null && (
-                    <span className="board-hcp" aria-label={`Handicap ${hcpOf(s.playerId)}`}>
-                      {hcpOf(s.playerId)}
+                    <span className="board-hcp" aria-label={`Handicap ${formatHandicap(hcpOf(s.playerId)!)}`}>
+                      {formatHandicap(hcpOf(s.playerId)!)}
                     </span>
                   )}
                 </span>
