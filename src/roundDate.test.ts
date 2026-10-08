@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatRoundDate } from './roundDate';
+import { formatRoundDate, todayIso } from './roundDate';
 
 // Fixed reference point: Monday 24 August 2026, local time.
 const now = new Date(2026, 7, 24, 12, 0, 0);
@@ -38,5 +38,15 @@ describe('formatRoundDate', () => {
     expect(formatRoundDate('', now)).toBe('');
     expect(formatRoundDate('not-a-date', now)).toBe('not-a-date');
     expect(formatRoundDate('2026-13-45', now)).toBe('2026-13-45');
+  });
+});
+
+describe('todayIso', () => {
+  // Written in local time to match how formatRoundDate reads it. 7pm on the
+  // 8th in Los Angeles is already the 9th in UTC.
+  it('uses the local calendar date', () => {
+    const evening = new Date(2026, 9, 8, 19, 0);
+    expect(todayIso(evening)).toBe('2026-10-08');
+    expect(formatRoundDate(todayIso(evening), evening)).toBe('Today');
   });
 });

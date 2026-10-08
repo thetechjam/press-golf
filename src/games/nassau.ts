@@ -72,8 +72,12 @@ export function autoPressStarts(round: Round): number[] {
 
   for (const nine of [front, back]) {
     if (nine.length === 0) continue;
-    // Every bet running on this nine, by the hole it starts from.
-    const open = [nine[0].number];
+    // Every bet running on this nine, by the hole it starts from — the base
+    // bet and any press called by hand. A called press is a bet like any
+    // other, and one that goes two down presses again; watching only the
+    // presses this rule itself had spawned left the called ones out.
+    const called = (round.presses ?? []).filter((h) => nine.some((n) => n.number === h));
+    const open = [...new Set([nine[0].number, ...called])];
     const spawned = new Set<number>();
 
     for (let i = 0; i < nine.length; i++) {
