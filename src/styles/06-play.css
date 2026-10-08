@@ -73,6 +73,8 @@
 .hole-num {
   font-family: var(--font-display);
   font-size: var(--fs-4xl);
+  /* "HOLE 18" broke onto two lines at 320px. */
+  white-space: nowrap;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -715,4 +717,10 @@
   font-size: var(--fs-md);
   line-height: 1;
   cursor: pointer;
+}
+
+@media (max-width: 359px) {
+  .hole-num {
+    font-size: var(--fs-3xl);
+  }
 }

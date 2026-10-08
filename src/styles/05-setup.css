@@ -845,3 +845,11 @@
   text-align: center;
   margin: 0;
 }
+
+/* At 320px the name field was down to ~80px and clipped its own placeholder;
+   "HCP" and a two-digit number fit in less. */
+@media (max-width: 359px) {
+  .player-hcp {
+    width: 60px;
+  }
+}

@@ -467,3 +467,16 @@
   align-items: center;
   gap: 14px;
 }
+
+/* The narrowest phones still clipped the last hole of a nine. The nine's
+   subtotal is the one column that can go — Tot is still there — and the cells
+   come down to the 24px tap-target floor. */
+@media (max-width: 345px) {
+  .scorecard.compact th,
+  .scorecard.compact td {
+    min-width: 24px;
+  }
+  .scorecard.compact .sc-nine {
+    display: none;
+  }
+}
