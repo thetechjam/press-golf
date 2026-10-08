@@ -1044,6 +1044,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Plus handicaps can be typed on iPhones: the handicap and Index fields use
   the number keyboard that has a minus key, and a plus handicap displays as
   "+3" on the Hole tab, the card and the boards.
+- **Restoring a backup can no longer crash the Wolf board.** A round from an
+  older or hand-edited file that lacked `wolf`, `presses` or `junk` passed
+  validation and threw on the Hole tab. Missing or malformed fields are now
+  filled with their empty value, and a hole with no number or par is dropped
+  rather than the round.
+- One bad entry in the saved rounds or courses (a null from a bad write, a
+  course with no name) no longer empties the whole list.
+- The New Round hint says how to enter a plus handicap.
 - In development (StrictMode), a shared link no longer sticks on "Opening
   round…".
 - On 320px phones: the hole header stays on one line, the HCP field gives

@@ -638,7 +638,7 @@ export function Setup({ onCancel, onStart }: Props) {
           <p className="hint">
             {rated
               ? 'Enter each player’s Handicap Index — the number after the arrow is what they play off here. All blank scores gross.'
-              : 'Enter handicaps to score net — all blank scores gross, and a blank plays off 0.'}
+              : 'Enter handicaps to score net — all blank scores gross, and a blank plays off 0. A plus handicap goes in as a minus number: +3 is −3.'}
           </p>
         )}
       </section>

@@ -108,6 +108,37 @@ describe('parseBackup', () => {
     expect(r.droppedRounds).toBe(1);
   });
 
+  it('fills in the fields an older or hand-edited file left out', () => {
+    // `wolf` is dereferenced by the Wolf engine without a check; a round
+    // without it passed validation and threw on the Hole tab.
+    const bare = round('bare', 1) as unknown as Record<string, unknown>;
+    delete bare.wolf;
+    bare.presses = 'nope';
+    bare.junk = 7;
+    const r = parseBackup(text({ app: 'press', format: 1, rounds: [bare], courses: [] }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const got = r.file.rounds[0];
+    expect(got.wolf).toEqual({});
+    expect(got.presses).toEqual([]);
+    expect(got.junk).toEqual({});
+    expect(r.droppedRounds).toBe(0);
+  });
+
+  it('drops a hole with no number or par rather than the round', () => {
+    const r = parseBackup(
+      text({
+        app: 'press',
+        format: 1,
+        rounds: [round('h', 1, { holes: [{ number: 1, par: 4 }, null, { par: 3 }] as never })],
+        courses: [],
+      })
+    );
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.rounds[0].holes).toEqual([{ number: 1, par: 4 }]);
+  });
+
   it('drops a round naming a game this build has no engine for', () => {
     const r = parseBackup(
       text({ app: 'press', format: 1, rounds: [round('x', 1, { games: ['bridge'] } as never)] })
