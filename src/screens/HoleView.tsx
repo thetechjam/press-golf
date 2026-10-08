@@ -5,7 +5,8 @@ import { WolfControls } from '../components/WolfControls';
 import { NassauControls } from '../components/NassauControls';
 import { JunkControls } from '../components/JunkControls';
 import { VegasStrip } from '../components/VegasStrip';
-import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from '../games/handicap';
+import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps, courseHandicapFor } from '../games/handicap';
+import { strokeIndexesUsable } from '../games/strokeIndex';
 import { anyNetScoring } from '../games/scoring';
 import { LEAGUE_MAX_SCORE, awaitingHandicap, leagueStrokesOnHole, pickedUp } from '../games/league';
 import { skinsOnHole } from '../games/skins';
@@ -59,6 +60,13 @@ export function HoleView({
   }, [idx, dotsRef]);
 
   const onTouchStart = (e: React.TouchEvent) => {
+    // The dot strip scrolls sideways on narrow phones, and a drag that scrolls
+    // it was being read here as a swipe — flipping the hole the opposite way
+    // to the scroll. A touch that starts on it is the strip's, not ours.
+    if ((e.target as Element).closest('.hole-dots')) {
+      touchStart.current = null;
+      return;
+    }
     const t = e.changedTouches[0];
     touchStart.current = { x: t.clientX, y: t.clientY };
   };
@@ -90,7 +98,11 @@ export function HoleView({
           <div className="hole-num">Hole {hole.number}</div>
           <div className="hole-par">
             Par {hole.par}
-            {hole.strokeIndex != null && (
+            {/* Only when these are the indexes the strokes come from. With a
+                card whose indexes are unusable the engine falls back to hole
+                order (Setup says so), and printing the card's number beside a
+                "+1 shot" it did not produce contradicted it. */}
+            {hole.strokeIndex != null && strokeIndexesUsable(round.holes) && (
               <>
                 {' · '}
                 <abbr title="Stroke index">SI</abbr> {hole.strokeIndex}
@@ -138,12 +150,16 @@ export function HoleView({
               // rather than a "HCP 0" that looks like a real one.
               handicap={
                 usesHandicaps(round) && !awaitingHandicap(round, p.id)
-                  ? (p.handicap ?? 0)
+                  ? courseHandicapFor(round, p)
                   : undefined
               }
               strokesReceived={
                 anyNetScoring(round)
-                  ? strokesReceivedOnHole(p.handicap ?? 0, siMap[hole.number], round.holes.length)
+                  ? strokesReceivedOnHole(
+                      courseHandicapFor(round, p),
+                      siMap[hole.number],
+                      round.holes.length
+                    )
                   : 0
               }
               matchStrokes={chips ? chips[p.id] : undefined}

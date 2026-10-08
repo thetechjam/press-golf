@@ -52,10 +52,29 @@ describe('strokesReceivedOnHole', () => {
     expect(strokesReceivedOnHole(20, 3, 18)).toBe(1);
   });
 
-  it('returns 0 for non-positive handicap or missing stroke index', () => {
+  it('returns 0 for a scratch player or a missing stroke index', () => {
     expect(strokesReceivedOnHole(0, 1, 18)).toBe(0);
-    expect(strokesReceivedOnHole(-3, 1, 18)).toBe(0);
     expect(strokesReceivedOnHole(9, 0, 18)).toBe(0);
+  });
+
+  // The entry field accepts 54; the old two-stroke ceiling lost everything
+  // past 36 on eighteen holes (and past 18 on nine).
+  it('keeps going round the card for a handicap over twice the holes', () => {
+    expect(strokesReceivedOnHole(40, 1, 18)).toBe(3);
+    expect(strokesReceivedOnHole(40, 4, 18)).toBe(3);
+    expect(strokesReceivedOnHole(40, 5, 18)).toBe(2);
+    expect(strokesReceivedOnHole(40, 18, 18)).toBe(2);
+    const total = Array.from({ length: 18 }, (_, i) => strokesReceivedOnHole(40, i + 1, 18)).reduce((a, b) => a + b, 0);
+    expect(total).toBe(40);
+    expect(Array.from({ length: 9 }, (_, i) => strokesReceivedOnHole(27, i + 1, 9)).reduce((a, b) => a + b, 0)).toBe(27);
+  });
+
+  // A plus player gives strokes back, from the easiest holes.
+  it('gives strokes back for a plus handicap, easiest holes first', () => {
+    expect(strokesReceivedOnHole(-3, 18, 18)).toBe(-1);
+    expect(strokesReceivedOnHole(-3, 16, 18)).toBe(-1);
+    expect(strokesReceivedOnHole(-3, 15, 18)).toBe(0);
+    expect(strokesReceivedOnHole(-3, 1, 18)).toBe(0);
   });
 });
 
