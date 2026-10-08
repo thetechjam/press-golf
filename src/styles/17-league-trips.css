@@ -1,0 +1,354 @@
+/* ---- League standings ----
+   Built from the Board's rows so a season reads like a night: same rank
+   column, same leader tint, same scoreboard type for names. What it adds is a
+   second line under each name (record, team, average) and the nights list. */
+.standings .board-title {
+  margin: 0;
+}
+.standings .board + .board {
+  margin-top: 4px;
+}
+.standings-row {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+}
+.standings-who {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.standings-sub {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  /* Wraps: at 360px the player line ended "pla…", and "plays to 8" is the
+     figure a player opens this screen for. */
+  overflow-wrap: anywhere;
+}
+.standings-unit {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+.standings-source {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.standings-nights {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.standings-nights li + li {
+  border-top: 1px solid var(--line);
+}
+.standings-night {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  min-height: var(--tap);
+  /* Room on the right for the chevron below. */
+  padding: 10px 22px 10px 0;
+  text-align: left;
+}
+/* Each night opens its results, and nothing said so: the rows read as a
+   list to look at. The same › the setup rows and the Standings link use. */
+.standings-night::after {
+  content: '›';
+  position: absolute;
+  right: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  color: var(--muted);
+}
+.standings-night-when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.standings-night-score {
+  font-size: var(--fs-md);
+  color: var(--muted);
+}
+.standings-night-score .won {
+  color: var(--ink);
+  font-weight: 700;
+}
+.standings-night-pts {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+/* The way in, at the top of Golf League: one row in the setup-row voice. */
+.standings-link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--green-ink);
+  transition: transform var(--press) var(--ease-out);
+}
+.standings-link:active {
+  transform: scale(0.98);
+}
+.standings-link-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.standings-link-summary {
+  color: var(--muted);
+  font-size: var(--fs-md);
+}
+@media (hover: hover) {
+  .standings-link:hover,
+  .standings-night:hover {
+    background: color-mix(in srgb, var(--fairway) 7%, var(--card));
+  }
+}
+
+/* ---- Trips ---- */
+.trip-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* The chosen trip, in the selected-segment fill, so "No trip" being picked
+   reads as a choice and not as nothing having been chosen. */
+.trip-chip.on {
+  background: var(--green-600);
+  border-color: var(--green-600);
+  color: #fff;
+  font-weight: 600;
+}
+.trip-name {
+  margin-top: 12px;
+}
+
+/* Home's trip card: the card surface with the Settlement board's gold edge,
+   because what it carries is the trip's money. Quieter than the felt Resume
+   card above it — that one is the round on the course right now. */
+.trip-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  width: 100%;
+  text-align: left;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--line));
+  border-radius: var(--radius);
+  transition: transform var(--press) var(--ease-out);
+}
+.trip-card:active {
+  transform: scale(0.98);
+}
+.trip-card-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold-ink);
+}
+.trip-card-name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-2xl);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.trip-card-standing {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.trip-card-standing .up {
+  color: var(--under-ink);
+}
+.trip-card-standing .down {
+  color: var(--over-strong);
+}
+.trip-card-cta {
+  margin-top: 4px;
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--green-ink);
+}
+/* A round's trip among its tags: gold-edged, so it does not read as a game. */
+.tag.trip {
+  background: none;
+  border: 1px solid color-mix(in srgb, var(--gold) 60%, var(--line));
+  color: var(--gold-ink);
+  font-weight: 600;
+  text-transform: none;
+}
+/* Under a trip round's Settlement: these payments are not the ones to make. */
+.trip-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  margin-top: -2px;
+  padding: 10px 14px;
+  text-align: left;
+  font-size: var(--fs-sm);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--gold) 14%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+  border-radius: var(--radius);
+}
+.trip-link > span:last-child {
+  color: var(--green-ink);
+  font-size: var(--fs-xl);
+}
+.trip-meta {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.trip .board-title {
+  margin: 0;
+}
+.trip-rename {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.btn-ghost.trip-share {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 12px;
+}
+.trip-rounds {
+  margin-top: 8px;
+}
+.trip-rounds-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 10px;
+}
+/* The same quiet label as Home's "Your rounds". */
+.trip-rounds-head h2 {
+  margin: 0;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+}
+.trip-choose {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.trip-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.trip-choice.on {
+  border-color: var(--green-ink);
+}
+.trip-choice:disabled {
+  opacity: 0.7;
+}
+.trip-choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.trip-choice-name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.trip-choice-sub {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- "Is this the same person?" at Start ----
+   In the pinned bar beside the button that raised it, like the error above
+   it: the question is the answer to a press on Start. */
+.same-person {
+  margin: 0 0 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--card);
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--line));
+}
+.same-person p {
+  margin: 0 0 10px;
+  font-size: var(--fs-md);
+}
+.same-person-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.same-person-actions button {
+  flex: 1 1 auto;
+}
+.same-person.nudge {
+  margin: 0;
+}
+.link-btn.merge-open {
+  align-self: flex-start;
+  margin: 0;
+  min-height: 32px;
+  font-size: var(--fs-xs);
+}
+.merge-into {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.merge-into p {
+  margin: 0 0 10px;
+  font-size: var(--fs-sm);
+}

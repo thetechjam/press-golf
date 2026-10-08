@@ -1,0 +1,233 @@
+/* ---- New Round collapsible rows -------------------------------------------
+   Each row names its own current value so the screen reads as settled facts
+   rather than unanswered questions. Grouped into one card so four rows read
+   as a short list, not four separate panels. */
+.setup-rows {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.setup-row + .setup-row {
+  border-top: 1px solid var(--line);
+}
+.setup-row-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--tap);
+  padding: 10px 14px;
+  text-align: left;
+}
+.setup-row-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.setup-row-summary {
+  color: var(--muted);
+  font-size: var(--fs-md);
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* A disclosure chevron rotating 0 -> 90deg is on-screen movement, not press
+   feedback: it travels with the panel opening beneath it rather than
+   acknowledging a finger, so it takes --swap (the state-change duration the
+   .seg-btn and .game-card fills use) and --ease-in-out, which exists for
+   exactly this A-to-B case. The old 0.16s matched neither token and a seventh
+   token to preserve 160ms would defeat the point; +20ms is imperceptible on a
+   rotation this small.
+   Its reduced-motion rule stays local, a few lines below, rather than joining
+   the block at EOF — that block is specifically press-transform suppression,
+   and an adjacent override cannot be out-ordered by the rule it overrides. */
+.setup-row-chevron {
+  color: var(--muted);
+  font-size: var(--fs-2xl);
+  line-height: 1;
+  transition: transform var(--swap) var(--ease-in-out);
+}
+.setup-row.open .setup-row-chevron {
+  transform: rotate(90deg);
+}
+.setup-row-body {
+  padding: 0 14px 14px;
+}
+/* The row's own card supplies the frame, so nested sections must not draw a
+   second one inside it. */
+.setup-row-body .card {
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+/* Unframed, the saved-course list loses the card margin that separated it
+   from the search above, and its heading ran straight into the attribution
+   line. */
+.setup-row-body .course-search + .course-picker {
+  margin-top: 18px;
+}
+/* A disclosure row inside an ordinary card (League's pars & stroke index)
+   takes the card's padding as its own; the row's inset is for the edge-to-edge
+   list on New Round and put this one 14px inside the buttons above it. */
+.card > .setup-row .setup-row-head,
+.card > .setup-row .setup-row-body {
+  padding-left: 0;
+  padding-right: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .setup-row-chevron {
+    transition: none;
+  }
+}
+
+/* ---- Player recall chips -------------------------------------------------- */
+.crew-chip {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--tap);
+  /* 8px, the rhythm the player rows under it already use. */
+  margin-bottom: 8px;
+  padding: 8px 14px;
+  border: 1px dashed var(--green-600);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--fairway) 10%, transparent);
+  text-align: left;
+}
+.crew-chip-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--green-ink);
+  flex: 0 0 auto;
+}
+:root.dark .crew-chip-title {
+  color: var(--fairway);
+}
+.crew-chip-names {
+  color: var(--muted);
+  font-size: var(--fs-md);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* "+ Add player" and the recall chips share a row: both add one player, and
+   stacked they cost 50px on the one screen that has to fit above a pinned
+   button. Wraps when the chips outgrow the line, which is what they did on
+   their own row anyway. */
+.add-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.add-row .add {
+  margin-top: 0;
+  /* No left padding, so the "+" starts on the same line as the PLAYERS
+     heading and the avatars rather than six pixels inside them — which also
+     happens to be the six pixels that keep the row unwrapped at 320px. The
+     target is unaffected: min-height carries the vertical, and the label is
+     still 120px wide. */
+  padding-left: 0;
+}
+.recent-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  /* No margin of its own inside .add-row — the row's gap spaces it. */
+  min-width: 0;
+}
+.recent-chip {
+  /* 40px, matching .chip and the grid controls rather than sitting six pixels
+     under them. */
+  min-height: 40px;
+  padding: 6px 12px;
+  /* Ink-derived, not --line: --line is tuned for dividers between large
+     surfaces, not for the outline of a small tappable control, and in glare
+     mode it measures 1.74:1 against the card — under WCAG 1.4.11's 3:1 for a
+     component boundary, in the very theme meant for direct sunlight. The
+     border carries the whole boundary here, since --bg resolves to the card's
+     own white in glare. The alpha is set so that the border, once composited
+     over the card, clears 3:1 in all three themes; deriving it from --ink
+     keeps it proportionate in dark mode with no per-theme override. It sits
+     deliberately above the threshold rather than on it, so that tuning a
+     palette token later does not silently drop it under. Measure the
+     composited colour against --card, not the alpha value, if you change it. */
+  border: 1px solid color-mix(in srgb, var(--ink) 52%, transparent);
+  border-radius: var(--r-pill);
+  background: var(--bg);
+  color: var(--ink);
+  font-size: var(--fs-md);
+}
+
+/* The update prompt declares no transition, animation or transform, and is
+   deliberately kept that way: it is the one control that can reload the app,
+   and it must read identically whether or not the user has reduced motion on.
+   That is why it has no entry in the suppression block below. If motion is
+   ever added here, it has to be added there too — and this block must stay
+   ABOVE that one, which is required to remain the last rule in the file.
+
+   A banner in normal flow, NOT a floating toast. The first version was
+   `position: fixed` anchored to `calc(12px + env(safe-area-inset-bottom))` —
+   the exact anchor the pinned Start button used then (a sticky button; it is
+   .screen-foot's bar now) — at z-index 60 against its 2, so it covered
+   "Start Round" completely and a tap meant to start a round reloaded the app
+   instead. Suppressing it per-view was the wrong repair: the
+   property wanted is "never overlaps a primary action", and a list of
+   suppressed views only approximates that until someone adds a screen.
+   Reserving space cannot be got wrong. It also means the fixed sheet backdrop
+   (z-index 50) paints over this rather than under it, so the banner cannot be
+   tapped through an open sheet either. */
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: calc(8px + env(safe-area-inset-top)) 12px 0;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+}
+
+.update-msg {
+  flex: 1;
+  font-size: var(--fs-lg);
+}
+
+.update-banner button {
+  min-height: var(--tap);
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.update-btn {
+  border: none;
+  background: var(--green-600);
+  color: #fff;
+}
+
+/* .update-later is `background: transparent`, so this border is the only thing
+   marking it as a control and must clear 3:1 as a component boundary
+   (WCAG 1.4.11). A flat --line measures 1.22:1 on light / 1.32:1 dark /
+   1.74:1 glare against the card behind it. Same derivation, and the same
+   reasoning, as .recent-chip above. */
+.update-later {
+  border: 1px solid color-mix(in srgb, var(--ink) 52%, transparent);
+  background: transparent;
+  color: var(--muted);
+}

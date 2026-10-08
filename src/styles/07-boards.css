@@ -1,0 +1,453 @@
+/* ---------- Leaderboards ---------- */
+/* ---- Board tab jump chips ----
+   Sticky so it is there wherever the list has been scrolled to; the cards it
+   lands on keep a scroll margin so the row does not cover their titles. */
+.board-jump {
+  position: sticky;
+  /* Under the status bar, not behind it: the page is viewport-fit=cover. */
+  top: env(safe-area-inset-top);
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 -16px;
+  padding: 8px 16px;
+  background: var(--bg);
+}
+.board-jump::-webkit-scrollbar {
+  display: none;
+}
+.board-jump-chip {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  transition: background-color var(--swap) ease, border-color var(--swap) ease,
+    color var(--swap) ease;
+}
+.board-jump-chip.active {
+  background: var(--green-600);
+  border-color: var(--green-600);
+  color: #fff;
+}
+.board {
+  scroll-margin-top: calc(60px + env(safe-area-inset-top));
+}
+.boards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.board {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+}
+/* The status pill started life as a short flag ("LIVE" / "FINAL") but now
+   carries a full sentence from the engines — "Marcus leads · 67 net (71)".
+   Without wrap it steals width from the title and breaks both onto two lines,
+   so the pill drops to its own row once the pair no longer fits. */
+.board-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  /* Centre, not baseline: a title with an icon is an inline-flex box whose
+     baseline is the icon's bottom edge, which dropped "Edit stakes" a few
+     pixels below MONEY and SETTLEMENT. */
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 8px;
+}
+.board-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xl);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+/* "LIVE" / "FINAL" reads as a scoreboard flag. */
+.board-status {
+  /* The scoreboard face, like the title beside it. Widely tracked body text
+     was a third type voice on every board, and Oswald's narrower letters fit
+     "JORDAN & CASEY LEAD 3–0" on a phone where the old setting truncated. */
+  font-family: var(--font-display);
+  font-size: var(--fs-xs);
+  color: var(--green-ink);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border: 1.5px solid currentColor;
+  border-radius: var(--r-pill);
+  padding: 3px 9px;
+  align-self: center;
+  /* A pill is a pill only on one line — wrapping overruns the rounded border. */
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.board-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+/* The detail column used to be `auto` — it never shrank, so a long Nassau
+   detail ("Jesse & Marcus won 2&1") starved the 1fr name column and
+   ellipsized the bet label down to a bare "PRESS …". Flipping which column
+   is elastic lets the detail wrap and keeps every label whole. */
+.board-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
+  border-radius: var(--r-md);
+}
+.board-row.leader {
+  background: color-mix(in srgb, var(--fairway) 14%, transparent);
+}
+/* League rows have no rank/trophy gutter — names sit flush left. */
+.league-board .board-row {
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+}
+.board-rank {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  text-align: center;
+  font-weight: 700;
+}
+.board-row.leader .board-rank {
+  color: var(--gold-ink);
+}
+.board-name {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.board-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.board-detail {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--muted);
+  text-align: right;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  /* Nassau details are prose, not numbers, and wrap to two lines on a phone.
+     Balancing splits them evenly instead of stranding one word on line two. */
+  text-wrap: balance;
+}
+.board-row.leader .board-detail {
+  color: var(--ink);
+}
+/* Nassau's rows are bets, not places: FRONT, BACK and TOTAL, each with a
+   sentence for its result. Numbered and set in the heavy detail weight, the
+   sentence outweighed the bet it belongs to and the 1-2-3 read as a ranking.
+   The bet leads now, and the sentence reads as its answer. */
+.board-nassau .board-row {
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+}
+.board-nassau .board-rank {
+  display: none;
+}
+.board-nassau .board-detail {
+  font-weight: 500;
+  font-size: var(--fs-md);
+  color: var(--ink);
+}
+.board-note,
+.board-foot {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  padding-top: 6px;
+}
+
+/* Play's foot is .screen-foot now, the same bar Setup and Golf League use —
+   which is where the "stick the footer, not the button" reasoning lives. It
+   keeps this class as a hook for the landscape rule further down, and because
+   two screens' feet reading as one control is the point.
+   What it gained by joining: a CTA that fills the bar instead of sizing to its
+   own label (183px of a 358px row, left-aligned, on the screen whose button is
+   pressed eighteen times a round), and the fade, so the Board tab's money rows
+   stop being sliced through the middle by an opaque edge. */
+.screen-foot .warn-banner {
+  /* The bar's own 8px gap spaces this; its margin would stack on top. */
+  margin-bottom: 0;
+}
+.warn-banner {
+  background: color-mix(in srgb, var(--gold) 18%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.warn-banner p {
+  margin: 0 0 10px;
+  font-size: var(--fs-md);
+  line-height: 1.35;
+}
+.warn-actions {
+  display: flex;
+  gap: 8px;
+}
+.warn-keep {
+  flex: 1;
+  padding: 12px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+.warn-actions .btn-primary {
+  flex: 1;
+  padding: 12px;
+}
+
+/* ---------- League ---------- */
+.league-board {
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+}
+/* Called for darkness or weather — and the confirm before it. */
+.league-called {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--gold) 18%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+}
+.league-called p {
+  margin: 0 0 6px;
+  font-size: var(--fs-md);
+}
+.link-btn.league-call {
+  display: block;
+  margin: 8px 0 0;
+  min-height: 44px;
+  padding: 0;
+}
+.league-matches {
+  margin-top: 10px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+}
+.lmatch {
+  padding: 10px 2px;
+}
+.lmatch + .lmatch {
+  border-top: 1px solid var(--line);
+}
+.lmatch-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+.lmatch-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.lmatch-up {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.lmatch-status {
+  font-size: var(--fs-md);
+  color: var(--muted);
+  margin-top: 2px;
+}
+.lmatch-status.final {
+  color: var(--green-ink);
+  font-weight: 700;
+}
+.lmatch-strokes {
+  font-size: var(--fs-xs);
+  color: var(--gold-ink);
+  margin-top: 3px;
+  letter-spacing: 0.01em;
+}
+
+/* ---------- Settlement ---------- */
+.settlement {
+  border: 1px solid color-mix(in srgb, var(--gold) 40%, var(--line));
+}
+/* "Edit stakes" and "Edit handicaps" are 13px of text, which was also the
+   whole height of the button: 17px measured, under WCAG 2.5.8 AA's 24x24 and
+   the only thing in the app actually below that bar. The padding is negative
+   on the sides so the words still line up with the card edge they sit against. */
+.link-btn {
+  color: var(--green-ink);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+  min-height: 28px;
+  padding: 4px 6px;
+  margin: -4px -6px;
+}
+.stakes-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 12px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 10px;
+}
+.stake-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.stake-label {
+  font-weight: 600;
+}
+.stake-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stake-input .dollar {
+  color: var(--muted);
+}
+.stake-input input {
+  width: 64px;
+  min-height: 40px;
+  padding: 8px;
+  text-align: right;
+}
+.stake-input .per {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  min-width: 64px;
+}
+.net-list {
+  margin-bottom: 10px;
+}
+.net-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  /* No side inset: these rows carry no highlight to sit inside, so 6px only
+     put the avatars and amounts off the column the payments below use. */
+  padding: 7px 0;
+}
+.net-name {
+  flex: 1;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.net-amount {
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.net-amount.up {
+  color: var(--under-ink);
+}
+.net-amount.down {
+  color: var(--over-strong);
+}
+.payments {
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+/* The payout section reads as a bet slip: perforated tear line with
+   edge notches, monospaced amounts. Press is a wager, after all. */
+.settlement .payments {
+  position: relative;
+  margin: 14px -14px 0;
+  padding: 12px 14px 2px;
+  border-top: 2px dashed var(--line);
+}
+.settlement .payments::before,
+.settlement .payments::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+}
+.settlement .payments::before {
+  left: -9px;
+}
+.settlement .payments::after {
+  right: -9px;
+}
+/* "Bartholomew pays Christopher  $55" is four flex items across, and nothing
+   in it could give: a flex item will not shrink below its own longest word, so
+   at 320px the amount was pushed past the right edge and took the whole page
+   sideways with it. Wrapping lets the figure drop to its own line — still
+   pushed right by its auto margin, which is where the eye looks for it — and
+   `anywhere` is the last resort for a name longer than the card. */
+.payment {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-lg);
+}
+.payment strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.payment + .payment {
+  margin-top: 6px;
+}
+.pay-amount {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--green-ink);
+  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-size: 0.92em;
+}
+/* Rubber-stamped when no money moves. */
+.all-even {
+  width: fit-content;
+  margin: 4px auto;
+  padding: 5px 12px;
+  border: 2px solid var(--under);
+  border-radius: var(--r-sm);
+  color: var(--under-ink);
+  font-weight: 800;
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  transform: rotate(-2deg);
+  opacity: 0.85;
+}

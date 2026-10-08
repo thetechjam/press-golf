@@ -1,0 +1,176 @@
+/* ---- Round history ---- */
+.history-tools {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.history-search {
+  position: relative;
+}
+.history-search input {
+  width: 100%;
+  /* Room for the clear button, so a long query never runs under it. */
+  padding-right: 40px;
+}
+/* type="search" brings its own clear button in WebKit and Chromium, which sat
+   next to ours as a second, smaller, unlabelled ✕ doing the same job. Ours
+   stays because it is the one with an accessible name and a target the size of
+   a thumb. */
+.history-search input::-webkit-search-cancel-button,
+.history-search input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.history-clear {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.history-filter {
+  width: 100%;
+  /* The tools column's gap spaces the rows; the .seg margin on top of it
+     put the League / Regular row a full button's breath below the first. */
+  margin-bottom: 0;
+}
+
+.history-count {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+}
+.history-empty {
+  margin: 28px 0;
+  text-align: center;
+  color: var(--muted);
+}
+
+.history-group h2 {
+  margin: 6px 0 8px;
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Room for the sticky bar to scroll clear of the last card, added only while
+   it is on screen. */
+.screen.history.selecting {
+  padding-bottom: 80px;
+}
+
+/* The bulk bar sits above the safe area and stays put while the list scrolls
+   under it — the selection it describes is spread down the whole list. */
+.history-bulk {
+  position: sticky;
+  bottom: calc(10px + env(safe-area-inset-bottom));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  margin-top: 14px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 12%);
+}
+.history-bulk .btn-ghost {
+  white-space: nowrap;
+}
+.history-bulk .btn-danger {
+  margin-left: auto;
+}
+
+/* Uses --over-strong, the text-safe error red, rather than the --over accent:
+   this is a word you have to read before you tap it. */
+.btn-danger {
+  padding: 10px 16px;
+  min-height: 40px;
+  border: 1px solid var(--over-strong);
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--over-strong);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.btn-danger:active {
+  background: color-mix(in srgb, var(--over-strong) 12%, transparent);
+}
+.btn-danger:disabled {
+  opacity: 0.45;
+}
+
+/* Home's handover to the history. */
+.btn-ghost.saved-all {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  font-size: var(--fs-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ticker-face,
+  .del-face,
+  .share-face,
+  .view-tool,
+  .nav-arrow,
+  .round-main,
+  .hole-dot,
+  .hole-dot::before,
+  .round-del,
+  .saved-course-del,
+  .game-info-btn,
+  .sheet-close,
+  .btn-primary,
+  .btn-secondary,
+  .bar .btn-ghost,
+  .saved-course-load,
+  .par-tile,
+  .resume-card,
+  .board-jump-chip,
+  .standings-link,
+  .trip-card {
+    transition: none;
+  }
+  .seg-btn,
+  .game-card {
+    transition: background-color var(--swap) ease, border-color var(--swap) ease,
+      color var(--swap) ease;
+  }
+  .seg-btn:active,
+  .view-tool:active,
+  .nav-arrow:active,
+  .game-card:active,
+  .round-main:active,
+  .hole-dot:active,
+  .round-del:active,
+  .saved-course-del:active,
+  .game-info-btn:active,
+  .sheet-close:active,
+  .btn-primary:active,
+  .btn-secondary:active,
+  .saved-course-load:active,
+  .par-tile:active,
+  .resume-card:active,
+  .standings-link:active,
+  .trip-card:active {
+    transform: none;
+  }
+  /* Higher specificity than the .bar .btn-ghost:active rule it overrides;
+     that one also sets border-color, which is a state cue and stays. */
+  .bar .btn-ghost:active {
+    transform: none;
+  }
+}

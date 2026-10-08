@@ -1,0 +1,336 @@
+/* Condensed leaderboard face for names and numerals — the clubhouse
+   scoreboard look. Self-hosted latin subset (21KB), precached offline. */
+@font-face {
+  font-family: 'Oswald';
+  font-style: normal;
+  font-weight: 500 600;
+  font-display: swap;
+  src: url('/fonts/oswald-latin.woff2') format('woff2');
+}
+
+:root {
+  --font-display: 'Oswald', 'Avenir Next Condensed', 'Arial Narrow', sans-serif;
+  --green-900: #0b3d2e;
+  --green-700: #14694e;
+  --green-600: #1a7d5e;
+  --green-500: #21a179;
+  --fairway: #2fbf86;
+  --cream: #f4f7f2;
+  --ink: #10231b;
+  /* 4.72:1 on --card (#fff) — .board-hcp and .winner-sub are 11–14px, so
+     they need the 4.5:1 small-text ratio, which #5f7068 missed at 3.99. */
+  --muted: #56675e;
+  --card: #ffffff;
+  --line: #e3ebe5;
+  --bg: #eef3ee;
+  --over: #d2483b;
+  /* Text-safe error red: ≥4.5:1 both as text on --bg and under #fff text. --over stays accent-only. */
+  --over-strong: #bd392c;
+  --under: #1a8f4c;
+  /* Foreground-only green, same pattern as --gold-ink below: the base :root is
+     a light theme, so darker ink is the default text color. Measures 5.46:1
+     on #ffffff (WCAG AA wants 4.5:1). Bright green is restored only in dark
+     mode where surfaces are dark. */
+  --under-ink: #167940;
+  --gold: #e7b53c;
+  /* Foreground-only gold. The base :root is a light theme, so dark ink is the
+     default. Bright gold is restored only in dark mode where surfaces are dark. */
+  --gold-ink: #7d5a0c;
+  /* Foreground-only green — the one accent ramp that never got an ink token,
+     and the only reason dark mode had a contrast problem at all.
+     --green-600 and --green-700 are surface colours: they are mid-dark greens
+     chosen against white, and dark mode kept painting them as text on a
+     near-black page, where they measure 2.4-3.2:1 against a 4.5 minimum. It
+     showed up across seventeen different elements — every ghost button, every
+     board status line, both Results links — because it was one missing token
+     wearing many hats. Four elements had already been patched one at a time
+     with :root.dark overrides to --fairway; this is that patch, applied once
+     at the source, and those four are gone.
+     Light: 5.46:1 on --card and 5.19:1 on --bg. Dark: --fairway, 7.90 on --bg
+     and 6.84 on --card, the same swap --focus already makes. */
+  --green-ink: #14694e;
+  /* Highlight tint — the wash behind the current hole and the leading row.
+     Written as a raw 18% at both sites, which in dark mode put --muted at
+     4.16:1 and an over-par red at 4.16:1 against a 4.5 floor: a tint is a
+     surface, and text has to keep working on it. 12% clears both (5.94 and
+     4.66) and still reads as highlighted in either theme. Tokenised because
+     two sites writing the same percentage independently is how they drift. */
+  --tint: 12%;
+  /* Corner scale. --radius was the only token here and 35 other corners were
+     written as raw pixels beside it, including a lone 6px and a lone 14px that
+     were nothing but the nearest round number somebody reached for. Named so
+     the next corner is a choice between steps rather than a new value.
+     `50%` stays literal at its seven use sites: a circle is a shape, not a
+     step on a scale, and naming it would invite 48% . */
+  --r-2xs: 2px;
+  --r-xs: 4px;
+  --r-sm: 8px;
+  --r-md: 10px;
+  --r-lg: 12px;
+  --radius: 16px;
+  --r-pill: 999px;
+  --tap: 48px;
+  /* Type scale. This file tokenised motion and colour early and carefully and
+     never did the same for type, so the sizes grew one screen at a time and
+     reached thirty-six distinct values — four of them (0.78, 0.8, 0.82, 0.85)
+     inside a single pixel of each other and used fifty-two times between them.
+     Nobody can see the difference between two of those; what is visible in
+     aggregate is that nothing lines up with anything, because there was no
+     scale for it to line up with.
+
+     Twelve steps, each at least a whole pixel from its neighbours at a 16px
+     root, so every step is a decision somebody can actually see. Named by size
+     rather than by role — a role name (--fs-caption) claims to know where it
+     will be used, and the same 13px is a chip here and a helper line there.
+
+     Marks are not type and are not on this scale: .sc-dots and .sc-chip live
+     inside a 35x37px scorecard cell at 8px and 7px, below the smallest step,
+     and snapping them to it would overflow the cell they annotate. */
+  --fs-3xs: 0.625rem;
+  --fs-2xs: 0.6875rem;
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-lg: 0.9375rem;
+  --fs-xl: 1rem;
+  --fs-2xl: 1.125rem;
+  --fs-3xl: 1.3125rem;
+  --fs-4xl: 1.5rem;
+  --fs-5xl: 1.75rem;
+  --fs-6xl: 2.3125rem;
+  /* Motion. Every transition DURATION in this file comes from these three
+     tokens — no transition hardcodes a time. Timing functions are tokenized
+     for the two transform curves only: --ease-out front-loads the movement
+     (things entering, and press feedback, should commit immediately) and
+     --ease-in-out is for things already on screen moving from A to B.
+     The colour-swap transitions (.switch, and the .seg-btn / .game-card
+     fills) still write the bare keyword `ease`, deliberately: `ease` is the
+     initial value of transition-timing-function, so writing it is the same as
+     omitting it — there is no magic number to hoist, and giving those a curve
+     token would change how a selection feels, not just how it is spelled.
+     Keyframed set-pieces (flap, celebrate, winner-pop, confetti-fall) keep
+     their own bespoke curves on purpose — they are choreography, not UI
+     response. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --press: 140ms;
+  --swap: 180ms;
+  --sheet: 280ms;
+  /* The iOS sheet ease. Sheets get their own curve because they travel their
+     full height — --ease-out does not decelerate hard enough over that
+     distance to land softly. Used by both the enter and the exit.
+     The matching --sheet-exit duration is deliberately NOT here: Sheet.tsx
+     owns it and sets it inline, so its unmount timer is the single source of
+     truth and cannot drift from the animation. */
+  --ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  /* Focus ring colour. Its own token because outline-offset puts the ring on
+     the CONTAINER behind the button, not the button fill — so the ring must
+     clear 3:1 (WCAG 1.4.11) against --bg and --card, and the light themes
+     govern. --fairway measured 2.10:1 on light --bg and 2.35:1 in glare, the
+     theme built for direct daylight. --green-600 is the only palette colour
+     that clears 3:1 in every theme (4.52 light --bg / 5.07 light --card /
+     5.07 glare — glare sets --bg to #ffffff, so both its surfaces measure the
+     same); --green-500 passes on white but misses light --bg at 2.90.
+     Dark mode flips it back to --fairway, which has the headroom there.
+
+     The `outline-offset: 2px` at every use site is part of the contrast
+     result, not cosmetic spacing. --focus is the same colour as
+     .btn-primary's fill, so the offset is what puts a 2px gap of page
+     background between ring and button; remove it and the ring measures 1:1
+     against a primary button and disappears. Do not tidy it away. */
+  --focus: var(--green-600);
+  /* Width of each pinned scorecard total column (Tot, +/−). Fits "118" and
+     "+35" at 0.85rem tabular-nums with 4px side padding. */
+  --sc-total-w: 46px;
+  /* Scoring mix (Stats): diverging out from par, greens under and reds over.
+     Lightness moves away from the grey midpoint by roughly equal steps on
+     each arm (OKLab L .47/.65 · .84 · .72/.55), so the order reads without
+     the hue. The bar never carries meaning alone — its chips are the legend. */
+  --mix-eagles: #0e6b39;
+  --mix-birdies: #3aa86a;
+  --mix-pars: #c3cec7;
+  --mix-bogeys: #df8577;
+  --mix-others: #c23b2e;
+  /* Yardage-book contour lines, tiled behind everything. */
+  --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(20,105,78,0.11)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
+}
+
+/* Dark palette. Applied by theme.ts as a class, not a media query, so an
+   explicit Dark choice works on a light phone. */
+:root.dark {
+  /* Dark surfaces: --green-600 loses its headroom, --fairway gains it (7.90 on
+     --bg, 6.84 on --card). Same ring, opposite end of the ramp. */
+  --focus: var(--fairway);
+  --topo: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='420' height='420'><g fill='none' stroke='rgba(234,243,238,0.045)' stroke-width='1.2'><path d='M60 90c40-30 110-28 140 8s10 84-30 100-96 8-124-24-26-54 14-84z'/><path d='M80 105c30-22 82-20 104 6s8 62-22 74-72 6-92-18-20-40 10-62z'/><path d='M100 120c20-14 52-12 66 4s5 40-14 47-46 4-59-11-13-26 7-40z'/><path d='M300 280c30-20 80-16 96 12s0 60-32 70-70 0-84-26-10-36 20-56z'/><path d='M316 294c20-13 54-10 65 8s0 40-22 47-47 0-56-17-7-25 13-38z'/><path d='M250 40c25 5 45 25 40 45'/><path d='M40 300c10 30 40 50 70 45'/><path d='M380 120c-5 25-25 45-50 45'/></g></svg>");
+  --cream: #0f1d18;
+  --ink: #eaf3ee;
+  --muted: #9fb4aa;
+  --card: #15241e;
+  --line: #243a31;
+  --bg: #0a1511;
+  --over: #ff6b5e;
+  --over-strong: #ff6b5e;
+  --under: #43d281;
+  --under-ink: var(--under);
+  --gold-ink: var(--gold);
+  --green-ink: var(--fairway);
+  /* On the dark card the arms brighten outward instead of darkening. */
+  --mix-eagles: #5fe09a;
+  --mix-birdies: #2f9a5e;
+  --mix-pars: #3b4a43;
+  --mix-bogeys: #b0564c;
+  --mix-others: #ff7a6d;
+}
+
+/* Glare mode: max-contrast light theme for direct daylight, whatever the
+   Appearance setting. Deliberately texture-free — see the spec. */
+:root.glare {
+  color-scheme: light;
+  --topo: none;
+  --cream: #ffffff;
+  --ink: #04110b;
+  --muted: #3d4d45;
+  --card: #ffffff;
+  --line: #b9c8bd;
+  --bg: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* A scorekeeper holds the phone one-handed and taps hard. Without this, a
+   long-press on a score chip pops iOS's selection handles and callout menu
+   over the control instead of entering a score. Inputs opt back in below. */
+button,
+[role='button'],
+[role='radio'],
+label,
+th,
+.tab,
+.chip {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+input,
+textarea {
+  -webkit-user-select: auto;
+  user-select: auto;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+/* Stops the browser's pull-to-refresh reloading the app mid-round when a
+   scorekeeper overscrolls at the top of the Hole tab.
+   Two things this must get right, both of which a first attempt got wrong:
+   - It belongs on the ROOT element. Unlike `overflow`, overscroll-behavior
+     does not propagate from `body` to the viewport, and `document.scrolling
+     Element` here is `html` — with the rule on `body`, `html` still computed
+     `auto` and the gesture still fired.
+   - The keyword must be `none`, not `contain`. `contain` only stops scroll
+     chaining to ancestors and explicitly *preserves* the element's own
+     default overscroll behaviours, refresh among them. `none` is the one
+     that suppresses the default.
+   Inner scrollers (.card-scroll, .hole-dots, .money-ticker) are unaffected
+   and keep their own overscroll behaviour. */
+html {
+  overscroll-behavior-y: none;
+  /* Safari inflates text in some layouts unless told not to, which moves every
+     width this file reasons about. Installed to a home screen there is no
+     browser chrome to notice it against — the first sign is a row that no
+     longer fits. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Held by Sheet.tsx for as long as any sheet is on screen. showModal() does
+   not reliably stop the page behind a modal dialog from scrolling, so without
+   this a short sheet over a long Setup screen lets a drag scroll the page
+   under it — the sheet sits still while the world moves. On html, not body:
+   html is the scrolling element here (see the height: 100% chain above), and
+   locking it leaves the scroll position exactly where it was for the unlock. */
+html.sheet-open {
+  overflow: hidden;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, system-ui, sans-serif;
+  background-color: var(--bg);
+  background-image: var(--topo);
+  background-size: 420px 420px;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* A flex column so the screen inside it can be told to fill the viewport. It
+   already reserved the height with min-height; what it did not do was hand any
+   of it to the screen, so a short screen ended where its content did and a
+   pinned bar stopped wherever that was — "Next Hole" floating 180px above the
+   bottom of an otherwise empty phone, which reads as a page that failed to
+   finish loading rather than as a footer. */
+.app {
+  max-width: 540px;
+  margin: 0 auto;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+/* `width: 100%` looks redundant next to a stretching flex item, and is not.
+   Making .app a flex column turned every screen into a flex item, and a flex
+   item's cross size is only stretched to the line when the container's cross
+   size is definite — where it is not, an item can size itself to its own
+   max-content instead and grow past the phone. That is what a screenshot from
+   an iPhone showed: the scoring toolbar and the money ticker, the two children
+   of that screen whose content can be wider than the screen, were both laid
+   out past the right edge, while the header and the scoring card — which
+   cannot exceed their content — sat correctly inside it. The tabs then shared
+   the extra width out between them and the Settings gear ended up off the
+   side. Stating the width leaves nothing to infer.
+   box-sizing is border-box globally, so the screen's own padding is inside
+   this 100% rather than added to it. */
+.app > .screen {
+  flex: 1 0 auto;
+  width: 100%;
+  min-width: 0;
+}
+
+/* A phone in landscape is ~874px wide. 900px is effectively full width there
+   while still capping line length on a tablet or desktop browser, where an
+   uncapped Setup or Results screen would stretch text to an unreadable measure.
+   The scorecard is the real beneficiary: 18 holes fit without horizontal scroll. */
+@media (orientation: landscape) {
+  .app {
+    max-width: 900px;
+  }
+}
+
+.screen {
+  padding: calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right))
+    calc(32px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  animation: screen-in 0.24s ease-out;
+}
+@keyframes screen-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen {
+    animation: none;
+  }
+}

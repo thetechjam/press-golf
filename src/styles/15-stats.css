@@ -1,0 +1,240 @@
+/* ---------- Stats ---------- */
+
+/* .bar is a three-column grid with the title centered in the middle column.
+   A screen whose header has no trailing action leaves that column stretched
+   to the right, so the title sits visibly off-center under the back arrow.
+   This occupies the third cell at the same width the icon buttons use. */
+.bar-spacer {
+  /* Matches .bar .btn-ghost.icon, which the header resize took to 44px. */
+  min-width: 44px;
+}
+
+/* Years accumulate, one per season played, so this row cannot behave like the
+   fixed pairs and triples .seg was written for: six equal columns at 360px
+   leave each button too narrow for a four-digit label, and flex does not wrap.
+   A grid does, and unlike `flex-wrap` it keeps every cell one column wide —
+   the last row of a wrapped flex row stretches its two survivors to half the
+   width each, which reads as a different control rather than the rest of the
+   same one. */
+.stat-years {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(68px, 1fr));
+  margin-bottom: 0;
+}
+.stat-years .seg-btn {
+  padding: 12px 8px;
+}
+
+.stat-summary {
+  display: flex;
+  gap: 8px;
+  margin: 4px 0 2px;
+}
+.stat-sum {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  /* Three tiles on a 320px screen with a dollar figure in one of them: let
+     the number shrink rather than push the row wider than the viewport. */
+  min-width: 0;
+}
+.stat-sum-n {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  font-weight: 600;
+  color: var(--green-ink);
+  font-variant-numeric: tabular-nums;
+}
+.stat-sum-l {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.stat-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stat-name {
+  font-weight: 700;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stat-rounds {
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  flex: 0 0 auto;
+}
+
+.stat-figures {
+  display: flex;
+  gap: 14px;
+  /* Four figures (gross, net, money, skins) do not fit one phone row, and a
+     horizontal scroller for four short numbers is worse than a second line. */
+  flex-wrap: wrap;
+}
+.stat-figure {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.stat-big {
+  font-family: var(--font-display);
+  font-size: var(--fs-3xl);
+  font-weight: 600;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+.stat-big.up {
+  color: var(--under-ink);
+}
+.stat-big.down {
+  color: var(--over-strong);
+}
+.stat-cap {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-tally {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.stat-tally li {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  background: color-mix(in srgb, var(--green-600) 8%, transparent);
+  border-radius: var(--r-pill);
+  padding: 3px 9px;
+}
+.stat-tally-n {
+  font-weight: 700;
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+.stat-tally-l {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+
+/* ---- Stats charts ---- */
+.mix-bar {
+  display: flex;
+  gap: 2px;
+  height: 10px;
+  border-radius: var(--r-xs);
+  overflow: hidden;
+}
+.mix-seg {
+  flex-basis: 0;
+  min-width: 3px;
+}
+.mix-eagles { background: var(--mix-eagles); }
+.mix-birdies { background: var(--mix-birdies); }
+.mix-pars { background: var(--mix-pars); }
+.mix-bogeys { background: var(--mix-bogeys); }
+.mix-others { background: var(--mix-others); }
+.mix-swatch {
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.trend {
+  /* The figures above end in a caption and this starts with one; the card's
+     10px gap alone ran OVER 8 ROUNDS straight into VS PAR BY ROUND. */
+  margin-top: 6px;
+}
+.trend-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 8px;
+}
+/* Each label whole, on one line: when both do not fit — "· per 18" once a
+   nine is in the mix — the second drops below rather than both breaking
+   mid-phrase and stranding "18" and "WORST" on lines of their own. */
+.trend-head > span {
+  white-space: nowrap;
+}
+.trend-plot {
+  margin: 4px 0 2px;
+  border-radius: var(--r-sm);
+}
+.trend-plot svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+.trend-avg {
+  stroke: var(--muted);
+  stroke-width: 1;
+  stroke-dasharray: 3 4;
+  opacity: 0.6;
+}
+.trend-guide {
+  stroke: var(--line);
+  stroke-width: 1;
+}
+/* The best round keeps a small ring wherever the selection is. */
+.trend-best {
+  fill: var(--card);
+  stroke: var(--gold-ink);
+  stroke-width: 2;
+}
+/* 2px card-coloured ring so the selected point lifts off the line. */
+.trend-dot {
+  stroke: var(--card);
+  stroke-width: 2;
+}
+.trend-hit {
+  fill: transparent;
+  cursor: pointer;
+}
+.trend-caption {
+  margin: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.trend-caption strong {
+  color: var(--ink);
+}
+
+.stat-best {
+  font-size: var(--fs-md);
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.stat-foot {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}

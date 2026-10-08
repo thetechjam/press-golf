@@ -1,0 +1,71 @@
+/* ---------- Pointer hover ----------
+   Everything here is behind `@media (hover: hover)` and that is the whole
+   reason this file had no hover rules for so long: an unguarded :hover sticks
+   to the last control a scorekeeper touched on a phone and sits there, lit,
+   until they tap something else. Under the query, no touch device sees any of
+   it.
+
+   Press already answers the finger (:active, everywhere) and the keyboard
+   (:focus-visible). This is the third input the app gets used with — it opens
+   at a URL on a laptop, and until now nothing on the page acknowledged a
+   cursor at all.
+
+   One tint, and it is the press colour at roughly half strength: hover says
+   "this is a thing you can hit", press says "you hit it", and the second has
+   to read as more than the first. Mixing into --card rather than --bg keeps a
+   single value working on both surfaces, which is what .game-card.active
+   already does from a --bg base.
+
+   No transitions are added for these. Hover tracks a cursor that is already on
+   the control, so an instant answer reads as responsiveness where a fade reads
+   as lag — and .seg-btn and .game-card, the two that already carry a
+   background-color transition for their selected state, quietly get one
+   anyway. The dot strip (.hole-dot) is deliberately left out: its visual is a
+   13px ::before, so a tint on the button box would paint a square behind a
+   circle, and the alternative is a scale — motion, needing its own
+   reduced-motion entry, for the app's smallest and least mouse-driven target. */
+@media (hover: hover) {
+  .btn-secondary:hover,
+  .btn-ghost:hover,
+  .cs-hit:hover:not(:disabled),
+  .round-card:has(> .round-main:hover),
+  .press-btn:hover:not(:disabled),
+  .set-action:hover,
+  .hero-settings:hover,
+  .sheet-close:hover,
+  .game-info-btn:hover,
+  .view-tool:hover,
+  .nav-arrow:hover:not(:disabled),
+  .seg-btn:hover:not(.active):not(:disabled),
+  .game-card:hover:not(.active),
+  .score-chip:hover:not([aria-checked='true']) {
+    background: color-mix(in srgb, var(--fairway) 7%, var(--card));
+  }
+  /* The whole row tints, not the main button inside it: tinting the button
+     alone stopped short of the delete column and split the row in two. A
+     saved course row sits on --bg, so its tint mixes from that. */
+  .saved-course-row:has(> .saved-course-load:hover) {
+    background: color-mix(in srgb, var(--fairway) 9%, var(--bg));
+  }
+  /* .btn-ghost is bare text with no box of its own, so the tint needs a shape
+     to land in. It only exists on hover, so nothing is rounded at rest. */
+  .btn-ghost:hover {
+    border-radius: var(--r-md);
+  }
+  /* The primary CTA is the one filled control, so it darkens instead of
+     tinting — and darkens rather than lightens because its label is white:
+     --green-500 would put white text at 3.26:1, under the 4.5:1 floor, while
+     --green-700 lifts it from 5.07:1 to 6.65:1. Hover must never cost
+     contrast. */
+  .btn-primary:hover:not(:disabled):not([aria-disabled='true']) {
+    background: var(--green-700);
+  }
+  /* Destructive controls answer in their own colour rather than the fairway
+     tint — hovering the delete on a saved round should not feel like hovering
+     the round. Not while armed: that state is already solid --over-strong, and
+     there is nothing quieter to say once the button is asking. */
+  .round-del:hover:not(.armed),
+  .saved-course-del:hover:not(.armed) {
+    background: color-mix(in srgb, var(--over-strong) 10%, var(--card));
+  }
+}

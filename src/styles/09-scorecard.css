@@ -1,0 +1,469 @@
+/* ---------- Scoring marks (golf circle/square convention) ---------- */
+/* Border color inherits the tone color already set on the number/cell. */
+.mark {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.7em;
+  height: 1.7em;
+  padding: 0 0.12em;
+  border: 2px solid currentColor;
+  line-height: 1;
+}
+.mark-circle {
+  border-radius: var(--r-pill);
+}
+.mark-square {
+  border-radius: var(--r-xs);
+}
+/* Bogey and double+ used to draw the same 2px square, separated only by the
+   outer ring — which made a high-handicap row read as an undifferentiated wall
+   of red and buried the blow-up holes. A hairline bogey box keeps the mark
+   (paper cards do box bogeys) while letting double+ carry the visual weight.
+   The box is softened via border-color rather than opacity, which would dim
+   the digit inside it too and drop the score below its contrast floor. */
+.mark-square:not(.mark-double) {
+  border-width: 1px;
+  border-color: color-mix(in srgb, currentColor 55%, transparent);
+}
+/* Second ring for eagle / double-bogey+ — gap drawn in the card color. */
+.mark-double {
+  box-shadow: 0 0 0 2px var(--card), 0 0 0 4px currentColor;
+}
+
+/* Celebratory beat when a score lands under par. */
+@keyframes celebrate {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 14px transparent;
+  }
+}
+.score-num.celebrate {
+  animation: celebrate 0.9s ease-out;
+  border-radius: var(--r-pill);
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-num.celebrate {
+    animation: none;
+  }
+}
+
+/* ---------- Install button ---------- */
+.install-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: var(--radius);
+  border: 1px dashed var(--green-600);
+  color: var(--green-ink);
+  background: transparent;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ---------- Presets & stroke index ---------- */
+.preset-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+  margin-bottom: 12px;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+/* The two par presets. Only Setup uses these. */
+.chip {
+  padding: 7px 12px;
+  /* 31px tall was the smallest thing on the screen you were meant to tap. */
+  min-height: 40px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-weight: 600;
+  font-size: var(--fs-sm);
+  color: var(--green-ink);
+}
+.si-input {
+  padding: 6px;
+  /* Matches the par select above it. They are one control in the user's mind —
+     this hole's par, this hole's rank — and the smaller of the two was the
+     fiddlier to hit. */
+  min-height: 40px;
+  text-align: center;
+  font-size: var(--fs-sm);
+  width: 100%;
+}
+.hint-inline {
+  font-size: var(--fs-xs);
+  color: var(--muted);
+  margin: 8px 0 0;
+}
+
+/* ---------- Scorecard grid ---------- */
+/* Front 9 / Back 9 / All 18 above the grid. The .seg look, a size down: it
+   is a view switch for the card, not the page's tabs. */
+.sc-view .seg-btn {
+  min-height: 38px;
+  font-size: var(--fs-md);
+}
+.sc-view {
+  margin-bottom: 8px;
+}
+.card-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  /* No horizontal padding at all: a sticky `left`/`right` offset is measured
+     from the scrollport's padding box, so any padding here parks the frozen
+     columns inland and leaves a strip where scrolled cells show through. The
+     right side was fixed first; the left kept an 8px gutter that leaked the
+     edge of whatever hole was scrolled under the name column. The frozen
+     columns carry their own side padding instead. */
+  padding: 8px 0;
+}
+/* `separate` with zero spacing, not `collapse`: a collapsed border is shared
+   between neighbouring cells and is not painted over by either cell's own
+   background, so scrolled hole cells showed through a 1px seam alongside the
+   pinned totals. With `separate` each cell paints its full box. */
+.scorecard {
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  font-size: var(--fs-md);
+  font-variant-numeric: tabular-nums;
+}
+.scorecard th,
+.scorecard td {
+  padding: 8px 6px;
+  text-align: center;
+  min-width: 30px;
+  white-space: nowrap;
+}
+.sc-corner,
+.sc-name {
+  position: sticky;
+  left: 0;
+  background: var(--card);
+  text-align: left;
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  /* Above .sc-cell, which is `position: relative` for the handicap dots and so
+     paints in the positioned layer. A double-bogey mark draws its outer ring
+     4px outside its own cell via box-shadow, and those rings were bleeding
+     over the frozen name column from holes scrolled underneath it. */
+  z-index: 3;
+  min-width: 62px;
+  padding-left: 8px;
+}
+/* Matches the edge drawn beside the pinned totals: without it the sliver of
+   the hole scrolled under this column reads as a broken glyph rather than as
+   a cell passing behind. */
+.scorecard th.sc-name::after,
+.scorecard th.sc-corner::after {
+  content: '';
+  position: absolute;
+  inset: 0 -9px 0 auto;
+  width: 8px;
+  background: linear-gradient(
+    to left,
+    transparent,
+    color-mix(in srgb, var(--ink) 10%, transparent)
+  );
+  pointer-events: none;
+}
+.sc-hole {
+  color: var(--muted);
+  font-family: var(--font-display);
+  font-weight: 500;
+  cursor: pointer;
+}
+.sc-hole.current,
+.sc-cell.current {
+  background: color-mix(in srgb, var(--fairway) var(--tint), transparent);
+  border-radius: var(--r-xs);
+}
+.sc-par-row td,
+.sc-par-row th {
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+/* The header block closes under SI, not under Par — the border moved down when
+   the stroke-index row was added. */
+.sc-si-row td,
+.sc-si-row th {
+  color: var(--muted);
+  font-size: var(--fs-2xs);
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid var(--line);
+}
+.sc-cell {
+  cursor: pointer;
+  position: relative;
+}
+.scorecard td.sc-cell {
+  padding: 0;
+}
+/* --over and --under are accent-only (see the token comments); the scorecard
+   paints them as small text, where they measure ~4.1–4.4:1. The -ink / -strong
+   pair exists for exactly this and is identical in dark mode. */
+.sc-cell.under {
+  color: var(--under-ink);
+  font-weight: 700;
+}
+.sc-cell.over {
+  color: var(--over-strong);
+}
+/* Tot and +/− are the two numbers anyone actually looks for, and they sat at
+   the far end of an 18-column scroll — the name column was pinned left while
+   the totals were not pinned at all. Pinning them right means a glance at any
+   row gives you the total without travelling to hole 18 and back.
+   Addressed by position rather than a class because they are always the last
+   two cells of every row, header rows included. */
+/* Subtotal columns (OUT / IN). Quieter than the pinned TOT pair — they are a
+   waypoint inside the grid, not the headline — but separated from the holes
+   either side so the eye can find the break between nines. */
+.scorecard th.sc-nine,
+.scorecard td.sc-nine {
+  position: relative;
+  z-index: 2;
+  font-weight: 700;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--ink) 4%, var(--card));
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  min-width: 38px;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.sc-par-row td.sc-nine,
+.sc-si-row td.sc-nine {
+  font-weight: 600;
+}
+
+/* Selector must out-specify `.scorecard th, .scorecard td` (0,2,1) below, or
+   that rule's min-width and padding win and the widths here never apply —
+   which is exactly what left a gap between the two pinned columns. */
+/* `.scorecard th` above centres every header cell and outranks the plain
+   .sc-name / .sc-corner rule that asked for left, so names sat centred in
+   their column — ALEX and JORDAN starting at different places — and the
+   row labels with them. Said at the same weight, so it holds. */
+.scorecard th.sc-name,
+.scorecard th.sc-corner {
+  text-align: left;
+}
+/* The column headings in the scoreboard voice, like HOLE and PAR beside
+   them; "Tot" and "+/−" were the only header cells left in the body face. */
+.scorecard thead th.sc-total {
+  font-family: var(--font-display);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.scorecard th.sc-total,
+.scorecard td.sc-total {
+  font-weight: 700;
+  border-left: 1px solid var(--line);
+  /* One source of truth: the pinned Tot column offsets itself by exactly the
+     width of the +/− column beside it. Hard-coding the two separately left a
+     gap the moment "+35" grew the last column past the assumed width, and
+     hole cells scrolled through it. */
+  width: var(--sc-total-w);
+  min-width: var(--sc-total-w);
+  max-width: var(--sc-total-w);
+  padding-left: 4px;
+  padding-right: 4px;
+  position: sticky;
+  right: 0;
+  background: var(--card);
+  z-index: 3;
+}
+.scorecard th.sc-total:nth-last-child(2),
+.scorecard td.sc-total:nth-last-child(2) {
+  right: var(--sc-total-w);
+  border-left: 1px solid var(--line);
+}
+/* The pinned pair needs an edge, or scrolled cells appear to slide out of
+   nowhere underneath them. */
+.scorecard th.sc-total:nth-last-child(2)::before,
+.scorecard td.sc-total:nth-last-child(2)::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 -9px;
+  width: 8px;
+  background: linear-gradient(to right, transparent, color-mix(in srgb, var(--ink) 10%, transparent));
+  pointer-events: none;
+}
+/* A nine on its own (see `compact` in Scorecard.tsx): the badge stands in for
+   the name and the cells give up their side padding, so nine holes, the nine's
+   subtotal and Tot fit a 360px phone without a sideways swipe. The marks come
+   down a step with the type so a double ring stays inside its own column. */
+.scorecard.compact {
+  font-size: var(--fs-sm);
+}
+.scorecard.compact th,
+.scorecard.compact td {
+  min-width: 26px;
+  padding-left: 1px;
+  padding-right: 1px;
+}
+.scorecard.compact .sc-cell-btn {
+  padding: 10px 0;
+}
+.scorecard.compact .mark {
+  min-width: 1.6em;
+  height: 1.6em;
+}
+.scorecard.compact th.sc-corner,
+.scorecard.compact th.sc-name {
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 4px;
+}
+/* Badge over handicap, centred as a pair: there is not the width for them
+   side by side, and a pill wrapping under a left-aligned badge looked dropped. */
+.scorecard.compact th.sc-name {
+  text-align: center;
+  white-space: normal;
+}
+.scorecard.compact .sc-hcp {
+  margin-top: 3px;
+  padding: 1px 4px;
+}
+.scorecard.compact th.sc-nine,
+.scorecard.compact td.sc-nine {
+  min-width: 30px;
+}
+.scorecard.compact th.sc-total,
+.scorecard.compact td.sc-total {
+  --sc-total-w: 40px;
+  line-height: 1.1;
+}
+.sc-topar {
+  display: block;
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  color: var(--muted);
+}
+.sc-dots {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 0.5rem;
+  color: var(--gold-ink);
+  line-height: 1;
+}
+/* League strokes come off three baselines, so the cell names the matches
+   instead of counting dots — same convention as PlayerScoreRow's .lg-chip. */
+.sc-chips {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  display: inline-flex;
+  gap: 1px;
+  line-height: 1;
+}
+.sc-chip {
+  font-size: 0.44rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 1px 2px;
+  border-radius: var(--r-2xs);
+  color: var(--gold-ink);
+  border: 1px solid currentColor;
+}
+:root.dark .sc-chip {
+  color: var(--gold);
+}
+
+/* The two labels of a picture CTA. The idle one stays in flow and goes on
+   setting the button's height; taking BOTH out of it would collapse the
+   button to its padding and min-height the moment a render started. Width is
+   never at stake — the buttons are full-width in the sheet — so this is a
+   pure cross-fade with no geometry in it. */
+.share-face {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: opacity var(--swap) ease, filter var(--swap) ease;
+}
+.share-busy {
+  position: absolute;
+  inset: 0;
+  justify-content: center;
+}
+/* Blur, not opacity alone: an icon-plus-noun dissolving into a bare gerund is
+   two different shapes, and dimming one while the other brightens still reads
+   as two objects. Blurring across the swap bridges them into one thing
+   changing. 2px, well under the ~20px where Safari's blur cost shows. */
+.share-face.out {
+  opacity: 0;
+  filter: blur(2px);
+}
+
+/* The one way out of the Results screen. Everything that used to be stacked
+   here is grouped in the Share sheet instead. */
+.share-open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+/* Two picture CTAs in the Share sheet, stacked, each with a line saying what
+   it actually produces — "Results" and "Scorecard" side by side said nothing
+   about the difference. */
+.share-picture .btn-primary,
+.share-picture .btn-secondary {
+  width: 100%;
+  /* Containing block for the busy label stacked on top of the idle one. */
+  position: relative;
+}
+.share-picture-hint {
+  margin: 6px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+.share-picture + .share-picture {
+  margin-top: 16px;
+}
+
+/* The rule between sending a picture of the result and sending the round. */
+.share-split {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 14px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.share-split::before,
+.share-split::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
+/* Edit stakes and Edit handicaps, together, where the money is. */
+.board-edits {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}

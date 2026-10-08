@@ -1,0 +1,323 @@
+/* ---------- Home ---------- */
+.hero {
+  text-align: center;
+  padding: 24px 0 8px;
+}
+.logo {
+  /* An <h1> since it is Home's page title (see Home.tsx) — the UA margin that
+     comes with that has to go, the hero spaces itself. */
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-6xl);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--green-ink);
+  display: flex;
+  /* The P Flag mark stands in for the P: its bottom edge sits on the text
+     baseline, and the flag tip runs tight against the R. */
+  align-items: baseline;
+  justify-content: center;
+  gap: 3px;
+}
+.tagline {
+  color: var(--muted);
+  margin: 4px 0 0;
+}
+
+/* The section label and its Stats link share a baseline row, so the link sits
+   with the heading rather than becoming a third full-width button under two
+   big CTAs. */
+.saved-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.saved-stats {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-md);
+  color: var(--green-ink);
+  padding: 0 4px;
+}
+.saved h2 {
+  font-size: var(--fs-md);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 8px 4px;
+}
+.round-card {
+  display: flex;
+  align-items: stretch;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+.round-main {
+  flex: 1;
+  /* Must shrink when the armed delete grows — text ellipsizes, row height stays put. */
+  min-width: 0;
+  text-align: left;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+/* The card's text moved from <div>s to <span>s when it became a shared
+   component — the select-mode tick sits beside the text, so the two need a
+   row and the text needs a column of its own. These have to be told they are
+   blocks; overflow: hidden on an inline box does not ellipsize. */
+.round-body {
+  flex: 1;
+  min-width: 0;
+  display: block;
+}
+.round-title,
+.round-sub,
+.round-result {
+  display: block;
+}
+
+/* Select mode. The tick is drawn rather than an <input>: the whole card is
+   already the control, and a checkbox inside a button is a second target
+   inside the first. `aria-pressed` on the card carries the state. */
+.round-tick {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  color: #fff;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+}
+.round-tick.on {
+  background: var(--green-600);
+  border-color: var(--green-ink);
+}
+.round-card.selected {
+  border-color: var(--green-ink);
+}
+
+/* A league night, told apart before the card is read: a felt edge down the
+   left, and a "League night" line over the title. Green rather than gold —
+   gold already means a round still in play, and a league night can be both. */
+.round-card.league {
+  /* A border, not an inset shadow: the card's button paints its hover tint
+     over anything drawn inside the card, and the edge went with it. */
+  border-left: 4px solid var(--green-ink);
+}
+/* The 3px the edge adds over the usual 1px border comes back off the inside,
+   so the text keeps the column every other card's text is on. */
+.round-card.league .round-main {
+  padding-left: 13px;
+}
+.round-kind {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 2px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--green-ink);
+}
+
+.round-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-2xl);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* The live status, and the card's third line rather than its loudest.
+   It was 600 — heavier than the title above it at 500, in the accent colour,
+   at the same size as the meta line. Three emphasis signals on a detail that
+   is secondary to the course name, repeated down a list of cards. Matching
+   --round-sub's weight leaves colour to do the distinguishing on its own,
+   which is enough: nothing else on the card is green. */
+.round-result {
+  font-size: var(--fs-sm);
+  font-weight: 400;
+  color: var(--green-ink);
+  margin-top: 2px;
+}
+/* When the line is about money, who won and who paid are told apart by the
+   same up/down pair the money board uses. The text-safe tokens, since this
+   is 13px body text on --card. */
+.round-result .up {
+  color: var(--under-ink);
+}
+.round-result .down {
+  color: var(--over-strong);
+}
+.round-sub {
+  font-size: var(--fs-sm);
+  color: var(--muted);
+  margin-top: 2px;
+  /* Wraps rather than ellipsizing: on a 360px phone the line for a round in
+     progress ran out at "th…", cutting off "thru 18" — the one part of it
+     that changes while you play. */
+  overflow-wrap: anywhere;
+}
+.round-games {
+  margin-top: 8px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.tag {
+  font-size: var(--fs-2xs);
+  background: var(--bg);
+  color: var(--green-ink);
+  border-radius: var(--r-pill);
+  padding: 3px 9px;
+  text-transform: capitalize;
+}
+/* An unfinished round's tag: gold, the colour the app already uses for what
+   is live and in play, so it does not read as one more game name. 5.5:1
+   light, 5.3:1 dark. */
+.tag.live {
+  background: color-mix(in srgb, var(--gold) 22%, var(--card));
+  color: var(--gold-ink);
+  font-weight: 600;
+}
+
+/* ---- Resume card (Home) ----
+   Felt green in every theme, like the splash and the share card: it is the
+   one surface on Home that stands for the round on the course, and it has to
+   out-shout Start New Round without being mistaken for it. Colours are fixed
+   rather than tokens because the ground is fixed — white is 12.2:1 on
+   --green-900, --gold 6.4:1 (either way round, so the CTA pill too), and the
+   78% white standing line 8.0:1. */
+.resume-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  width: 100%;
+  text-align: left;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--green-900);
+  border: 1px solid color-mix(in srgb, var(--fairway) 35%, var(--green-900));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(11, 61, 46, 0.28);
+  transition: transform var(--press) var(--ease-out);
+}
+.resume-card:active {
+  transform: scale(0.98);
+}
+.resume-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+}
+.resume-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fairway);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fairway) 30%, transparent);
+}
+.resume-title {
+  max-width: 100%;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-4xl);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.resume-standing {
+  font-size: var(--fs-md);
+  color: rgba(255, 255, 255, 0.78);
+}
+.resume-cta {
+  margin-top: 8px;
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+  color: var(--green-900);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.round-del {
+  width: 44px;
+  color: var(--muted);
+  font-size: var(--fs-2xl);
+}
+.hint {
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  margin-top: auto;
+}
+/* A trailing paragraph's own bottom margin is dead space: there is no sibling
+   below it to be separated from, and the card's padding is already the gap.
+   Worth 13px on the Players card, which is the tallest one in the app. */
+.card > .hint:last-child {
+  margin-bottom: 0;
+}
+/* `margin-top: auto` is for Home, whose column pushes the tip to the foot of
+   the screen. In a card it resolves to 0 — which is what had the handicap
+   line on New Round sitting flush against the recall chips above it. And a
+   card's hint reads as the caption to the controls above it, so it starts
+   where they do rather than centring under a left-aligned column. */
+.card .hint,
+.course-search .hint,
+.trip-picker .hint {
+  margin-top: 10px;
+  text-align: start;
+}
+
+/* ---------- Empty state (Home, no rounds) ---------- */
+.empty-state {
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 28px 20px;
+  margin-top: 4px;
+}
+.empty-icon {
+  line-height: 1;
+  color: var(--green-ink);
+}
+.empty-title {
+  font-weight: 700;
+  margin: 12px 0 4px;
+}
+.empty-sub {
+  color: var(--muted);
+  font-size: var(--fs-md);
+  margin: 0;
+}
+.empty-help {
+  margin-top: 10px;
+  font-size: var(--fs-md);
+}
