@@ -4,6 +4,7 @@ import { GAMES } from '../games';
 import { DeleteButton } from './DeleteButton';
 import { TrophyIcon, XIcon } from '../icons';
 import { formatRoundDate } from '../roundDate';
+import { count } from '../plural';
 import { roundTitle, standingLine } from '../roundSummary';
 
 interface Props {
@@ -65,8 +66,8 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect, h
           <span className="round-sub">
             {[
               formatRoundDate(round.date),
-              `${round.players.length} players`,
-              `${round.holes.length} holes`,
+              count(round.players.length, 'player'),
+              count(round.holes.length, 'hole'),
               round.status === 'finished' ? null : thru === 0 ? 'not started' : `thru ${thru}`,
             ]
               .filter(Boolean)

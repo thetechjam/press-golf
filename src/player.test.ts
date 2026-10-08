@@ -18,15 +18,19 @@ describe('playerColor', () => {
   // Every badge draws a white monogram over the color, at 9–12px — small text,
   // so the 4.5:1 floor applies. Three hues used to sit just under it.
   it('carries white text at AA on every hue', () => {
-    for (let i = 0; i < 8; i += 1) {
+    for (let i = 0; i < 12; i += 1) {
       const color = playerColor(i);
       expect(againstWhite(color), `${color} at index ${i}`).toBeGreaterThanOrEqual(4.5);
     }
   });
 
   it('wraps past the end of the palette', () => {
-    expect(playerColor(8)).toBe(playerColor(0));
-    expect(playerColor(9)).toBe(playerColor(1));
+    expect(playerColor(12)).toBe(playerColor(0));
+    expect(playerColor(13)).toBe(playerColor(1));
+  });
+
+  it('gives twelve players twelve colours', () => {
+    expect(new Set(Array.from({ length: 12 }, (_, i) => playerColor(i))).size).toBe(12);
   });
 
   it('gives distinct colors to a full foursome', () => {

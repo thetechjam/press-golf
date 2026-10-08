@@ -132,9 +132,7 @@ describe('grouping by month', () => {
   });
 
   it('keeps the order it was given inside a month', () => {
-    // `listRounds` sorts by updatedAt, so a round edited today sits above one
-    // played the same week and untouched since. Re-sorting by date here would
-    // undo that.
+    // `listRounds` decides the order; grouping must not quietly re-sort.
     const groups = groupByMonth([pebble, torrey], now);
     expect(ids(groups[0].rounds)).toEqual(['b', 'a']);
   });
