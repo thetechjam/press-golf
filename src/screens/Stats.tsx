@@ -13,7 +13,7 @@ import {
 import { formatMoney } from '../games/settlement';
 import { formatRoundDate } from '../roundDate';
 import { PlayerAvatar } from '../components/PlayerAvatar';
-import { playerColor } from '../player';
+import { seatColor } from '../player';
 import { ChartIcon, XIcon } from '../icons';
 import { MixBar, TrendLine } from '../components/StatCharts';
 import { nameKey } from '../people';
@@ -172,9 +172,10 @@ export function Stats({ onBack }: Props) {
   const { shown, stats, cards, byPlayer } = useMemo(() => {
     const matched = filterByYear(searchRounds(counted, query), year);
     const base = computeStats(matched);
-    // The colour is taken from the player's place in the unfiltered list, so
-    // searching somebody's name does not also repaint their badge.
-    const all = base.players.map((p, i) => ({ name: p.name, p, color: playerColor(i) }));
+    // The colour is the seat each player had in their latest round — the same
+    // badge the Hole tab and Results drew for them — and is read from every
+    // counted round, so searching or a year filter does not repaint it.
+    const all = base.players.map((p, i) => ({ name: p.name, p, color: seatColor(counted, p.name, i) }));
     const named = searchPlayers(all, query);
     if (named.length === all.length) {
       return { shown: matched, stats: base, cards: all, byPlayer: false };

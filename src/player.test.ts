@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { playerColor, initials } from './player';
+import { playerColor, initials, seatColor } from './player';
+import type { Round } from './types';
 
 /** WCAG relative luminance of a #rrggbb string. */
 function luminance(hex: string): number {
@@ -46,5 +47,26 @@ describe('initials', () => {
 
   it('falls back for an empty name', () => {
     expect(initials('   ')).toBe('?');
+  });
+});
+
+describe('seatColor', () => {
+  const round = (names: string[]): Round =>
+    ({ players: names.map((name, i) => ({ id: `p${i}`, name })) }) as unknown as Round;
+
+  // Stats used to colour by rank, so the leader was always green — and Alex
+  // was purple on Stats and green on every card he had played.
+  it('takes the seat from the newest round the player is in', () => {
+    const rounds = [round(['Sam', 'Alex']), round(['Alex', 'Sam', 'Jordan'])];
+    expect(seatColor(rounds, 'Alex', 5)).toBe(playerColor(1));
+    expect(seatColor(rounds, 'Jordan', 5)).toBe(playerColor(2));
+  });
+
+  it('matches names the way people are matched everywhere else', () => {
+    expect(seatColor([round(['Sam', ' alex '])], 'Alex', 0)).toBe(playerColor(1));
+  });
+
+  it('falls back for someone in none of the rounds', () => {
+    expect(seatColor([round(['Sam'])], 'Casey', 3)).toBe(playerColor(3));
   });
 });
