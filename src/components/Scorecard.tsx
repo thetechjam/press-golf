@@ -3,6 +3,8 @@ import type { Round } from '../types';
 import { buildScorecard, formatToPar } from '../scorecardModel';
 import { clampScore } from '../scoreEntry';
 import { LEAGUE_MAX_SCORE, pickedUp } from '../games/league';
+import { playerColor } from '../player';
+import { PlayerAvatar } from './PlayerAvatar';
 
 interface Props {
   round: Round;
@@ -33,6 +35,14 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
   const half = model.nines[0]?.afterIndex ?? model.holes.length - 1;
   const shown = (i: number) =>
     !splits || view === 'all' || (view === 'front' ? i <= half : i > half);
+
+  /**
+   * Nine holes or fewer on screen. A nine still scrolled sideways at phone
+   * width — the name column alone took half the card — so a nine trades the
+   * written name for the player's badge and folds +/− under Tot, and the nine
+   * fits without a swipe. All 18 keeps the full layout; it scrolls anyway.
+   */
+  const compact = model.holes.filter((_, i) => shown(i)).length <= 9;
 
   /** The subtotal column that follows hole-column `i`, if any. */
   const nineAfter = (i: number) => model.nines.find((n) => n.afterIndex === i);
@@ -92,7 +102,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
       </div>
     )}
     <div className="card-scroll">
-      <table className="scorecard">
+      <table className={`scorecard${compact ? ' compact' : ''}`}>
         <thead>
           <tr>
             <th className="sc-corner">Hole</th>
@@ -108,7 +118,7 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
               </Fragment>
             ))}
             <th className="sc-total">Tot</th>
-            <th className="sc-total">+/−</th>
+            {!compact && <th className="sc-total">+/−</th>}
           </tr>
           <tr className="sc-par-row">
             <th className="sc-corner">Par</th>
@@ -119,12 +129,19 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
               </Fragment>
             ))}
             <td className="sc-total">{model.parTotal}</td>
-            <td className="sc-total" />
+            {!compact && <td className="sc-total" />}
           </tr>
           {/* Stroke index is a fact about the course, so it shows in gross play too. */}
           <tr className="sc-si-row">
             <th className="sc-corner" title="Stroke index — hole difficulty rank">
-              Stroke Index
+              {compact ? (
+                <>
+                  <span aria-hidden="true">SI</span>
+                  <span className="sr-only">Stroke Index</span>
+                </>
+              ) : (
+                'Stroke Index'
+              )}
             </th>
             {model.holes.map((h, i) => shown(i) && (
               <Fragment key={h.number}>
@@ -134,14 +151,21 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
               </Fragment>
             ))}
             <td className="sc-total" />
-            <td className="sc-total" />
+            {!compact && <td className="sc-total" />}
           </tr>
         </thead>
         <tbody>
-          {model.rows.map((row) => (
+          {model.rows.map((row, rowIndex) => (
             <tr key={row.playerId}>
               <th className="sc-name">
-                <span className="sc-name-text">{row.name}</span>
+                {compact ? (
+                  <>
+                    <PlayerAvatar name={row.name} color={playerColor(rowIndex)} size={26} />
+                    <span className="sr-only">{row.name}</span>
+                  </>
+                ) : (
+                  <span className="sc-name-text">{row.name}</span>
+                )}
                 {model.showHandicap && (
                   <span className="sc-hcp" aria-label={`Handicap ${row.handicap}`}>
                     {row.handicap}
@@ -236,8 +260,23 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                   </Fragment>
                 );
               })}
-              <td className="sc-total">{row.gross ?? ''}</td>
-              <td className="sc-total">{row.toPar == null ? '' : formatToPar(row.toPar)}</td>
+              {compact ? (
+                <td className="sc-total">
+                  {row.gross ?? ''}
+                  {row.toPar != null && (
+                    <span className="sc-topar">
+                      <span className="sr-only">, </span>
+                      {formatToPar(row.toPar)}
+                      <span className="sr-only"> to par</span>
+                    </span>
+                  )}
+                </td>
+              ) : (
+                <>
+                  <td className="sc-total">{row.gross ?? ''}</td>
+                  <td className="sc-total">{row.toPar == null ? '' : formatToPar(row.toPar)}</td>
+                </>
+              )}
             </tr>
           ))}
         </tbody>

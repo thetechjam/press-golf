@@ -3664,6 +3664,57 @@ select:focus {
   background: linear-gradient(to right, transparent, color-mix(in srgb, var(--ink) 10%, transparent));
   pointer-events: none;
 }
+/* A nine on its own (see `compact` in Scorecard.tsx): the badge stands in for
+   the name and the cells give up their side padding, so nine holes, the nine's
+   subtotal and Tot fit a 360px phone without a sideways swipe. The marks come
+   down a step with the type so a double ring stays inside its own column. */
+.scorecard.compact {
+  font-size: var(--fs-sm);
+}
+.scorecard.compact th,
+.scorecard.compact td {
+  min-width: 26px;
+  padding-left: 1px;
+  padding-right: 1px;
+}
+.scorecard.compact .sc-cell-btn {
+  padding: 10px 0;
+}
+.scorecard.compact .mark {
+  min-width: 1.6em;
+  height: 1.6em;
+}
+.scorecard.compact th.sc-corner,
+.scorecard.compact th.sc-name {
+  min-width: 0;
+  padding-left: 8px;
+  padding-right: 4px;
+}
+/* Badge over handicap, centred as a pair: there is not the width for them
+   side by side, and a pill wrapping under a left-aligned badge looked dropped. */
+.scorecard.compact th.sc-name {
+  text-align: center;
+  white-space: normal;
+}
+.scorecard.compact .sc-hcp {
+  margin-top: 3px;
+  padding: 1px 4px;
+}
+.scorecard.compact th.sc-nine,
+.scorecard.compact td.sc-nine {
+  min-width: 30px;
+}
+.scorecard.compact th.sc-total,
+.scorecard.compact td.sc-total {
+  --sc-total-w: 40px;
+  line-height: 1.1;
+}
+.sc-topar {
+  display: block;
+  font-size: var(--fs-3xs);
+  font-weight: 600;
+  color: var(--muted);
+}
 .sc-dots {
   position: absolute;
   top: 2px;

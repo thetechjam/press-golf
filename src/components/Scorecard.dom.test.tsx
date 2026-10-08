@@ -106,3 +106,25 @@ describe('the nine switch', () => {
     expect(holeHeads()).toHaveLength(9);
   });
 });
+
+describe('a nine on its own', () => {
+  // At phone width a nine still scrolled sideways, so a nine swaps the
+  // written name for the badge and folds +/− under Tot.
+  it('draws badges and one total column, and keeps the names for screen readers', () => {
+    render(<Scorecard round={makeRound({ players: four, holes: holes18(), status: 'in_progress' })} />);
+    const table = document.querySelector('.scorecard')!;
+    expect(table.classList.contains('compact')).toBe(true);
+    expect(table.querySelectorAll('thead tr:first-child th.sc-total')).toHaveLength(1);
+    const first = table.querySelector('tbody th.sc-name')!;
+    expect(first.querySelector('.avatar')?.textContent).toBe('AL');
+    expect(first.querySelector('.sr-only')?.textContent).toBe('Al');
+  });
+
+  it('keeps the full layout for all eighteen', () => {
+    show({ status: 'finished' });
+    const table = document.querySelector('.scorecard')!;
+    expect(table.classList.contains('compact')).toBe(false);
+    expect(table.querySelectorAll('thead tr:first-child th.sc-total')).toHaveLength(2);
+    expect(table.querySelector('tbody .sc-name-text')?.textContent).toBe('Al');
+  });
+});
