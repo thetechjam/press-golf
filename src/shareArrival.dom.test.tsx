@@ -63,6 +63,8 @@ async function arriveWith(hash: string) {
   window.history.replaceState(null, '', `/${hash}`);
   render(<App />);
   await waitFor(() => expect(screen.queryByText('Opening round…')).toBeNull());
+  // The arrival screens are lazy (src/lazyScreens.ts): wait for one to land.
+  await waitFor(() => expect(document.querySelector('.screen h1')).not.toBeNull());
 }
 
 beforeEach(() => {

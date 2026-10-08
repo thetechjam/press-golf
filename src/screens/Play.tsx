@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import type { JunkClaims, Round, WolfChoice } from '../types';
 import { LEAGUE_MAX_SCORE, pickedUp } from '../games/league';
 import { setFirstNightHandicap } from '../games/roundEdits';
@@ -20,7 +20,7 @@ import { useWakeLock } from '../useWakeLock';
 import { GearIcon, PencilIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { EditHandicaps } from '../components/EditHandicaps';
-import { SendRound } from '../components/SendRound';
+import { SendRound } from '../lazyScreens';
 
 type PlayMode = 'hole' | 'board' | 'card';
 
@@ -363,7 +363,11 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
         />
       )}
 
-      {handingOver && <SendRound round={round} onClose={() => setHandingOver(false)} />}
+      {handingOver && (
+        <Suspense fallback={null}>
+          <SendRound round={round} onClose={() => setHandingOver(false)} />
+        </Suspense>
+      )}
       {showHcp && (
         <EditHandicaps round={round} onChange={onChange} onClose={() => setShowHcp(false)} />
       )}

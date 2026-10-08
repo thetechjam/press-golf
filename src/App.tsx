@@ -1,23 +1,28 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import type { Round, SavedCourse } from './types';
 import { Home } from './screens/Home';
 import { Setup } from './screens/Setup';
-import { LeagueSetup } from './screens/LeagueSetup';
 import { Play } from './screens/Play';
 import { Results } from './screens/Results';
-import { Stats } from './screens/Stats';
-import { LeagueStandings } from './screens/LeagueStandings';
-import { TripScreen } from './screens/TripScreen';
-import { History } from './screens/History';
 import { saveRound, getRound, listCourses, saveCourse } from './storage';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { dismissSplash } from './splash';
 import { createNavigator } from './navigation';
 import { decodeRound, sharedFromHash } from './shareLink';
 import { decodeCourse, courseClash, asSeparateCourse, type CourseClash } from './shareCourse';
-import { ArrivingCourse, type CourseChoice } from './screens/ArrivingCourse';
+import type { CourseChoice } from './screens/ArrivingCourse';
 import { compareRounds, forkRound, type Arrival as ArrivalState } from './handover';
-import { Arrival, type Resolution } from './screens/Arrival';
+import type { Resolution } from './screens/Arrival';
+import {
+  Arrival,
+  ArrivingCourse,
+  History,
+  LeagueSetup,
+  LeagueStandings,
+  Stats,
+  TripScreen,
+  preloadScreens,
+} from './lazyScreens';
 
 const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats', 'history', 'standings', 'trip'] as const;
 type View = (typeof VIEWS)[number];
@@ -76,6 +81,7 @@ export default function App() {
   // It runs from here rather than main.tsx so it cannot outrun React's initial
   // commit — see splash.ts.
   useEffect(dismissSplash, []);
+  useEffect(preloadScreens, []);
 
   /**
    * Move focus to the new screen's heading on every view change.
@@ -99,7 +105,24 @@ export default function App() {
       navigated.current = true;
       return;
     }
-    document.querySelector<HTMLElement>('.screen h1')?.focus();
+    // A lazy screen may not have arrived yet (see lazyScreens.ts), so the
+    // heading is waited for rather than assumed. Almost always it is already
+    // there; the observer is the cold-cache case.
+    const focusHeading = () => {
+      const h = document.querySelector<HTMLElement>('.screen h1');
+      h?.focus();
+      return !!h;
+    };
+    if (focusHeading()) return;
+    const watch = new MutationObserver(() => {
+      if (focusHeading()) watch.disconnect();
+    });
+    watch.observe(document.body, { childList: true, subtree: true });
+    const stop = window.setTimeout(() => watch.disconnect(), 5000);
+    return () => {
+      watch.disconnect();
+      window.clearTimeout(stop);
+    };
   }, [view]);
 
   // Without this, the Android back gesture exits an installed PWA mid-round.
@@ -258,11 +281,13 @@ export default function App() {
   if (incoming?.state === 'course') {
     return (
       <div className="app">
-        <ArrivingCourse
-          course={incoming.course}
-          clash={incoming.clash}
-          onChoose={(choice) => resolveCourse(incoming.course, choice)}
-        />
+        <Suspense fallback={null}>
+          <ArrivingCourse
+            course={incoming.course}
+            clash={incoming.clash}
+            onChoose={(choice) => resolveCourse(incoming.course, choice)}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -270,11 +295,13 @@ export default function App() {
   if (incoming?.state === 'deciding') {
     return (
       <div className="app">
-        <Arrival
-          incoming={incoming.round}
-          arrival={incoming.arrival}
-          onResolve={(resolution) => resolve(incoming.round, resolution)}
-        />
+        <Suspense fallback={null}>
+          <Arrival
+            incoming={incoming.round}
+            arrival={incoming.arrival}
+            onResolve={(resolution) => resolve(incoming.round, resolution)}
+          />
+        </Suspense>
       </div>
     );
   }
@@ -302,6 +329,11 @@ export default function App() {
       {/* Mounted on every view so the service worker registers on every load;
           the prompt itself stays hidden while a round is being scored. */}
       <UpdatePrompt suppressed={view === 'play'} />
+
+      {/* No fallback: the chunks are preloaded at idle, so the wait is a frame
+          or two at most, and a spinner flashing for that long is worse than
+          nothing. */}
+      <Suspense fallback={null}>
 
       {view === 'home' && (
         <Home
@@ -402,6 +434,7 @@ export default function App() {
           onTrip={openTrip}
         />
       )}
+      </Suspense>
     </div>
   );
 }

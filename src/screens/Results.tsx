@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import type { Round } from '../types';
 import { Leaderboard } from '../components/Leaderboard';
 import { Settlement } from '../components/Settlement';
@@ -12,7 +12,7 @@ import { usesHandicaps } from '../games/handicap';
 import { TrophyIcon, ShareIcon } from '../icons';
 import { EditHandicaps } from '../components/EditHandicaps';
 import { setFirstNightHandicap } from '../games/roundEdits';
-import { ShareSheet } from '../components/ShareSheet';
+import { ShareSheet } from '../lazyScreens';
 import { Awards } from '../components/Awards';
 import { formatRoundDate } from '../roundDate';
 
@@ -242,7 +242,9 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep,
       )}
 
       {sharing && (
-        <ShareSheet round={round} summary={buildSummary(round)} onClose={() => setSharing(false)} />
+        <Suspense fallback={null}>
+          <ShareSheet round={round} summary={buildSummary(round)} onClose={() => setSharing(false)} />
+        </Suspense>
       )}
     </div>
   );

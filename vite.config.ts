@@ -22,6 +22,25 @@ export default defineConfig({
     // enough to read off a screenshot.
     __BUILD_STAMP__: JSON.stringify(new Date().toISOString().slice(0, 16).replace('T', ' ')),
   },
+  build: {
+    rolldownOptions: {
+      output: {
+        // The lazy screens (src/lazyScreens.ts) share most of the app with the
+        // main bundle — storage, the game engines, settlement — and left to
+        // itself the bundler cut that shared code into twenty-odd chunks the
+        // first screen then had to request one by one. Anything used by more
+        // than one chunk goes into a single `app` chunk instead, so a launch is
+        // the entry, that chunk, and React; a lazy chunk holds only what is
+        // its own.
+        codeSplitting: {
+          groups: [
+            { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/ },
+            { name: 'app', test: /[\\/]src[\\/]/, minShareCount: 2 },
+          ],
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     // The scoring engines are pure and run fastest with no DOM at all, so node

@@ -35,6 +35,8 @@ async function arriveWith(course: SavedCourse) {
   window.history.replaceState(null, '', `/#c=${await encodeCourse(course)}`);
   render(<App />);
   await waitFor(() => expect(screen.queryByText('Opening round…')).toBeNull());
+  // The arrival screens are lazy (src/lazyScreens.ts): wait for one to land.
+  await waitFor(() => expect(document.querySelector('.screen h1')).not.toBeNull());
 }
 
 beforeEach(() => {

@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, Suspense } from 'react';
 import type { Round, Player, GameType, Hole, SavedCourse, TeamSetup, RoundTrip } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { GAMES, gameMeta } from '../games';
@@ -27,7 +27,7 @@ import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry, placePlayer 
 import { CrewChip, RecentChips } from '../components/RosterChips';
 import { CourseSearch } from '../components/CourseSearch';
 import { DeleteButton } from '../components/DeleteButton';
-import { SendRound } from '../components/SendRound';
+import { SendRound } from '../lazyScreens';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import { playerColor } from '../player';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
@@ -1182,7 +1182,9 @@ export function Setup({ onCancel, onStart }: Props) {
       {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} screen="setup" />}
 
       {sendingCourse && (
-        <SendRound course={sendingCourse} onClose={() => setSendingCourse(null)} />
+        <Suspense fallback={null}>
+          <SendRound course={sendingCourse} onClose={() => setSendingCourse(null)} />
+        </Suspense>
       )}
     </div>
   );
