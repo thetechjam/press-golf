@@ -148,6 +148,7 @@
    because what it carries is the trip's money. Quieter than the felt Resume
    card above it — that one is the round on the course right now. */
 .trip-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -155,13 +156,30 @@
   width: 100%;
   text-align: left;
   padding: 14px 16px;
-  background: var(--card);
+  /* A wash of gold from the corner the leader sits in: the money colour,
+     faint enough that the text over it keeps its contrast. */
+  background:
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--gold) 16%, transparent), transparent 55%),
+    var(--card);
   border: 1px solid color-mix(in srgb, var(--gold) 55%, var(--line));
   border-radius: var(--radius);
   transition: transform var(--press) var(--ease-out);
 }
 .trip-card:active {
   transform: scale(0.98);
+}
+.trip-card-leader {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+}
+.trip-card-leader .avatar {
+  box-shadow: 0 0 0 3px var(--card), 0 0 0 5px color-mix(in srgb, var(--gold) 60%, transparent);
+}
+/* Clear of the leader badge, so a long trip name wraps before it rather than
+   running under it. */
+.trip-card-name {
+  padding-right: 52px;
 }
 .trip-card-eyebrow {
   display: inline-flex;

@@ -3,6 +3,8 @@ import type { Trip } from '../trips';
 import { tripLedger } from '../trips';
 import { formatMoney } from '../games/settlement';
 import { CoinIcon } from '../icons';
+import { seatColor } from '../player';
+import { PlayerAvatar } from './PlayerAvatar';
 
 /**
  * Home's way to the trip being played: its name, where the money stands
@@ -19,6 +21,14 @@ export function TripCard({ trip, onOpen }: { trip: Trip; onOpen: () => void }) {
 
   return (
     <button className="trip-card" onClick={onOpen}>
+      {/* The trip's leader, ringed in gold like the winner on Results, so the
+          card says who is on top before it is read. Decorative: the line
+          below names them. */}
+      {top && top.total > 0 && (
+        <span className="trip-card-leader" aria-hidden="true">
+          <PlayerAvatar name={top.name} color={seatColor(trip.rounds, top.name, 0)} size={40} />
+        </span>
+      )}
       <span className="trip-card-eyebrow">
         <CoinIcon size={14} /> Trip · {n} {n === 1 ? 'round' : 'rounds'}
       </span>

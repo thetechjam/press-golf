@@ -175,8 +175,13 @@
 .round-games {
   margin-top: 8px;
   display: flex;
+  align-items: center;
   gap: 6px;
   flex-wrap: wrap;
+}
+.round-gamelist {
+  font-size: var(--fs-xs);
+  color: var(--muted);
 }
 .tag {
   font-size: var(--fs-2xs);
@@ -319,5 +324,19 @@
 }
 .empty-help {
   margin-top: 10px;
+  font-size: var(--fs-md);
+}
+
+/* Start New Round and League on one row: the round is the everyday action and
+   takes the width, League is a compact tile beside it. */
+.home-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+.btn-secondary.big.home-league {
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 18px;
   font-size: var(--fs-md);
 }

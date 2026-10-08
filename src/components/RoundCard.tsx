@@ -90,11 +90,15 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect, h
                 tell that it is not. */}
             {round.status !== 'finished' && <span className="tag live">In progress</span>}
             {round.trip && !hideTrip && <span className="tag trip">{round.trip.name}</span>}
-            {round.games.map((g) => (
-              <span key={g} className="tag">
-                {GAMES.find((m) => m.id === g)?.label ?? g}
+            {/* The games as one quiet line rather than a pill each: four
+                pills wrapped to a second row on most cards and drowned out
+                the two tags above that actually say something about the
+                round. */}
+            {round.games.length > 0 && (
+              <span className="round-gamelist">
+                {round.games.map((g) => GAMES.find((m) => m.id === g)?.label ?? g).join(' · ')}
               </span>
-            ))}
+            )}
           </span>
         </span>
       </button>
