@@ -15,6 +15,7 @@ import { setFirstNightHandicap } from '../games/roundEdits';
 import { ShareSheet } from '../lazyScreens';
 import { Awards } from '../components/Awards';
 import { formatRoundDate } from '../roundDate';
+import { count } from '../plural';
 
 interface Hero {
   players: { name: string; color: string }[];
@@ -162,7 +163,8 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep,
       <div className="results-meta">
         <div className="results-course">{round.course || 'Golf round'}</div>
         <div className="results-sub">
-          {formatRoundDate(round.date)} · {round.players.length} players · {round.holes.length} holes
+          {formatRoundDate(round.date)} · {count(round.players.length, 'player')} ·{' '}
+          {count(round.holes.length, 'hole')}
         </div>
       </div>
 

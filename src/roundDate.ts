@@ -45,3 +45,17 @@ export function formatRoundDate(iso: string, now: Date = new Date()): string {
     ...(sameYear ? {} : { year: 'numeric' }),
   });
 }
+
+/**
+ * Today as a `Round.date`, in the phone's own calendar.
+ *
+ * Not `toISOString().slice(0, 10)`: that is the UTC date, and a round started
+ * after 5pm on the US west coast was filed under tomorrow — "Thu, Oct 9" on
+ * the card instead of "Today", and a New Year's Eve league night in next
+ * season's standings. `formatRoundDate` above reads these fields as local
+ * time, so they have to be written that way too.
+ */
+export function todayIso(now: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}

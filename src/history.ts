@@ -100,8 +100,8 @@ export interface RoundGroup {
  * isn't.
  *
  * Input order is preserved within a group: `listRounds` already sorts by
- * `updatedAt`, and re-sorting here by date would put a round edited today
- * below one played the same week and never touched since.
+ * date played, newest first, with the round touched last ahead on a tie, and
+ * this function has no business reordering what it was handed.
  */
 export function groupByMonth(rounds: Round[], now: Date = new Date()): RoundGroup[] {
   const groups = new Map<string, Round[]>();

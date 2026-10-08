@@ -94,17 +94,33 @@ export function playingHandicap(round: Round, playerId: string, game?: GameType)
   return allowance === 100 ? base : withAllowance(base, allowance);
 }
 
-/** Strokes a player receives on a single hole given their course handicap. */
+/**
+ * Strokes a player receives on a single hole given their course handicap.
+ *
+ * One stroke a hole down the stroke index, then round again from the top for
+ * every full lap of the card the handicap covers: a 40 on eighteen holes gets
+ * two everywhere and a third on the four hardest. The old two-stroke ceiling
+ * quietly lost four of those strokes while the entry field accepted 54.
+ *
+ * A plus handicap is negative here and gives strokes back, one a hole from the
+ * easiest end of the card — the same walk in the other direction.
+ */
 export function strokesReceivedOnHole(
   courseHandicap: number,
   strokeIndex: number,
   totalHoles: number
 ): number {
-  if (!courseHandicap || courseHandicap <= 0 || !strokeIndex) return 0;
-  let strokes = 0;
-  if (strokeIndex <= courseHandicap) strokes += 1;
-  if (strokeIndex <= courseHandicap - totalHoles) strokes += 1;
-  return strokes;
+  if (!courseHandicap || !strokeIndex || totalHoles <= 0) return 0;
+  const hcp = Math.abs(courseHandicap);
+  const laps = Math.floor(hcp / totalHoles);
+  const rest = hcp % totalHoles;
+  const extra =
+    courseHandicap > 0
+      ? strokeIndex <= rest ? 1 : 0
+      : strokeIndex > totalHoles - rest ? 1 : 0;
+  const strokes = laps + extra;
+  // `0 * -1` is -0, which Object.is-based assertions tell apart from 0.
+  return strokes === 0 ? 0 : Math.sign(courseHandicap) * strokes;
 }
 
 /**
@@ -126,19 +142,34 @@ export function holeScore(
   return raw - strokesReceivedOnHole(hcp, si, round.holes.length);
 }
 
+/**
+ * Handicap strokes a player receives over some of the round's holes — the
+ * ones scored so far, when a running total is being compared mid-round.
+ * Allocation is always off the full card, so a stroke lands on the same hole
+ * here as it does on the scorecard.
+ */
+export function strokesReceivedOver(
+  round: Round,
+  playerId: string,
+  holes: readonly Hole[],
+  game?: GameType
+): number {
+  const hcp = playingHandicap(round, playerId, game);
+  if (hcp === 0) return 0;
+  const si = strokeIndexMap(round);
+  return holes.reduce(
+    (sum, h) => sum + strokesReceivedOnHole(hcp, si[h.number], round.holes.length),
+    0
+  );
+}
+
 /** Total handicap strokes a player receives across the whole round. */
 export function totalStrokesReceived(
   round: Round,
   playerId: string,
   game?: GameType
 ): number {
-  const hcp = playingHandicap(round, playerId, game);
-  if (hcp <= 0) return 0;
-  const si = strokeIndexMap(round);
-  return round.holes.reduce(
-    (sum, h) => sum + strokesReceivedOnHole(hcp, si[h.number], round.holes.length),
-    0
-  );
+  return strokesReceivedOver(round, playerId, round.holes, game);
 }
 
 /**

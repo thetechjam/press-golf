@@ -25,7 +25,11 @@ const LIVE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 /** The round Home should put front and centre, if any. `rounds` is newest first. */
 export function liveRound(rounds: Round[], now = Date.now()): Round | undefined {
-  return rounds.find((r) => r.status !== 'finished' && now - r.updatedAt < LIVE_WINDOW_MS);
+  // The one touched most recently, whatever order the list came in — the
+  // list is by date played, and a backdated round can be the one in play.
+  return rounds
+    .filter((r) => r.status !== 'finished' && now - r.updatedAt < LIVE_WINDOW_MS)
+    .sort((a, b) => b.updatedAt - a.updatedAt)[0];
 }
 
 const fmtPts = (n: number) => (Number.isInteger(n) ? `${n}` : n.toFixed(1));

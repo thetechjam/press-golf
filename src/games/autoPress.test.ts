@@ -180,3 +180,16 @@ describe('nassauSegments with auto-press', () => {
     expect(computeSettlement(staked).totals.p1).toBe(15);
   });
 });
+
+describe('a press called by hand', () => {
+  // The rule watched only the presses it had spawned itself, so a press
+  // somebody called that then went two down never pressed again.
+  it('presses again when it goes two down, like any other bet', () => {
+    // Bo wins 1 and 2, Al calls a press from 3; Bo wins 3 and 4 too, so the
+    // called press is two down after 4 and presses from 5. The base bet,
+    // two down after 2, pressed from 3 already and presses only once.
+    const r = nassau(9, { p1: bogeysFirst(4), p2: allPars() }, { autoPress: true });
+    const withCalled: Round = { ...r, presses: [3] };
+    expect(autoPressStarts(withCalled)).toEqual([3, 5]);
+  });
+});

@@ -225,7 +225,9 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                         }${
                           cell.dots > 0
                             ? `, ${cell.dots} handicap stroke${cell.dots === 1 ? '' : 's'}`
-                            : ''
+                            : cell.dots < 0
+                              ? `, gives back ${-cell.dots} stroke${cell.dots === -1 ? '' : 's'}`
+                              : ''
                         }${
                           cell.chips.length > 0
                             ? `, gets a stroke in ${cell.chips.join(', ')}`
@@ -237,9 +239,10 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                         ) : (
                           cell.score != null && <span className={cell.markClass}>{cell.score}</span>
                         )}
-                        {cell.dots > 0 && (
+                        {/* A plus player's stroke given back is a hollow dot. */}
+                        {cell.dots !== 0 && (
                           <span className="sc-dots" aria-hidden="true">
-                            {'•'.repeat(cell.dots)}
+                            {(cell.dots > 0 ? '•' : '◦').repeat(Math.abs(cell.dots))}
                           </span>
                         )}
                         {cell.chips.length > 0 && (

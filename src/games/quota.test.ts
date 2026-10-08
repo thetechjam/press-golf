@@ -153,3 +153,19 @@ describe('computeQuota', () => {
     expect(s.totals.p2).toBe(0);
   });
 });
+
+describe('a player who brought an Index', () => {
+  // Quota read `player.handicap` directly, so an Index on a rated course —
+  // which every other net game converts to strokes — set the quota as if the
+  // player were scratch.
+  it('has a quota built from the course handicap, like every other net game', () => {
+    const hs = holes(18);
+    const r: Round = {
+      ...makeRound({ holes: hs, players: [{ id: 'p1', name: 'Al', index: 14 }], games: ['quota'] }),
+      slope: 113,
+      rating: 72,
+    };
+    // Slope 113 and rating = par: the course handicap is the Index, 14.
+    expect(quotaFor(r, 'p1')).toBe(36 - 14);
+  });
+});

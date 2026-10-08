@@ -2,6 +2,7 @@ import type { Round } from '../types';
 import type { Arrival as ArrivalState } from '../handover';
 import { describeArrival } from '../handover';
 import { formatRoundDate } from '../roundDate';
+import { count } from '../plural';
 
 /** What the user decided to do about a round that arrived by link. */
 export type Resolution =
@@ -43,8 +44,8 @@ export function Arrival({ incoming, arrival, onResolve }: Props) {
       <div className="arriving-round">
         <div className="arriving-course">{incoming.course || 'Golf round'}</div>
         <div className="arriving-sub">
-          {formatRoundDate(incoming.date)} · {incoming.players.length} players ·{' '}
-          {incoming.holes.length} holes
+          {formatRoundDate(incoming.date)} · {count(incoming.players.length, 'player')} ·{' '}
+          {count(incoming.holes.length, 'hole')}
         </div>
       </div>
 

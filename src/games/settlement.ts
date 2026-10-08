@@ -1,4 +1,4 @@
-import type { Round, GameType, GameResult } from '../types';
+import type { Round, Hole, GameType, GameResult } from '../types';
 import { computeSkins } from './skins';
 import { computeStableford } from './stableford';
 import { computeWolf } from './wolf';
@@ -7,7 +7,7 @@ import { nassauSegments, nassauTeams } from './nassau';
 import { vegasHoles, vegasTeams } from './vegas';
 import { computeQuota } from './quota';
 import { computeJunk } from './junk';
-import { totalStrokesReceived } from './handicap';
+import { strokesReceivedOver } from './handicap';
 import { netFor } from './scoring';
 
 export interface Transaction {
@@ -135,16 +135,17 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
     const totals = ids
       .map((id) => {
         let gross = 0;
-        let played = 0;
+        const played: Hole[] = [];
         for (const h of round.holes) {
           const s = round.scores[h.number]?.[id];
           if (s != null) {
             gross += s;
-            played += 1;
+            played.push(h);
           }
         }
-        const total = useNet ? gross - totalStrokesReceived(round, id, 'strokePlay') : gross;
-        return { id, total, played };
+        // Strokes on the holes scored, as computeStrokePlay counts them.
+        const total = useNet ? gross - strokesReceivedOver(round, id, played, 'strokePlay') : gross;
+        return { id, total, played: played.length };
       })
       .filter((t) => t.played > 0);
     if (totals.length < 2) return net;

@@ -1,5 +1,5 @@
 import type { Round, Hole, GameResult, GameStanding } from '../types';
-import { strokeIndexMap, strokesReceivedOnHole } from './handicap';
+import { strokesReceivedOver } from './handicap';
 import { rankStandings } from './util';
 
 /**
@@ -25,13 +25,10 @@ export const quotaPointsFor = (toPar: number): number => Math.max(0, 2 - toPar);
  * any other net game on the same card always tell the same story.
  */
 function strokesOver(round: Round, playerId: string, holes: Hole[]): number {
-  const hcp = round.players.find((p) => p.id === playerId)?.handicap ?? 0;
-  if (hcp <= 0) return 0;
-  const si = strokeIndexMap(round);
-  return holes.reduce(
-    (sum, h) => sum + strokesReceivedOnHole(hcp, si[h.number], round.holes.length),
-    0
-  );
+  // Through the playing handicap, not `player.handicap`: a player who brought
+  // an Index to a rated course has no typed handicap at all, and reading the
+  // field directly set their quota as if they were scratch.
+  return strokesReceivedOver(round, playerId, holes, 'quota');
 }
 
 /** A player's target for the full round: 2 a hole, less the strokes they get. */

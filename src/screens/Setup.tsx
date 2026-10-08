@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, Suspense } from 'react';
+import { todayIso } from '../roundDate';
 import type { Round, Player, GameType, Hole, SavedCourse, TeamSetup, RoundTrip } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { GAMES, gameMeta } from '../games';
@@ -351,6 +352,8 @@ export function Setup({ onCancel, onStart }: Props) {
     setGames((gs) => (gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g]));
 
   const namedPlayers = players.filter((p) => p.name.trim());
+  /** The seat row `i` takes in the round: how many named rows sit above it. */
+  const seatOf = (i: number) => players.slice(0, i).filter((p) => p.name.trim()).length;
   const showNet = games.some(usesHandicap);
   const showStableford = games.includes('stableford');
   const showWolf = games.includes('wolf');
@@ -360,7 +363,7 @@ export function Setup({ onCancel, onStart }: Props) {
   // Gross and net are the same card until somebody has a handicap, so the
   // per-game picker stays out of the way until the choice means something.
   // An Index counts: on a rated course it is what their strokes come from.
-  const anyHandicap = namedPlayers.some((p) => (p.handicap ?? 0) > 0 || p.index != null);
+  const anyHandicap = namedPlayers.some((p) => (p.handicap ?? 0) !== 0 || p.index != null);
   const allowanceGames = games.filter(usesHandicap);
   const showScoring = anyHandicap && allowanceGames.length > 0;
   // Only surfaced while the stroke index editor is open: a user who never
@@ -397,7 +400,7 @@ export function Setup({ onCancel, onStart }: Props) {
   const canTeams = namedPlayers.length >= 4;
 
   const start = (answer?: { id: string; name: string }) => {
-    if (namedPlayers.length < 1) return setError('Add at least one player.');
+    if (namedPlayers.length < 1) return setError('Give at least one player a name.');
 
     // Names merged before come through as the spelling they were merged
     // into, and a "yes, that's Alex" just given applies here — state set a
@@ -436,7 +439,7 @@ export function Setup({ onCancel, onStart }: Props) {
     // Net scoring is automatic: on when anybody brought a handicap, by either
     // route — a stroke count typed in, or an Index the course can convert.
     const useNet = cleanPlayers.some(
-      (p) => (p.handicap ?? 0) > 0 || (rated && p.index != null)
+      (p) => (p.handicap ?? 0) !== 0 || (rated && p.index != null)
     );
 
     // Builds a TeamSetup from picker state, or returns an error message.
@@ -483,7 +486,7 @@ export function Setup({ onCancel, onStart }: Props) {
     const round: Round = {
       id: uid(),
       course: course.trim() || undefined,
-      date: new Date().toISOString().slice(0, 10),
+      date: todayIso(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
       players: cleanPlayers,
@@ -534,7 +537,10 @@ export function Setup({ onCancel, onStart }: Props) {
         <CrewChip crew={crewMatches ? [] : crew} onUseCrew={useCrew} />
         {players.map((p, i) => (
           <div key={p.id} className="player-row">
-            <PlayerAvatar name={p.name || `${i + 1}`} color={playerColor(i)} />
+            {/* Coloured by place among the named rows, which is the seat the
+                round will give them: a blank row above used to shift every
+                colour below it the moment the round started. */}
+            <PlayerAvatar name={p.name || `${i + 1}`} color={playerColor(seatOf(i))} />
             <input
               className="player-name"
               value={p.name}

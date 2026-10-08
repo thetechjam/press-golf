@@ -79,7 +79,10 @@ export function listRounds(): Round[] {
     const raw = kv.getItem(ROUNDS_KEY);
     if (!raw) return [];
     const rounds = JSON.parse(raw) as Round[];
-    return rounds.sort((a, b) => b.updatedAt - a.updatedAt);
+    // Newest day played first; the round touched last breaks a tie. A list
+    // that read Jun 4 above Jun 7 because the earlier one had been edited
+    // since was ordered by something the reader could not see.
+    return rounds.sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt - a.updatedAt);
   } catch {
     return [];
   }

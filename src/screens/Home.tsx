@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Round } from '../types';
 import { listRounds } from '../storage';
+import { count } from '../plural';
 import { InstallPrompt } from '../components/InstallPrompt';
 import { RoundCard } from '../components/RoundCard';
 import { ResumeCard } from '../components/ResumeCard';
@@ -143,7 +144,7 @@ export function Home({
               history now, so it has to be reachable with two rounds saved. */}
           {rest.length > 0 && (
             <button className="btn-ghost saved-all" onClick={onHistory}>
-              All {rounds.length} rounds ›
+              All {count(rounds.length, 'round')} ›
             </button>
           )}
         </section>

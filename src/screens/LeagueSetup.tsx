@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { todayIso } from '../roundDate';
 import type { Round, Player, Hole, SavedCourse, LeagueTeam } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
@@ -219,7 +220,7 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     const round: Round = {
       id: uid(),
       course: course.trim() || undefined,
-      date: new Date().toISOString().slice(0, 10),
+      date: todayIso(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
       players,

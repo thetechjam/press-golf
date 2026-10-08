@@ -34,7 +34,7 @@ export function EditHandicaps({ round, onChange, onClose }: Props) {
             className="player-hcp"
             type="number"
             inputMode="numeric"
-            min={0}
+            min={-10}
             max={54}
             value={valueFor(p.id)}
             placeholder="HCP"

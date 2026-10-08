@@ -15,6 +15,11 @@ const PALETTE = [
   '#0d7272', // teal — 5.73:1
   '#856208', // gold-brown — 5.60:1
   '#4d7c1f', // olive — 4.98:1
+  // A ninth player used to wrap round to the first colour.
+  '#8a3a1b', // rust — 7.77:1
+  '#2b6e8f', // steel blue — 5.63:1
+  '#5b4bc4', // indigo — 6.46:1
+  '#a0225a', // deep rose — 7.31:1
 ];
 
 /** Stable color for a player, keyed by their position in round.players. */

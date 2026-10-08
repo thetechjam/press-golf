@@ -998,6 +998,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Match-play standings showed a trailing side as `-2 DN` instead of `2 DN`
   (double-negative in the UP/DN detail formatting).
 
+### Fixed
+- **Quota treated an Index as scratch.** A player who entered a Handicap
+  Index on a rated course got strokes in every other net game but none in
+  Quota, so their target was wrong by their whole handicap. Quota now plays
+  off the same course handicap as everything else, with its allowance. The
+  Hole tab's HCP badge and "+1 shot" chip, and the scorecard's stroke dots,
+  had the same blind spot and are fixed the same way.
+- **Net stroke play mid-round** took the whole round's strokes off a half-
+  played card, so an 18-handicap through nine showed nine shots better than
+  a scratch player level with them, and the live money followed. Only the
+  strokes on holes already scored count now.
+- **Handicaps over 36** (over 18 on a nine) lost strokes to a two-a-hole
+  ceiling. A 40 now gets all 40: two everywhere and a third on the hardest
+  four.
+- **Plus handicaps** can be entered (down to +10) and give strokes back on
+  the easiest holes, shown as a hollow dot on the card and "−1 shot" on the
+  Hole tab. They used to be silently rounded to 0.
+- **A press called by hand now presses again** when it goes two down, as the
+  How to Play text already said. Auto-press only watched the presses it had
+  spawned itself.
+- **Round dates are written in local time.** A round started after 5pm on the
+  US west coast was dated tomorrow — "Thu, Oct 9" instead of "Today" — and a
+  New Year's Eve league night landed in next season's standings.
+- **Scrolling the hole-dot strip no longer changes the hole.** On phones
+  under ~375px the strip scrolls sideways, and the swipe handler read that
+  scroll as a swipe the other way.
+- **Back no longer piles up history.** "Back to the scorecard" on Results
+  and Finish on the card each swapped in a new history entry; the Android
+  back gesture had to walk through all of them to reach Home. Starting a
+  round also replaces the Setup screen in history, so Back from a round just
+  started goes Home instead of to a blank Setup that could start it twice.
+- Round lists are ordered by the day played (then by last edit), so Jun 7
+  no longer sits below Jun 4 because the earlier round was edited later.
+- A blank row above a named player in New Round no longer gives that player
+  a different colour once the round starts.
+- "1 players", "1 holes" and "All 1 rounds" read correctly now.
+- Nine or more players each get their own colour (the palette is 12 hues).
+- The Hole tab hides a stroke index the strokes are not actually using (a
+  card with duplicate or missing indexes falls back to hole order).
+- On 320px phones: the hole header stays on one line, the HCP field gives
+  the name field room for its placeholder, and a nine on the scorecard
+  fits without clipping hole 18.
+
 ## [0.1.0] - 2026-07-01
 
 First tagged release. A local-only, offline-first PWA for tracking golf

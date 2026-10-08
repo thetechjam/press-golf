@@ -4,8 +4,11 @@ import type { Round } from '../types';
 export type HandicapEdits = Record<string, number | undefined>;
 
 const MAX_HANDICAP = 54;
+/** A plus handicap, as a negative number: +10 is the best the system issues. */
+const MIN_HANDICAP = -10;
 
-const clamp = (v: number): number => Math.min(Math.max(0, Math.round(v)), MAX_HANDICAP);
+const clamp = (v: number): number =>
+  Math.min(Math.max(MIN_HANDICAP, Math.round(v)), MAX_HANDICAP);
 
 const merged = (round: Round, edits: HandicapEdits) =>
   round.players.map((p) => {

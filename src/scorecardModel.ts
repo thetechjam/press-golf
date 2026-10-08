@@ -1,5 +1,5 @@
 import type { JunkKind, Round } from './types';
-import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps } from './games/handicap';
+import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps, courseHandicapFor } from './games/handicap';
 import { claimsOn, junkMeta } from './games/junk';
 import { ordinal } from './games/util';
 import { anyNetScoring } from './games/scoring';
@@ -190,7 +190,9 @@ export function buildScorecard(round: Round): ScorecardModel {
       : [];
 
   const rows: ScorecardRow[] = round.players.map((p) => {
-    const handicap = p.handicap ?? 0;
+    // The course handicap, so an Index-only player's dots and HCP badge
+    // match what every engine plays them off.
+    const handicap = courseHandicapFor(round, p);
     let gross = 0;
     let playedPar = 0;
     let played = 0;

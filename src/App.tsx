@@ -237,10 +237,14 @@ export default function App() {
     if (round.status !== 'finished') goTo('play');
   };
 
+  // Results stands in for the round that just finished rather than stacking
+  // on top of it, and "back to the card" undoes that: each Finish/Back cycle
+  // used to add two history entries, all of which the Android back gesture
+  // then had to walk through to reach Home.
   const finish = () => {
     if (!round) return;
     update({ ...round, status: 'finished' });
-    goTo('results');
+    nav.replace('results');
   };
 
   /** Applies what the user chose about a round that this device already had. */
@@ -402,7 +406,10 @@ export default function App() {
           onStart={(r) => {
             load(r);
             saveRound(r);
-            goTo('play');
+            // In place of Setup: Back from a round just started goes Home.
+            // Popping to a blank Setup over a saved round invited starting it
+            // twice.
+            nav.replace('play');
           }}
         />
       )}
@@ -414,7 +421,7 @@ export default function App() {
           onStart={(r) => {
             load(r);
             saveRound(r);
-            goTo('play');
+            nav.replace('play');
           }}
         />
       )}
@@ -428,7 +435,7 @@ export default function App() {
           round={round}
           onChange={update}
           onHome={() => goTo('home')}
-          onBackToPlay={() => goTo('play')}
+          onBackToPlay={() => nav.replace('play')}
           unkept={unkept}
           onKeep={keep}
           onTrip={openTrip}

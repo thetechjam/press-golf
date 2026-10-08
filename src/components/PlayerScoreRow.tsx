@@ -105,14 +105,18 @@ export function PlayerScoreRow({
         {/* Spelled out rather than a dot: "who gets one here?" is asked on
             every hole, and a dot was only explained by the legend on the
             Card tab. */}
-        {!matchStrokes && strokesReceived > 0 && (
+        {!matchStrokes && strokesReceived !== 0 && (
           <span
             className="stroke-pip"
-            aria-label={`Gets ${strokesReceived} handicap stroke${strokesReceived === 1 ? '' : 's'} here`}
+            aria-label={
+              strokesReceived > 0
+                ? `Gets ${strokesReceived} handicap stroke${strokesReceived === 1 ? '' : 's'} here`
+                : `Gives back ${-strokesReceived} stroke${strokesReceived === -1 ? '' : 's'} here`
+            }
           >
-            +{strokesReceived}
+            {strokesReceived > 0 ? `+${strokesReceived}` : `−${-strokesReceived}`}
             <span className="stroke-pip-word" aria-hidden="true">
-              {strokesReceived === 1 ? ' shot' : ' shots'}
+              {Math.abs(strokesReceived) === 1 ? ' shot' : ' shots'}
             </span>
           </span>
         )}

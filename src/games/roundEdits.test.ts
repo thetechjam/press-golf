@@ -48,9 +48,11 @@ describe('applyHandicaps', () => {
     expect(applyHandicaps(r, { p1: 3 }).scores).toEqual(scores);
   });
 
-  it('clamps a handicap to 0..54', () => {
+  it('clamps a handicap to +10..54', () => {
     const r = makeRound({ players: [player('p1', 'Al')] });
-    expect(applyHandicaps(r, { p1: -4 }).players[0].handicap).toBe(0);
+    // A plus handicap is kept, as a negative number; it used to become 0.
+    expect(applyHandicaps(r, { p1: -4 }).players[0].handicap).toBe(-4);
+    expect(applyHandicaps(r, { p1: -20 }).players[0].handicap).toBe(-10);
     expect(applyHandicaps(r, { p1: 99 }).players[0].handicap).toBe(54);
   });
 });
