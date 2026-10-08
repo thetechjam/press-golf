@@ -177,6 +177,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   team match off the low of all four, and still at most one stroke a hole.
 
 ### Changed
+- **A whole nine on the scorecard.** Front 9 and Back 9 now fit a phone
+  screen with no sideways swipe: each player shows as their coloured badge,
+  Stroke Index shortens to SI, and +/− sits under Tot. All 18 is unchanged.
+- **Each player has one colour everywhere.** Stats used to colour players by
+  their rank, so a player could be green on the card and purple on Stats. It
+  now uses the seat they had in their latest round, as the Trip screen does.
+- **Stats trend line**: a player who shot the same score every round gets one
+  line of text instead of a flat chart. Small swings are no longer stretched
+  edge to edge, and the chart adds a dashed average line and a dot per round.
+- **Home**: League is a compact tile beside Start New Round, round cards list
+  their games as one quiet line instead of a row of pills, and the trip card
+  shows the trip leader ringed in gold.
+- **Hole tab**: the collapsed Nassau, Junk and Wolf strips group into one
+  block, which moves the score rows up the screen.
+- **Faster launch**: Stats, History, the league and trip screens, the arrival
+  screens and the share sheets load on demand and are preloaded at idle.
+  Startup JavaScript drops from 424 KB to 376 KB, and React sits in its own
+  chunk that keeps its hash across releases, so an update downloads less.
+  Everything still works offline.
+- The stylesheet is split into ordered section files under `src/styles`. The
+  shipped CSS is unchanged.
+
 - **Small phones read whole.** A pass at 360px wide, where several lines cut
   off or broke mid-phrase:
   - A round in progress showed "th…" instead of "thru 18" on its card, and
