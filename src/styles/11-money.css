@@ -166,3 +166,19 @@
   letter-spacing: 0.05em;
   font-size: var(--fs-2xs);
 }
+
+/* Two or more collapsed strips in a row (Wolf, Nassau, Junk) read as one
+   grouped list rather than a stack of separate bars: they share a border and
+   drop the gap between them, which also pulls the score rows up the screen.
+   Portrait only — landscape lays the strips side by side instead. */
+@media (orientation: portrait) {
+  .hole-body > .collapsed + .collapsed {
+    margin-top: -11px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+  }
+  .hole-body > .collapsed:has(+ .collapsed) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
