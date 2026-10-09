@@ -343,3 +343,41 @@ describe('buildScorecard — junk footer', () => {
     expect(buildScorecard(round).junk.map((e) => e.detail)).toEqual(['Greenie (3rd)']);
   });
 });
+
+describe('buildScorecard — net totals', () => {
+  it('adds up the dots under the gross in a net round', () => {
+    const hs = holes(9);
+    const round = makeRound({
+      players: [player('p1', 'Al', 4), player('p2', 'Bo', 0)],
+      holes: hs,
+      games: ['strokePlay'],
+      options: { useNet: true },
+      scores: scoresFrom(hs, { p1: Array(9).fill(5), p2: Array(9).fill(4) }),
+    });
+    const model = buildScorecard(round);
+    expect(model.showNet).toBe(true);
+    // Al gets a stroke on SI 1–4: 45 gross, 41 net.
+    expect(model.rows[0]).toMatchObject({ gross: 45, net: 41 });
+    expect(model.rows[1]).toMatchObject({ gross: 36, net: 36 });
+  });
+
+  it('counts only the strokes on holes played', () => {
+    const hs = holes(9);
+    const round = makeRound({
+      players: [player('p1', 'Al', 9)],
+      holes: hs,
+      games: ['strokePlay'],
+      options: { useNet: true },
+      scores: scoresFrom(hs, { p1: [5, 5, 5] }),
+    });
+    expect(buildScorecard(round).rows[0]).toMatchObject({ gross: 15, net: 12 });
+  });
+
+  it('offers no net in a gross round or a league night', () => {
+    const hs = holes(9);
+    const gross = makeRound({ players: [player('p1', 'Al')], holes: hs, games: ['strokePlay'] });
+    expect(buildScorecard(gross).showNet).toBe(false);
+    const night = makeRound({ players: FOUR, holes: hs, options: { league: league() } });
+    expect(buildScorecard(night).showNet).toBe(false);
+  });
+});

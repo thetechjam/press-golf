@@ -107,13 +107,18 @@ export function autoPressStarts(round: Round): number[] {
 export function nassauSegments(round: Round): NassauSegment[] {
   const front = round.holes.filter((h) => h.number <= 9);
   const back = round.holes.filter((h) => h.number > 9);
-  const segments: NassauSegment[] = back.length
-    ? [
-        { label: 'Front', holes: front, isPress: false, isAuto: false },
-        { label: 'Back', holes: back, isPress: false, isAuto: false },
-        { label: 'Total', holes: round.holes, isPress: false, isAuto: false },
-      ]
-    : [{ label: 'Total', holes: round.holes, isPress: false, isAuto: false }];
+  // Three bets only when there are two nines to bet on. A round played on
+  // the back nine alone — holes 10–18 — is one nine, and used to be scored
+  // as an empty Front, a Back and a Total over the same holes: the one bet
+  // paid twice.
+  const segments: NassauSegment[] =
+    front.length && back.length
+      ? [
+          { label: 'Front', holes: front, isPress: false, isAuto: false },
+          { label: 'Back', holes: back, isPress: false, isAuto: false },
+          { label: 'Total', holes: round.holes, isPress: false, isAuto: false },
+        ]
+      : [{ label: 'Total', holes: round.holes, isPress: false, isAuto: false }];
 
   const manual = round.presses ?? [];
   // A hole can be both: the two-down rule fires where somebody had already

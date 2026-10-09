@@ -480,3 +480,19 @@
     display: none;
   }
 }
+
+/* The net total, under the gross in Tot: the sum of the dots on the card,
+   which players were adding up by hand. Muted and a step smaller, so the
+   gross stays the number the column is named for. */
+.sc-net {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.scorecard thead th .sc-net {
+  font-weight: 500;
+  text-transform: lowercase;
+  letter-spacing: 0;
+}

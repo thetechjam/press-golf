@@ -76,3 +76,16 @@ describe('computeNassau', () => {
     expect(r.note).toBe(`${a.label} vs ${b.label}`);
   });
 });
+
+describe('a round played on the back nine alone', () => {
+  it('is one bet, not an empty front, a back and a total over the same holes', () => {
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo')],
+      holes: holes18().slice(9),
+      games: ['nassau'],
+    });
+    const segs = nassauSegments(round);
+    expect(segs.map((s) => s.label)).toEqual(['Total']);
+    expect(segs[0].holes.map((h) => h.number)).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18]);
+  });
+});

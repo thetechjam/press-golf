@@ -1,5 +1,7 @@
 import type { Round } from './types';
 import { buildScorecard, formatToPar, type ScorecardModel } from './scorecardModel';
+import { formatRoundDateAbsolute } from './roundDate';
+import { count } from './plural';
 import {
   BG, CREAM, MUTED, GOLD,
   disp, mono, setLS, up, fit,
@@ -32,7 +34,7 @@ const holeColWidth = (count: number) => (count > 12 ? 56 : 78);
 
 function boardWidth(model: ScorecardModel): number {
   const cols = model.holes.length * holeColWidth(model.holes.length);
-  return PAD * 2 + NAME_W + cols + model.nines.length * NINE_W + TOTAL_W * 2;
+  return PAD * 2 + NAME_W + cols + model.nines.length * NINE_W + TOTAL_W * (model.showNet ? 3 : 2);
 }
 
 /**
@@ -106,7 +108,7 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
     width: W,
     pad: PAD,
     title: round.course || 'Golf round',
-    meta: `${round.date} · ${round.players.length} players · ${model.holes.length} holes`,
+    meta: `${formatRoundDateAbsolute(round.date)} · ${count(round.players.length, 'player')} · ${count(model.holes.length, 'hole')}`,
     y: PAD + 36,
   });
 
@@ -122,6 +124,8 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
   const totX =
     gridX + model.holes.length * holeW + model.nines.length * NINE_W + TOTAL_W / 2;
   const parX = totX + TOTAL_W;
+  /** The net column, drawn only in a net round — see `showNet`. */
+  const netX = parX + TOTAL_W;
 
   // ---- Header rows: Hole, Par, Stroke Index ----
   y += HEAD_ROW_H;
@@ -133,6 +137,7 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
   model.nines.forEach((n) => center(ctx, n.label, nineX(n), y));
   center(ctx, 'TOT', totX, y);
   center(ctx, '+/−', parX, y);
+  if (model.showNet) center(ctx, 'NET', netX, y);
   setLS(ctx, 0);
 
   y += HEAD_ROW_H - 6;
@@ -257,6 +262,10 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
     center(ctx, row.gross == null ? '' : `${row.gross}`, totX, base);
     ctx.fillStyle = row.toPar != null && row.toPar < 0 ? GOLD : CREAM;
     center(ctx, row.toPar == null ? '' : formatToPar(row.toPar), parX, base);
+    if (model.showNet) {
+      ctx.fillStyle = CREAM;
+      center(ctx, row.net == null ? '' : `${row.net}`, netX, base);
+    }
 
     y += ROW_H;
   }

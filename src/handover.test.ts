@@ -3,6 +3,7 @@ import type { Round } from './types';
 import { compareRounds, forkRound, describeArrival } from './handover';
 import { makeRound, holes18, player, scoresFrom } from './games/testFixtures';
 import { mergeRounds } from './backup';
+import { packRound, unpackRound } from './shareLink';
 
 /**
  * Two phones holding the same round.
@@ -260,5 +261,77 @@ describe('league pick-ups on a handed-over round', () => {
     // The score is a 9 either way; the X is what loses Al the hole.
     expect(compareRounds(withPickups({ 1: ['a'] }), withPickups()).kind).toBe('ahead');
     expect(compareRounds(withPickups(), withPickups({ 1: ['a'] })).kind).toBe('behind');
+  });
+});
+
+describe('settings that are not entries on the card', () => {
+  const stakes = (r: Round, skins: number, updatedAt: number): Round => ({
+    ...r,
+    updatedAt,
+    options: { ...r.options, stakes: { skins } },
+  });
+
+  it('a changed stake on identical cards is not "exactly the same round"', () => {
+    const mine = stakes(card(MINE, through(9), through(9)), 5, 1000);
+    const theirs = stakes(card(THEIRS, through(9), through(9)), 10, 2000);
+    const arrival = compareRounds(theirs, mine);
+    expect(arrival.kind).toBe('ahead');
+    if (arrival.kind !== 'ahead') return;
+    expect(arrival.diff).toMatchObject({ theirsOnly: 0, mineOnly: 0, differing: 0, settings: 1 });
+    expect(describeArrival(arrival)).toMatch(/1 setting — stakes, handicaps, presses or Wolf calls — set differently/);
+  });
+
+  it('is "behind" when my copy is the one written more recently', () => {
+    const mine = stakes(card(MINE, through(9), through(9)), 5, 3000);
+    const theirs = stakes(card(THEIRS, through(9), through(9)), 10, 2000);
+    expect(compareRounds(theirs, mine).kind).toBe('behind');
+  });
+
+  it('counts a corrected handicap, a press and a Wolf call', () => {
+    const base = card(MINE, through(9), through(9));
+    const mine: Round = { ...base, updatedAt: 1 };
+    const theirs: Round = {
+      ...card(THEIRS, through(9), through(9)),
+      updatedAt: 2,
+      players: [{ id: 'p0', name: 'Al', handicap: 14 }, { id: 'p1', name: 'Bo' }],
+      presses: [5],
+      wolf: { 3: { wolfPlayerId: 'p0', choice: { type: 'lone' } } },
+    };
+    const arrival = compareRounds(theirs, mine);
+    expect(arrival.kind).toBe('ahead');
+    if (arrival.kind === 'ahead') expect(arrival.diff.settings).toBe(3);
+  });
+
+  it('says so beside the entries when both differ', () => {
+    const mine = stakes(card(MINE, through(9), through(9)), 5, 1000);
+    const theirs = stakes(card(THEIRS, through(12), through(12)), 10, 2000);
+    const arrival = compareRounds(theirs, mine);
+    expect(arrival.kind).toBe('ahead');
+    expect(describeArrival(arrival)).toMatch(/6 entries yours doesn’t, and 1 setting/);
+  });
+
+  it('reads a rated round back from its own link as the same round', () => {
+    const mine: Round = {
+      ...card(MINE, through(18), through(18)),
+      players: [
+        { id: MINE[0], name: 'Al', index: 8.4 },
+        { id: MINE[1], name: 'Bo', index: 12.1 },
+      ],
+      slope: 131,
+      rating: 72.4,
+      ratingHoles: 18,
+      presses: [4],
+      wolf: { 2: { wolfPlayerId: MINE[0], choice: { type: 'partner', partnerId: MINE[1] } } },
+      options: { useNet: true, stablefordMode: 'standard', loneWolfMultiplier: 2, blindWolfMultiplier: 3, stakes: { skins: 5 }, autoPress: true, netByGame: { skins: false }, allowanceByGame: { nassau: 90 } },
+    };
+    const back = unpackRound(packRound(mine)!);
+    if (!back.ok) throw new Error(back.error);
+    expect(compareRounds(back.round, mine)).toEqual({ kind: 'same' });
+  });
+
+  it('is still the same round when nothing differs', () => {
+    const mine = stakes(card(MINE, through(9), through(9)), 5, 1000);
+    const theirs = stakes(card(THEIRS, through(9), through(9)), 5, 2000);
+    expect(compareRounds(theirs, mine)).toEqual({ kind: 'same' });
   });
 });

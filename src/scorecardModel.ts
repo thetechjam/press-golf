@@ -52,6 +52,12 @@ export interface ScorecardRow {
   gross: number | null;
   /** Against the par of played holes only. null when none played. */
   toPar: number | null;
+  /**
+   * Gross less the handicap strokes on the holes played. null when none
+   * played, and absent in gross and league rounds, where there is nothing to
+   * take off — see `showNet`.
+   */
+  net: number | null;
 }
 
 /**
@@ -82,6 +88,8 @@ export interface ScorecardModel {
   holes: ScorecardHole[];
   parTotal: number;
   showHandicap: boolean;
+  /** Whether rows carry a net total: a net round that is not a league night. */
+  showNet: boolean;
   /** Empty for a round covering only one nine, where a subtotal restates TOT. */
   nines: ScorecardNine[];
   rows: ScorecardRow[];
@@ -232,6 +240,9 @@ export function buildScorecard(round: Round): ScorecardModel {
       return any ? sum : null;
     });
 
+    // The dots were on the card and the sum of them was not: in a net round
+    // players added the dots up by hand, or went to the Board for the number.
+    const strokes = cells.reduce((sum, c) => sum + (c.score == null ? 0 : c.dots), 0);
     return {
       playerId: p.id,
       name: p.name,
@@ -240,6 +251,7 @@ export function buildScorecard(round: Round): ScorecardModel {
       nineTotals,
       gross: played ? gross : null,
       toPar: played ? gross - playedPar : null,
+      net: played ? gross - strokes : null,
     };
   });
 
@@ -247,6 +259,7 @@ export function buildScorecard(round: Round): ScorecardModel {
     holes,
     parTotal: round.holes.reduce((s, h) => s + h.par, 0),
     showHandicap: usesHandicaps(round),
+    showNet: !isLeague && useNet,
     nines,
     rows,
     junk: junkEntries(round),

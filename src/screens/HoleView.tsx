@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Round, Hole, JunkClaims, WolfChoice } from '../types';
 import { PlayerScoreRow } from '../components/PlayerScoreRow';
 import { WolfControls } from '../components/WolfControls';
@@ -29,13 +29,22 @@ interface Props {
   onWolf: (choice: WolfChoice) => void;
   onPresses: (presses: number[]) => void;
   onJunk: (junk: JunkClaims) => void;
+  /** Rewrites this hole's par on the round. Absent when the card is read-only. */
+  onPar?: (holeNumber: number, par: number) => void;
 }
+
+/** The pars a hole can be corrected to: golf is 3 to 6 in practice. */
+const PARS = [3, 4, 5, 6];
 
 export function HoleView({
   round, hole, idx, dir, highlightId, holeComplete, holePartial, onGo, onScore, onPickup, onWolf,
-  onPresses, onJunk,
+  onPresses, onJunk, onPar,
 }: Props) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
+  // Whether the par picker is open. Local to this hole: a swipe remounts the
+  // body but not this, so it is closed on every hole change below.
+  const [pickingPar, setPickingPar] = useState(false);
+  useEffect(() => setPickingPar(false), [hole.number]);
   // One ref serves both jobs: keeping the current dot centred, and measuring
   // which edge still hides holes.
   const { ref: dotsRef, edge: dotsEdge } = useEdgeFade<HTMLDivElement>();
@@ -98,22 +107,61 @@ export function HoleView({
         <button className="nav-arrow" onClick={() => onGo(idx - 1)} disabled={idx === 0} aria-label="Previous hole">‹</button>
         <div className="hole-head">
           <div className="hole-num">Hole {hole.number}</div>
-          <div className="hole-par">
-            Par {hole.par}
-            {/* Only when these are the indexes the strokes come from. With a
-                card whose indexes are unusable the engine falls back to hole
-                order (Setup says so), and printing the card's number beside a
-                "+1 shot" it did not produce contradicted it. */}
-            {hole.strokeIndex != null && strokeIndexesUsable(round.holes) && (
+          {/* The par is a button when it can be corrected: a course-search
+              par off by one changes every net score, Stableford point and
+              quota target, and the only fix used to be a new round. A tap
+              opens a picker rather than stepping the par, so a brush of the
+              thumb cannot move it. */}
+          {(() => {
+            const si = hole.strokeIndex != null && strokeIndexesUsable(round.holes) && (
               <>
                 {' · '}
                 <abbr title="Stroke index">SI</abbr> {hole.strokeIndex}
               </>
-            )}
-          </div>
+            );
+            return onPar ? (
+              <button
+                type="button"
+                className="hole-par hole-par-btn"
+                aria-expanded={pickingPar}
+                aria-label={`Par ${hole.par}. Change this hole's par`}
+                onClick={() => setPickingPar((v) => !v)}
+              >
+                Par {hole.par}
+                {si}
+              </button>
+            ) : (
+              <div className="hole-par">
+                Par {hole.par}
+                {si}
+              </div>
+            );
+          })()}
         </div>
         <button className="nav-arrow" onClick={() => onGo(idx + 1)} disabled={last} aria-label="Next hole">›</button>
       </div>
+
+      {pickingPar && onPar && (
+        <div className="par-pick" role="group" aria-label={`Par for hole ${hole.number}`}>
+          <div className="seg">
+            {PARS.map((p) => (
+              <button
+                key={p}
+                type="button"
+                className={`seg-btn${hole.par === p ? ' active' : ''}`}
+                aria-pressed={hole.par === p}
+                onClick={() => {
+                  onPar(hole.number, p);
+                  setPickingPar(false);
+                }}
+              >
+                Par {p}
+              </button>
+            ))}
+          </div>
+          <p className="par-pick-note">Changes this round’s card only.</p>
+        </div>
+      )}
 
       <div className="hole-dots" ref={dotsRef} data-fade={dotsEdge} aria-label="Hole progress">
         {round.holes.map((h, i) => (
