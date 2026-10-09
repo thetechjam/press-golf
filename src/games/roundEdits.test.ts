@@ -48,6 +48,37 @@ describe('applyHandicaps', () => {
     expect(applyHandicaps(r, { p1: 3 }).scores).toEqual(scores);
   });
 
+  it('keeps net on for a round whose only handicap is a plus', () => {
+    const r = makeRound({
+      players: [player('p1', 'Al', -2), player('p2', 'Bo')],
+      options: { useNet: true },
+    });
+    // Setup turns net on for any handicap other than 0; saving the sheet
+    // unchanged used to turn it off for a plus player.
+    expect(applyHandicaps(r, {}).options.useNet).toBe(true);
+  });
+
+  it('edits the Index on a rated round, and keeps net on', () => {
+    const r = makeRound({
+      players: [
+        { id: 'p1', name: 'Al', index: 12.4 },
+        { id: 'p2', name: 'Bo', index: 3.1 },
+      ],
+      holes: holes(18),
+      slope: 131,
+      rating: 72.4,
+      options: { useNet: true },
+    });
+    // Saving unchanged on an Index round turned every untouched game gross.
+    expect(applyHandicaps(r, {}).options.useNet).toBe(true);
+    const next = applyHandicaps(r, { p1: 14.8 });
+    expect(next.players[0].index).toBe(14.8);
+    expect(next.players[0].handicap).toBeUndefined();
+    expect(next.options.useNet).toBe(true);
+    // Clearing both Indexes is a gross round again.
+    expect(applyHandicaps(r, { p1: undefined, p2: undefined }).options.useNet).toBe(false);
+  });
+
   it('clamps a handicap to +10..54', () => {
     const r = makeRound({ players: [player('p1', 'Al')] });
     // A plus handicap is kept, as a negative number; it used to become 0.

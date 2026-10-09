@@ -27,7 +27,14 @@ export function holeSwing(round: Round, holeNumber: number): Record<string, numb
   const withHole = computeSettlement(round).totals;
   const scores = { ...round.scores };
   delete scores[holeNumber];
-  const withoutHole = computeSettlement({ ...round, scores }).totals;
+  // The hole's junk and pick-ups go with its scores: a sandie claimed on the
+  // hole just finished is part of its swing, and was the whole swing when
+  // junk was the only money that moved.
+  const junk = round.junk && { ...round.junk };
+  if (junk) delete junk[holeNumber];
+  const pickups = round.pickups && { ...round.pickups };
+  if (pickups) delete pickups[holeNumber];
+  const withoutHole = computeSettlement({ ...round, scores, junk, pickups }).totals;
 
   const swing: Record<string, number> = {};
   for (const p of round.players) {

@@ -128,7 +128,7 @@ export function Setup({ onCancel, onStart }: Props) {
   // One snapshot of saved history, read once on mount. Everything derived from
   // past rounds — which rows open, the crew chip, the recent chips — reads this
   // and not localStorage, so the screen cannot shift while the user is typing.
-  const [savedRounds] = useState(() => listRounds());
+  const [savedRounds, setSavedRounds] = useState(() => listRounds());
 
   // The trip this round is part of. Starts on the trip being played this week,
   // if there is one: the second round of a trip is the common case, and
@@ -207,6 +207,12 @@ export function Setup({ onCancel, onStart }: Props) {
     setAdvancedHoles(applied.some((h) => h.strokeIndex));
     setHolesSource('search');
     setImported({ raw: c.holes, expected: count });
+    // Search data carries no slope or rating, and the ones on screen were
+    // the last course's: left in place they converted every Index with the
+    // wrong course's figures and went onto the round as that course's.
+    setSlope(undefined);
+    setRating(undefined);
+    setRatingHoles(undefined);
     openRow('holes');
     setError('');
     setSavedNote({
@@ -434,6 +440,21 @@ export function Setup({ onCancel, onStart }: Props) {
     }
     setAskSame(null);
 
+    // Two players under one name are one person to everything downstream:
+    // the settlement reads "Mike pays Mike", Stats adds both cards up as
+    // one, and a trip nets their money against each other.
+    const seen = new Map<string, string>();
+    for (const p of namedPlayers) {
+      const typed = nameFor(p).trim();
+      const k = nameKey(typed);
+      const other = seen.get(k);
+      if (other !== undefined) {
+        openRow('players');
+        return setError(`Two players are called ${other} — add an initial to one of them.`);
+      }
+      seen.set(k, typed);
+    }
+
     if (games.length === 0) return gamesError('Pick at least one game.');
     for (const g of games) {
       const meta = GAMES.find((m) => m.id === g)!;
@@ -618,7 +639,7 @@ export function Setup({ onCancel, onStart }: Props) {
             <button
               className="player-del"
               onClick={() => removePlayer(p.id)}
-              aria-label="Remove player"
+              aria-label={`Remove ${p.name.trim() || `player ${i + 1}`}`}
             >
               <XIcon />
             </button>
@@ -714,6 +735,7 @@ export function Setup({ onCancel, onStart }: Props) {
                   key={g.id}
                   role="button"
                   tabIndex={0}
+                  aria-pressed={games.includes(g.id)}
                   className={`game-card${games.includes(g.id) ? ' active' : ''}${expandedGame === g.id ? ' expanded' : ''}`}
                   onClick={() => toggleGame(g.id)}
                   onKeyDown={(e) => {
@@ -1200,7 +1222,18 @@ export function Setup({ onCancel, onStart }: Props) {
         ))}
       </datalist>
 
-      {showSettings && <SettingsSheet onClose={() => setShowSettings(false)} screen="setup" />}
+      {showSettings && (
+        <SettingsSheet
+          onClose={() => setShowSettings(false)}
+          screen="setup"
+          // A restore from here brings courses and past players; the saved
+          // course list and the recall chips read them again.
+          onDataChanged={() => {
+            setCourses(listCourses());
+            setSavedRounds(listRounds());
+          }}
+        />
+      )}
 
       {sendingCourse && (
         <Suspense fallback={null}>

@@ -15,6 +15,7 @@ import {
 import { makeRound, player, holes18, scoresFrom } from './games/testFixtures';
 import { computeSettlement } from './games/settlement';
 import { computeLeague } from './games/league';
+import { courseHandicapFor } from './games/handicap';
 import { activeResults } from './games';
 
 /**
@@ -551,5 +552,78 @@ describe('a league night one short, called for darkness, over a link', () => {
     if (!result.ok) throw new Error(result.error);
     const di = result.round.players.find((p) => p.name === 'Di')!;
     expect(result.round.options.league!.firstNight).toEqual([di.id]);
+  });
+});
+
+describe('hole numbers over a link', () => {
+  const backNine = (): Round => ({
+    ...makeRound({
+      players: ['Al', 'Bo', 'Cy', 'Di'].map((name, i) => player(`mine-${i}`, name, 5)),
+      // A league night on the back nine: holes 10–18, with everything keyed
+      // by those numbers.
+      holes: holes18().slice(9),
+      options: {
+        league: {
+          pointsPerMatch: 1,
+          teams: [
+            { aId: 'mine-0', bId: 'mine-1' },
+            { aId: 'mine-2', bId: 'mine-3' },
+          ],
+        },
+      },
+      scores: { 12: { 'mine-0': 9, 'mine-1': 4, 'mine-2': 5, 'mine-3': 4 } },
+    }),
+    pickups: { 12: ['mine-0'] },
+  });
+
+  it('keeps a back nine on holes 10–18, so an X on the 12th is still on the 12th', () => {
+    const result = unpackRound(packRound(backNine())!);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.round.holes.map((h) => h.number)).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18]);
+    const al = result.round.players.find((p) => p.name === 'Al')!.id;
+    expect(result.round.pickups).toEqual({ 12: [al] });
+    expect(result.round.scores[12][al]).toBe(9);
+    expect(computeLeague(result.round).teams.map((t) => t.points)).toEqual(
+      computeLeague(backNine()).teams.map((t) => t.points)
+    );
+  });
+
+  it('costs nothing on a round whose holes are 1..N', () => {
+    expect('hn' in packRound(fullRound())!).toBe(false);
+  });
+
+  it('falls back to 1..N when the numbers it is handed are not sound', () => {
+    const packed = packRound(backNine())!;
+    packed.hn = [10, 10, 12, 13, 14, 15, 16, 17, 18];
+    const result = unpackRound(packed);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.round.holes.map((h) => h.number)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  });
+});
+
+describe('a nine played off an eighteen-hole rating, over a link', () => {
+  it('still turns each Index into the same strokes on the other phone', () => {
+    const round = makeRound({
+      players: [
+        { id: 'mine-0', name: 'Al', index: 18.0 },
+        { id: 'mine-1', name: 'Bo', index: 4.2 },
+      ],
+      holes: holes18().slice(0, 9),
+      slope: 125,
+      rating: 72.0,
+      ratingHoles: 18,
+      options: { useNet: true },
+    });
+    const before = round.players.map((p) => courseHandicapFor(round, p));
+    expect(before[0]).toBeGreaterThan(0);
+    const result = unpackRound(packRound(round)!);
+    if (!result.ok) throw new Error(result.error);
+    expect(result.round.ratingHoles).toBe(18);
+    expect(result.round.players.map((p) => courseHandicapFor(result.round, p))).toEqual(before);
+  });
+
+  it('costs nothing when the rating covers the holes played', () => {
+    const packed = packRound(makeRound({ holes: holes18(), slope: 125, rating: 72.0, ratingHoles: 18 }))!;
+    expect('rh' in packed).toBe(false);
   });
 });

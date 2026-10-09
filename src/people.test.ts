@@ -68,6 +68,12 @@ describe('aliases', () => {
     expect(applyAliases(r, {})).toBe(r);
   });
 
+  it('leaves a spelling as typed when the merged name is already on the card', () => {
+    // Rob was merged into Robert once; this round has father and son.
+    const r = makeRound({ players: [player('p1', 'Rob'), player('p2', 'Robert')] });
+    expect(applyAliases(r, { rob: 'Robert' })).toBe(r);
+  });
+
   it('will not merge two players on the same card', () => {
     const both = makeRound({ players: [player('p1', 'Al'), player('p2', 'Alex')] });
     const one = makeRound({ players: [player('p1', 'Al'), player('p2', 'Sam')] });

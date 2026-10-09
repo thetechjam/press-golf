@@ -153,7 +153,8 @@ describe('the ways in', () => {
   });
 
   it('leaves an old trip off Home', () => {
-    store([round('a', { Al: 3, Bo: 5 }, { updatedAt: Date.now() - 30 * 864e5 })]);
+    // Played a month ago; that it was edited today does not bring it back.
+    store([round('a', { Al: 3, Bo: 5 }, { date: '2026-01-10', updatedAt: Date.now() })]);
     render(<Home {...homeProps} onTrip={() => {}} />);
     expect(document.querySelector('.trip-card')).toBeNull();
   });

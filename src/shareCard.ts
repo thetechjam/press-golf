@@ -2,6 +2,8 @@ import type { Round } from './types';
 import { activeResults } from './games';
 import { computeLeague } from './games/league';
 import { computeSettlement, formatMoney } from './games/settlement';
+import { formatRoundDateAbsolute } from './roundDate';
+import { count } from './plural';
 import { computeAwards } from './games/awards';
 import {
   CREAM, MUTED, GOLD, BRIGHT, RED, BG,
@@ -36,7 +38,7 @@ export async function renderShareCard(round: Round): Promise<Blob> {
     width: W,
     pad: PAD,
     title: round.course || 'Golf round',
-    meta: `${round.date} · ${round.players.length} players · ${round.holes.length} holes`,
+    meta: `${formatRoundDateAbsolute(round.date)} · ${count(round.players.length, 'player')} · ${count(round.holes.length, 'hole')}`,
     y: PAD + 36,
   });
 

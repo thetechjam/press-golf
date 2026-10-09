@@ -111,6 +111,16 @@ interface PackedRound {
   pr?: number[];
   sl?: number;
   ra?: number;
+  /** How many holes `ra` covers, only when that is not the number played. */
+  rh?: number;
+  /**
+   * The holes' own numbers, only when they are not 1..N in order. A league
+   * night on the back nine, or starting on the 4th, keys its pick-ups, junk,
+   * wolf calls and presses by those numbers; renumbered 1..9 on arrival, an X
+   * on the 12th matched no hole at all. Absent on every other round, which
+   * is what keeps the payload the size it was.
+   */
+  hn?: number[];
   /** The trip, as [id, name]. */
   t?: [string, string];
 }
@@ -259,6 +269,9 @@ export function packRound(round: Round): PackedRound | null {
   if (round.presses?.length) packed.pr = round.presses;
   if (typeof round.slope === 'number') packed.sl = round.slope;
   if (typeof round.rating === 'number') packed.ra = round.rating;
+  if (typeof round.ratingHoles === 'number' && round.ratingHoles !== round.holes.length)
+    packed.rh = round.ratingHoles;
+  if (round.holes.some((h, i) => h.number !== i + 1)) packed.hn = round.holes.map((h) => h.number);
   if (round.trip) packed.t = [round.trip.id, round.trip.name];
   return packed;
 }
@@ -509,12 +522,23 @@ export function unpackRound(raw: unknown): UnpackResult {
     players.push(player);
   }
 
+  // Hole numbers travel only when they are not 1..N, and are used only when
+  // they are sound: one per hole, positive, no repeats. Anything else falls
+  // back to 1..N, which is what every link before them carried.
+  const numbers =
+    Array.isArray(raw.hn) &&
+    raw.hn.length === raw.h.length &&
+    raw.hn.every((n) => Number.isInteger(n) && (n as number) > 0) &&
+    new Set(raw.hn).size === raw.hn.length
+      ? (raw.hn as number[])
+      : null;
+
   const holes: Hole[] = [];
   for (let i = 0; i < raw.h.length; i += 1) {
     const entry = raw.h[i];
     if (!Array.isArray(entry) || typeof entry[0] !== 'number')
       return { ok: false, error: 'That link is damaged.' };
-    const hole: Hole = { number: i + 1, par: entry[0] };
+    const hole: Hole = { number: numbers ? numbers[i] : i + 1, par: entry[0] };
     const si = num(entry[1]);
     if (si !== undefined) hole.strokeIndex = si;
     holes.push(hole);
@@ -578,6 +602,8 @@ export function unpackRound(raw: unknown): UnpackResult {
   const rating = num(raw.ra);
   if (slope !== undefined) round.slope = slope;
   if (rating !== undefined) round.rating = rating;
+  const ratingHoles = num(raw.rh);
+  if (ratingHoles !== undefined && rating !== undefined) round.ratingHoles = ratingHoles;
   // Optional, and ignored rather than refused when malformed: a round is
   // whole without its trip, where it is not whole without a score.
   if (

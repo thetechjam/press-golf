@@ -43,6 +43,9 @@ export const JUNK: JunkMeta[] = [
 
 const KINDS = new Set<string>(JUNK.map((j) => j.id));
 
+/** Junk only one player can hold on a hole. */
+const ONE_PER_HOLE = new Set<JunkKind>(['greenie']);
+
 export const junkMeta = (id: JunkKind): JunkMeta => JUNK.find((j) => j.id === id) as JunkMeta;
 
 /** Whether `kind` is one this version knows how to count. */
@@ -82,6 +85,18 @@ export function toggleJunk(
   const onHole = { ...(next[holeNumber] ?? {}) };
   const held = claimsOn(round, holeNumber, playerId);
   const after = held.includes(kind) ? held.filter((k) => k !== kind) : [...held, kind];
+
+  // Only one ball is closest to the pin, so claiming the greenie for Bo takes
+  // it off Al: the common way a greenie lands on the wrong player is a tap on
+  // the wrong name, and both holding one paid both.
+  if (ONE_PER_HOLE.has(kind) && !held.includes(kind)) {
+    for (const [other, kinds] of Object.entries(onHole)) {
+      if (other === playerId) continue;
+      const rest = kinds.filter((k) => k !== kind);
+      if (rest.length === 0) delete onHole[other];
+      else onHole[other] = rest;
+    }
+  }
 
   if (after.length === 0) delete onHole[playerId];
   else onHole[playerId] = JUNK.filter((j) => after.includes(j.id)).map((j) => j.id);

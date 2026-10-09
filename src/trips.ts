@@ -1,6 +1,7 @@
 import type { Round, RoundTrip } from './types';
 import { computeSettlement, formatMoney, settleBalances, type Transaction } from './games/settlement';
 import { nameKey } from './people';
+import { daysSince } from './roundDate';
 
 /**
  * Trips: several rounds that settle their money once, at the end.
@@ -70,8 +71,16 @@ export const ACTIVE_TRIP_DAYS = 4;
  * last month's trip on Home.
  */
 export function activeTrip(rounds: Round[], now: number = Date.now()): Trip | null {
-  const recent = listTrips(rounds).filter((t) => now - t.touched < ACTIVE_TRIP_DAYS * 864e5);
-  return recent.sort((a, b) => b.touched - a.touched)[0] ?? null;
+  // By the date its last round was played, not by when a round was last
+  // written: renaming June's trip in October, or merging a name that
+  // appears in it, used to put it back on Home and start the next round on
+  // it.
+  const today = new Date(now);
+  const recent = listTrips(rounds).filter((t) => {
+    const days = daysSince(t.last, today);
+    return days !== null && days >= 0 && days < ACTIVE_TRIP_DAYS;
+  });
+  return recent.sort((a, b) => b.last.localeCompare(a.last) || b.touched - a.touched)[0] ?? null;
 }
 
 export interface TripPlayer {

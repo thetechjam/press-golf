@@ -42,7 +42,7 @@ export function Home({
   onHistory,
   onTrip,
 }: Props) {
-  const [rounds] = useState<Round[]>(listRounds);
+  const [rounds, setRounds] = useState<Round[]>(listRounds);
   const [showSettings, setShowSettings] = useState(false);
   const [settingsView, setSettingsView] = useState<'settings' | 'help'>('settings');
 
@@ -157,6 +157,9 @@ export function Home({
           onClose={() => setShowSettings(false)}
           screen="home"
           initialView={settingsView}
+          // A restore from this sheet used to leave "No rounds yet" on the
+          // screen behind it until the next navigation.
+          onDataChanged={() => setRounds(listRounds())}
         />
       )}
     </div>

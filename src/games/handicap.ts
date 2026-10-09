@@ -52,6 +52,28 @@ export function allowanceFor(round: Round, game: GameType): number {
  * `round.rating` covers the holes actually being played; Setup converts when
  * it copies a rating off a course that spans more holes than the round does.
  */
+/**
+ * Whether the round carries a slope and rating good enough to turn an Index
+ * into strokes — judged against the holes the rating covers, not the holes
+ * being played, for the nine-off-an-eighteen case `ratingHoles` exists for.
+ */
+export function roundRated(round: Pick<Round, 'holes' | 'slope' | 'rating' | 'ratingHoles'>): boolean {
+  const holes = round.holes.length;
+  const ratingHoles = round.ratingHoles ?? holes;
+  return validSlope(round.slope) && validRating(round.rating, ratingHoles) && holes > 0 && ratingHoles > 0;
+}
+
+/**
+ * The round's default for net scoring: on when anybody brought a handicap, by
+ * either route — a stroke count other than 0, or an Index the course can
+ * convert. The one rule, shared by Setup and Edit handicaps: the two used to
+ * disagree, and saving the handicap sheet unchanged on an Index round turned
+ * every untouched game gross.
+ */
+export function netByDefault(players: Player[], rated: boolean): boolean {
+  return players.some((p) => (p.handicap ?? 0) !== 0 || (rated && validIndex(p.index)));
+}
+
 export function courseHandicapFor(round: Round, player: Player): number {
   const holes = round.holes.length;
   // The rating describes `ratingHoles` holes, which is not always the number

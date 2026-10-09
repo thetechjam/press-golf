@@ -1,7 +1,16 @@
 import type { Round } from '../types';
+import { netByDefault, roundRated } from './handicap';
 
-/** playerId -> new handicap, or undefined to clear it. */
+/** playerId -> new handicap (or Index, on a rated round), or undefined to clear it. */
 export type HandicapEdits = Record<string, number | undefined>;
+
+/**
+ * Which number the sheet edits for this round. On a course with a slope and
+ * rating the strokes come from the Index, so that is the number to change —
+ * a typed stroke count is ignored while a valid Index exists, and editing it
+ * would have done nothing.
+ */
+export const editsIndex = (round: Round): boolean => !round.options.league && roundRated(round);
 
 const MAX_HANDICAP = 54;
 /** A plus handicap, as a negative number: +10 is the best the system issues. */
@@ -10,12 +19,22 @@ const MIN_HANDICAP = -10;
 const clamp = (v: number): number =>
   Math.min(Math.max(MIN_HANDICAP, Math.round(v)), MAX_HANDICAP);
 
-const merged = (round: Round, edits: HandicapEdits) =>
-  round.players.map((p) => {
+/** The Handicap Index range the system issues, same as courseHandicap's. */
+const MAX_INDEX = 54;
+const MIN_INDEX = -10;
+const clampIndex = (v: number): number =>
+  Math.min(Math.max(MIN_INDEX, Math.round(v * 10) / 10), MAX_INDEX);
+
+const merged = (round: Round, edits: HandicapEdits) => {
+  const index = editsIndex(round);
+  return round.players.map((p) => {
     if (!(p.id in edits)) return p;
     const v = edits[p.id];
-    return v == null || Number.isNaN(v) ? { ...p, handicap: undefined } : { ...p, handicap: clamp(v) };
+    const blank = v == null || Number.isNaN(v);
+    if (index) return { ...p, index: blank ? undefined : clampIndex(v) };
+    return { ...p, handicap: blank ? undefined : clamp(v) };
   });
+};
 
 /** Returns an error message, or null when the edits are valid to save. */
 export function validateHandicaps(round: Round, edits: HandicapEdits): string | null {
@@ -40,7 +59,7 @@ export function applyHandicaps(round: Round, edits: HandicapEdits): Round {
   // they have never shown — a behavior change this has no mandate to make.
   const useNet = round.options.league
     ? round.options.useNet
-    : players.some((p) => (p.handicap ?? 0) > 0);
+    : netByDefault(players, roundRated(round));
   return { ...round, players, options: { ...round.options, useNet } };
 }
 

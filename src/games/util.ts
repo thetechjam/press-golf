@@ -16,6 +16,29 @@ export function firstIncompleteHole(round: ScoredRound): number {
   return i === -1 ? round.holes.length - 1 : i;
 }
 
+/**
+ * Where a resumed round should open: the hole after the furthest one with a
+ * score on it, or that hole itself while it is still part-scored. The first
+ * blank is not it — a hole skipped on purpose with "Skip anyway" put the card
+ * back on it every time the round was reopened, eleven holes behind the
+ * group. Falls back to the last hole when everything is scored, so the
+ * Finish button is at hand, and to the first for a round not started.
+ */
+export function resumeHole(round: ScoredRound): number {
+  let furthest = -1;
+  round.holes.forEach((h, i) => {
+    if (round.players.some((p) => round.scores[h.number]?.[p.id] != null)) furthest = i;
+  });
+  if (furthest === -1) return 0;
+  if (!isHoleComplete(round, round.holes[furthest].number)) return furthest;
+  return Math.min(furthest + 1, round.holes.length - 1);
+}
+
+/** Whether a hole has some scores but not everyone's. */
+export const isHolePartial = (round: ScoredRound, holeNumber: number): boolean =>
+  !isHoleComplete(round, holeNumber) &&
+  round.players.some((p) => round.scores[holeNumber]?.[p.id] != null);
+
 /** Number of fully-scored holes ("thru N" on the Home screen). */
 export function completedHoleCount(round: ScoredRound): number {
   return round.holes.filter((h) => isHoleComplete(round, h.number)).length;
@@ -50,6 +73,29 @@ export function rankStandings(
   });
 
   return ordered;
+}
+
+/**
+ * Ranks the standings of the players who have scored, and puts everyone with
+ * no score on any hole after them, unranked as leader. Ranked on the 0 they
+ * would otherwise carry, a player who had not teed off led stroke play, and
+ * led quota once the field was under pace.
+ */
+export function rankPlayed(
+  round: ScoredRound,
+  standings: GameStanding[],
+  lowerIsBetter: boolean
+): GameStanding[] {
+  const played = (s: GameStanding) =>
+    !s.playerId || round.holes.some((h) => round.scores[h.number]?.[s.playerId!] != null);
+  const sorted = rankStandings(standings.filter(played), lowerIsBetter);
+  for (const s of standings) {
+    if (played(s)) continue;
+    s.rank = sorted.length + 1;
+    s.isLeader = false;
+    sorted.push(s);
+  }
+  return sorted;
 }
 
 export const ordinal = (n: number): string => {

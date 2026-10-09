@@ -415,6 +415,20 @@ describe('keeping a course you have checked', () => {
   });
 });
 
+describe('two players under one name', () => {
+  it('are stopped at Start, since everything downstream would treat them as one', async () => {
+    const user = userEvent.setup();
+    const started: unknown[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(inputs[0], 'Mike');
+    await user.type(inputs[1], ' mike ');
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started).toEqual([]);
+    expect(screen.getByRole('alert').textContent).toMatch(/Two players are called Mike/);
+  });
+});
+
 describe('a course with a slope and rating', () => {
   const rate = async (
     user: ReturnType<typeof userEvent.setup>,

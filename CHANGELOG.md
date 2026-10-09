@@ -8,6 +8,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **The scorecard strip shows where the gaps are.** A hole with some scores in
+  but not everyone's is a half-filled dot, between the hollow of a hole not
+  reached and the solid of one finished — so a blank left with "Skip anyway"
+  can be found from the strip rather than from the Finish warning.
+- **A press on the tee.** Scoring runs a hole behind the golf: the 4th is
+  entered, Next, and somebody presses on the 5th tee with the 5th on screen.
+  The press used to start on the 6th, the only way to cover the 5th being to
+  go back to the 4th. Now a hole nobody has a score on yet is one the press
+  can still cover, and the Nassau panel has a Done button to close it — it
+  could not be closed at all, and open it is a hundred pixels of the screen
+  that has four players to fit. Its hint says "2 presses", not "2 press", and
+  the × that removes a press has a 44px target behind its 22px face.
+- **A missing Wolf call is called out.** A hole scored by everyone with no
+  call made counts for nothing in Wolf, and went by without a word. Next Hole
+  and Finish now ask about it the way they ask about a missing score.
+- **"Not saved" when it isn't.** A write that storage refused — the phone full,
+  or a browser mode that refuses writes — used to throw out of the score
+  handler after the screen had updated, so scoring looked normal and nothing
+  was kept. A banner now says so, and what to do about it.
+- **How to Play says how net and money work now.** It described a net-scoring
+  switch that no longer exists; net is automatic once anybody has a handicap
+  or an Index, with gross or net set per game in the Scoring row. A short
+  paragraph on stakes and settling up sits under it.
+
+### Changed
+- **Resume opens where the group is.** A round reopened from Home landed on
+  the first hole with a blank — which, after a "Skip anyway" on the 7th, was
+  the 7th every time, eleven holes behind the group. It opens on the hole
+  after the furthest one scored, or on that hole while it is part-scored. The
+  Resume card says the same hole.
+- **Next Hole works from the Board and Card tabs.** It moved the hole with
+  nothing on screen to show it, and a second press skipped one. It now shows
+  the new hole, on the Hole tab, from the top of the page — with six players
+  or a strip open, the page was left scrolled to where the last chips were.
+- **One greenie a hole.** Claiming the greenie for Bo takes it off Al: the
+  usual way a greenie landed on the wrong player was a tap on the wrong name,
+  and both holding one paid both. Every other junk can still be held by more
+  than one player on a hole.
+- **A finished round reopened from Results** says "Back to results" at its
+  foot, not "Finish Round".
+- **Shared text and the scoreboard image carry a readable date** — "Thu, Oct 8,
+  2026" rather than "2026-10-08" — and "1 player" rather than "1 players". A
+  round on a trip says under its settlement that it settles at the end of
+  the trip, as the screen already did.
+- **Two players under one name are stopped at Start.** Everything downstream
+  treated them as one person: the settlement read "Mike pays Mike", Stats
+  added both cards up, and a trip netted their money against each other.
+- **New Round's game cards say whether they are selected** to a screen reader,
+  and each player's remove button names the player it removes.
+
+### Fixed
+- **Edit handicaps on a course with a slope and rating.** Players there carry
+  an Index, and the sheet showed a blank stroke count for every one of them,
+  ignored a number typed into it, and — saving it unchanged — turned every
+  untouched game gross, because it decided net scoring by a rule New Round
+  had moved on from. It now edits the Index, shows what it plays off here,
+  and uses the one net rule New Round uses, which also keeps net on for a
+  round whose only handicap is a plus. The handicap badges on the Board and
+  Results show what an Index player plays off rather than "0".
+- **A share link keeps the nine-off-an-eighteen rating.** The number of holes
+  a rating covers was not in the link, so on the other phone an eighteen-hole
+  rating was judged against nine holes, thrown out, and every Index player
+  was scratch. The two phones settled different money.
+- **A share link keeps a back nine on holes 10–18.** Holes were renumbered
+  1..N on arrival while pick-ups, junk, wolf calls and presses kept their
+  original numbers, so a league night on the back nine arrived with its X on
+  the 12th matching no hole at all. Links from rounds on holes 1..N are
+  unchanged in size.
+- **Thirty cents a point no longer loses a cent.** 0.30 × 3 × 100 is
+  89.999999… in floating point, and truncating it to cents dropped a real
+  cent with nothing left over to put back. Figures are snapped to a
+  millionth of a cent before they are truncated.
+- **A player with no scores does not lead stroke play, or win quota money.**
+  Ranked on the 0 they would otherwise carry they led stroke play before
+  teeing off, and in quota and Stableford at a stake they collected from
+  everyone under pace. They rank last, and in the points games the others
+  settle among themselves.
+- **Junk belongs to the hole it was claimed on.** The money ticker's swing for
+  the hole just finished left out the junk claimed on it — the whole swing,
+  when junk was the only money that moved — and the Highway Robbery award
+  put every junk dollar on the 1st.
+- **Looking at a scorecard cell no longer changes it.** Tapping a cell and
+  tapping away committed whatever it held, which on a league card turned a
+  pick-up — stored as a 9 — into a real 9 that could halve the hole.
+- **An old trip stays old.** Renaming June's trip in October, taking a round
+  off it, or merging a name that appears in it put it back on Home as the
+  trip being played and started the next round on it, because a trip was
+  judged by when a round was last written rather than the day it was played.
+- **Restoring a backup refreshes the screen behind it.** Home kept "No rounds
+  yet" and New Round kept its old saved-course list until the next
+  navigation.
+- **Picking a course from search clears the last course's slope and rating.**
+  Search data carries neither, and the previous course's figures converted
+  every Index and went onto the round as the new course's.
+- **A merged spelling never doubles a name on one card.** Once "Rob" had been
+  merged into "Robert", a round with father and son on it was saved with two
+  Roberts, whose money cancelled out in the trip's settlement.
+
 - **How to Play explains trips**: putting rounds on a trip, where the trip
   settle-up lives, and that Press asks before counting two spellings of a
   name as one person.

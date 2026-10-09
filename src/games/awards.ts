@@ -226,10 +226,18 @@ function moneyByHole(round: Round): { hole: number; net: Record<string, number> 
 
   for (const h of round.holes) {
     const upTo = round.holes.filter((x) => x.number <= h.number).map((x) => x.number);
-    const scores = Object.fromEntries(
-      Object.entries(round.scores).filter(([n]) => upTo.includes(Number(n)))
-    );
-    const totals = computeSettlement({ ...round, scores }).totals;
+    const onHoles = <T,>(byHole: Record<number, T> | undefined) =>
+      byHole && Object.fromEntries(Object.entries(byHole).filter(([n]) => upTo.includes(Number(n))));
+    const scores = onHoles(round.scores) as Round['scores'];
+    // Junk and pick-ups are keyed by hole exactly as scores are, and left
+    // whole here they all landed on the 1st: a sandie on the 14th made
+    // Highway Robbery say its owner cleaned up on the first.
+    const totals = computeSettlement({
+      ...round,
+      scores,
+      junk: onHoles(round.junk),
+      pickups: onHoles(round.pickups),
+    }).totals;
 
     const net: Record<string, number> = {};
     for (const p of round.players)

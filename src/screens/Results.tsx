@@ -8,13 +8,13 @@ import { activeResults } from '../games';
 import { computeSettlement, formatMoney } from '../games/settlement';
 import { computeLeague } from '../games/league';
 import { colorMap } from '../player';
-import { usesHandicaps } from '../games/handicap';
+import { courseHandicapFor, usesHandicaps } from '../games/handicap';
 import { TrophyIcon, ShareIcon } from '../icons';
 import { EditHandicaps } from '../components/EditHandicaps';
 import { setFirstNightHandicap } from '../games/roundEdits';
 import { ShareSheet } from '../lazyScreens';
 import { Awards } from '../components/Awards';
-import { formatRoundDate } from '../roundDate';
+import { formatRoundDate, formatRoundDateAbsolute } from '../roundDate';
 import { count } from '../plural';
 
 interface Hero {
@@ -73,7 +73,7 @@ interface Props {
 
 function buildSummary(round: Round): string {
   const lines: string[] = [];
-  lines.push(`⛳ ${round.course || 'Golf round'} — ${round.date}`);
+  lines.push(`⛳ ${round.course || 'Golf round'} — ${formatRoundDateAbsolute(round.date)}`);
 
   if (round.options.league) {
     const league = computeLeague(round);
@@ -114,6 +114,9 @@ function buildSummary(round: Round): string {
         lines.push(`  ${t.from} pays ${t.to} ${formatMoney(t.amount)}`);
       }
     }
+    // The screen says these are not the payments to make; the text that goes
+    // to the group chat has to say so too.
+    if (round.trip) lines.push(`  Part of ${round.trip.name} — settles up at the end of the trip`);
     lines.push('');
   }
 
@@ -127,8 +130,12 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep,
   const results = activeResults(round);
   const hero = round.options.league ? null : winnerHero(round);
   const colors = colorMap(round);
-  const hcpOf = (id: string) =>
-    usesHandicaps(round) ? (round.players.find((p) => p.id === id)?.handicap ?? 0) : undefined;
+  // The course handicap, not the stored stroke count: an Index player's
+  // badge read "0" while they were getting strokes.
+  const hcpOf = (id: string) => {
+    const p = round.players.find((q) => q.id === id);
+    return usesHandicaps(round) && p ? courseHandicapFor(round, p) : undefined;
+  };
 
   return (
     <div className="screen results">

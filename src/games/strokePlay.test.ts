@@ -71,3 +71,20 @@ describe('net stroke play mid-round', () => {
     expect(res.status).toBe('All square');
   });
 });
+
+describe('a player with no scores yet', () => {
+  it('is ranked last rather than leading on a total of 0', () => {
+    const hs = holes(9);
+    const r = computeStrokePlay(
+      makeRound({
+        players: [player('p1', 'Al'), player('p2', 'Bo')],
+        holes: hs,
+        games: ['strokePlay'],
+        scores: scoresFrom(hs, { p1: [4] }),
+      })
+    );
+    expect(r.standings[0]).toMatchObject({ playerId: 'p1', rank: 1 });
+    expect(r.standings[1]).toMatchObject({ playerId: 'p2', rank: 2, isLeader: false, detail: '—' });
+    expect(r.status).not.toMatch(/Bo/);
+  });
+});

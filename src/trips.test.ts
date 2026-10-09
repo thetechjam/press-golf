@@ -57,11 +57,19 @@ describe('trips', () => {
   });
 
   it('is active for a few days after its last round, then not', () => {
-    const now = Date.UTC(2027, 3, 10);
+    const now = new Date(2027, 3, 10, 12).getTime();
     const r = round('a', '2027-04-08', { Al: 4 }, { updatedAt: now - DAY });
     expect(activeTrip([r], now)?.id).toBe('t1');
-    const old = { ...r, updatedAt: now - (ACTIVE_TRIP_DAYS + 1) * DAY };
+    const old = round('a', '2027-04-01', { Al: 4 }, { updatedAt: now - (ACTIVE_TRIP_DAYS + 1) * DAY });
     expect(activeTrip([old], now)).toBeNull();
+  });
+
+  it('goes by the day it was played, not the day a round was last edited', () => {
+    // Renaming June's trip in October used to put it back on Home for four
+    // days and start the next round on it.
+    const now = new Date(2027, 9, 10, 12).getTime();
+    const edited = round('a', '2027-06-05', { Al: 4 }, { updatedAt: now - 60_000 });
+    expect(activeTrip([edited], now)).toBeNull();
   });
 
   it('adds up money across rounds by name, and settles the sum once', () => {

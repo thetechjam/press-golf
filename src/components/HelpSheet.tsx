@@ -47,8 +47,15 @@ export function HelpSheet({ onBack }: Props) {
           update live.
         </p>
         <p>
-          Turn on <strong>net scoring</strong> to apply player handicaps, so
-          games stay fair between different skill levels.
+          Type a <strong>handicap</strong> beside a player — or a Handicap Index,
+          on a course with a slope and rating — and games score net for
+          everyone, with each game set to gross or net in the Scoring row. Blank
+          handicaps play gross.
+        </p>
+        <p>
+          Put a <strong>stake</strong> on a game in the Money row and Press keeps
+          a running total through the round, then settles the group up in the
+          fewest payments. Stakes and handicaps can be changed mid-round.
         </p>
       </section>
 

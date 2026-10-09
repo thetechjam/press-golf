@@ -102,6 +102,9 @@ const COUNTED: Partial<Record<GameType, (round: Round) => GameResult>> = {
   quota: computeQuota,
 };
 
+/** Games whose standing is a points figure a player who never scored cannot hold. */
+const SCORED_ON_POINTS: GameType[] = ['quota', 'stableford'];
+
 /** Field-difference model: each unit shifts `stake` between you and every rival. */
 function fieldNet(
   ids: string[],
@@ -127,6 +130,16 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
     counted(round).standings.forEach((s) => {
       if (s.playerId) valueById[s.playerId] = s.value;
     });
+    // In the games scored on points, somebody with no score on any hole did
+    // not play: their 0 is not zero points, and under the field model it had
+    // them collecting from everyone whose quota pace was negative. The others
+    // settle among themselves and they stay at 0. Skins, Wolf and junk are
+    // counts of things won, where 0 is a true 0 and every rival pays.
+    if (SCORED_ON_POINTS.includes(gameType)) {
+      const played = ids.filter((id) => round.holes.some((h) => round.scores[h.number]?.[id] != null));
+      if (played.length < 2) return net;
+      return { ...net, ...fieldNet(played, valueById, stake) };
+    }
     return fieldNet(ids, valueById, stake);
   }
 
@@ -227,7 +240,10 @@ function gameNet(round: Round, gameType: GameType, stake: number): Record<string
  * are either equal or zero and there is no "most truncated" player to prefer.
  */
 function toCents(ids: string[], raw: Record<string, number>): Record<string, number> {
-  const exact = ids.map((id) => (raw[id] ?? 0) * 100);
+  // Snapped to a millionth of a cent first: 0.3 × 3 × 100 is 89.999999…, and
+  // truncating that dropped a real cent on $0.30-a-point games with nothing
+  // left over to put it back.
+  const exact = ids.map((id) => Math.round((raw[id] ?? 0) * 100 * 1e6) / 1e6);
   const cents = exact.map((v) => Math.trunc(v));
   let residual = -cents.reduce((a, c) => a + c, 0);
 

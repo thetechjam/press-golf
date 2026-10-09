@@ -43,9 +43,15 @@ export function resolveName(name: string, aliases: Aliases): string {
 export function applyAliases(round: Round, aliases: Aliases): Round {
   if (!Object.keys(aliases).length) return round;
   let changed = false;
-  const players = round.players.map((p) => {
+  const keys = round.players.map((p) => nameKey(p.name));
+  const players = round.players.map((p, i) => {
     const name = resolveName(p.name, aliases);
     if (name === p.name.trim() || !p.name.trim()) return p;
+    // A merged spelling that is already somebody else on this card stays as
+    // typed, as `mergeInRounds` leaves it: Rob and Robert in one foursome are
+    // two people, and renaming one gave the trip two Roberts whose money
+    // cancelled out.
+    if (keys.some((k, j) => j !== i && k === nameKey(name))) return p;
     changed = true;
     return { ...p, name };
   });

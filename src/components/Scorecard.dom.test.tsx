@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, afterEach } from 'vitest';
-import { render, cleanup } from '@testing-library/react';
+import { render, cleanup, fireEvent, screen } from '@testing-library/react';
 import type { JunkClaims, Round } from '../types';
 import { Scorecard } from './Scorecard';
 import { makeRound, player, holes18 } from '../games/testFixtures';
@@ -126,5 +126,40 @@ describe('a nine on its own', () => {
     expect(table.classList.contains('compact')).toBe(false);
     expect(table.querySelectorAll('thead tr:first-child th.sc-total')).toHaveLength(2);
     expect(table.querySelector('tbody .sc-name-text')?.textContent).toBe('Al');
+  });
+});
+
+describe('typing into a cell', () => {
+  it('commits nothing when the cell is left as it was — so a league X stays an X', () => {
+    const hs = holes18().slice(0, 9);
+    const round: Round = makeRound({
+      players: four,
+      holes: hs,
+      options: {
+        league: {
+          pointsPerMatch: 1,
+          teams: [
+            { aId: 'p1', bId: 'p2' },
+            { aId: 'p3', bId: 'p4' },
+          ],
+        },
+      },
+      scores: { 1: { p1: 9, p2: 4, p3: 5, p4: 4 } },
+      pickups: { 1: ['p1'] },
+    });
+    const calls: unknown[] = [];
+    render(<Scorecard round={round} onScore={(...a) => calls.push(a)} />);
+    // Tap the X to look at it, then tap away.
+    fireEvent.click(screen.getByRole('button', { name: /Al, hole 1, picked up/ }));
+    const input = document.querySelector<HTMLInputElement>('.sc-input')!;
+    fireEvent.blur(input);
+    expect(calls).toEqual([]);
+
+    // A real change still goes through.
+    fireEvent.click(screen.getByRole('button', { name: /Bo, hole 1, 4/ }));
+    const next = document.querySelector<HTMLInputElement>('.sc-input')!;
+    fireEvent.change(next, { target: { value: '5' } });
+    fireEvent.blur(next);
+    expect(calls).toEqual([[1, 'p2', 5]]);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getSettings, saveSettings, DEFAULT_SETTINGS, listRounds, listCourses } from './storage';
+import { getSettings, saveSettings, DEFAULT_SETTINGS, listRounds, listCourses, saveRound } from './storage';
 import { makeRound, player } from './games/testFixtures';
 
 // Vitest runs in node — back localStorage with a Map.
@@ -109,5 +109,27 @@ describe('a damaged list', () => {
       ])
     );
     expect(listCourses().map((c) => c.id)).toEqual(['b', 'c', 'a']);
+  });
+});
+
+describe('saveRound', () => {
+  beforeEach(() => store.clear());
+
+  it('reports a write that storage refused instead of throwing out of the score handler', () => {
+    const r = makeRound({ players: [player('p1', 'Al')] });
+    expect(saveRound(r)).toBe(true);
+    expect(listRounds().map((x) => x.id)).toEqual([r.id]);
+
+    const real = localStorage.setItem;
+    localStorage.setItem = () => {
+      throw new DOMException('full', 'QuotaExceededError');
+    };
+    try {
+      expect(saveRound({ ...r, course: 'Torrey' })).toBe(false);
+    } finally {
+      localStorage.setItem = real;
+    }
+    // What was there is still there.
+    expect(listRounds()[0].course).toBeUndefined();
   });
 });
