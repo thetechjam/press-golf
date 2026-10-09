@@ -122,7 +122,14 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                 {nineAfter(i) && <th className="sc-nine">{nineAfter(i)!.label}</th>}
               </Fragment>
             ))}
-            <th className="sc-total">Tot</th>
+            <th className="sc-total">
+              Tot
+              {model.showNet && (
+                <span className="sc-net" aria-hidden="true">
+                  net
+                </span>
+              )}
+            </th>
             {!compact && <th className="sc-total">+/−</th>}
           </tr>
           <tr className="sc-par-row">
@@ -278,10 +285,29 @@ export function Scorecard({ round, currentHole, onJumpToHole, onScore }: Props) 
                       <span className="sr-only"> to par</span>
                     </span>
                   )}
+                  {model.showNet && row.net != null && (
+                    <span className="sc-net">
+                      <span className="sr-only">, </span>
+                      {row.net}
+                      <span className="sr-only"> net</span>
+                    </span>
+                  )}
                 </td>
               ) : (
                 <>
-                  <td className="sc-total">{row.gross ?? ''}</td>
+                  <td className="sc-total">
+                    {row.gross ?? ''}
+                    {/* Under the gross rather than in a column of its own:
+                        the two pinned columns are laid out as a pair, and
+                        the dots on the card are what this is the sum of. */}
+                    {model.showNet && row.net != null && (
+                      <span className="sc-net">
+                        <span className="sr-only">, </span>
+                        {row.net}
+                        <span className="sr-only"> net</span>
+                      </span>
+                    )}
+                  </td>
                   <td className="sc-total">{row.toPar == null ? '' : formatToPar(row.toPar)}</td>
                 </>
               )}

@@ -37,6 +37,7 @@ import { StarIcon, XIcon, GearIcon, QrIcon } from '../icons';
 import { StakesEditor } from '../components/StakesEditor';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { nameKey, nearMatches, resolveName } from '../people';
+import { lastSetup } from '../lastSetup';
 
 interface Props {
   onCancel: () => void;
@@ -48,6 +49,10 @@ function makeHoles(count: number): Hole[] {
 }
 
 export function Setup({ onCancel, onStart }: Props) {
+  // What the group played last time: the games, the stakes and the options
+  // start where they were left, the way the players already did. Read once,
+  // on mount, like the saved rounds below.
+  const [remembered] = useState(() => lastSetup(listRounds()));
   const [course, setCourse] = useState('');
   const [players, setPlayers] = useState<Player[]>([
     { id: uid(), name: '' },
@@ -68,9 +73,11 @@ export function Setup({ onCancel, onStart }: Props) {
    */
   const [ratingHoles, setRatingHoles] = useState<number | undefined>();
   /** Handicap allowance per game, as a percentage. Absent entries are 100%. */
-  const [allowanceByGame, setAllowanceByGame] = useState<Partial<Record<GameType, number>>>({});
-  const [games, setGames] = useState<GameType[]>(['skins']);
-  const [options, setOptions] = useState({ ...DEFAULT_OPTIONS });
+  const [allowanceByGame, setAllowanceByGame] = useState<Partial<Record<GameType, number>>>(
+    () => remembered?.allowanceByGame ?? {}
+  );
+  const [games, setGames] = useState<GameType[]>(() => remembered?.games ?? ['skins']);
+  const [options, setOptions] = useState({ ...DEFAULT_OPTIONS, ...(remembered?.options ?? {}) });
   const [advancedHoles, setAdvancedHoles] = useState(false);
   /**
    * Where the pars and stroke indexes currently on screen came from.
@@ -92,6 +99,15 @@ export function Setup({ onCancel, onStart }: Props) {
    * round to the number of holes that arrived.
    */
   const [imported, setImported] = useState<{ raw: Hole[]; expected: number } | null>(null);
+  /**
+   * The whole card a course was loaded from, saved or searched. Switching to
+   * nine used to keep holes 1–9 with their eighteen-hole stroke indexes —
+   * unusable as a ranking, so strokes fell in hole order — and switching back
+   * brought holes 10–18 up as blank par 4s. The card is kept so either count
+   * is a slice of it, and a nine can be the back nine.
+   */
+  const [source, setSource] = useState<Hole[] | null>(null);
+  const [nine, setNine] = useState<'front' | 'back'>('front');
   const [error, setError] = useState('');
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   // The saved course being handed out, if any — see the QR button on each row.
@@ -108,11 +124,11 @@ export function Setup({ onCancel, onStart }: Props) {
     text: string;
     row: 'course' | 'holes' | 'check';
   } | null>(null);
-  const [nassauMode, setNassauMode] = useState<'1v1' | '2v2'>('1v1');
+  const [nassauMode, setNassauMode] = useState<'1v1' | '2v2'>(() => remembered?.nassauMode ?? '1v1');
   const [nassauSideA, setNassauSideA] = useState('');
   const [nassauSideB, setNassauSideB] = useState('');
   const [nassauAssign, setNassauAssign] = useState<Assign>({});
-  const [matchMode, setMatchMode] = useState<'1v1' | '2v2'>('1v1');
+  const [matchMode, setMatchMode] = useState<'1v1' | '2v2'>(() => remembered?.matchMode ?? '1v1');
   const [matchSideA, setMatchSideA] = useState('');
   const [matchSideB, setMatchSideB] = useState('');
   const [matchAssign, setMatchAssign] = useState<Assign>({});
@@ -121,7 +137,9 @@ export function Setup({ onCancel, onStart }: Props) {
   // Only the games the user actually changed. An absent entry follows the
   // round default, so leaving this alone reproduces the old behaviour exactly
   // — including a handicap added later switching the untouched games over.
-  const [netByGame, setNetByGame] = useState<Partial<Record<GameType, boolean>>>({});
+  const [netByGame, setNetByGame] = useState<Partial<Record<GameType, boolean>>>(
+    () => remembered?.netByGame ?? {}
+  );
   const [showSettings, setShowSettings] = useState(false);
   const [expandedGame, setExpandedGame] = useState<GameType | null>(null);
 
@@ -181,6 +199,8 @@ export function Setup({ onCancel, onStart }: Props) {
     setCourse(c.name);
     setHoleCount(applied.length);
     setHoles(applied);
+    setSource(applied.length >= 18 ? applied : null);
+    setNine('front');
     setAdvancedHoles(applied.some((h) => h.strokeIndex));
     setHolesSource('saved');
     setImported(null);
@@ -204,6 +224,8 @@ export function Setup({ onCancel, onStart }: Props) {
     setCourse(c.name);
     setHoleCount(count);
     setHoles(applied);
+    setSource(c.holes.length >= 18 ? sliceCourseHoles(c.holes, 18) : null);
+    setNine('front');
     setAdvancedHoles(applied.some((h) => h.strokeIndex));
     setHolesSource('search');
     setImported({ raw: c.holes, expected: count });
@@ -289,6 +311,14 @@ export function Setup({ onCancel, onStart }: Props) {
 
   const setHoleCountAndPars = (n: number) => {
     setHoleCount(n);
+    if (source) {
+      // A slice of the card that was loaded: the stroke indexes are re-ranked
+      // for the nine, and eighteen is the whole card again. The note and the
+      // source stay, because these are still that course's numbers.
+      setHoles(sliceCourseHoles(source, n, { nine: n === 9 ? nine : undefined }));
+      setImported((im) => (im ? { ...im, expected: n } : im));
+      return;
+    }
     setHoles((prev) => {
       const next = makeHoles(n);
       // keep any pars the user already edited
@@ -299,6 +329,13 @@ export function Setup({ onCancel, onStart }: Props) {
     setSavedNote(null);
     setHolesSource('manual');
     setImported(null);
+  };
+
+  /** Which nine of a loaded eighteen a nine-hole round plays. */
+  const switchNine = (n: 'front' | 'back') => {
+    if (!source) return;
+    setNine(n);
+    setHoles(sliceCourseHoles(source, 9, { nine: n }));
   };
 
   const updatePlayer = (id: string, patch: Partial<Player>) =>
@@ -362,6 +399,10 @@ export function Setup({ onCancel, onStart }: Props) {
 
   const setPar = (number: number, par: number) => {
     setHoles((hs) => hs.map((h) => (h.number === number ? { ...h, par } : h)));
+    // Carried into the loaded card too, so a corrected par survives a switch
+    // between nine and eighteen. Hole numbers match: a back nine is 10–18
+    // on both.
+    setSource((src) => src && src.map((h) => (h.number === number ? { ...h, par } : h)));
     // A single hand-edited par is still enough to make the loaded/saved note
     // describe a course the holes no longer match.
     setSavedNote(null);
@@ -607,6 +648,22 @@ export function Setup({ onCancel, onStart }: Props) {
                     placeholder="Index"
                     aria-label={`Handicap Index for ${p.name || `player ${i + 1}`}`}
                   />
+                  {/* Recalled with strokes but no Index: they play off those
+                      strokes, and the field being blank said otherwise. Shown,
+                      and cleared with a tap for anyone who would rather type
+                      an Index. */}
+                  {p.index == null && p.handicap != null && (
+                    <button
+                      type="button"
+                      className="player-recalled"
+                      onClick={() => updatePlayer(p.id, { handicap: undefined })}
+                      aria-label={`${p.name || `Player ${i + 1}`} plays off ${formatHandicap(p.handicap)} from a remembered stroke count. Clear it`}
+                    >
+                      <span aria-hidden="true" className="player-derived-arrow">→</span>
+                      {formatHandicap(p.handicap)}
+                      <span className="player-recalled-x" aria-hidden="true">×</span>
+                    </button>
+                  )}
                   {derivedHandicap(p.index) != null && (
                     <span
                       className="player-derived"
@@ -658,7 +715,11 @@ export function Setup({ onCancel, onStart }: Props) {
         {showNet && (
           <p className="hint">
             {rated
-              ? 'Enter each player’s Handicap Index — the number after the arrow is what they play off here. All blank scores gross.'
+              ? `Enter each player’s Handicap Index — the number after the arrow is what they play off here. All blank scores gross.${
+                  players.some((p) => p.index == null && p.handicap != null)
+                    ? ' A player recalled with a stroke count and no Index plays off those strokes; tap the × to clear them.'
+                    : ''
+                }`
               : 'Enter handicaps to score net — all blank scores gross, and a blank plays off 0. A plus handicap goes in as a minus number: +3 is −3.'}
           </p>
         )}
@@ -733,32 +794,33 @@ export function Setup({ onCancel, onStart }: Props) {
               {GAMES.map((g) => (
                 <div
                   key={g.id}
-                  role="button"
-                  tabIndex={0}
-                  aria-pressed={games.includes(g.id)}
                   className={`game-card${games.includes(g.id) ? ' active' : ''}${expandedGame === g.id ? ' expanded' : ''}`}
-                  onClick={() => toggleGame(g.id)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      toggleGame(g.id);
-                    }
-                  }}
                 >
+                  {/* Two buttons side by side, not one inside the other: the
+                      card used to be a role="button" wrapping the real ⓘ
+                      button, a control nested in a control, which assistive
+                      tech exposes unreliably. The card itself is now only a
+                      box; the pick and the rules are each a button. */}
                   <div className="game-card-row">
-                    <span className="game-check">{games.includes(g.id) ? '✓' : ''}</span>
-                    <span className="game-text">
-                      <strong>{g.label}</strong>
-                    </span>
+                    <button
+                      type="button"
+                      className="game-card-btn"
+                      aria-pressed={games.includes(g.id)}
+                      onClick={() => toggleGame(g.id)}
+                    >
+                      <span className="game-check" aria-hidden="true">
+                        {games.includes(g.id) ? '✓' : ''}
+                      </span>
+                      <span className="game-text">
+                        <strong>{g.label}</strong>
+                      </span>
+                    </button>
                     <button
                       type="button"
                       className="game-info-btn"
                       aria-label={`${g.label} rules`}
                       aria-expanded={expandedGame === g.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setExpandedGame((cur) => (cur === g.id ? null : g.id));
-                      }}
+                      onClick={() => setExpandedGame((cur) => (cur === g.id ? null : g.id))}
                     >
                       ⓘ
                     </button>
@@ -978,6 +1040,27 @@ export function Setup({ onCancel, onStart }: Props) {
                 </button>
               ))}
             </div>
+            {/* A nine off a loaded eighteen can be either nine. Golf League
+                has always offered this; New Round only ever played the front. */}
+            {holeCount === 9 && source && (
+              <div className="seg nine-pick" role="group" aria-label="Which nine">
+                {(
+                  [
+                    ['front', 'Front 9'],
+                    ['back', 'Back 9'],
+                  ] as const
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    className={`seg-btn${nine === id ? ' active' : ''}`}
+                    aria-pressed={nine === id}
+                    onClick={() => switchNine(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
             {/* One slot, two states, written as a choice so they cannot both
                 appear: the caveat while the numbers are still the database's,
                 and — once the user has vouched for them — the confirmation, in

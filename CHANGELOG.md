@@ -8,6 +8,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **A wrong par can be fixed on the hole.** Course search data is sometimes
+  a par out, which changes every net score, Stableford point and quota
+  target for the rest of the round, and the only fix was a new round. "Par 4"
+  in the hole header is now a button: a tap opens a Par 3 · 4 · 5 · 6 picker
+  rather than stepping the par, so a brush of the thumb cannot move it. It
+  changes this round's card only; the saved course is edited from New Round.
+- **New Round starts from last time.** The games, the stakes, auto-press,
+  the Stableford and Wolf settings, each game's gross/net and allowance, and
+  the Nassau and Match Play 1v1/2v2 modes all start where the last regular
+  round left them, the way the players already did — a weekly group was
+  re-picking the games and retyping both stakes every week, with the Money
+  row collapsed and a forgotten stake a round played for nothing. The row
+  summaries say what is set. League nights are not used as a source, and a
+  first-ever round still starts on skins alone.
+- **A net total on the Card.** In a net round the scorecard showed the
+  stroke dots and only a gross total, so players added the dots up by hand
+  or went to the Board. The sum sits under the gross in the Tot column, on
+  screen and on the shared scorecard image, which also gains a NET column.
+- **A trip player's total opens out.** Tap a player on the trip's settle-up
+  and each round they played is listed with what they won or lost on it —
+  "why am I −$254?" used to mean opening every round.
+- **A nine can be the back nine.** Loading an eighteen-hole course and
+  choosing 9 holes now offers Front 9 / Back 9, as Golf League always has,
+  and the nine's stroke indexes are re-ranked 1–9 from the eighteen's rather
+  than kept as 7, 15, 3 … — which no ranking could use, so strokes fell in
+  hole order. Switching back to 18 brings the whole card back, pars
+  corrected on the way included; it used to come back as nine blank par 4s.
+- **A remembered stroke count shows on a rated course.** A player recalled
+  with strokes but no Index plays off those strokes, and the Index field
+  being blank said otherwise. It is shown as what they play off, with a ×
+  that clears it for anyone who would rather type an Index.
+
+### Changed
+- **A handed-over round compares its settings too.** Two copies with the
+  same scores and a corrected handicap, a changed stake, a press, a Wolf
+  call or a game switched to gross read as "exactly the same round", with no
+  way to take the change. They are now counted beside the card's entries —
+  "1 setting — stakes, handicaps, presses or Wolf calls — set differently" —
+  and the copy written more recently is offered as the one to bring in.
+- **The game cards on New Round are two buttons side by side**, the pick and
+  the ⓘ, rather than a button wrapping a button, which assistive tech
+  exposes unreliably. Nothing moved.
+
+### Fixed
+- **Nassau on the back nine alone is one bet.** Holes 10–18 on their own were
+  scored as an empty Front, a Back and a Total over the same nine, so the one
+  bet paid twice. Reachable now that New Round can play the back nine.
+- **The shared scorecard image** carries a readable date and "1 player"
+  rather than "1 players", as the scoreboard image already did.
+
 - **The scorecard strip shows where the gaps are.** A hole with some scores in
   but not everyone's is a half-filled dot, between the hollow of a hole not
   reached and the solid of one finished — so a blank left with "Skip anyway"

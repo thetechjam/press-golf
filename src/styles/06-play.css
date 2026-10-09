@@ -745,3 +745,27 @@
 .nassau-head .junk-done {
   margin-left: auto;
 }
+
+/* The hole's par, as a button when it can be corrected: reads exactly as the
+   text did, with a dotted underline to say it opens something. */
+.hole-par-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  min-height: 0;
+  font: inherit;
+  color: var(--muted);
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.par-pick {
+  padding: 0 14px;
+  margin-top: 6px;
+}
+.par-pick-note {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}

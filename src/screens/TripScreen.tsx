@@ -66,6 +66,9 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
   const [draft, setDraft] = useState('');
   const [choosing, setChoosing] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Whose rounds are opened out under their total. "Why am I −$254?" was
+  // answered by opening each round; the ledger had the figures all along.
+  const [opened, setOpened] = useState<string | null>(null);
   const [distinct, setDistinct] = useState(getDistinct);
   // The one place a split name costs real money: "Al" owing "Alex" what
   // "Alex" owes himself. Asked here, above the payments it would change.
@@ -192,15 +195,45 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
         ) : (
           <>
             <ol className="board-list net-list">
-              {ledger.players.map((p, i) => (
-                <li key={p.name} className="net-row">
-                  <PlayerAvatar name={p.name} color={colorOf(p.name, i)} size={22} />
-                  <span className="net-name">{p.name}</span>
-                  <span className={`net-amount${p.total > 0 ? ' up' : p.total < 0 ? ' down' : ''}`}>
-                    {p.total === 0 ? '—' : formatMoney(p.total)}
-                  </span>
-                </li>
-              ))}
+              {ledger.players.map((p, i) => {
+                const open = opened === p.name;
+                const perRound = trip.rounds
+                  .filter((r) => r.id in p.byRound)
+                  .map((r) => ({ round: r, net: p.byRound[r.id] }));
+                return (
+                  <li key={p.name} className="net-row net-row-open">
+                    <button
+                      type="button"
+                      className="net-row-btn"
+                      aria-expanded={open}
+                      onClick={() => setOpened(open ? null : p.name)}
+                    >
+                      <PlayerAvatar name={p.name} color={colorOf(p.name, i)} size={22} />
+                      <span className="net-name">{p.name}</span>
+                      <span className={`net-amount${p.total > 0 ? ' up' : p.total < 0 ? ' down' : ''}`}>
+                        {p.total === 0 ? '—' : formatMoney(p.total)}
+                      </span>
+                      <span className="net-row-chevron" aria-hidden="true">
+                        {open ? '▾' : '▸'}
+                      </span>
+                    </button>
+                    {open && (
+                      <ul className="net-breakdown">
+                        {perRound.map(({ round: r, net }) => (
+                          <li key={r.id}>
+                            <span className="net-breakdown-round">
+                              {r.course || 'Round'} · {formatRoundDate(r.date)}
+                            </span>
+                            <span className={`net-amount${net > 0 ? ' up' : net < 0 ? ' down' : ''}`}>
+                              {net === 0 ? '—' : formatMoney(net)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
             <div className="payments">
               {ledger.transactions.length === 0 ? (

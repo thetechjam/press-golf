@@ -853,3 +853,56 @@
     width: 60px;
   }
 }
+
+/* The pick half of a game card: a real button filling the row, drawn as the
+   card's own text. The card is a box now, not a control. */
+.game-card-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--tap);
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+/* The button now carries the row's tap height, so the card's own vertical
+   padding would only add to it; the rules text keeps its 10px below. */
+.game-card {
+  cursor: default;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.game-card .game-info-text {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+/* A remembered stroke count on a rated course, with its clear. Same face as
+   the derived figure beside an Index, so the two read as the same answer. */
+.player-recalled {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-height: var(--tap);
+  padding: 0 4px;
+  background: none;
+  border: none;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--green-ink);
+  cursor: pointer;
+}
+.player-recalled-x {
+  color: var(--muted);
+  font-weight: 400;
+}
+.nine-pick {
+  margin-top: 8px;
+}

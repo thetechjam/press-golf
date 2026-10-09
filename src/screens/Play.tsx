@@ -129,6 +129,11 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     setScoreAt(hole.number, playerId, value);
 
   const setPresses = (presses: number[]) => onChange({ ...round, presses });
+  const setPar = (holeNumber: number, par: number) =>
+    onChange({
+      ...round,
+      holes: round.holes.map((h) => (h.number === holeNumber ? { ...h, par } : h)),
+    });
   const setJunk = (junk: JunkClaims) => onChange({ ...round, junk });
 
   const setWolf = (choice: WolfChoice) => {
@@ -301,6 +306,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           onWolf={setWolf}
           onPresses={setPresses}
           onJunk={setJunk}
+          onPar={setPar}
         />
       )}
 

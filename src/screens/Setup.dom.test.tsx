@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { render, screen, cleanup, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Setup } from './Setup';
-import type { SavedCourse } from '../types';
+import type { Round, SavedCourse } from '../types';
 import { realCard18 } from '../games/testFixtures';
 
 /**
@@ -412,6 +412,159 @@ describe('keeping a course you have checked', () => {
     // at import.
     await waitFor(() => expect(callOut()!.textContent).not.toMatch(/par 12/));
     expect(saveButton().textContent).toMatch(/looks right/i);
+  });
+});
+
+describe('starting from last time', () => {
+  const weekly = () =>
+    localStorage.setItem(
+      'press.rounds.v1',
+      JSON.stringify([
+        {
+          ...JSON.parse(JSON.stringify({ id: 'r1', course: 'Muni', date: '2026-09-01', createdAt: 1, updatedAt: 1 })),
+          players: [{ id: 'p1', name: 'Alex' }, { id: 'p2', name: 'Sam' }],
+          holes: realCard18(),
+          games: ['nassau', 'skins'],
+          options: {
+            useNet: false,
+            stablefordMode: 'standard',
+            loneWolfMultiplier: 2,
+            blindWolfMultiplier: 3,
+            stakes: { nassau: 5, skins: 2 },
+            autoPress: true,
+          },
+          scores: {},
+          wolf: {},
+          status: 'finished',
+        },
+      ])
+    );
+
+  it('offers last week’s games and stakes in the row summaries', () => {
+    weekly();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    const summaries = [...document.querySelectorAll('.setup-row-summary')].map((el) => el.textContent);
+    expect(summaries).toContain('Nassau, Skins');
+    expect(summaries).toContain('$5 Nassau · $2 Skins');
+  });
+
+  it('starts the round with them, auto-press included', async () => {
+    weekly();
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    await user.click(screen.getByRole('button', { name: /Same crew/ }));
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started[0].games).toEqual(['nassau', 'skins']);
+    expect(started[0].options.stakes).toEqual({ nassau: 5, skins: 2 });
+    expect(started[0].options.autoPress).toBe(true);
+  });
+
+  it('still starts a first round on skins alone', () => {
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    const summaries = [...document.querySelectorAll('.setup-row-summary')].map((el) => el.textContent);
+    expect(summaries).toContain('Skins');
+    expect(summaries).toContain('No stakes');
+  });
+});
+
+describe('nine holes off a loaded eighteen', () => {
+  const saved: SavedCourse = { id: 's18', name: 'Bramble Ridge GC', holes: realCard18() };
+  const load = async (user: ReturnType<typeof userEvent.setup>) => {
+    localStorage.setItem('press.courses.v1', JSON.stringify([saved]));
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.click(await screen.findByText('Bramble Ridge GC'));
+    await waitFor(() => expect(rowOpen('Holes & pars')).toBe(true));
+  };
+  const siCells = () =>
+    [...document.querySelectorAll<HTMLInputElement>('input[aria-label^="Stroke index for hole"]')].map(
+      (el) => Number(el.value)
+    );
+
+  it('re-ranks the stroke indexes for the nine rather than keeping the eighteen’s', async () => {
+    const user = userEvent.setup();
+    await load(user);
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    // Front-nine SIs 5,1,15,7,11,3,17,9,13 rank as 3,1,8,4,6,2,9,5,7.
+    expect(siCells()).toEqual([3, 1, 8, 4, 6, 2, 9, 5, 7]);
+  });
+
+  it('can be the back nine, and the whole card comes back at eighteen', async () => {
+    const user = userEvent.setup();
+    await load(user);
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    await user.click(screen.getByRole('button', { name: 'Back 9' }));
+    expect(parTile(10)).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Par for hole 1: / })).toBeNull();
+    // The back nine's pars, in order.
+    // The tile's text ends with the par; its screen-reader prefix names the hole.
+    const pars = [10, 11, 12, 13, 14, 15, 16, 17, 18].map((h) => parTile(h).textContent?.trim().slice(-1));
+    expect(pars).toEqual(['4', '4', '3', '5', '4', '4', '3', '4', '5']);
+    await user.click(screen.getByRole('button', { name: '18 holes' }));
+    expect(parTile(18).textContent).toContain('5');
+    expect(parTile(1).textContent).toContain('4');
+  });
+
+  it('keeps a corrected par across the switch', async () => {
+    const user = userEvent.setup();
+    await load(user);
+    await user.click(parTile(2)); // 4 → 5
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    expect(parTile(2).textContent).toContain('5');
+  });
+});
+
+describe('a remembered stroke count on a rated course', () => {
+  it('is shown as what the player plays off, and can be cleared', async () => {
+    localStorage.setItem(
+      'press.rounds.v1',
+      JSON.stringify([
+        {
+          id: 'r0',
+          date: '2026-09-01',
+          createdAt: 1,
+          updatedAt: 1,
+          players: [{ id: 'p1', name: 'Bob', handicap: 14 }, { id: 'p2', name: 'Al' }],
+          holes: realCard18(),
+          games: ['skins'],
+          options: { useNet: true, stablefordMode: 'standard', loneWolfMultiplier: 2, blindWolfMultiplier: 3, stakes: {} },
+          scores: {},
+          wolf: {},
+          status: 'finished',
+        },
+      ])
+    );
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await user.click(screen.getByRole('button', { name: 'Add Bob' }));
+    await openRow(user, 'Holes & pars');
+    await user.type(screen.getByLabelText(/^Slope$/i), '131');
+    await user.type(screen.getByLabelText(/^Rating$/i), '74.2');
+    const recalled = await screen.findByRole('button', { name: /Bob plays off 14 from a remembered stroke count/ });
+    expect(recalled.textContent).toContain('14');
+    await user.click(recalled);
+    expect(screen.queryByRole('button', { name: /Bob plays off 14/ })).toBeNull();
+  });
+});
+
+describe('the game cards', () => {
+  it('are a pick button beside a rules button, not one inside the other', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Games');
+    const skins = screen.getByRole('button', { name: 'Skins' });
+    expect(skins.getAttribute('aria-pressed')).toBe('true');
+    expect(skins.closest('[role="button"]:not(.game-card-btn)')).toBeNull();
+    const rules = screen.getByRole('button', { name: 'Wolf rules' });
+    expect(rules.closest('button')).toBe(rules);
+    expect(rules.parentElement?.closest('button')).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Wolf' }));
+    expect(screen.getByRole('button', { name: 'Wolf' }).getAttribute('aria-pressed')).toBe('true');
+    await user.click(rules);
+    expect(rules.getAttribute('aria-expanded')).toBe('true');
+    // Opening the rules did not change the pick.
+    expect(screen.getByRole('button', { name: 'Wolf' }).getAttribute('aria-pressed')).toBe('true');
   });
 });
 

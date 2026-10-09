@@ -55,6 +55,22 @@ describe('Trip screen', () => {
     expect(document.querySelector('.trip-meta')?.textContent).toMatch(/^2 rounds/);
   });
 
+  it('opens a player’s total out into the rounds behind it', async () => {
+    const user = userEvent.setup();
+    store([
+      round('a', { Al: 3, Bo: 5, Cy: 5 }), // Al +90
+      round('b', { Al: 5, Bo: 3, Cy: 5 }), // Al −45
+    ]);
+    show();
+    expect(document.querySelector('.net-breakdown')).toBeNull();
+    await user.click(screen.getByRole('button', { name: /^Al/ }));
+    const lines = [...document.querySelectorAll('.net-breakdown li')].map((li) => li.textContent);
+    expect(lines).toHaveLength(2);
+    expect(lines.join(' ')).toContain('Course a');
+    expect(lines.join(' ')).toContain('$90');
+    expect(lines.join(' ')).toContain('−$45');
+  });
+
   it('renames the trip on every round', async () => {
     const user = userEvent.setup();
     store([round('a', { Al: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })]);
