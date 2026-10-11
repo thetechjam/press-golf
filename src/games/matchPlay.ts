@@ -1,6 +1,7 @@
 import type { Round, Hole, Player, GameResult, GameStanding, TeamSetup, GameType } from '../types';
 import { matchHandicaps, netHoleScore } from './handicap';
 import { netFor } from './scoring';
+import { creditSide, zeroNet, type MoneyFn } from './moneyModels';
 
 /** A side in a match: one player (1v1) or a team (2v2, best ball). */
 export interface Side {
@@ -236,3 +237,12 @@ export function computeMatchPlay(round: Round): GameResult {
     note: note || undefined,
   };
 }
+
+/** The winning side collects the stake from the losing side; a halve moves nothing. */
+export const matchPlayMoney: MoneyFn = (round, stake) => {
+  const net = zeroNet(round);
+  if (round.players.length < 2) return net;
+  const { a, b } = resolveSides(round, round.options.matchPlay);
+  creditSide(net, matchSegmentSides(round, round.holes, a, b).winner, a, b, stake);
+  return net;
+};

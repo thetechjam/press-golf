@@ -2,6 +2,7 @@ import type { Round, GameResult, GameStanding } from '../types';
 import { holeScore } from './handicap';
 import { netFor } from './scoring';
 import { ordinal, rankStandings } from './util';
+import { countedMoney, type MoneyFn } from './moneyModels';
 
 /**
  * Whether a carried pot still has a hole to land on.
@@ -122,3 +123,6 @@ export function skinsOnHole(round: Round, holeNumber: number): number {
   }
   return carry + 1;
 }
+
+/** Each one won is worth the stake against every rival — see moneyModels.ts. */
+export const skinsMoney: MoneyFn = countedMoney(computeSkins);

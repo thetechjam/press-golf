@@ -1,5 +1,6 @@
 import type { Round, GameResult, GameStanding, JunkKind, JunkClaims } from '../types';
 import { rankStandings } from './util';
+import { countedMoney, type MoneyFn } from './moneyModels';
 
 /**
  * Junk — the side bets a scorecard cannot see.
@@ -170,3 +171,6 @@ export function computeJunk(round: Round): GameResult {
     standings: sorted,
   };
 }
+
+/** Each one won is worth the stake against every rival — see moneyModels.ts. */
+export const junkMoney: MoneyFn = countedMoney(computeJunk);

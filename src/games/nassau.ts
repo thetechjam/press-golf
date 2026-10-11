@@ -6,6 +6,7 @@ import {
   resolveSides,
   type Side,
 } from './matchPlay';
+import { creditSide, zeroNet, type MoneyFn } from './moneyModels';
 
 /** Resolves the two Nassau sides from options (defaults to 1v1, first two players). */
 export function nassauTeams(round: Round): { a: Side; b: Side } {
@@ -186,3 +187,14 @@ export function computeNassau(round: Round): GameResult {
     note: shots ? `${a.label} vs ${b.label} · ${shots}` : `${a.label} vs ${b.label}`,
   };
 }
+
+/** Each bet — front, back, total, every press — is worth `stake` per player: winning side collects, losing side pays. */
+export const nassauMoney: MoneyFn = (round, stake) => {
+  const net = zeroNet(round);
+  if (round.players.length < 2) return net;
+  const { a, b } = nassauTeams(round);
+  for (const seg of nassauSegments(round)) {
+    creditSide(net, matchSegmentSides(round, seg.holes, a, b, 'nassau').winner, a, b, stake);
+  }
+  return net;
+};

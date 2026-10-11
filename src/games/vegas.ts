@@ -2,6 +2,7 @@ import type { Round, Hole, GameResult, GameStanding } from '../types';
 import { holeScore } from './handicap';
 import { netFor } from './scoring';
 import { resolveSides, type Side } from './matchPlay';
+import { zeroNet, type MoneyFn } from './moneyModels';
 
 /**
  * Vegas — the two-on-two game where a team's score is not added but written
@@ -154,3 +155,19 @@ export function computeVegas(round: Round): GameResult {
     note: last ? `Hole ${last.hole}: ${last.a} to ${last.b}` : undefined,
   };
 }
+
+/**
+ * Points are a team figure, so every player on the side collects or pays the
+ * same — zero-sum across four players the way match play is across two. A
+ * side that is 60 points up at $1 a point is $60 a man, which is how Vegas
+ * actually gets settled and why the stake wants to be small.
+ */
+export const vegasMoney: MoneyFn = (round, stake) => {
+  const net = zeroNet(round);
+  const { a, b } = vegasTeams(round);
+  if (round.options.vegas?.mode !== '2v2' || a.ids.length < 2 || b.ids.length < 2) return net;
+  const { margin } = vegasHoles(round);
+  a.ids.forEach((id) => (net[id] += margin * stake));
+  b.ids.forEach((id) => (net[id] -= margin * stake));
+  return net;
+};

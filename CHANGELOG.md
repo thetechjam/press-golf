@@ -47,6 +47,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Press, data: and blob: for the share cards), plus `X-Frame-Options: DENY`,
   `X-Content-Type-Options: nosniff`, a strict referrer policy and a minimal
   Permissions-Policy.
+- **Each game carries its own money rule.** Internal, no visible change:
+  the settlement engine kept its own tables of which games settle on a
+  count, which on points, and a chain of special cases for the rest, beside
+  the registry that already lists every game. Each game now declares how it
+  settles next to how it scores (`src/games/index.ts`), and the engine reads
+  that — so a new game is one entry, not four edits that have to agree.
 - **Course data is credited properly:** "© OpenStreetMap contributors (ODbL
   1.0) via OpenGolfAPI", with OpenStreetMap linked to its copyright page, under
   course search, in How to Play and in the README.

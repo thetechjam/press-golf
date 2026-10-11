@@ -1,14 +1,7 @@
-import type { Round, Hole, GameType, GameResult } from '../types';
-import { computeSkins } from './skins';
-import { computeStableford } from './stableford';
-import { computeWolf } from './wolf';
-import { matchSegmentSides, resolveSides } from './matchPlay';
-import { nassauSegments, nassauTeams } from './nassau';
-import { vegasHoles, vegasTeams } from './vegas';
-import { computeQuota } from './quota';
-import { computeJunk } from './junk';
-import { strokesReceivedOver } from './handicap';
-import { netFor } from './scoring';
+import type { Round, GameType } from '../types';
+import { GAMES, gameMeta } from './index';
+import { nassauSegments } from './nassau';
+import { zeroNet } from './moneyModels';
 
 export interface Transaction {
   from: string; // debtor name
@@ -31,30 +24,14 @@ export interface Settlement {
   transactions: Transaction[];
 }
 
-const LABEL: Record<GameType, string> = {
-  strokePlay: 'Stroke Play',
-  matchPlay: 'Match Play',
-  skins: 'Skins',
-  stableford: 'Stableford',
-  wolf: 'Wolf',
-  nassau: 'Nassau',
-  vegas: 'Vegas',
-  quota: 'Quota',
-  junk: 'Junk',
-};
-
-export const STAKE_UNIT: Record<GameType, string> = {
-  strokePlay: 'low round',
-  matchPlay: 'the match',
-  skins: 'skin',
-  stableford: 'point',
-  wolf: 'point',
-  // No count here: Nassau's bet count depends on the round — see `unitFor`.
-  nassau: 'bet',
-  vegas: 'point',
-  quota: 'point',
-  junk: 'junk',
-};
+/**
+ * The stake unit of each game, for a screen with no round in hand — the
+ * setup screen says "per bet" without claiming a number. Read off the
+ * registry, where each game declares it beside its money rule.
+ */
+export const STAKE_UNIT: Record<GameType, string> = Object.fromEntries(
+  GAMES.map((g) => [g.id, g.unit])
+) as Record<GameType, string>;
 
 /**
  * The stake unit as it reads for a round in progress.
@@ -62,12 +39,10 @@ export const STAKE_UNIT: Record<GameType, string> = {
  * Nassau is the one game whose number of bets isn't fixed. The static label
  * used to read "bet (×3)", assuming front, back and total — already wrong on a
  * nine, which has one bet, and wronger with every press running, called or
- * automatic. Anywhere a round is in hand the real count can be shown; the
- * static `STAKE_UNIT` stays for the setup screen, which has no round yet and
- * so says "per bet" without claiming a number.
+ * automatic. Anywhere a round is in hand the real count can be shown.
  */
 export function unitFor(round: Round, game: GameType): string {
-  if (game !== 'nassau') return STAKE_UNIT[game];
+  if (game !== 'nassau') return gameMeta(game).unit;
   const bets = nassauSegments(round).length;
   return `bet (×${bets})`;
 }
@@ -86,136 +61,16 @@ export function formatMoney(n: number): string {
 }
 
 /**
- * The games that settle on a count: each player's standing value is a number of
- * things won, and every one of them is worth the stake against every rival.
- *
- * One map rather than a condition listing the games and a ternary chain
- * choosing between them. Those were two lists of the same five games that had
- * to agree, and adding a sixth meant editing both — which is exactly the shape
- * of edit that gets half-made.
+ * One game's net in dollars, every player present, zero when nothing is at
+ * stake. The rule itself is the game's own (`GameMeta.money`): this used to
+ * be a table of which games settle on a count, a second list of which of
+ * those are scored on points, and a chain of ifs for the rest — three places
+ * that had to agree, and a new game meant editing all of them.
  */
-const COUNTED: Partial<Record<GameType, (round: Round) => GameResult>> = {
-  junk: computeJunk,
-  skins: computeSkins,
-  stableford: computeStableford,
-  wolf: computeWolf,
-  quota: computeQuota,
-};
-
-/** Games whose standing is a points figure a player who never scored cannot hold. */
-const SCORED_ON_POINTS: GameType[] = ['quota', 'stableford'];
-
-/** Field-difference model: each unit shifts `stake` between you and every rival. */
-function fieldNet(
-  ids: string[],
-  valueById: Record<string, number>,
-  stake: number
-): Record<string, number> {
-  const n = ids.length;
-  const total = ids.reduce((a, id) => a + (valueById[id] ?? 0), 0);
-  const net: Record<string, number> = {};
-  ids.forEach((id) => (net[id] = stake * (n * (valueById[id] ?? 0) - total)));
-  return net;
-}
-
 function gameNet(round: Round, gameType: GameType, stake: number): Record<string, number> {
-  const ids = round.players.map((p) => p.id);
-  const net: Record<string, number> = {};
-  ids.forEach((id) => (net[id] = 0));
+  const net = zeroNet(round);
   if (stake <= 0) return net;
-
-  const counted = COUNTED[gameType];
-  if (counted) {
-    const valueById: Record<string, number> = {};
-    counted(round).standings.forEach((s) => {
-      if (s.playerId) valueById[s.playerId] = s.value;
-    });
-    // In the games scored on points, somebody with no score on any hole did
-    // not play: their 0 is not zero points, and under the field model it had
-    // them collecting from everyone whose quota pace was negative. The others
-    // settle among themselves and they stay at 0. Skins, Wolf and junk are
-    // counts of things won, where 0 is a true 0 and every rival pays.
-    if (SCORED_ON_POINTS.includes(gameType)) {
-      const played = ids.filter((id) => round.holes.some((h) => round.scores[h.number]?.[id] != null));
-      if (played.length < 2) return net;
-      return { ...net, ...fieldNet(played, valueById, stake) };
-    }
-    return fieldNet(ids, valueById, stake);
-  }
-
-  if (gameType === 'strokePlay') {
-    const useNet = netFor(round, 'strokePlay');
-    const totals = ids
-      .map((id) => {
-        let gross = 0;
-        const played: Hole[] = [];
-        for (const h of round.holes) {
-          const s = round.scores[h.number]?.[id];
-          if (s != null) {
-            gross += s;
-            played.push(h);
-          }
-        }
-        // Strokes on the holes scored, as computeStrokePlay counts them.
-        const total = useNet ? gross - strokesReceivedOver(round, id, played, 'strokePlay') : gross;
-        return { id, total, played: played.length };
-      })
-      .filter((t) => t.played > 0);
-    if (totals.length < 2) return net;
-    const min = Math.min(...totals.map((t) => t.total));
-    const winners = totals.filter((t) => t.total === min);
-    const losers = totals.filter((t) => t.total > min);
-    const share = (losers.length * stake) / winners.length;
-    winners.forEach((w) => (net[w.id] = share));
-    losers.forEach((l) => (net[l.id] = -stake));
-    return net;
-  }
-
-  if (gameType === 'matchPlay') {
-    if (round.players.length < 2) return net;
-    const { a, b } = resolveSides(round, round.options.matchPlay);
-    const seg = matchSegmentSides(round, round.holes, a, b);
-    if (seg.winner === 'A') {
-      a.ids.forEach((id) => (net[id] += stake));
-      b.ids.forEach((id) => (net[id] -= stake));
-    } else if (seg.winner === 'B') {
-      b.ids.forEach((id) => (net[id] += stake));
-      a.ids.forEach((id) => (net[id] -= stake));
-    }
-    return net;
-  }
-
-  if (gameType === 'vegas') {
-    // Points are a team figure, so every player on the side collects or pays
-    // the same — zero-sum across four players the way match play is across
-    // two. A side that is 60 points up at $1 a point is $60 a man, which is
-    // how Vegas actually gets settled and why the stake wants to be small.
-    const { a, b } = vegasTeams(round);
-    if (round.options.vegas?.mode !== '2v2' || a.ids.length < 2 || b.ids.length < 2) return net;
-    const { margin } = vegasHoles(round);
-    a.ids.forEach((id) => (net[id] += margin * stake));
-    b.ids.forEach((id) => (net[id] -= margin * stake));
-    return net;
-  }
-
-  if (gameType === 'nassau') {
-    if (round.players.length < 2) return net;
-    // Each bet is worth `stake` per player: winning side collects, losing side pays.
-    const { a, b } = nassauTeams(round);
-    for (const seg of nassauSegments(round)) {
-      const r = matchSegmentSides(round, seg.holes, a, b, 'nassau');
-      if (r.winner === 'A') {
-        a.ids.forEach((id) => (net[id] += stake));
-        b.ids.forEach((id) => (net[id] -= stake));
-      } else if (r.winner === 'B') {
-        b.ids.forEach((id) => (net[id] += stake));
-        a.ids.forEach((id) => (net[id] -= stake));
-      }
-    }
-    return net;
-  }
-
-  return net;
+  return { ...net, ...gameMeta(gameType).money(round, stake) };
 }
 
 /**
@@ -340,7 +195,7 @@ export function computeSettlement(round: Round): Settlement {
     const cents = toCents(ids, gameNet(round, gt, stake));
     perGame.push({
       gameType: gt,
-      label: LABEL[gt],
+      label: gameMeta(gt).label,
       unit: unitFor(round, gt),
       stake,
       net: fromCents(ids, cents),

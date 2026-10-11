@@ -2,6 +2,7 @@ import type { Round, Hole, GameResult, GameStanding } from '../types';
 import { holeScore } from './handicap';
 import { netFor } from './scoring';
 import { rankStandings } from './util';
+import { countedMoney, type MoneyFn } from './moneyModels';
 
 /** Whose turn it is to be the Wolf on a given hole (rotates by tee order). */
 export function wolfForHole(round: Round, hole: Hole): string | undefined {
@@ -121,3 +122,6 @@ export function computeWolf(round: Round): GameResult {
     note: round.players.length < 3 ? 'Wolf is best with 3–4 players' : undefined,
   };
 }
+
+/** Each one won is worth the stake against every rival — see moneyModels.ts. */
+export const wolfMoney: MoneyFn = countedMoney(computeWolf);
