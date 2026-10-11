@@ -32,7 +32,9 @@ handicap exceeds the hole count. Match Play and Nassau follow the Rules of
 Handicapping (Appendix C): the lowest handicap in the match plays off scratch
 and the others receive the difference, cut to 90% in a four-ball. Save a
 course's pars and stroke indexes once and reload them with a tap, or pull them
-live from course search.
+live from course search (course data ©
+[OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, ODbL
+1.0, via OpenGolfAPI).
 
 ## Settling up
 

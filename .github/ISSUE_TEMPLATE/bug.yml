@@ -1,0 +1,53 @@
+name: Bug report
+description: Something scored, saved, or displayed wrong
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks. Two numbers from **Settings → the lines at the bottom** make most
+        reports answerable from a single screenshot: the **Build** stamp and the
+        **Layout** line. Please include them.
+  - type: input
+    id: build
+    attributes:
+      label: Build stamp
+      description: Settings → bottom of the sheet → "Build YYYY-MM-DD HH:MM"
+      placeholder: "Build 2026-10-08 20:31"
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone and browser
+      description: e.g. iPhone 15 / Safari 18, installed to home screen · Pixel 8 / Chrome 130
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what you expected
+      description: Which screen, which game, which hole. Scores and handicaps if a result was wrong.
+    validations:
+      required: true
+  - type: dropdown
+    id: share
+    attributes:
+      label: Can you share the round as a link?
+      description: Settings → Send this round (or the Results screen's share) gives a link that holds the whole round and nothing else. Pasting it here lets the bug be reproduced exactly. It contains the players' names and scores, so leave it out if that is a problem.
+      options:
+        - "Yes — pasted below"
+        - "No — the round is private"
+        - "No — there was no round"
+    validations:
+      required: true
+  - type: textarea
+    id: link
+    attributes:
+      label: Round link (optional)
+      placeholder: https://pressgolf.netlify.app/#r=...
+  - type: textarea
+    id: diag
+    attributes:
+      label: Anything else
+      description: The Layout line, the Storage line, a screenshot, the text from a "Press hit a snag" screen.

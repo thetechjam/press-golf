@@ -150,7 +150,8 @@ export function Home({
         </section>
       )}
 
-      <p className="hint">Tip: add Press to your home screen for one-tap access on the course.</p>
+      <p className="hint">Tip: add Press to your home screen for one-tap access on the course — and so Safari
+        keeps your saved rounds, which it clears from a site left unopened for seven days.</p>
 
       {showSettings && (
         <SettingsSheet

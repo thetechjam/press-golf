@@ -112,6 +112,18 @@ export function HelpSheet({ onBack }: Props) {
           five matches, 70% until a player has three.
         </p>
       </section>
+
+      <section className="help-section">
+        <h3>Course data</h3>
+        <p>
+          Course search is powered by OpenGolfAPI. Course data ©{' '}
+          <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
+            OpenStreetMap
+          </a>{' '}
+          contributors (ODbL 1.0) via OpenGolfAPI. Check a card before you play
+          off it — open data is sometimes a par out — and save the checked one.
+        </p>
+      </section>
     </div>
   );
 }

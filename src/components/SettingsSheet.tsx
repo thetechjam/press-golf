@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { Theme } from '../storage';
 import type { Round } from '../types';
 import { getSettings, saveSettings } from '../storage';
+import { describePersistence } from '../persistence';
 import { applyTheme } from '../theme';
 import { Sheet } from './Sheet';
 import { FeedbackForm } from './FeedbackForm';
@@ -242,6 +243,8 @@ export function SettingsSheet({
             </div>
             <div className="about-line">Build {__BUILD_STAMP__}</div>
             <div className="about-line">Layout {layout}</div>
+            {/* Whether the browser agreed to keep the storage — see persistence.ts. */}
+            {!isNative() && <div className="about-line">{describePersistence()}</div>}
             <div className="about-line">Created by Jesse Morrison</div>
             <div className="about-line">PolyForm Noncommercial License 1.0.0</div>
           </div>

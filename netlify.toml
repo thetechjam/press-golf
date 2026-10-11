@@ -10,3 +10,26 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Security headers. Netlify applies these at the edge; nothing here is read by
+# the Capacitor shell, which loads the app from its own bundle.
+#
+# The CSP is written against what the app actually does:
+#   - scripts, styles, fonts, the manifest and the service worker all ship
+#     from this origin; the only inline style is the splash in index.html and
+#     a handful of React style attributes, hence 'unsafe-inline' for styles
+#     only (no inline scripts exist, so script-src stays strict);
+#   - connect-src: the app's own files (precache, feedback POST to
+#     /__forms.html) and the course-search API;
+#   - img-src adds data: and blob: for the share-card canvas and backup
+#     downloads; the QR code is inline SVG, not an image load;
+#   - links out (YouTube, Buy Me a Coffee, OpenStreetMap) are navigations,
+#     which CSP does not govern.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://api.opengolfapi.org; manifest-src 'self'; worker-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
