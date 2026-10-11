@@ -109,6 +109,17 @@ npm run audit:a11y    # in another
 The accessible-name half of the same check runs in CI without a browser, in
 `src/a11y.dom.test.tsx`.
 
+### The link-preview card
+
+`public/og.png` is what a shared pressgolf link unfurls into. It is drawn by
+`scripts/og-image.mjs` from the brand art in `BRAND.md` and the app's own
+Oswald, and committed, since crawlers need a PNG. Regenerate it when the mark,
+the colours or the tagline change:
+
+```bash
+npm run og:image   # uses Playwright if installed, else a Chromium/Chrome on PATH
+```
+
 ## How it's built
 
 Vite + React + TypeScript, shipped as an installable PWA. Each game is a

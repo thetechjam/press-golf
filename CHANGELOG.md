@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **A shared link unfurls as a card.** A pressgolf link dropped into
+  iMessage, WhatsApp or Slack used to show as a bare URL. It now carries a
+  title, the description from the README and a 1200×630 card — the P Flag
+  mark, the wordmark and "Settle it on 18." on the felt — through Open Graph
+  and Twitter tags, with a canonical URL, a robots.txt that lets crawlers in,
+  and a line for visitors with JavaScript off. The card is drawn by
+  `npm run og:image` (`scripts/og-image.mjs`) from the brand art and the
+  app's own Oswald, so it can be regenerated when the mark changes; it is not
+  precached by the service worker.
 - **A screen for when Press breaks, with the backup on it.** A render error
   used to leave a blank page under a splash that never faded — on an
   installed app, a green rectangle with no way out and the rounds behind it.
