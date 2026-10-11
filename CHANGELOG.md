@@ -53,6 +53,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the registry that already lists every game. Each game now declares how it
   settles next to how it scores (`src/games/index.ts`), and the engine reads
   that — so a new game is one entry, not four edits that have to agree.
+- **New Round is in pieces.** Internal, no visible change: the screen was
+  one 1,300-line file with three dozen pieces of state. The course and the
+  holes now live in one reducer, and the Players card, the Course, Holes and
+  Games rows are their own components; the saved-course list, the pars grid
+  and the stroke-index warning are shared with Golf League rather than
+  copied into it.
 - **Course data is credited properly:** "© OpenStreetMap contributors (ODbL
   1.0) via OpenGolfAPI", with OpenStreetMap linked to its copyright page, under
   course search, in How to Play and in the README.
