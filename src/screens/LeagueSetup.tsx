@@ -4,13 +4,14 @@ import type { Round, Player, Hole, SavedCourse, LeagueTeam } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
 import { CourseSearch } from '../components/CourseSearch';
-import { DeleteButton } from '../components/DeleteButton';
+import { SavedCourseList } from '../components/SavedCourseList';
+import { ParGrid } from '../components/ParGrid';
+import { StrokeIndexNote } from '../components/StrokeIndexNote';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
-import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
-import { StarIcon, XIcon, GearIcon, TrophyIcon } from '../icons';
+import { strokeIndexProblem } from '../games/strokeIndex';
+import { StarIcon, GearIcon, TrophyIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { SetupRow } from '../components/SetupRow';
-import { ParTile } from '../components/ParTile';
 import { LeagueHcpHelper } from '../components/LeagueHcpHelper';
 import { leagueHistory } from '../games/leagueHandicap';
 import { leagueCourseSummary } from '../setupSummary';
@@ -286,32 +287,7 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
           placeholder="Thursday Night League"
         />
 
-        {courses.length > 0 && (
-          <section className="card course-picker">
-            <h2>Load a saved course</h2>
-            <div className="saved-course-list">
-              {courses.map((c) => (
-                <div key={c.id} className="saved-course-row">
-                  <button className="saved-course-load" onClick={() => loadCourse(c)}>
-                    <span className="saved-course-name">{c.name}</span>
-                    <span className="saved-course-meta">
-                      {/* No-break spaces inside each part, so a wrap falls between parts. */}
-                      {c.holes.length}{'\u00a0'}holes · par{'\u00a0'}{c.holes.reduce((s, h) => s + h.par, 0)}
-                      {c.holes.some((h) => h.strokeIndex) ? ' · stroke\u00a0index\u00a0set' : ''}
-                    </span>
-                  </button>
-                  <DeleteButton
-                    className="saved-course-del"
-                    label={`saved course ${c.name}`}
-                    onDelete={() => removeCourse(c.id)}
-                  >
-                    <XIcon />
-                  </DeleteButton>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        <SavedCourseList courses={courses} onLoad={loadCourse} onRemove={removeCourse} />
       </section>
 
       {teams.map((t, ti) => (
@@ -462,34 +438,15 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
           {/* Always both boxes here, so always both captions. They replace a
               "top box = par, bottom = stroke index" hint, which only held while
               the two sat in that order — cells wrap, and the hint did not. */}
-          <div className="par-grid with-si">
-            {holes.map((h) => (
-              <div key={h.number} className="par-cell">
-                <span className="par-hole">{h.number}</span>
-                <span className="par-cap">Par</span>
-                <ParTile hole={h.number} par={h.par} onChange={(v) => setPar(h.number, v)} />
-                <span className="par-cap">SI</span>
-                <input
-                  className="si-input"
-                  type="number"
-                  min={1}
-                  max={9}
-                  value={h.strokeIndex ?? ''}
-                  onChange={(e) => setSI(h.number, e.target.value === '' ? undefined : Number(e.target.value))}
-                  aria-label={`Stroke index for hole ${h.number}`}
-                />
-              </div>
-            ))}
-          </div>
+          <ParGrid
+            holes={holes}
+            withStrokeIndex
+            maxStrokeIndex={9}
+            onPar={setPar}
+            onStrokeIndex={setSI}
+          />
           <p className="hint-inline">Stroke index ranks hole difficulty (1 = hardest).</p>
-          {siProblem && (
-            <p className="check-note bad" role="status">
-              <strong>These stroke indexes can't be used.</strong>{' '}
-              {describeStrokeIndexProblem(siProblem, holes.length)} Until it's fixed, handicap
-              strokes fall in hole order instead — everyone still gets the right number of shots,
-              just not on the holes the course would pick.
-            </p>
-          )}
+          <StrokeIndexNote problem={siProblem} holeCount={holes.length} />
           <button className="btn-ghost add" onClick={saveFavorite}>
             <StarIcon size={16} /> Save this course for next time
           </button>

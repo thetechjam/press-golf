@@ -1,16 +1,11 @@
-import { useMemo, useRef, useState, Suspense } from 'react';
+import { useMemo, useReducer, useRef, useState, Suspense } from 'react';
 import { todayIso } from '../roundDate';
-import type { Round, Player, GameType, Hole, SavedCourse, TeamSetup, RoundTrip } from '../types';
+import type { Round, Player, GameType, SavedCourse, TeamSetup, RoundTrip } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
-import { GAMES, gameMeta } from '../games';
-import { GAME_RULES } from '../games/rules';
-import { usesHandicap, canScoreNet } from '../games/scoring';
-import { formatHandicap, MATCH_ALLOWANCE } from '../games/handicap';
-import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
-import { scorecardIssues } from '../courses/validate';
-import { validSlope, validRating, courseHandicap } from '../games/courseHandicap';
+import { GAMES } from '../games';
+import { usesHandicap } from '../games/scoring';
 import { wolfForHole } from '../games/wolf';
-import { TeamPicker, effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
+import { effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import {
   uid,
   listCourses,
@@ -23,115 +18,68 @@ import {
 import { SetupRow } from '../components/SetupRow';
 import { TripPicker } from '../components/TripPicker';
 import { activeTrip, listTrips } from '../trips';
-import { ParTile } from '../components/ParTile';
 import { courseSummary, holesSummary, gamesSummary, stakesSummary } from '../setupSummary';
 import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry, placePlayer } from '../roster';
-import { CrewChip, RecentChips } from '../components/RosterChips';
-import { CourseSearch } from '../components/CourseSearch';
-import { DeleteButton } from '../components/DeleteButton';
 import { SendRound } from '../lazyScreens';
-import { PlayerAvatar } from '../components/PlayerAvatar';
-import { playerColor } from '../player';
-import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
-import { StarIcon, XIcon, GearIcon, QrIcon } from '../icons';
+import type { FetchedCourse } from '../courses/openGolfApi';
+import { GearIcon } from '../icons';
 import { StakesEditor } from '../components/StakesEditor';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { nameKey, nearMatches, resolveName } from '../people';
 import { lastSetup } from '../lastSetup';
+import { courseReducer, deriveCourse, initialCourseState } from './setup/courseState';
+import { PlayersSection } from './setup/PlayersSection';
+import { CourseSection, HolesSection } from './setup/CourseSection';
+import { GamesSection, type SidePick } from './setup/GamesSection';
 
 interface Props {
   onCancel: () => void;
   onStart: (round: Round) => void;
 }
 
-function makeHoles(count: number): Hole[] {
-  return Array.from({ length: count }, (_, i) => ({ number: i + 1, par: 4 }));
-}
-
+/**
+ * New Round.
+ *
+ * The screen is a Players card and five collapsible rows. The course and the
+ * holes live in one reducer (`setup/courseState.ts`), because they move
+ * together; the players, the games and their options are plain state here,
+ * because they do not. Each row's body is its own component under `setup/`,
+ * so this file is the state, the rules for starting a round, and the layout.
+ */
 export function Setup({ onCancel, onStart }: Props) {
   // What the group played last time: the games, the stakes and the options
   // start where they were left, the way the players already did. Read once,
   // on mount, like the saved rounds below.
   const [remembered] = useState(() => lastSetup(listRounds()));
-  const [course, setCourse] = useState('');
+  const [cs, dispatch] = useReducer(courseReducer, initialCourseState);
+  const derived = deriveCourse(cs);
+  const { rated } = derived;
   const [players, setPlayers] = useState<Player[]>([
     { id: uid(), name: '' },
     { id: uid(), name: '' },
   ]);
-  const [holeCount, setHoleCount] = useState(18);
-  const [holes, setHoles] = useState<Hole[]>(makeHoles(18));
-  /** Slope and rating of the course, when the user knows them. */
-  const [slope, setSlope] = useState<number | undefined>();
-  const [rating, setRating] = useState<number | undefined>();
-  /**
-   * How many holes the rating above covers.
-   *
-   * Loading an eighteen-hole course to play nine is the case this exists for:
-   * the rating is for eighteen, and saying so is what lets it be halved rather
-   * than judged against nine holes and thrown out. A rating typed by hand is
-   * for the holes on screen, so it tracks the hole count.
-   */
-  const [ratingHoles, setRatingHoles] = useState<number | undefined>();
   /** Handicap allowance per game, as a percentage. Absent entries are 100%. */
   const [allowanceByGame, setAllowanceByGame] = useState<Partial<Record<GameType, number>>>(
     () => remembered?.allowanceByGame ?? {}
   );
   const [games, setGames] = useState<GameType[]>(() => remembered?.games ?? ['skins']);
   const [options, setOptions] = useState({ ...DEFAULT_OPTIONS, ...(remembered?.options ?? {}) });
-  const [advancedHoles, setAdvancedHoles] = useState(false);
-  /**
-   * Where the pars and stroke indexes currently on screen came from.
-   *
-   * Only 'search' earns a warning. Course search is open community data and is
-   * sometimes wrong — a par off by one quietly changes every net score and
-   * every Stableford point for the whole round. A course the user saved
-   * themselves, or a preset they chose, needs no such caveat.
-   */
-  const [holesSource, setHolesSource] = useState<'manual' | 'search' | 'saved'>('manual');
-  /**
-   * What course search handed over, kept so the problems with it can be
-   * re-read from the holes as they stand rather than reported once and left
-   * stale. Fixing a par should make the line about that par go away.
-   *
-   * `raw` is the unsliced response — see `scorecardIssues` for why the stroke
-   * index check needs it. `expected` is the hole count that was asked for,
-   * which the hole count itself no longer tells us: a short import sets the
-   * round to the number of holes that arrived.
-   */
-  const [imported, setImported] = useState<{ raw: Hole[]; expected: number } | null>(null);
-  /**
-   * The whole card a course was loaded from, saved or searched. Switching to
-   * nine used to keep holes 1–9 with their eighteen-hole stroke indexes —
-   * unusable as a ranking, so strokes fell in hole order — and switching back
-   * brought holes 10–18 up as blank par 4s. The card is kept so either count
-   * is a slice of it, and a nine can be the back nine.
-   */
-  const [source, setSource] = useState<Hole[] | null>(null);
-  const [nine, setNine] = useState<'front' | 'back'>('front');
   const [error, setError] = useState('');
   const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
   // The saved course being handed out, if any — see the QR button on each row.
   const [sendingCourse, setSendingCourse] = useState<SavedCourse | null>(null);
-  /**
-   * A confirmation of something the user just did, and the row it happened in.
-   *
-   * The row matters: rendered once at the foot of the screen, as it was, the
-   * note appeared over a thousand pixels below the fold on a phone — a
-   * confirmation nobody could see is not a confirmation. It is shown beside
-   * the control that produced it instead.
-   */
-  const [savedNote, setSavedNote] = useState<{
-    text: string;
-    row: 'course' | 'holes' | 'check';
-  } | null>(null);
-  const [nassauMode, setNassauMode] = useState<'1v1' | '2v2'>(() => remembered?.nassauMode ?? '1v1');
-  const [nassauSideA, setNassauSideA] = useState('');
-  const [nassauSideB, setNassauSideB] = useState('');
-  const [nassauAssign, setNassauAssign] = useState<Assign>({});
-  const [matchMode, setMatchMode] = useState<'1v1' | '2v2'>(() => remembered?.matchMode ?? '1v1');
-  const [matchSideA, setMatchSideA] = useState('');
-  const [matchSideB, setMatchSideB] = useState('');
-  const [matchAssign, setMatchAssign] = useState<Assign>({});
+  const [nassau, setNassau] = useState<SidePick>(() => ({
+    mode: remembered?.nassauMode ?? '1v1',
+    sideA: '',
+    sideB: '',
+    assign: {},
+  }));
+  const [match, setMatch] = useState<SidePick>(() => ({
+    mode: remembered?.matchMode ?? '1v1',
+    sideA: '',
+    sideB: '',
+    assign: {},
+  }));
   // Vegas is 2v2 only — there is no side to choose, just who is with whom.
   const [vegasAssign, setVegasAssign] = useState<Assign>({});
   // Only the games the user actually changed. An absent entry follows the
@@ -141,7 +89,6 @@ export function Setup({ onCancel, onStart }: Props) {
     () => remembered?.netByGame ?? {}
   );
   const [showSettings, setShowSettings] = useState(false);
-  const [expandedGame, setExpandedGame] = useState<GameType | null>(null);
 
   // One snapshot of saved history, read once on mount. Everything derived from
   // past rounds — which rows open, the crew chip, the recent chips — reads this
@@ -188,61 +135,17 @@ export function Setup({ onCancel, onStart }: Props) {
    * eighteen pars and stroke indexes at a stroke, and doing that behind a
    * collapsed section is how a wrong number reaches the first tee unseen. What
    * differs between them is the warning, not whether the numbers are shown:
-   * only search data is second-guessed.
+   * only search data is second-guessed — see the reducer.
    */
   const loadCourse = (c: SavedCourse) => {
-    // A 27-hole card can arrive by link. The round is a nine or an eighteen —
-    // Nassau's nines, the Front/Back split and the rating all assume it — so
-    // anything longer plays as its first eighteen.
-    const applied =
-      c.holes.length > 18 ? sliceCourseHoles(c.holes, 18) : c.holes.map((h) => ({ ...h }));
-    setCourse(c.name);
-    setHoleCount(applied.length);
-    setHoles(applied);
-    setSource(applied.length >= 18 ? applied : null);
-    setNine('front');
-    setAdvancedHoles(applied.some((h) => h.strokeIndex));
-    setHolesSource('saved');
-    setImported(null);
-    setSlope(c.slope);
-    // The rating describes the whole card; it is not carried onto a cut one.
-    setRating(c.holes.length > 18 ? undefined : c.rating);
-    setRatingHoles(applied.length);
+    dispatch({ type: 'loadSaved', course: c });
     openRow('holes');
-    setSavedNote({
-      text:
-        c.holes.length > 18
-          ? `Loaded the first 18 of "${c.name}" (${c.holes.length} holes)`
-          : `Loaded "${c.name}"`,
-      row: 'course',
-    });
   };
 
   const loadFromApi = (c: FetchedCourse) => {
-    const count = holeCount <= 9 ? Math.min(9, c.holes.length) : Math.min(18, c.holes.length);
-    const applied = sliceCourseHoles(c.holes, count);
-    setCourse(c.name);
-    setHoleCount(count);
-    setHoles(applied);
-    setSource(c.holes.length >= 18 ? sliceCourseHoles(c.holes, 18) : null);
-    setNine('front');
-    setAdvancedHoles(applied.some((h) => h.strokeIndex));
-    setHolesSource('search');
-    setImported({ raw: c.holes, expected: count });
-    // Search data carries no slope or rating, and the ones on screen were
-    // the last course's: left in place they converted every Index with the
-    // wrong course's figures and went onto the round as that course's.
-    setSlope(undefined);
-    setRating(undefined);
-    setRatingHoles(undefined);
+    dispatch({ type: 'loadSearch', course: c });
     openRow('holes');
     setError('');
-    setSavedNote({
-      text: applied.some((h) => h.strokeIndex)
-        ? `Loaded "${c.name}" — par + stroke index`
-        : `Loaded "${c.name}" — par only (no stroke index in database)`,
-      row: 'course',
-    });
   };
 
   /**
@@ -254,7 +157,7 @@ export function Setup({ onCancel, onStart }: Props) {
    * failure the note was moved out of the page footer to avoid.
    */
   const saveFavorite = (from: 'check' | 'foot' = 'foot') => {
-    const name = course.trim();
+    const name = cs.course.trim();
     if (!name) {
       openRow('course');
       setError('Add a course name (in the Course row) before saving.');
@@ -264,78 +167,18 @@ export function Setup({ onCancel, onStart }: Props) {
     saveCourse({
       id: existing?.id ?? uid(),
       name,
-      holes: holes.map((h) => ({ number: h.number, par: h.par, strokeIndex: h.strokeIndex })),
-      slope,
-      rating,
+      holes: cs.holes.map((h) => ({ number: h.number, par: h.par, strokeIndex: h.strokeIndex })),
+      slope: cs.slope,
+      rating: cs.rating,
     });
     setCourses(listCourses());
     setError('');
-    setSavedNote({ text: `Saved "${name}"`, row: from === 'check' ? 'check' : 'holes' });
-    // Keeping a course is the user vouching for it, so the "check this against
-    // the card" caveat has served its purpose and goes. From here their copy
-    // is the one that loads, and search is only ever saving them the typing.
-    setHolesSource('saved');
-    setImported(null);
+    dispatch({ type: 'saved', name, from });
   };
 
   const removeCourse = (id: string) => {
     deleteCourse(id);
     setCourses(listCourses());
-  };
-
-  // A common par-72 layout, repeated for 9 or 18 holes.
-  const STANDARD_PARS = [4, 4, 3, 5, 4, 4, 3, 4, 5, 4, 4, 3, 5, 4, 4, 3, 4, 5];
-
-  const applyPreset = (kind: 'par4' | 'standard') => {
-    setHoles((hs) =>
-      hs.map((h, i) => ({ ...h, par: kind === 'par4' ? 4 : STANDARD_PARS[i % 18] }))
-    );
-    // Same reasoning as setHoleCountAndPars: a bulk par overwrite makes any
-    // loaded/saved note describe a course that no longer matches the holes —
-    // and these are the user's own pars now, not the database's.
-    setSavedNote(null);
-    setHolesSource('manual');
-  };
-
-  const setStrokeIndex = (number: number, si: number | undefined) =>
-    setHoles((hs) => hs.map((h) => (h.number === number ? { ...h, strokeIndex: si } : h)));
-
-  const toggleAdvanced = () =>
-    setAdvancedHoles((a) => {
-      const next = !a;
-      if (next)
-        // Seed stroke indexes in hole order so nothing is blank.
-        setHoles((hs) => hs.map((h, i) => (h.strokeIndex ? h : { ...h, strokeIndex: i + 1 })));
-      return next;
-    });
-
-  const setHoleCountAndPars = (n: number) => {
-    setHoleCount(n);
-    if (source) {
-      // A slice of the card that was loaded: the stroke indexes are re-ranked
-      // for the nine, and eighteen is the whole card again. The note and the
-      // source stay, because these are still that course's numbers.
-      setHoles(sliceCourseHoles(source, n, { nine: n === 9 ? nine : undefined }));
-      setImported((im) => (im ? { ...im, expected: n } : im));
-      return;
-    }
-    setHoles((prev) => {
-      const next = makeHoles(n);
-      // keep any pars the user already edited
-      return next.map((h) => prev.find((p) => p.number === h.number) ?? h);
-    });
-    // A loaded/saved note describes a specific hole count and par set; changing
-    // the count invalidates it before the user can act on stale information.
-    setSavedNote(null);
-    setHolesSource('manual');
-    setImported(null);
-  };
-
-  /** Which nine of a loaded eighteen a nine-hole round plays. */
-  const switchNine = (n: 'front' | 'back') => {
-    if (!source) return;
-    setNine(n);
-    setHoles(sliceCourseHoles(source, 9, { nine: n }));
   };
 
   const updatePlayer = (id: string, patch: Partial<Player>) =>
@@ -397,66 +240,17 @@ export function Setup({ onCancel, onStart }: Props) {
 
   const addFromRoster = (e: RosterEntry) => setPlayers((ps) => placePlayer(ps, recalled(e)));
 
-  const setPar = (number: number, par: number) => {
-    setHoles((hs) => hs.map((h) => (h.number === number ? { ...h, par } : h)));
-    // Carried into the loaded card too, so a corrected par survives a switch
-    // between nine and eighteen. Hole numbers match: a back nine is 10–18
-    // on both.
-    setSource((src) => src && src.map((h) => (h.number === number ? { ...h, par } : h)));
-    // A single hand-edited par is still enough to make the loaded/saved note
-    // describe a course the holes no longer match.
-    setSavedNote(null);
-  };
-
   const toggleGame = (g: GameType) =>
     setGames((gs) => (gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g]));
 
   const namedPlayers = players.filter((p) => p.name.trim());
-  /** The seat row `i` takes in the round: how many named rows sit above it. */
-  const seatOf = (i: number) => players.slice(0, i).filter((p) => p.name.trim()).length;
   const showNet = games.some(usesHandicap);
-  const showStableford = games.includes('stableford');
-  const showWolf = games.includes('wolf');
-  const showNassau = games.includes('nassau');
-  const showMatchPlay = games.includes('matchPlay');
-  const showVegas = games.includes('vegas');
   // Gross and net are the same card until somebody has a handicap, so the
   // per-game picker stays out of the way until the choice means something.
   // An Index counts: on a rated course it is what their strokes come from.
   const anyHandicap = namedPlayers.some((p) => (p.handicap ?? 0) !== 0 || p.index != null);
   const allowanceGames = games.filter(usesHandicap);
   const showScoring = anyHandicap && allowanceGames.length > 0;
-  // Only surfaced while the stroke index editor is open: a user who never
-  // opened it did not enter these and cannot act on the message.
-  const siProblem = strokeIndexProblem(holes);
-  /**
-   * Whether these holes carry figures good enough to work a course handicap
-   * out from an Index. Both have to be plausible: a slope alone, or a rating
-   * left over from a different number of holes, would produce a confident
-   * wrong answer rather than no answer.
-   */
-  // Judged against the holes the rating covers, not the holes being played —
-  // otherwise an eighteen-hole rating loaded to play nine reads as implausible
-  // and the Index column never appears.
-  const ratedHoles = ratingHoles ?? holes.length;
-  const rated = validSlope(slope) && validRating(rating, ratedHoles);
-  /** The course handicap an Index is worth here, for showing beside the field. */
-  const derivedHandicap = (index: number | undefined): number | null => {
-    if (!rated || index == null || Number.isNaN(index)) return null;
-    return courseHandicap({
-      index,
-      slope: slope as number,
-      rating: rating as number,
-      ratingHoles: ratedHoles,
-      playingHoles: holes.length,
-      playingPar: holes.reduce((sum, h) => sum + h.par, 0),
-    });
-  };
-  // Re-read every render, so correcting a hole clears the line about it.
-  const importIssues =
-    holesSource === 'search' && imported
-      ? scorecardIssues(holes, imported.expected, imported.raw)
-      : [];
   const canTeams = namedPlayers.length >= 4;
 
   const start = (answer?: { id: string; name: string }) => {
@@ -518,61 +312,56 @@ export function Setup({ onCancel, onStart }: Props) {
     );
 
     // Builds a TeamSetup from picker state, or returns an error message.
-    const buildTeams = (
-      mode: '1v1' | '2v2',
-      sideA: string,
-      sideB: string,
-      assign: Assign
-    ): TeamSetup | string => {
-      if (mode === '2v2') {
-        const teamA = cleanPlayers.filter((p, i) => assignmentOf(assign, p.id, i) === 'A').map((p) => p.id);
-        const teamB = cleanPlayers.filter((p, i) => assignmentOf(assign, p.id, i) === 'B').map((p) => p.id);
+    const buildTeams = (pick: SidePick): TeamSetup | string => {
+      if (pick.mode === '2v2') {
+        const teamA = cleanPlayers.filter((p, i) => assignmentOf(pick.assign, p.id, i) === 'A').map((p) => p.id);
+        const teamB = cleanPlayers.filter((p, i) => assignmentOf(pick.assign, p.id, i) === 'B').map((p) => p.id);
         if (teamA.length !== 2 || teamB.length !== 2)
           return 'Assign exactly 2 players to each team.';
         return { mode: '2v2', teamA, teamB };
       }
-      const a = effectiveSide(cleanPlayers, sideA, 0);
-      const b = effectiveSide(cleanPlayers, sideB, 1);
+      const a = effectiveSide(cleanPlayers, pick.sideA, 0);
+      const b = effectiveSide(cleanPlayers, pick.sideB, 1);
       if (!a || !b || a === b) return 'Pick two different players.';
       return { mode: '1v1', teamA: [a], teamB: [b] };
     };
 
-    let nassau: TeamSetup | undefined;
+    let nassauTeams: TeamSetup | undefined;
     if (games.includes('nassau')) {
-      const r = buildTeams(nassauMode, nassauSideA, nassauSideB, nassauAssign);
+      const r = buildTeams(nassau);
       if (typeof r === 'string') return gamesError(`Nassau: ${r}`);
-      nassau = r;
+      nassauTeams = r;
     }
 
     let matchPlay: TeamSetup | undefined;
     if (games.includes('matchPlay')) {
-      const r = buildTeams(matchMode, matchSideA, matchSideB, matchAssign);
+      const r = buildTeams(match);
       if (typeof r === 'string') return gamesError(`Match Play: ${r}`);
       matchPlay = r;
     }
 
     let vegas: TeamSetup | undefined;
     if (games.includes('vegas')) {
-      const r = buildTeams('2v2', '', '', vegasAssign);
+      const r = buildTeams({ mode: '2v2', sideA: '', sideB: '', assign: vegasAssign });
       if (typeof r === 'string') return gamesError(`Vegas: ${r}`);
       vegas = r;
     }
 
     const round: Round = {
       id: uid(),
-      course: course.trim() || undefined,
+      course: cs.course.trim() || undefined,
       date: todayIso(),
       createdAt: Date.now(),
       updatedAt: Date.now(),
       players: cleanPlayers,
-      holes,
+      holes: cs.holes,
       games,
-      options: { ...options, useNet, netByGame, allowanceByGame, nassau, matchPlay, vegas },
+      options: { ...options, useNet, netByGame, allowanceByGame, nassau: nassauTeams, matchPlay, vegas },
       // Copied onto the round so it stays scoreable on its own terms: editing
       // the saved course later must not re-handicap a round already played.
-      slope: rated ? slope : undefined,
-      rating: rated ? rating : undefined,
-      ratingHoles: rated ? ratingHoles : undefined,
+      slope: rated ? cs.slope : undefined,
+      rating: rated ? cs.rating : undefined,
+      ratingHoles: rated ? cs.ratingHoles : undefined,
       scores: {},
       wolf: {},
       presses: [],
@@ -581,7 +370,7 @@ export function Setup({ onCancel, onStart }: Props) {
     };
 
     if (games.includes('wolf')) {
-      holes.forEach((h) => {
+      cs.holes.forEach((h) => {
         round.wolf[h.number] = {
           wolfPlayerId: wolfForHole({ ...round, players: cleanPlayers }, h)!,
           choice: null,
@@ -591,7 +380,7 @@ export function Setup({ onCancel, onStart }: Props) {
 
     // Clear so a later visit to this screen (e.g. after Undo) doesn't open on
     // a note describing a course loaded during the round that just ended.
-    setSavedNote(null);
+    dispatch({ type: 'clearNote' });
     onStart(round);
   };
 
@@ -607,180 +396,37 @@ export function Setup({ onCancel, onStart }: Props) {
         </button>
       </header>
 
-      <section className="card">
-        <h2>Players</h2>
-        <CrewChip crew={crewMatches ? [] : crew} onUseCrew={useCrew} />
-        {players.map((p, i) => (
-          <div key={p.id} className="player-row">
-            {/* Coloured by place among the named rows, which is the seat the
-                round will give them: a blank row above used to shift every
-                colour below it the moment the round started. */}
-            <PlayerAvatar name={p.name || `${i + 1}`} color={playerColor(seatOf(i))} />
-            <input
-              className="player-name"
-              value={p.name}
-              onChange={(e) => updatePlayer(p.id, { name: e.target.value })}
-              list="press-known-names"
-              autoComplete="off"
-              placeholder={`Player ${i + 1}`}
-              aria-label={`Name of player ${i + 1}`}
-            />
-            {showNet &&
-              (rated ? (
-                /* A rated course can work the strokes out, so the field asks
-                   for the number the player actually carries between courses
-                   and shows what it is worth here. Asking for both would be
-                   asking the same question twice. */
-                <span className="player-index">
-                  {/* No inputMode: iOS's decimal and numeric pads have no
-                      minus key, and a plus player's Index is negative. The
-                      number keyboard type=number brings up on its own does. */}
-                  <input
-                    className="player-hcp"
-                    type="number"
-                    step="0.1"
-                    value={p.index ?? ''}
-                    onChange={(e) =>
-                      updatePlayer(p.id, {
-                        index: e.target.value === '' ? undefined : Number(e.target.value),
-                      })
-                    }
-                    placeholder="Index"
-                    aria-label={`Handicap Index for ${p.name || `player ${i + 1}`}`}
-                  />
-                  {/* Recalled with strokes but no Index: they play off those
-                      strokes, and the field being blank said otherwise. Shown,
-                      and cleared with a tap for anyone who would rather type
-                      an Index. */}
-                  {p.index == null && p.handicap != null && (
-                    <button
-                      type="button"
-                      className="player-recalled"
-                      onClick={() => updatePlayer(p.id, { handicap: undefined })}
-                      aria-label={`${p.name || `Player ${i + 1}`} plays off ${formatHandicap(p.handicap)} from a remembered stroke count. Clear it`}
-                    >
-                      <span aria-hidden="true" className="player-derived-arrow">→</span>
-                      {formatHandicap(p.handicap)}
-                      <span className="player-recalled-x" aria-hidden="true">×</span>
-                    </button>
-                  )}
-                  {derivedHandicap(p.index) != null && (
-                    <span
-                      className="player-derived"
-                      aria-label={`Plays off ${formatHandicap(derivedHandicap(p.index)!)} on these holes`}
-                    >
-                      {/* The arrow is doing real work: without it this is a
-                          second number beside the first with nothing to say
-                          it is the answer rather than another question. */}
-                      <span aria-hidden="true" className="player-derived-arrow">
-                        →
-                      </span>
-                      {formatHandicap(derivedHandicap(p.index)!)}
-                    </span>
-                  )}
-                </span>
-              ) : (
-                <input
-                  className="player-hcp"
-                  type="number"
-                  value={p.handicap ?? ''}
-                  onChange={(e) =>
-                    updatePlayer(p.id, {
-                      handicap: e.target.value === '' ? undefined : Number(e.target.value),
-                    })
-                  }
-                  placeholder="HCP"
-                  aria-label={`Handicap for ${p.name || `player ${i + 1}`}`}
-                />
-              ))}
-            <button
-              className="player-del"
-              onClick={() => removePlayer(p.id)}
-              aria-label={`Remove ${p.name.trim() || `player ${i + 1}`}`}
-            >
-              <XIcon />
-            </button>
-          </div>
-        ))}
-        {/* One row. Both of these add a single player — which is why the
-            chips sit beside the button rather than under it — and stacked
-            they spent 50px of a screen that was already scrolling with every
-            row collapsed. */}
-        <div className="add-row">
-          <button className="btn-ghost add" onClick={addPlayer}>
-            + Add player
-          </button>
-          <RecentChips recent={recent} onAdd={addFromRoster} />
-        </div>
-        {showNet && (
-          <p className="hint">
-            {rated
-              ? `Enter each player’s Handicap Index — the number after the arrow is what they play off here. All blank scores gross.${
-                  players.some((p) => p.index == null && p.handicap != null)
-                    ? ' A player recalled with a stroke count and no Index plays off those strokes; tap the × to clear them.'
-                    : ''
-                }`
-              : 'Enter handicaps to score net — all blank scores gross, and a blank plays off 0. A plus handicap goes in as a minus number: +3 is −3.'}
-          </p>
-        )}
-      </section>
+      <PlayersSection
+        players={players}
+        showNet={showNet}
+        rated={rated}
+        derivedHandicap={derived.derivedHandicap}
+        crew={crewMatches ? [] : crew}
+        onUseCrew={useCrew}
+        recent={recent}
+        onAddFromRoster={addFromRoster}
+        onUpdate={updatePlayer}
+        onAdd={addPlayer}
+        onRemove={removePlayer}
+      />
 
       <div className="setup-rows">
         <SetupRow
           label="Course"
-          summary={courseSummary(course)}
+          summary={courseSummary(cs.course)}
           open={!!openRows.course}
           onToggle={() => toggleRow('course')}
         >
-          <CourseSearch value={course} onChange={setCourse} onPick={loadFromApi} />
-
-          {courses.length > 0 && (
-            <section className="card course-picker">
-              <h2>Load a saved course</h2>
-              <div className="saved-course-list">
-                {courses.map((c) => (
-                  <div key={c.id} className="saved-course-row">
-                    {/* One row: the name and its figures are the load
-                        button, the two actions sit at the end. The name
-                        wraps rather than truncating, so it can share the
-                        line — three stacked lines per course made two saved
-                        courses fill the screen. */}
-                    <button className="saved-course-load" onClick={() => loadCourse(c)}>
-                      <span className="saved-course-name">{c.name}</span>
-                      <span className="saved-course-meta">
-                        {/* No-break spaces inside each part, so a wrap falls between parts. */}
-                        {c.holes.length}{'\u00a0'}holes · par{'\u00a0'}{c.holes.reduce((s, h) => s + h.par, 0)}
-                        {c.holes.some((h) => h.strokeIndex) ? ' · stroke\u00a0index\u00a0set' : ''}
-                      </span>
-                    </button>
-                    {/* Checking a scorecard is done once, by one person.
-                        This is how the other three get the checked one
-                        instead of each re-typing it, or not bothering. */}
-                    <button
-                      className="saved-course-send"
-                      onClick={() => setSendingCourse(c)}
-                      aria-label={`Send ${c.name} to another phone`}
-                    >
-                      <QrIcon size={16} />
-                    </button>
-                    <DeleteButton
-                      className="saved-course-del"
-                      label={`saved course ${c.name}`}
-                      onDelete={() => removeCourse(c.id)}
-                    >
-                      <XIcon />
-                    </DeleteButton>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {savedNote?.row === 'course' && (
-            <p className="hint-inline" role="status">
-              {savedNote.text}
-            </p>
-          )}
+          <CourseSection
+            course={cs.course}
+            onCourse={(name) => dispatch({ type: 'course', name })}
+            onPick={loadFromApi}
+            courses={courses}
+            onLoad={loadCourse}
+            onSend={setSendingCourse}
+            onRemove={removeCourse}
+            note={cs.savedNote?.row === 'course' ? cs.savedNote.text : null}
+          />
         </SetupRow>
 
         <SetupRow
@@ -789,451 +435,35 @@ export function Setup({ onCancel, onStart }: Props) {
           open={!!openRows.games}
           onToggle={() => toggleRow('games')}
         >
-          <section className="card">
-            <div className="game-list">
-              {GAMES.map((g) => (
-                <div
-                  key={g.id}
-                  className={`game-card${games.includes(g.id) ? ' active' : ''}${expandedGame === g.id ? ' expanded' : ''}`}
-                >
-                  {/* Two buttons side by side, not one inside the other: the
-                      card used to be a role="button" wrapping the real ⓘ
-                      button, a control nested in a control, which assistive
-                      tech exposes unreliably. The card itself is now only a
-                      box; the pick and the rules are each a button. */}
-                  <div className="game-card-row">
-                    <button
-                      type="button"
-                      className="game-card-btn"
-                      aria-pressed={games.includes(g.id)}
-                      onClick={() => toggleGame(g.id)}
-                    >
-                      <span className="game-check" aria-hidden="true">
-                        {games.includes(g.id) ? '✓' : ''}
-                      </span>
-                      <span className="game-text">
-                        <strong>{g.label}</strong>
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className="game-info-btn"
-                      aria-label={`${g.label} rules`}
-                      aria-expanded={expandedGame === g.id}
-                      onClick={() => setExpandedGame((cur) => (cur === g.id ? null : g.id))}
-                    >
-                      ⓘ
-                    </button>
-                  </div>
-                  {/* The blurb lives behind the ⓘ with the rules: nine cards
-                      each carrying a sentence made this row the longest part
-                      of setup, and the name is what a regular picks by. */}
-                  {expandedGame === g.id && (
-                    <p className="game-info-text">
-                      <strong>{g.blurb}</strong> {GAME_RULES[g.id]}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {showScoring && (
-            <section className="card">
-              <h2>Scoring</h2>
-              <p className="hint-inline">
-                Handicaps apply at full allowance by default. Match Play and Nassau play off the
-                low handicap — the lowest plays scratch and the rest take the difference, 90% of
-                it in a four-ball. Set a game to gross to play it off the card, or change an
-                allowance the way your group plays — 85% for four-ball stroke play, 95% for
-                Stableford.
-              </p>
-              {allowanceGames.map((g) => {
-                const canNet = canScoreNet(g);
-                const net = canNet ? (netByGame[g] ?? true) : false;
-                // An allowance cuts handicap strokes, so it only means
-                // anything where handicap strokes are being used: a game set
-                // to gross has none to cut. Quota has no gross/net choice at
-                // all and always spends the handicap, so it always asks.
-                const showAllowance = canNet ? net : true;
-                // What the match is played off when nothing is chosen: the
-                // handbook's 90% for a four-ball, 100% otherwise — the same
-                // fallback `matchAllowanceFor` uses, so the row tells the truth.
-                const fourBall =
-                  (g === 'matchPlay' && matchMode === '2v2') ||
-                  (g === 'nassau' && nassauMode === '2v2');
-                const fallback =
-                  g === 'matchPlay' || g === 'nassau'
-                    ? fourBall
-                      ? MATCH_ALLOWANCE.fourBall
-                      : MATCH_ALLOWANCE.singles
-                    : 100;
-                return (
-                  <div key={g} className="score-mode-row">
-                    <span className="score-mode-name">{gameMeta(g).label}</span>
-                    {canNet && (
-                      <div className="seg small">
-                        {([false, true] as const).map((v) => (
-                          <button
-                            key={String(v)}
-                            type="button"
-                            className={`seg-btn${net === v ? ' active' : ''}`}
-                            aria-pressed={net === v}
-                            onClick={() => setNetByGame((m) => ({ ...m, [g]: v }))}
-                          >
-                            {v ? 'Net' : 'Gross'}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {showAllowance && (
-                      <select
-                        className="allowance-select"
-                        value={allowanceByGame[g] ?? fallback}
-                        onChange={(e) =>
-                          setAllowanceByGame((m) => ({ ...m, [g]: Number(e.target.value) }))
-                        }
-                        aria-label={`Handicap allowance for ${gameMeta(g).label}`}
-                      >
-                        {[100, 95, 90, 85, 75, 50].map((pct) => (
-                          <option key={pct} value={pct}>
-                            {pct}%
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                );
-              })}
-            </section>
-          )}
-
-          {showMatchPlay && (
-            <TeamPicker
-              label="Match Play teams"
-              players={namedPlayers}
-              canTeams={canTeams}
-              mode={matchMode}
-              onMode={setMatchMode}
-              sideA={matchSideA}
-              sideB={matchSideB}
-              onSideA={setMatchSideA}
-              onSideB={setMatchSideB}
-              assign={matchAssign}
-              onAssign={(id, v) => setMatchAssign((a) => ({ ...a, [id]: v }))}
-            />
-          )}
-
-          {showVegas && (
-            <TeamPicker
-              label="Vegas teams"
-              players={namedPlayers}
-              canTeams={canTeams}
-              teamsOnly
-              mode="2v2"
-              onMode={() => {}}
-              sideA=""
-              sideB=""
-              onSideA={() => {}}
-              onSideB={() => {}}
-              assign={vegasAssign}
-              onAssign={(id, v) => setVegasAssign((a) => ({ ...a, [id]: v }))}
-            />
-          )}
-
-          {showNassau && (
-            <TeamPicker
-              label="Nassau teams"
-              players={namedPlayers}
-              canTeams={canTeams}
-              mode={nassauMode}
-              onMode={setNassauMode}
-              sideA={nassauSideA}
-              sideB={nassauSideB}
-              onSideA={setNassauSideA}
-              onSideB={setNassauSideB}
-              assign={nassauAssign}
-              onAssign={(id, v) => setNassauAssign((a) => ({ ...a, [id]: v }))}
-            />
-          )}
-
-          {(showStableford || showWolf || showVegas || showNassau) && (
-            <section className="card">
-              <h2>Options</h2>
-              {showStableford && (
-                <label className="field">
-                  <span>Stableford scoring</span>
-                  <select
-                    value={options.stablefordMode}
-                    onChange={(e) =>
-                      setOptions({
-                        ...options,
-                        stablefordMode: e.target.value as 'standard' | 'modified',
-                      })
-                    }
-                  >
-                    <option value="standard">Standard (par = 2 pts)</option>
-                    <option value="modified">Modified (eagle = 5 pts)</option>
-                  </select>
-                </label>
-              )}
-              {showNassau && (
-                <label className="set-row">
-                  <span>
-                    <span className="set-label">Nassau auto-press</span>
-                    <span className="set-hint">Press automatically when a side goes 2 down</span>
-                  </span>
-                  <input
-                    className="switch"
-                    type="checkbox"
-                    checked={options.autoPress === true}
-                    onChange={(e) => setOptions({ ...options, autoPress: e.target.checked })}
-                  />
-                </label>
-              )}
-              {showVegas && (
-                <label className="set-row">
-                  <span>
-                    <span className="set-label">Vegas birdie flip</span>
-                    <span className="set-hint">A birdie turns the other side's number around</span>
-                  </span>
-                  <input
-                    className="switch"
-                    type="checkbox"
-                    checked={options.vegasFlip !== false}
-                    onChange={(e) => setOptions({ ...options, vegasFlip: e.target.checked })}
-                  />
-                </label>
-              )}
-              {showWolf && (
-                <div className="wolf-opts">
-                  <label className="field small">
-                    <span>Lone Wolf ×</span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={options.loneWolfMultiplier}
-                      onChange={(e) =>
-                        setOptions({ ...options, loneWolfMultiplier: Number(e.target.value) })
-                      }
-                    />
-                  </label>
-                  <label className="field small">
-                    <span>Blind Wolf ×</span>
-                    <input
-                      type="number"
-                      min={1}
-                      value={options.blindWolfMultiplier}
-                      onChange={(e) =>
-                        setOptions({ ...options, blindWolfMultiplier: Number(e.target.value) })
-                      }
-                    />
-                  </label>
-                </div>
-              )}
-            </section>
-          )}
+          <GamesSection
+            games={games}
+            onToggleGame={toggleGame}
+            namedPlayers={namedPlayers}
+            canTeams={canTeams}
+            showScoring={showScoring}
+            allowanceGames={allowanceGames}
+            netByGame={netByGame}
+            onNetByGame={(g, v) => setNetByGame((m) => ({ ...m, [g]: v }))}
+            allowanceByGame={allowanceByGame}
+            onAllowance={(g, pct) => setAllowanceByGame((m) => ({ ...m, [g]: pct }))}
+            match={match}
+            onMatch={(patch) => setMatch((m) => ({ ...m, ...patch }))}
+            nassau={nassau}
+            onNassau={(patch) => setNassau((n) => ({ ...n, ...patch }))}
+            vegasAssign={vegasAssign}
+            onVegasAssign={(id, v) => setVegasAssign((a) => ({ ...a, [id]: v }))}
+            options={options}
+            onOptions={setOptions}
+          />
         </SetupRow>
 
         <SetupRow
           label="Holes & pars"
-          summary={holesSummary(holes)}
+          summary={holesSummary(cs.holes)}
           open={!!openRows.holes}
           onToggle={() => toggleRow('holes')}
         >
-          <section className="card">
-            <div className="seg">
-              {[9, 18].map((n) => (
-                <button
-                  key={n}
-                  className={`seg-btn${holeCount === n ? ' active' : ''}`}
-                  aria-pressed={holeCount === n}
-                  onClick={() => setHoleCountAndPars(n)}
-                >
-                  {n} holes
-                </button>
-              ))}
-            </div>
-            {/* A nine off a loaded eighteen can be either nine. Golf League
-                has always offered this; New Round only ever played the front. */}
-            {holeCount === 9 && source && (
-              <div className="seg nine-pick" role="group" aria-label="Which nine">
-                {(
-                  [
-                    ['front', 'Front 9'],
-                    ['back', 'Back 9'],
-                  ] as const
-                ).map(([id, label]) => (
-                  <button
-                    key={id}
-                    className={`seg-btn${nine === id ? ' active' : ''}`}
-                    aria-pressed={nine === id}
-                    onClick={() => switchNine(id)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            )}
-            {/* One slot, two states, written as a choice so they cannot both
-                appear: the caveat while the numbers are still the database's,
-                and — once the user has vouched for them — the confirmation, in
-                the same place. Saving from here retires the caveat, so putting
-                the answer at the foot of the row instead (below the whole par
-                grid, a screenful away) would read as the press having
-                dismissed a warning and done nothing else. */}
-            {holesSource === 'search' ? (
-              <p className={`check-note${importIssues.length ? ' bad' : ''}`} role="status">
-                <strong>Check these against the card.</strong> Pars and stroke indexes from
-                course search are open community data and are sometimes wrong — a par out by one
-                shifts every net score and Stableford point for the whole round.
-                {importIssues.length > 0 && (
-                  <>
-                    {' '}
-                    Some of it already looks off:
-                    <span className="issue-list">
-                      {importIssues.map((issue) => (
-                        <span key={issue}>{issue}</span>
-                      ))}
-                    </span>
-                  </>
-                )}
-                {/* The point of checking a course is not having to check it
-                    again. Offered here rather than only at the foot of the
-                    card, because this is where the checking happens — and
-                    saving is what turns a database guess into the copy that
-                    loads next time. */}
-                <button
-                  type="button"
-                  className="check-save"
-                  onClick={() => saveFavorite('check')}
-                >
-                  <StarIcon size={15} />
-                  {importIssues.length > 0
-                    ? 'Save this course anyway'
-                    : 'Looks right — save this course'}
-                </button>
-              </p>
-            ) : savedNote?.row === 'check' ? (
-              <p className="check-note saved" role="status">
-                <StarIcon size={15} /> {savedNote.text} — it loads from here next time.
-              </p>
-            ) : null}
-            <div className="rating-row">
-              <label className="field small">
-                <span>Slope</span>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={55}
-                  max={155}
-                  value={slope ?? ''}
-                  onChange={(e) => setSlope(e.target.value === '' ? undefined : Number(e.target.value))}
-                  placeholder="113"
-                />
-              </label>
-              <label className="field small">
-                <span>Rating</span>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.1"
-                  value={rating ?? ''}
-                  onChange={(e) => {
-                    setRating(e.target.value === '' ? undefined : Number(e.target.value));
-                    setRatingHoles(holes.length);
-                  }}
-                  placeholder={`${holes.length * 4}.0`}
-                />
-              </label>
-            </div>
-            <p className="hint-inline">
-              {rated
-                ? `Handicap Index converts to strokes for these ${holes.length} holes.`
-                : `Optional — off the card, for these ${holes.length} holes. With both, players can enter a Handicap Index instead of working out their own strokes.`}
-            </p>
-            <div className="preset-row">
-              <span>Quick set:</span>
-              <button className="chip" onClick={() => applyPreset('standard')}>
-                Standard par {holeCount === 9 ? 36 : 72}
-              </button>
-              <button className="chip" onClick={() => applyPreset('par4')}>
-                All par 4
-              </button>
-            </div>
-            {/* A div, not a label: with stroke index showing, a cell holds two
-                controls, and a <label> may only name one of them. Each field
-                carries its own accessible name instead, and — once there are
-                two boxes to tell apart — its own visible caption. Without them
-                the cell is a hole number over two bare boxes, and the default
-                stroke indexes make it worse by repeating the hole number
-                underneath itself. */}
-            <div className={`par-grid${advancedHoles ? ' with-si' : ''}`}>
-              {holes.map((h) => (
-                <div key={h.number} className="par-cell">
-                  <span className="par-hole">{h.number}</span>
-                  {advancedHoles && <span className="par-cap">Par</span>}
-                  <ParTile hole={h.number} par={h.par} onChange={(v) => setPar(h.number, v)} />
-                  {advancedHoles && (
-                    <>
-                      <span className="par-cap">SI</span>
-                      <input
-                        className="si-input"
-                        type="number"
-                        min={1}
-                        max={holes.length}
-                        value={h.strokeIndex ?? ''}
-                        onChange={(e) =>
-                          setStrokeIndex(
-                            h.number,
-                            e.target.value === '' ? undefined : Number(e.target.value)
-                          )
-                        }
-                        aria-label={`Stroke index for hole ${h.number}`}
-                      />
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-            {advancedHoles && siProblem && (
-              <p className="check-note bad" role="status">
-                <strong>These stroke indexes can't be used.</strong>{' '}
-                {describeStrokeIndexProblem(siProblem, holes.length)} Until it's fixed, handicap
-                strokes fall in hole order instead — everyone still gets the right number of
-                shots, just not on the holes the course would pick.
-              </p>
-            )}
-            <button className="btn-ghost add" onClick={toggleAdvanced}>
-              {/* The sign in a 16px box, the star icon's size, so this and
-                  "Save this course" below start their words in one column. */}
-              <span className="add-glyph" aria-hidden="true">
-                {advancedHoles ? '−' : '+'}
-              </span>
-              {advancedHoles ? 'Hide hole difficulty' : 'Set hole difficulty (stroke index)'}
-            </button>
-            {advancedHoles && (
-              <p className="hint-inline">
-                Stroke index ranks hole difficulty (1 = hardest). Used to allocate handicap
-                strokes in net games.
-              </p>
-            )}
-            {/* Stands down while the call-out above is offering the same
-                action: two identical buttons on one card is a question about
-                which one is the real one. This is the general path — a course
-                typed or preset by hand — and the call-out's is the prompt at
-                the moment it matters. */}
-            {holesSource !== 'search' && (
-              <button className="btn-ghost add" onClick={() => saveFavorite('foot')}>
-                <StarIcon size={16} /> Save this course for next time
-              </button>
-            )}
-            {savedNote?.row === 'holes' && (
-              <p className="hint-inline" role="status">
-                {savedNote.text}
-              </p>
-            )}
-          </section>
+          <HolesSection state={cs} derived={derived} dispatch={dispatch} onSave={saveFavorite} />
         </SetupRow>
 
         <SetupRow
