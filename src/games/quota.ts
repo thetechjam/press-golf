@@ -1,6 +1,7 @@
 import type { Round, Hole, GameResult, GameStanding } from '../types';
 import { strokesReceivedOver } from './handicap';
 import { rankPlayed } from './util';
+import { pointsMoney, type MoneyFn } from './moneyModels';
 
 /**
  * Quota (also called Points, or 39-ing).
@@ -89,3 +90,6 @@ export function computeQuota(round: Round): GameResult {
     note: 'Gross scores — the handicap is already in the quota.',
   };
 }
+
+/** Points over quota against the players who posted a card — see moneyModels.ts. */
+export const quotaMoney: MoneyFn = pointsMoney(computeQuota);

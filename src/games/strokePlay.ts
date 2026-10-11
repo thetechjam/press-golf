@@ -2,6 +2,7 @@ import type { Round, Hole, GameResult, GameStanding } from '../types';
 import { strokesReceivedOver } from './handicap';
 import { netFor } from './scoring';
 import { rankPlayed } from './util';
+import { zeroNet, type MoneyFn } from './moneyModels';
 
 export function computeStrokePlay(round: Round): GameResult {
   const useNet = netFor(round, 'strokePlay');
@@ -51,3 +52,38 @@ export function computeStrokePlay(round: Round): GameResult {
     standings: sorted,
   };
 }
+
+/**
+ * Low round takes the stake from every other player who posted a card; a tie
+ * for low splits the pot. Totals are over the holes each player scored, as
+ * computeStrokePlay counts them.
+ */
+export const strokePlayMoney: MoneyFn = (round, stake) => {
+  const net = zeroNet(round);
+  const useNet = netFor(round, 'strokePlay');
+  const totals = round.players
+    .map((p) => p.id)
+    .map((id) => {
+      let gross = 0;
+      const played: Hole[] = [];
+      for (const h of round.holes) {
+        const s = round.scores[h.number]?.[id];
+        if (s != null) {
+          gross += s;
+          played.push(h);
+        }
+      }
+      // Strokes on the holes scored, as computeStrokePlay counts them.
+      const total = useNet ? gross - strokesReceivedOver(round, id, played, 'strokePlay') : gross;
+      return { id, total, played: played.length };
+    })
+    .filter((t) => t.played > 0);
+  if (totals.length < 2) return net;
+  const min = Math.min(...totals.map((t) => t.total));
+  const winners = totals.filter((t) => t.total === min);
+  const losers = totals.filter((t) => t.total > min);
+  const share = (losers.length * stake) / winners.length;
+  winners.forEach((w) => (net[w.id] = share));
+  losers.forEach((l) => (net[l.id] = -stake));
+  return net;
+};

@@ -2,6 +2,7 @@ import type { Round, GameResult, GameStanding } from '../types';
 import { holeScore } from './handicap';
 import { netFor } from './scoring';
 import { rankStandings } from './util';
+import { pointsMoney, type MoneyFn } from './moneyModels';
 
 /** Points for a hole given score-relative-to-par (negative = under par). */
 function pointsFor(scoreToPar: number, mode: 'standard' | 'modified'): number {
@@ -60,3 +61,6 @@ export function computeStableford(round: Round): GameResult {
     note: useNet ? 'Net scoring' : undefined,
   };
 }
+
+/** Points against the players who posted a card — see moneyModels.ts. */
+export const stablefordMoney: MoneyFn = pointsMoney(computeStableford);
