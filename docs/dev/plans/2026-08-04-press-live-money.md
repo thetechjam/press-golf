@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vite 8 + React 19 + TypeScript 6, Vitest 4 (node environment), oxlint, plain CSS with custom properties. No new dependencies.
 
-**Spec:** `docs/superpowers/specs/2026-08-04-press-live-money-design.md`
+**Spec:** `docs/dev/specs/2026-08-04-press-live-money-design.md`
 
 ## Global Constraints
 

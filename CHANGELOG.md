@@ -35,6 +35,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (weekly, minor and patch grouped), and a sponsor button.
 
 ### Changed
+- **The repo's public face is tidier.** The design plans and specs that a
+  few larger features were built from have moved from `docs/superpowers/` to
+  `docs/dev/`, with a README saying what they are; a per-machine editor launch
+  file is no longer tracked; and a `.mailmap` folds the three author
+  identities the history was written under into one, so `git shortlog` and
+  GitHub's contributor graph read as the one person they are.
 - **Security headers on the site.** `netlify.toml` now sends a Content
   Security Policy (scripts, styles, fonts and the service worker from Press
   itself; network calls only to Press and the course-search API; images from

@@ -29,5 +29,10 @@ dist-ssr
 # Subagent-driven-development scratch workspace
 .superpowers/
 
+# Claude Code's per-machine launch config: how one developer starts `npm run dev`,
+# nothing a contributor needs. Only this file: the repo carries its own agent
+# setup (.claude/agents, skills, shared settings) next to the code.
+.claude/launch.json
+
 # tutorial footage
 video-out/

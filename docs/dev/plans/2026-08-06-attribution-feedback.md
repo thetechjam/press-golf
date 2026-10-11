@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Spec of record: `docs/superpowers/specs/2026-08-06-press-attribution-feedback-design.md`.
+- Spec of record: `docs/dev/specs/2026-08-06-press-attribution-feedback-design.md`.
 - **Tests are pure-logic only.** `vite.config.ts` sets `environment: 'node'` and `include: ['src/**/*.test.ts']` — `.tsx` is never collected and there is no jsdom or Testing Library. Do not write component tests; they would silently never run. Verify UI manually.
 - **Stub browser globals with `vi.stubGlobal`**, following `src/storage.test.ts:5-11`.
 - `npm run typecheck` is `tsc -b --noEmit`. **Do not change it to `tsc --noEmit`** — the root tsconfig is solution-style (`"files": []` with `references`), so without `-b` it compiles zero files and exits 0 regardless of what is broken.
@@ -993,7 +993,7 @@ Expected: all clean.
 
 - [ ] **Step 2: Walk the spec's acceptance criteria**
 
-Check each numbered item at the end of `docs/superpowers/specs/2026-08-06-press-attribution-feedback-design.md` and record a verdict with evidence.
+Check each numbered item at the end of `docs/dev/specs/2026-08-06-press-attribution-feedback-design.md` and record a verdict with evidence.
 
 For criterion 1, prove the version is not hard-coded:
 

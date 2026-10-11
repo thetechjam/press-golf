@@ -15,7 +15,7 @@
 - **Stroke index is always visible.** Not gated on `usesHandicaps(round)` or on whether real course indexes were provided.
 - **League parity is a requirement, not a nice-to-have.** Every change ships working for both `options.league` rounds and regular rounds.
 - **Brand constants are fixed** and must be identical across both share cards: `BG #0b3d2e`, `CREAM #f4f7f2`, `MUTED rgba(244, 247, 242, 0.62)`, `GOLD #e7b53c`, `BRIGHT #57d9a3`, `RED #ff8a7e`. Display face is Oswald; numerics are `ui-monospace, Menlo, monospace`.
-- **Verify layout at 874×390 (phone landscape) and 402×554 (the viewport real Safari reports).** Not the 375×812 emulator default, which is 258px taller than the device actually reports. See `docs/superpowers/specs/2026-08-06-press-attribution-feedback-design.md:342`.
+- **Verify layout at 874×390 (phone landscape) and 402×554 (the viewport real Safari reports).** Not the 375×812 emulator default, which is 258px taller than the device actually reports. See `docs/dev/specs/2026-08-06-press-attribution-feedback-design.md:342`.
 - **Commands:** `npm test` (vitest run), `npm run typecheck`, `npm run lint` (oxlint), `npm run build`.
 - Every task ends with `npm test && npm run typecheck && npm run lint` passing before its commit.
 

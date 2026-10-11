@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vite 8, React 19, TypeScript 6, vitest 4, oxlint. Plain CSS in a single `src/index.css`.
 
-**Spec:** `docs/superpowers/specs/2026-08-08-press-quick-pick-score-entry-design.md`
+**Spec:** `docs/dev/specs/2026-08-08-press-quick-pick-score-entry-design.md`
 
 ## Global Constraints
 
@@ -844,8 +844,8 @@ gh pr create --title "One-tap score entry on the Hole tab" --body "$(cat <<'EOF'
 Replaces the Hole tab's `−`/`+` stepper with a row of score chips centred on
 par, so any common score is one tap.
 
-Spec: `docs/superpowers/specs/2026-08-08-press-quick-pick-score-entry-design.md`
-Plan: `docs/superpowers/plans/2026-08-08-quick-pick-score-entry.md`
+Spec: `docs/dev/specs/2026-08-08-press-quick-pick-score-entry-design.md`
+Plan: `docs/dev/plans/2026-08-08-quick-pick-score-entry.md`
 
 - A typical hole drops from eight taps to four
 - Tapping the selected chip clears it, closing the dead end where a score set
