@@ -50,7 +50,9 @@ export function HelpSheet({ onBack }: Props) {
           Type a <strong>handicap</strong> beside a player — or a Handicap Index,
           on a course with a slope and rating — and games score net for
           everyone, with each game set to gross or net in the Scoring row. Blank
-          handicaps play gross.
+          handicaps play gross. In Match Play and Nassau the lowest handicap plays
+          off scratch and the others take the difference — 90% of it in a
+          four-ball — as the Rules of Handicapping recommend.
         </p>
         <p>
           Put a <strong>stake</strong> on a game in the Money row and Press keeps

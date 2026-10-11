@@ -5,7 +5,7 @@ import { DEFAULT_OPTIONS } from '../types';
 import { GAMES, gameMeta } from '../games';
 import { GAME_RULES } from '../games/rules';
 import { usesHandicap, canScoreNet } from '../games/scoring';
-import { formatHandicap } from '../games/handicap';
+import { formatHandicap, MATCH_ALLOWANCE } from '../games/handicap';
 import { strokeIndexProblem, describeStrokeIndexProblem } from '../games/strokeIndex';
 import { scorecardIssues } from '../courses/validate';
 import { validSlope, validRating, courseHandicap } from '../games/courseHandicap';
@@ -842,9 +842,11 @@ export function Setup({ onCancel, onStart }: Props) {
             <section className="card">
               <h2>Scoring</h2>
               <p className="hint-inline">
-                Handicaps apply everywhere at full allowance by default. Set a game to gross to
-                play it off the card, or cut the allowance the way the format asks — 90% for a
-                singles match, 85% for a four-ball.
+                Handicaps apply at full allowance by default. Match Play and Nassau play off the
+                low handicap — the lowest plays scratch and the rest take the difference, 90% of
+                it in a four-ball. Set a game to gross to play it off the card, or change an
+                allowance the way your group plays — 85% for four-ball stroke play, 95% for
+                Stableford.
               </p>
               {allowanceGames.map((g) => {
                 const canNet = canScoreNet(g);
@@ -854,6 +856,18 @@ export function Setup({ onCancel, onStart }: Props) {
                 // to gross has none to cut. Quota has no gross/net choice at
                 // all and always spends the handicap, so it always asks.
                 const showAllowance = canNet ? net : true;
+                // What the match is played off when nothing is chosen: the
+                // handbook's 90% for a four-ball, 100% otherwise — the same
+                // fallback `matchAllowanceFor` uses, so the row tells the truth.
+                const fourBall =
+                  (g === 'matchPlay' && matchMode === '2v2') ||
+                  (g === 'nassau' && nassauMode === '2v2');
+                const fallback =
+                  g === 'matchPlay' || g === 'nassau'
+                    ? fourBall
+                      ? MATCH_ALLOWANCE.fourBall
+                      : MATCH_ALLOWANCE.singles
+                    : 100;
                 return (
                   <div key={g} className="score-mode-row">
                     <span className="score-mode-name">{gameMeta(g).label}</span>
@@ -875,7 +889,7 @@ export function Setup({ onCancel, onStart }: Props) {
                     {showAllowance && (
                       <select
                         className="allowance-select"
-                        value={allowanceByGame[g] ?? 100}
+                        value={allowanceByGame[g] ?? fallback}
                         onChange={(e) =>
                           setAllowanceByGame((m) => ({ ...m, [g]: Number(e.target.value) }))
                         }

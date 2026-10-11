@@ -7,7 +7,7 @@ import { JunkControls } from '../components/JunkControls';
 import { VegasStrip } from '../components/VegasStrip';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps, courseHandicapFor } from '../games/handicap';
 import { strokeIndexesUsable } from '../games/strokeIndex';
-import { anyNetScoring } from '../games/scoring';
+import { dotHandicapFor } from '../games/strokeDisplay';
 import { LEAGUE_MAX_SCORE, awaitingHandicap, leagueStrokesOnHole, pickedUp } from '../games/league';
 import { skinsOnHole } from '../games/skins';
 import { playerColor } from '../player';
@@ -203,15 +203,14 @@ export function HoleView({
                   ? courseHandicapFor(round, p)
                   : undefined
               }
-              strokesReceived={
-                anyNetScoring(round)
-                  ? strokesReceivedOnHole(
-                      courseHandicapFor(round, p),
-                      siMap[hole.number],
-                      round.holes.length
-                    )
-                  : 0
-              }
+              // The strokes this hole is actually played off — a match's
+              // relative strokes when that is all the round scores net. Zero
+              // in a gross round. See strokeDisplay.ts.
+              strokesReceived={strokesReceivedOnHole(
+                dotHandicapFor(round, p.id),
+                siMap[hole.number],
+                round.holes.length
+              )}
               matchStrokes={chips ? chips[p.id] : undefined}
               onChange={(v) => onScore(p.id, v)}
               max={round.options.league ? LEAGUE_MAX_SCORE : undefined}
