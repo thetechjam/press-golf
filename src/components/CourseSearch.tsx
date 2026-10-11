@@ -154,7 +154,13 @@ export function CourseSearch({ value, onChange, onPick, label = 'Course (optiona
         </ul>
       )}
 
-      <p className="cs-attribution">Course data © OpenGolfAPI (ODbL)</p>
+      <p className="cs-attribution">
+        Course data ©{' '}
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">
+          OpenStreetMap
+        </a>{' '}
+        contributors (ODbL 1.0) via OpenGolfAPI
+      </p>
     </div>
   );
 }

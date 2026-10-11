@@ -50,6 +50,8 @@ export default defineConfig({
     // environment a file runs in where somebody reading that file will see it.
     environment: 'node',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+    // Puts happy-dom's localStorage back where Node 25+ defines its own — see the file.
+    setupFiles: ['./src/testSetup.ts'],
   },
   plugins: [
     react(),

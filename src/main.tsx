@@ -5,7 +5,9 @@ import App from './App.tsx'
 import { getSettings } from './storage'
 import { applyTheme, watchSystemTheme } from './theme'
 import { flushQueue, postFeedback, watchConnectivity } from './feedback'
-import { initNativeStorage } from './native'
+import { initNativeStorage, isNative } from './native'
+import { requestPersistentStorage } from './persistence'
+import { ErrorBoundary } from './components/ErrorBoundary'
 
 // Inside the native shell, storage has to be hydrated before anything reads
 // it — and the first read is two lines down. On the web this resolves
@@ -22,8 +24,15 @@ watchSystemTheme()
 void flushQueue(postFeedback)
 watchConnectivity(postFeedback)
 
+// Ask the browser to keep this origin's storage. Advisory and asynchronous:
+// the answer only feeds the diagnostics line in Settings. The native shell
+// has its own storage (native.ts) and no eviction to ask about.
+if (!isNative()) void requestPersistentStorage()
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )

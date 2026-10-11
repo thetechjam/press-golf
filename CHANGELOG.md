@@ -8,6 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **A screen for when Press breaks, with the backup on it.** A render error
+  used to leave a blank page under a splash that never faded — on an
+  installed app, a green rectangle with no way out and the rounds behind it.
+  It now shows what went wrong in words a bug report can carry, a Reload
+  button, and the Back up / Restore rows themselves, so the rounds on the
+  phone can be saved to a file before anything else is tried.
+- **Press asks the browser to keep its storage.** `navigator.storage.persist()`
+  is requested once at launch, and the answer is a new line at the bottom of
+  Settings — "Storage protected" or "Storage not protected — back up or
+  install" — beside the build stamp. The home-screen tip now says why
+  installing matters: Safari clears a site's data after seven days unused
+  unless it is installed.
+- **Repo files for people landing on GitHub:** `CONTRIBUTING.md` (Node 24, the
+  scripts, the additive-only rule for rounds, links and backups), a bug-report
+  template that asks for the build stamp and a round link, Dependabot
+  (weekly, minor and patch grouped), and a sponsor button.
+
+### Changed
+- **Security headers on the site.** `netlify.toml` now sends a Content
+  Security Policy (scripts, styles, fonts and the service worker from Press
+  itself; network calls only to Press and the course-search API; images from
+  Press, data: and blob: for the share cards), plus `X-Frame-Options: DENY`,
+  `X-Content-Type-Options: nosniff`, a strict referrer policy and a minimal
+  Permissions-Policy.
+- **Course data is credited properly:** "© OpenStreetMap contributors (ODbL
+  1.0) via OpenGolfAPI", with OpenStreetMap linked to its copyright page, under
+  course search, in How to Play and in the README.
+- **The test suite runs on Node 25 and later.** Node now ships its own
+  `localStorage` global, which hid happy-dom's and failed every screen test on
+  a developer machine running Node 26; a one-file test setup installs the
+  DOM's own storage in its place. CI stays on Node 24 (`.nvmrc`).
 - **A wrong par can be fixed on the hole.** Course search data is sometimes
   a par out, which changes every net score, Stableford point and quota
   target for the rest of the round, and the only fix was a new round. "Par 4"
