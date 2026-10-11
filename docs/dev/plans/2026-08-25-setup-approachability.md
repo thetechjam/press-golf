@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vite + React 19 + TypeScript, vitest (node environment), oxlint. Plain CSS in `src/index.css`.
 
-**Spec:** `docs/superpowers/specs/2026-08-25-press-setup-approachability-design.md`
+**Spec:** `docs/dev/specs/2026-08-25-press-setup-approachability-design.md`
 
 ## Global Constraints
 

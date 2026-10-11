@@ -12,7 +12,7 @@
 
 - **Tests are pure-logic only.** `vite.config.ts` sets `environment: 'node'` and `include: ['src/**/*.test.ts']` — `.tsx` files are never collected and there is no jsdom or Testing Library. Do not write component tests; verify UI manually per each task's Verify step.
 - **Stub browser globals with `vi.stubGlobal`**, following the existing pattern at `src/storage.test.ts:5-11`.
-- Spec of record: `docs/superpowers/specs/2026-08-05-press-theme-handicaps-design.md`.
+- Spec of record: `docs/dev/specs/2026-08-05-press-theme-handicaps-design.md`.
 - Run `npm test` (not `vitest` directly) — it is `vitest run`.
 - `npm run typecheck` is `tsc -b --noEmit`. **Do not change it back to `tsc --noEmit`** — the root `tsconfig.json` is solution-style (`"files": []` with `references`), so without `-b` it compiles zero files and exits 0 no matter what is broken. Fixed in `15d7fc8` after the Task 1 review caught it.
 - Commit after every task. Never commit with a failing test.
@@ -1715,7 +1715,7 @@ Expected: all clean.
 
 - [ ] **Step 3: Confirm each spec acceptance criterion**
 
-Walk the numbered list at the end of `docs/superpowers/specs/2026-08-05-press-theme-handicaps-design.md`. Pay particular attention to #5 (a league round shows every handicap badge despite `useNet: false`), #9 (chips match the Board's per-match totals), and #10 (chips legible in all themes and Glare).
+Walk the numbered list at the end of `docs/dev/specs/2026-08-05-press-theme-handicaps-design.md`. Pay particular attention to #5 (a league round shows every handicap badge despite `useNet: false`), #9 (chips match the Board's per-match totals), and #10 (chips legible in all themes and Glare).
 
 - [ ] **Step 4: Update the changelog**
 
