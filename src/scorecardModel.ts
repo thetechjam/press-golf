@@ -3,6 +3,7 @@ import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps, courseHandicapFor
 import { claimsOn, junkMeta } from './games/junk';
 import { ordinal } from './games/util';
 import { anyNetScoring } from './games/scoring';
+import { dotHandicapFor } from './games/strokeDisplay';
 import { leagueStrokesOnHole, type LeagueMatchKey } from './games/league';
 import { scoreMarkClass } from './scoreMark';
 
@@ -198,9 +199,12 @@ export function buildScorecard(round: Round): ScorecardModel {
       : [];
 
   const rows: ScorecardRow[] = round.players.map((p) => {
-    // The course handicap, so an Index-only player's dots and HCP badge
-    // match what every engine plays them off.
+    // The course handicap for the HCP badge, so an Index-only player's reads
+    // what the engines derive. The dots come from `dotHandicapFor`: the same
+    // number in a card game, the match's relative strokes when a match is all
+    // the round scores net.
     const handicap = courseHandicapFor(round, p);
+    const dotHandicap = isLeague ? 0 : dotHandicapFor(round, p.id);
     let gross = 0;
     let playedPar = 0;
     let played = 0;
@@ -219,7 +223,7 @@ export function buildScorecard(round: Round): ScorecardModel {
         markClass: score == null ? '' : scoreMarkClass(score - h.par),
         dots:
           !isLeague && useNet
-            ? strokesReceivedOnHole(handicap, siMap[h.number], total)
+            ? strokesReceivedOnHole(dotHandicap, siMap[h.number], total)
             : 0,
         chips: isLeague ? (chipsByHole[h.number][p.id] ?? []) : [],
       };

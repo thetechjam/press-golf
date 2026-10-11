@@ -682,6 +682,30 @@ describe('handicap allowances', () => {
       expect(screen.queryByLabelText(/Handicap allowance for Skins/i)).toBeNull()
     );
   });
+
+  it('show the 90% a four-ball match will play off, and 100% for singles', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await user.click(screen.getByRole('button', { name: /Add player/i }));
+    await user.click(screen.getByRole('button', { name: /Add player/i }));
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    for (const [i, name] of ['Al', 'Bo', 'Cy', 'Di'].entries()) await user.type(inputs[i], name);
+    await user.type(screen.getByLabelText(/^Handicap for Al$/i), '14');
+    await openRow(user, 'Games');
+    await user.click(screen.getByRole('button', { name: 'Match Play' }));
+
+    // Singles: the handbook's 100%, as the engine plays it.
+    const select = await screen.findByLabelText<HTMLSelectElement>(
+      /Handicap allowance for Match Play/i
+    );
+    expect(select.value).toBe('100');
+
+    // A four-ball: 90%, the figure matchAllowanceFor falls back to.
+    await user.click(screen.getByRole('button', { name: '2 v 2' }));
+    await waitFor(() => expect(select.value).toBe('90'));
+    await user.click(screen.getByRole('button', { name: '1 v 1' }));
+    await waitFor(() => expect(select.value).toBe('100'));
+  });
 });
 
 describe('telling the two handicap numbers apart', () => {

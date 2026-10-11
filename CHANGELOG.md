@@ -52,6 +52,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   exposes unreliably. Nothing moved.
 
 ### Fixed
+- **Match Play and Nassau take strokes off the low handicap.** A 10 playing a
+  6 got a shot on stroke indexes 1–10 and the 6 a shot on 1–6, each off their
+  own full handicap — six holes played level that read as handicapped, and the
+  10's four real shots on the wrong holes. The Rules of Handicapping (Appendix
+  C) have the lowest handicap in the match play off scratch and the rest take
+  the difference: 4 shots, on indexes 1–4. A four-ball plays 90% of that
+  difference — 10, 18, 27 and 39 play off 0, 7, 15 and 26, the handbook's own
+  example — unless the Scoring row says otherwise, and that row now shows the
+  90% it will use. Presses, called or automatic, are decided the same way. The
+  shot markers on the Hole tab and the Card show the strokes the match is
+  actually played off when a match is all the round scores net, and each
+  match's board names who gets what.
 - **Nassau on the back nine alone is one bet.** Holes 10–18 on their own were
   scored as an empty Front, a Back and a Total over the same nine, so the one
   bet paid twice. Reachable now that New Round can play the back nine.

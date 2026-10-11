@@ -1,5 +1,11 @@
 import type { Round, Hole, GameResult, GameStanding } from '../types';
-import { matchSegmentSides, resolveSides, type Side } from './matchPlay';
+import {
+  matchSegmentSides,
+  matchStrokesFor,
+  matchStrokesNote,
+  resolveSides,
+  type Side,
+} from './matchPlay';
 
 /** Resolves the two Nassau sides from options (defaults to 1v1, first two players). */
 export function nassauTeams(round: Round): { a: Side; b: Side } {
@@ -168,11 +174,15 @@ export function computeNassau(round: Round): GameResult {
   else if (bWins > aWins) status = `${b.label} ${leadVerb(b)} ${bWins}–${aWins}`;
   else status = `Tied ${aWins}–${bWins}`;
 
+  // Every bet, presses included, is played off the same strokes — the
+  // difference from the low man — so one line covers them all.
+  const shots = matchStrokesNote(round, matchStrokesFor(round, a, b, 'nassau'));
+
   return {
     gameType: 'nassau',
     title: round.options.nassau?.mode === '2v2' ? 'Nassau (2v2)' : 'Nassau',
     status,
     standings,
-    note: `${a.label} vs ${b.label}`,
+    note: shots ? `${a.label} vs ${b.label} · ${shots}` : `${a.label} vs ${b.label}`,
   };
 }

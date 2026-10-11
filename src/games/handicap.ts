@@ -116,6 +116,79 @@ export function playingHandicap(round: Round, playerId: string, game?: GameType)
   return allowance === 100 ? base : withAllowance(base, allowance);
 }
 
+/**
+ * The Rules of Handicapping's recommended allowances for a match (Appendix C):
+ * a singles match at 100%, a four-ball at 90%.
+ */
+export const MATCH_ALLOWANCE = { singles: 100, fourBall: 90 } as const;
+
+/**
+ * The allowance a match is played off: the one chosen for the game in Setup
+ * when there is one, otherwise the handbook's figure for the format. The
+ * Setup row shows the same fallback, so what it says and what is played agree.
+ */
+export function matchAllowanceFor(round: Round, game: GameType, fourBall: boolean): number {
+  const pct = round.options.allowanceByGame?.[game];
+  if (typeof pct === 'number' && pct > 0 && pct <= 100) return pct;
+  return fourBall ? MATCH_ALLOWANCE.fourBall : MATCH_ALLOWANCE.singles;
+}
+
+/**
+ * The strokes each player in a match plays off, by id.
+ *
+ * A match is scored between its players, not against the course, so each
+ * player's own course handicap is not what they play off. Rules of
+ * Handicapping, Appendix C: "the player with the lowest Playing Handicap plays
+ * off zero strokes relative to the other player(s). The other player(s)
+ * receive(s) the difference" — and in a four-ball the 90% allowance is applied
+ * to that difference, so 10, 18, 27 and 39 play off 0, 7, 15 and 26. A plus
+ * handicap is simply the low man: they play off scratch and everyone else's
+ * difference is measured from them.
+ *
+ * Press used to hand each side its full handicap on its own stroke-index holes,
+ * which gave a 10 against a 6 shots on indexes 1–10 and the 6 shots on 1–6 —
+ * six halved holes that should have been played level, and four shots for the
+ * 10 on the wrong holes. The allocation itself (`strokesReceivedOnHole`) is
+ * unchanged; only the number fed into it is.
+ */
+export function matchHandicaps(
+  round: Round,
+  ids: readonly string[],
+  game: GameType,
+  fourBall: boolean
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (ids.length === 0) return out;
+  const course: Record<string, number> = {};
+  for (const id of ids) {
+    const player = round.players.find((p) => p.id === id);
+    course[id] = player ? courseHandicapFor(round, player) : 0;
+  }
+  const low = Math.min(...ids.map((id) => course[id]));
+  const pct = matchAllowanceFor(round, game, fourBall);
+  for (const id of ids) out[id] = withAllowance(course[id] - low, pct);
+  return out;
+}
+
+/**
+ * A player's score on a hole, net of the strokes a given handicap gives them
+ * there. Null when no score has been entered. The handicap is passed in rather
+ * than looked up because a match plays off a relative one — see
+ * `matchHandicaps`.
+ */
+export function netHoleScore(
+  round: Round,
+  playerId: string,
+  hole: Hole,
+  handicap: number
+): number | null {
+  const raw = round.scores[hole.number]?.[playerId];
+  if (raw == null) return null;
+  if (!handicap) return raw;
+  const si = strokeIndexMap(round)[hole.number];
+  return raw - strokesReceivedOnHole(handicap, si, round.holes.length);
+}
+
 /** A handicap for display: a plus player's negative number reads as "+3". */
 export const formatHandicap = (n: number): string => (n < 0 ? `+${-n}` : `${n}`);
 
@@ -162,9 +235,7 @@ export function holeScore(
   const raw = round.scores[hole.number]?.[playerId];
   if (raw == null) return null;
   if (!useNet) return raw;
-  const hcp = playingHandicap(round, playerId, game);
-  const si = strokeIndexMap(round)[hole.number];
-  return raw - strokesReceivedOnHole(hcp, si, round.holes.length);
+  return netHoleScore(round, playerId, hole, playingHandicap(round, playerId, game));
 }
 
 /**

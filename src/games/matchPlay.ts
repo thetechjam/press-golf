@@ -1,11 +1,45 @@
 import type { Round, Hole, Player, GameResult, GameStanding, TeamSetup, GameType } from '../types';
-import { holeScore } from './handicap';
+import { matchHandicaps, netHoleScore } from './handicap';
 import { netFor } from './scoring';
 
 /** A side in a match: one player (1v1) or a team (2v2, best ball). */
 export interface Side {
   ids: string[];
   label: string;
+}
+
+/** Whether either side is a team — the four-ball the 90% allowance exists for. */
+export const isFourBall = (a: Side, b: Side): boolean => a.ids.length > 1 || b.ids.length > 1;
+
+/**
+ * The strokes each player in this match plays off, by id — the sides' players
+ * only, the lowest handicap at zero and the rest the difference (see
+ * `matchHandicaps`). Empty when the game is scored gross, so a caller can tell
+ * "no strokes" from "not a net game".
+ */
+export function matchStrokesFor(
+  round: Round,
+  a: Side,
+  b: Side,
+  game: GameType
+): Record<string, number> {
+  if (!netFor(round, game)) return {};
+  return matchHandicaps(round, [...a.ids, ...b.ids], game, isFourBall(a, b));
+}
+
+/**
+ * Who gets what in this match, for the board: "Bo gets 4 shots, Cy 2". The
+ * low man is not named — playing off scratch is the default, not news.
+ * Undefined when nobody gets a shot, so the board shows nothing rather than
+ * an empty line.
+ */
+export function matchStrokesNote(round: Round, strokes: Record<string, number>): string | undefined {
+  const getters = round.players.filter((p) => (strokes[p.id] ?? 0) > 0);
+  if (getters.length === 0) return undefined;
+  const [first, ...rest] = getters;
+  const n = strokes[first.id];
+  const head = `${first.name} gets ${n} shot${n === 1 ? '' : 's'}`;
+  return [head, ...rest.map((p) => `${p.name} ${strokes[p.id]}`)].join(', ');
 }
 
 export interface SegmentResult {
@@ -22,19 +56,18 @@ export interface SegmentResult {
 /**
  * Best (lowest) score for a side on a hole; null if no member has a score.
  *
- * Takes the game for the same reason `matchSegmentSides` does: it serves both
- * Match Play and Nassau, and those can be played off different allowances as
- * well as different gross/net settings.
+ * `strokes` is the match's own allocation from `matchStrokesFor` — relative
+ * to the low man, not each player's full handicap — and is empty for a gross
+ * game, where a missing entry plays off zero and the card is read as it is.
  */
 function sideBest(
   round: Round,
   ids: string[],
   hole: Hole,
-  useNet: boolean,
-  game: GameType
+  strokes: Record<string, number>
 ): number | null {
   const scores = ids
-    .map((id) => holeScore(round, id, hole, useNet, game))
+    .map((id) => netHoleScore(round, id, hole, strokes[id] ?? 0))
     .filter((s): s is number => s != null);
   return scores.length ? Math.min(...scores) : null;
 }
@@ -109,11 +142,11 @@ export function matchSegmentSides(
   b: Side,
   game: GameType = 'matchPlay'
 ): SegmentResult {
-  const useNet = netFor(round, game);
+  const strokes = matchStrokesFor(round, a, b, game);
   return runMatch(
     holes,
-    (h) => sideBest(round, a.ids, h, useNet, game),
-    (h) => sideBest(round, b.ids, h, useNet, game),
+    (h) => sideBest(round, a.ids, h, strokes),
+    (h) => sideBest(round, b.ids, h, strokes),
     a.label,
     b.label
   );
@@ -187,11 +220,19 @@ export function computeMatchPlay(round: Round): GameResult {
       ? 'Match Play (Net)'
       : 'Match Play';
 
+  // The matchup when it is not obvious from the players, and who gets shots:
+  // the Hole tab's markers can only draw one allocation, so in a round that
+  // also plays a card game net this line is where the match's own strokes are
+  // written down.
+  const who = twoTeams || round.players.length > 2 ? `${a.label} vs ${b.label}` : undefined;
+  const shots = matchStrokesNote(round, matchStrokesFor(round, a, b, 'matchPlay'));
+  const note = [who, shots].filter(Boolean).join(' · ');
+
   return {
     gameType: 'matchPlay',
     title,
     status: seg.status,
     standings,
-    note: twoTeams || round.players.length > 2 ? `${a.label} vs ${b.label}` : undefined,
+    note: note || undefined,
   };
 }
