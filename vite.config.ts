@@ -76,8 +76,9 @@ export default defineConfig({
       injectRegister: null,
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
-        // A build artifact for Netlify's form scanner, not an app asset.
-        globIgnores: ['**/__forms.html'],
+        // A build artifact for Netlify's form scanner, and the link-unfurl card,
+        // which only crawlers fetch: neither is an app asset.
+        globIgnores: ['**/__forms.html', '**/og.png'],
       },
       includeAssets: ['app-icon.svg', 'favicon.svg', 'apple-touch-icon.png'],
       manifest: {

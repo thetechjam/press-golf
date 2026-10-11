@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+# The Netlify Forms definition stub, not a page.
+Disallow: /__forms.html

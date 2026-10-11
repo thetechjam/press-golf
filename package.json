@@ -16,7 +16,8 @@
     "typecheck": "tsc -b --noEmit",
     "audit:a11y": "node scripts/a11y-audit.mjs",
     "audit:contrast": "node scripts/contrast-audit.mjs",
-    "capture:video": "node scripts/capture-tutorial.mjs"
+    "capture:video": "node scripts/capture-tutorial.mjs",
+    "og:image": "node scripts/og-image.mjs"
   },
   "dependencies": {
     "react": "^19.2.7",
