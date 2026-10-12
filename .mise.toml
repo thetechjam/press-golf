@@ -1,0 +1,3 @@
+# Node 24, the line CI runs (.nvmrc). `mise install` picks up the current 24.x.
+[tools]
+node = "24"

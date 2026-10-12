@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **A privacy page**, at `/privacy.html` on the site and as `PRIVACY.md` in the
+  repo, linked from the About block in Settings and from the README. Plain
+  English, checked against the code: no accounts, no analytics, no server-side
+  storage; what leaves the phone and when (course search, feedback, share
+  links, backups, links out); and how to delete what is stored.
+- **Screenshots in the README** — the real production build at phone width,
+  seeded with an invented four-ball, taken by `npm run screenshots:capture`.
+- **The share sheets say what a link is.** Under "Send the link" on both the
+  hand-over sheet and the results sheet, and in How to Play: the link is
+  compressed, not encrypted, and anyone who has it can read the names, scores
+  and stakes inside.
+- `.mise.toml` and `.tool-versions`, so mise and asdf pick up Node 24 the way
+  nvm already did.
+
 ## [0.2.0] - 2026-10-11
 
 Everything since the first cut in July, in one release. **Golf League** grows

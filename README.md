@@ -8,11 +8,20 @@ live leaderboards and running money totals while you play, then a settle-up
 summary at the end.
 
 No accounts, no sign-up, nothing to install from a store. It runs entirely in
-your browser, works offline, and keeps everything on your device.
+your browser, works offline, and keeps everything on your device — see
+[PRIVACY.md](./PRIVACY.md) for exactly what leaves it and when.
 
 **▶️ Live app: [pressgolf.netlify.app](https://pressgolf.netlify.app)**
 **📺 Walkthrough: [youtu.be/YDgTmnR_1eo](https://youtu.be/YDgTmnR_1eo)** — a full
 round in under six minutes
+
+<p align="center">
+  <img src="docs/screenshots/setup.png" width="180" alt="New Round: four players with handicaps, a saved course loaded, Nassau, Skins and Junk picked" />
+  <img src="docs/screenshots/hole.png" width="180" alt="The Hole tab mid-round: one row per player with score chips, and the money ticker showing who is up" />
+  <img src="docs/screenshots/board.png" width="180" alt="The Board: live Nassau, Skins and Junk standings with the running money" />
+  <img src="docs/screenshots/scoreboard.png" width="180" alt="The shareable scoreboard image: final standings, money and awards on the felt" />
+</p>
+<p align="center"><sub>Real screenshots of the production build at phone width — <code>npm run screenshots:capture</code> regenerates them. The <a href="docs/screenshots/results.png">full Results screen</a> shows the settle-up and the awards.</sub></p>
 
 ## Games
 
@@ -118,6 +127,16 @@ the colours or the tagline change:
 
 ```bash
 npm run og:image   # uses Playwright if installed, else a Chromium/Chrome on PATH
+```
+
+### The README screenshots
+
+`docs/screenshots/*.png` are taken from the production build in a headless
+Chromium at phone width, seeded with an invented four-ball (`scripts/capture-screenshots.mjs`):
+
+```bash
+npm run build
+npm run screenshots:capture   # needs Playwright (see above) or PLAYWRIGHT_CHROMIUM=/path/to/chrome
 ```
 
 ## How it's built

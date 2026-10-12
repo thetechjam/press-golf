@@ -140,7 +140,8 @@ export function ShareSheet({ round, summary, onClose }: Props) {
           </button>
           <p className="send-note quiet">
             The whole round is inside the link — nothing is uploaded, and it opens with no signal.
-            They can keep it and settle from it.
+            They can keep it and settle from it. The link is compressed, not encrypted: anyone
+            who has it can read the names, scores and stakes inside.
           </p>
         </>
       )}

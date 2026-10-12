@@ -59,6 +59,12 @@ export function HelpSheet({ onBack }: Props) {
           a running total through the round, then settles the group up in the
           fewest payments. Stakes and handicaps can be changed mid-round.
         </p>
+        <p>
+          A round can be <strong>sent by link or QR code</strong>: the whole card
+          travels inside the link and never touches a server. The link is
+          compressed, not encrypted — anyone who has it can read the names,
+          scores and stakes inside, so share it as you would the scorecard.
+        </p>
       </section>
 
       <section className="help-section">
