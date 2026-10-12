@@ -247,6 +247,11 @@ export function SettingsSheet({
             {!isNative() && <div className="about-line">{describePersistence()}</div>}
             <div className="about-line">Created by Jesse Morrison</div>
             <div className="about-line">PolyForm Noncommercial License 1.0.0</div>
+            {/* A static page, so it opens even when the app cannot: what is
+                stored, what leaves the phone, and how to delete it. */}
+            <a className="about-line" href="/privacy.html" target="_blank" rel="noopener noreferrer">
+              Privacy — what Press keeps and what leaves your phone
+            </a>
           </div>
         </>
       )}

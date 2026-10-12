@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { todayIso } from '../roundDate';
 import { render, screen, cleanup, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Round } from '../types';
@@ -17,7 +18,9 @@ import { makeRound, player, holes, scoresFrom } from '../games/testFixtures';
  */
 
 const TRIP = { id: 't1', name: "Myrtle '27" };
-const today = new Date().toISOString().slice(0, 10);
+// Local, as the app dates a round (roundDate.ts): the UTC date is already
+// tomorrow every evening in the Americas, and `activeTrip` counts local days.
+const today = todayIso();
 
 /** $5 skins; whoever alone has the lowest card takes all nine skins. */
 function round(id: string, cards: Record<string, number>, over: Partial<Round> = {}): Round {

@@ -5,7 +5,9 @@ Thanks for looking. Press is a small, solo-maintained app, so the bar is
 
 ## Setup
 
-Node **24** (`.nvmrc`; `nvm use` or `mise install`). Then:
+Node **24** — pinned four ways so whichever manager you use picks it up:
+`.nvmrc` (nvm), `.mise.toml` (mise), `.tool-versions` (asdf) and `engines` in
+`package.json`. Then:
 
 ```bash
 npm ci

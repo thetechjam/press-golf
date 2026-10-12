@@ -67,7 +67,8 @@ export function SendRound({ round, course, onClose }: Props) {
 
           <p className="send-note quiet">
             The whole {course ? 'scorecard' : 'round'} is inside the link — nothing is uploaded,
-            and it opens with no signal.
+            and it opens with no signal. The link is compressed, not encrypted: anyone who has
+            it can read the {course ? 'card' : 'names, scores and stakes'} inside.
             {live &&
               ' Your copy stays as it is, so if you both keep scoring, Press will ask which card is the real one.'}
             {course && ' They see the card before saving anything.'}
