@@ -1,7 +1,7 @@
 import type { Round, GameResult, GameStanding } from '../types';
 import { holeScore } from './handicap';
 import { netFor } from './scoring';
-import { rankStandings } from './util';
+import { rankPlayed } from './util';
 import { pointsMoney, type MoneyFn } from './moneyModels';
 
 /** Points for a hole given score-relative-to-par (negative = under par). */
@@ -42,7 +42,10 @@ export function computeStableford(round: Round): GameResult {
     };
   });
 
-  const sorted = rankStandings(standings, false);
+  // Ranked among the players who have scored. In modified Stableford a bogey
+  // is minus one, so a player who had not teed off led the field on the 0
+  // they would otherwise carry — the same fault stroke play and quota had.
+  const sorted = rankPlayed(round, standings, false);
   const leader = sorted.find((s) => s.isLeader);
   const anyScores = round.players.some((p) =>
     round.holes.some((h) => round.scores[h.number]?.[p.id] != null)

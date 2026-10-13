@@ -1,6 +1,6 @@
 import type { Hole, SavedCourse } from './types';
 import { uid } from './storage';
-import { toPayload, fromPayload } from './shareLink';
+import { toPayload, fromPayload, linksSupported, validSharePar, UNSUPPORTED_BROWSER } from './shareLink';
 import { validSlope, validRating } from './games/courseHandicap';
 
 /**
@@ -70,7 +70,8 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
  * nothing here judges whether the numbers are *plausible*: that is
  * `scorecardIssues`' job, and it is advisory on purpose, because plenty of odd
  * scorecards are simply unusual and the person holding the card gets to decide.
- * This only refuses what is not a scorecard at all.
+ * This only refuses what is not a scorecard at all — which a par of 0 or 72
+ * is, hence the same bounds the round link reads pars against.
  */
 export function unpackCourse(raw: unknown): CourseResult {
   const damaged: CourseResult = { ok: false, error: 'That link is damaged.' };
@@ -84,7 +85,7 @@ export function unpackCourse(raw: unknown): CourseResult {
   const holes: Hole[] = [];
   for (let i = 0; i < raw.h.length; i += 1) {
     const entry = raw.h[i];
-    if (!Array.isArray(entry) || !Number.isInteger(entry[0])) return damaged;
+    if (!Array.isArray(entry) || !validSharePar(entry[0])) return damaged;
     const hole: Hole = { number: i + 1, par: entry[0] as number };
     if (Number.isInteger(entry[1])) hole.strokeIndex = entry[1] as number;
     holes.push(hole);
@@ -104,6 +105,7 @@ export async function encodeCourse(course: SavedCourse): Promise<string> {
 }
 
 export async function decodeCourse(payload: string): Promise<CourseResult> {
+  if (!linksSupported()) return { ok: false, error: UNSUPPORTED_BROWSER };
   const raw = await fromPayload(payload);
   if (raw === null) return { ok: false, error: 'That link is damaged or incomplete.' };
   return unpackCourse(raw);

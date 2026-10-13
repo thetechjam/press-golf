@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { computeSettlement, formatMoney, unitFor, type Transaction } from './settlement';
+import {
+  computeSettlement,
+  formatMoney,
+  settleBalances,
+  unitFor,
+  type Transaction,
+} from './settlement';
 import { makeRound, player, holes, holes18, scoresFrom } from './testFixtures';
 import type { GameType, Round } from '../types';
 
@@ -680,5 +686,196 @@ describe('computeSettlement — cent invariants across many rounds', () => {
     // proves nothing, and the first version of this silently produced one
     // round four thousand times.
     expect(withSplit).toBeGreaterThan(20);
+  });
+});
+
+/**
+ * The fewest payments.
+ *
+ * The README and the help sheet both say "the fewest payments", and the
+ * greedy pass that used to be the whole of it did not always deliver that: it
+ * pairs the biggest debtor with the biggest creditor and can break up a group
+ * that would have settled among itself. The exact answer is n minus the most
+ * zero-sum groups the balances split into, and these tests hold the engine to
+ * it against a brute-force count.
+ */
+describe('settleBalances — the fewest payments', () => {
+  /** Whole cents, so "sums to zero" has one answer. */
+  const cents = (byName: Record<string, number>) =>
+    Object.values(byName).map((v) => Math.round(v * 100));
+
+  /** Applies the payments and checks every balance lands on zero, to the cent. */
+  function settles(byName: Record<string, number>, tx: Transaction[]) {
+    const bal: Record<string, number> = {};
+    for (const [name, v] of Object.entries(byName)) bal[name] = Math.round(v * 100);
+    for (const t of tx) {
+      expect(t.from).not.toBe(t.to);
+      expect(Number.isInteger(Math.round(t.amount * 100))).toBe(true);
+      expect(t.amount).toBeGreaterThan(0);
+      // A debtor never pays more than they owe; a creditor never takes more
+      // than they are owed.
+      expect(bal[t.from]).toBeLessThanOrEqual(-Math.round(t.amount * 100));
+      expect(bal[t.to]).toBeGreaterThanOrEqual(Math.round(t.amount * 100));
+      bal[t.from] += Math.round(t.amount * 100);
+      bal[t.to] -= Math.round(t.amount * 100);
+    }
+    // `Math.abs`: a balance that was -0 from the start is still settled.
+    for (const v of Object.values(bal)) expect(Math.abs(v)).toBe(0);
+  }
+
+  /** The greedy pass on its own, as the engine's upper bound. */
+  function greedyCount(byName: Record<string, number>): number {
+    const c = cents(byName);
+    const creditors = c.filter((v) => v > 0).sort((a, b) => b - a);
+    const debtors = c.filter((v) => v < 0).map((v) => -v).sort((a, b) => b - a);
+    let n = 0;
+    let i = 0;
+    let j = 0;
+    while (i < debtors.length && j < creditors.length) {
+      const amount = Math.min(debtors[i], creditors[j]);
+      debtors[i] -= amount;
+      creditors[j] -= amount;
+      if (debtors[i] === 0) i += 1;
+      if (creditors[j] === 0) j += 1;
+      n += 1;
+    }
+    return n;
+  }
+
+  /**
+   * The most zero-sum groups a set of balances splits into, by trying every
+   * subset that contains the first balance as its group. Exponential, which
+   * is fine for the seven or eight balances it is asked about here, and
+   * written nothing like the engine's search so the two can check each other.
+   */
+  function maxGroups(c: number[]): number {
+    if (c.length === 0) return 0;
+    const rest = c.slice(1);
+    let best = 0;
+    for (let mask = 0; mask < 1 << rest.length; mask += 1) {
+      let sum = c[0];
+      const remaining: number[] = [];
+      rest.forEach((v, i) => (mask & (1 << i) ? (sum += v) : remaining.push(v)));
+      if (sum === 0) best = Math.max(best, 1 + maxGroups(remaining));
+    }
+    return best;
+  }
+
+  const fewest = (byName: Record<string, number>) => {
+    const c = cents(byName).filter((v) => v !== 0);
+    return c.length - maxGroups(c);
+  };
+
+  /** A small deterministic generator, so a failure reproduces. */
+  function lcg(seed: number) {
+    let s = seed >>> 0;
+    return () => {
+      s = (Math.imul(s, 1664525) + 1013904223) >>> 0;
+      return s / 2 ** 32;
+    };
+  }
+
+  /** Balances in the shape games produce: a few stakes, shared and repeated. */
+  function ledger(rand: () => number, players: number): Record<string, number> {
+    const stakes = [1, 2, 2.5, 5, 10, 20];
+    const byName: Record<string, number> = {};
+    let sum = 0;
+    for (let i = 0; i < players - 1; i += 1) {
+      const sign = rand() < 0.5 ? -1 : 1;
+      const v = sign * stakes[Math.floor(rand() * stakes.length)] * (1 + Math.floor(rand() * 3));
+      byName[`P${i}`] = v;
+      sum += Math.round(v * 100);
+    }
+    byName[`P${players - 1}`] = -sum / 100;
+    return byName;
+  }
+
+  it('finds the split greedy misses', () => {
+    // Al +5, Bo +4, Cy +1, Di −6, Ed −4. Greedy sends Di to Al first, then has
+    // to spread Di's last dollar and Ed's four across Bo and Cy: four
+    // payments. Three do it: Ed pays Bo, Di pays Al and Cy.
+    const byName = { Al: 5, Bo: 4, Cy: 1, Di: -6, Ed: -4 };
+    expect(greedyCount(byName)).toBe(4);
+    const tx = settleBalances(byName);
+    expect(tx).toHaveLength(3);
+    settles(byName, tx);
+    expect(tx).toContainEqual({ from: 'Ed', to: 'Bo', amount: 4 });
+  });
+
+  it('settles two matches that never met as two payments', () => {
+    // A $20 Nassau between Al and Bo and a $7 skin between Cy and Di: nothing
+    // crosses between the pairs.
+    const byName = { Al: 20, Cy: 7, Bo: -20, Di: -7 };
+    expect(settleBalances(byName)).toEqual([
+      { from: 'Bo', to: 'Al', amount: 20 },
+      { from: 'Di', to: 'Cy', amount: 7 },
+    ]);
+  });
+
+  it('keeps the cents exact when a pot was split three ways', () => {
+    const byName = { Al: 1.67, Bo: 1.67, Cy: 1.66, Di: -5 };
+    const tx = settleBalances(byName);
+    expect(tx.map((t) => t.amount).sort()).toEqual([1.66, 1.67, 1.67]);
+    settles(byName, tx);
+  });
+
+  it('leaves a player who is level out of it', () => {
+    const tx = settleBalances({ Al: 5, Bo: 0, Cy: -5 });
+    expect(tx).toEqual([{ from: 'Cy', to: 'Al', amount: 5 }]);
+  });
+
+  it('pays nothing when nobody is up', () => {
+    expect(settleBalances({ Al: 0, Bo: 0 })).toEqual([]);
+    expect(settleBalances({})).toEqual([]);
+  });
+
+  it('prints the same payments every time, whatever order the balances came in', () => {
+    const byName = { Al: 5, Bo: 4, Cy: 1, Di: -6, Ed: -4 };
+    const reversed = Object.fromEntries(Object.entries(byName).reverse());
+    expect(settleBalances(reversed)).toEqual(settleBalances(byName));
+    expect(settleBalances(byName)).toEqual(settleBalances(byName));
+  });
+
+  it('is exactly the fewest, checked against a brute-force count, on random ledgers', () => {
+    const rand = lcg(20261012);
+    for (let i = 0; i < 400; i += 1) {
+      const byName = ledger(rand, 2 + Math.floor(rand() * 7));
+      const tx = settleBalances(byName);
+      settles(byName, tx);
+      expect(tx.length, JSON.stringify(byName)).toBe(fewest(byName));
+      expect(tx.length).toBeLessThanOrEqual(greedyCount(byName));
+    }
+  });
+
+  it('never needs more than one payment per player, however many there are', () => {
+    // Past the search's cap the greedy pass takes over: still settles, still
+    // at most n − 1, just not promised to be the fewest.
+    const rand = lcg(7);
+    for (let i = 0; i < 40; i += 1) {
+      const byName = ledger(rand, 13 + Math.floor(rand() * 8));
+      const tx = settleBalances(byName);
+      settles(byName, tx);
+      const parties = cents(byName).filter((v) => v !== 0).length;
+      expect(tx.length).toBeLessThanOrEqual(Math.max(0, parties - 1));
+      expect(tx.length).toBeLessThanOrEqual(greedyCount(byName));
+    }
+  });
+
+  it('settles twelve balances exactly and thirteen within one payment each', () => {
+    // Twelve pairs would be six payments. Twelve is inside the search; the
+    // thirteenth balance tips it to greedy, which is held to n − 1.
+    const twelve: Record<string, number> = {};
+    for (let i = 0; i < 6; i += 1) {
+      twelve[`W${i}`] = 3 + i;
+      twelve[`L${i}`] = -(3 + i);
+    }
+    const tx = settleBalances(twelve);
+    expect(tx).toHaveLength(6);
+    settles(twelve, tx);
+
+    const thirteen = { ...twelve, W5: 8, L5: -4, L6: -4 };
+    const more = settleBalances(thirteen);
+    settles(thirteen, more);
+    expect(more.length).toBeLessThanOrEqual(12);
   });
 });

@@ -50,7 +50,8 @@ live from course search (course data ©
 Set a stake per game and Press tracks everyone's net result live during the
 round — a money ticker and per-game breakdown on the Hole and Board tabs —
 then resolves the final total into the fewest payments needed to settle the
-whole group.
+whole group (exactly, for up to twelve people with money to move; past that,
+at most one payment per person).
 
 ## Awards
 

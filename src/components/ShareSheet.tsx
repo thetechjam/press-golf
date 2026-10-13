@@ -126,6 +126,12 @@ export function ShareSheet({ round, summary, onClose }: Props) {
           This round can’t be sent as a link. Use Backup in Settings to move it instead.
         </p>
       )}
+      {state.kind === 'unsupported' && (
+        <p className="send-note">
+          This browser can’t make Press links — update it (Safari 16.4 or later) or use
+          Backup in Settings to move the round instead.
+        </p>
+      )}
 
       {state.kind === 'ready' && (
         <>

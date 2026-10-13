@@ -48,6 +48,12 @@ export function SendRound({ round, course, onClose }: Props) {
           move it instead.
         </p>
       )}
+      {state.kind === 'unsupported' && (
+        <p className="send-note">
+          This browser can’t make Press links — update it (Safari 16.4 or later) or use
+          Backup in Settings to move the {course ? 'course' : 'round'} instead.
+        </p>
+      )}
 
       {state.kind === 'ready' && (
         <>

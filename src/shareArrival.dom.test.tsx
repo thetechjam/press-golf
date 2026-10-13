@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { StrictMode } from 'react';
 import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -310,5 +310,18 @@ describe('under StrictMode', () => {
     );
     expect(await screen.findByRole('heading', { name: 'Results' })).toBeTruthy();
     expect(window.location.hash).toBe('');
+  });
+});
+
+describe('a browser that cannot open links', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('says which browser to update, rather than sitting on "Opening round…"', async () => {
+    vi.stubGlobal('DecompressionStream', undefined);
+    await arriveWith('#r=ABC234');
+
+    expect(screen.getByRole('heading', { name: /Can’t open that link/ })).toBeTruthy();
+    expect(screen.getByText(/Safari 16\.4/)).toBeTruthy();
+    expect(stored()).toEqual([]);
   });
 });

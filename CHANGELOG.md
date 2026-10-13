@@ -22,6 +22,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `.mise.toml` and `.tool-versions`, so mise and asdf pick up Node 24 the way
   nvm already did.
 
+### Changed
+- **Share links are stricter about what a scorecard is.** A round or course
+  link whose par on any hole is outside 2–7 is refused as damaged, where the
+  reader used to accept any number — a 0 or a 72 reached every net score,
+  Stableford point and Quota target in the round. A round link's date has to
+  be the `yyyy-mm-dd` every `Round.date` is written as, since History shelves
+  rounds by the year and month in it.
+
+### Fixed
+- **Settling up finds the fewest payments.** The README and the help sheet
+  promised it; the engine paired the biggest debtor with the biggest creditor
+  and repeated, which is at most one payment per player but not always the
+  fewest — Al +5, Bo +4, Cy +1, Di −6, Ed −4 took four payments where three
+  do it (Ed pays Bo; Di pays Al and Cy). The settlement now searches for the
+  most groups the balances split into that each sum to zero, which is exact
+  for up to twelve people with money to move; past that the old pass stands
+  in. Amounts are settled in whole cents and come out in a fixed order, so
+  two phones reading the same round print the same payments.
+- **A browser too old for links says so.** Safari before 16.4 has no
+  `CompressionStream`. Building a link there rejected a promise nobody
+  caught, so the share sheet read "Building the link…" for good, and
+  opening one sat on "Opening round…". Both now say which browser to update,
+  and the share sheets point at Backup as the way to move the round instead.
+- **Modified Stableford no longer shows a player who hasn't teed off as the
+  leader.** Modified points go below zero, so the 0 a player carried before
+  their first hole topped the board once the field was under par pace — the
+  same fault stroke play and Quota were cured of. They now rank after the
+  players with a card, as there.
+
 ## [0.2.0] - 2026-10-11
 
 Everything since the first cut in July, in one release. **Golf League** grows
