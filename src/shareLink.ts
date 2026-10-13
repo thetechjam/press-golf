@@ -16,6 +16,7 @@ import type {
 import { DEFAULT_OPTIONS } from './types';
 import { GAMES } from './games';
 import { isJunkKind } from './games/junk';
+import { parseRoundDate } from './roundDate';
 
 /**
  * A whole round packed small enough to travel in a URL fragment.
@@ -69,6 +70,36 @@ export const COURSE_KEY = 'c';
 const MAX_PACKED_SCORE = 35;
 /** Stands in for a hole nobody has entered yet. Not a base-36 digit, so unambiguous. */
 const NO_SCORE = '.';
+
+/**
+ * The pars a link may carry. Every real hole is a 3, 4, 5 or 6; a 2 or a 7 is
+ * rare enough that the course checker flags it, but it is still a hole. A par
+ * outside even that is not a scorecard, and it was reaching every net score,
+ * Stableford point and Quota target in the round with nothing but a
+ * `typeof number` check in the way — a link is refused as damaged instead.
+ * Shared with the course link, which carries the same `[par, index]` pairs.
+ */
+export const MIN_SHARE_PAR = 2;
+export const MAX_SHARE_PAR = 7;
+export const validSharePar = (par: unknown): par is number =>
+  Number.isInteger(par) && (par as number) >= MIN_SHARE_PAR && (par as number) <= MAX_SHARE_PAR;
+
+/**
+ * Whether this browser can build and read links at all.
+ *
+ * The payload is deflated through `CompressionStream`, which Safari only
+ * gained in 16.4 (March 2023). On an older phone the call threw a
+ * ReferenceError inside a promise nobody was catching: the sender's sheet sat
+ * on "Building the link…" and the recipient's screen on "Opening round…", for
+ * good. Checked up front so both can say what is wrong instead.
+ */
+export function linksSupported(): boolean {
+  return typeof CompressionStream === 'function' && typeof DecompressionStream === 'function';
+}
+
+/** What the recipient reads when their browser cannot open a link. */
+export const UNSUPPORTED_BROWSER =
+  'This browser can’t open Press links. Update it — Safari 16.4 or later, or a current Chrome or Firefox — and open the link again.';
 
 const GAME_TYPES: readonly string[] = GAMES.map((g) => g.id);
 
@@ -493,7 +524,11 @@ export function unpackRound(raw: unknown): UnpackResult {
   if (typeof raw.v !== 'number' || raw.v > SHARE_FORMAT) return { ok: false, error: stale };
 
   if (typeof raw.i !== 'string' || !raw.i) return { ok: false, error: 'That link is damaged.' };
-  if (typeof raw.d !== 'string') return { ok: false, error: 'That link is damaged.' };
+  // The same `yyyy-mm-dd` rule every `Round.date` is written to. History
+  // files rounds by the year and month in this string and the trip ledger
+  // orders by it, so a date that is not one is a round that cannot be shelved.
+  if (typeof raw.d !== 'string' || !parseRoundDate(raw.d))
+    return { ok: false, error: 'That link is damaged.' };
   if (!Array.isArray(raw.p) || raw.p.length === 0) return { ok: false, error: 'That link is damaged.' };
   if (!Array.isArray(raw.h) || raw.h.length === 0) return { ok: false, error: 'That link is damaged.' };
   if (!Array.isArray(raw.s) || raw.s.length !== raw.p.length)
@@ -536,7 +571,7 @@ export function unpackRound(raw: unknown): UnpackResult {
   const holes: Hole[] = [];
   for (let i = 0; i < raw.h.length; i += 1) {
     const entry = raw.h[i];
-    if (!Array.isArray(entry) || typeof entry[0] !== 'number')
+    if (!Array.isArray(entry) || !validSharePar(entry[0]))
       return { ok: false, error: 'That link is damaged.' };
     const hole: Hole = { number: numbers ? numbers[i] : i + 1, par: entry[0] };
     const si = num(entry[1]);
@@ -713,6 +748,10 @@ export async function toPayload(value: unknown): Promise<string> {
  * here as a deflate error, which is a message for the user rather than a crash.
  */
 export async function fromPayload(payload: string): Promise<unknown | null> {
+  // Null rather than a ReferenceError from inside the stream: the promise
+  // this returns is awaited by code that expects a verdict, not a crash. The
+  // readers check `linksSupported` first so they can say which it was.
+  if (!linksSupported()) return null;
   const bytes = fromBase32(payload.trim());
   if (!bytes || bytes.length === 0) return null;
   try {
@@ -734,6 +773,7 @@ export async function encodeRound(round: Round): Promise<string | null> {
 
 /** Reads a round's payload back. Never throws. */
 export async function decodeRound(payload: string): Promise<UnpackResult> {
+  if (!linksSupported()) return { ok: false, error: UNSUPPORTED_BROWSER };
   const raw = await fromPayload(payload);
   if (raw === null) return { ok: false, error: 'That link is damaged or incomplete.' };
   return unpackRound(raw);

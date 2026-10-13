@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import type { Round } from './types';
 import {
   SHARE_FORMAT,
@@ -11,7 +11,12 @@ import {
   shareUrl,
   shareUrlQR,
   sharedFromHash,
+  linksSupported,
+  fromPayload,
+  MIN_SHARE_PAR,
+  MAX_SHARE_PAR,
 } from './shareLink';
+import { decodeCourse, unpackCourse } from './shareCourse';
 import { makeRound, player, holes18, scoresFrom } from './games/testFixtures';
 import { computeSettlement } from './games/settlement';
 import { computeLeague } from './games/league';
@@ -625,5 +630,80 @@ describe('a nine played off an eighteen-hole rating, over a link', () => {
   it('costs nothing when the rating covers the holes played', () => {
     const packed = packRound(makeRound({ holes: holes18(), slope: 125, rating: 72.0, ratingHoles: 18 }))!;
     expect('rh' in packed).toBe(false);
+  });
+});
+
+describe('what a link may carry', () => {
+  const payload = (over: Record<string, unknown>) => ({ ...packRound(fullRound()), ...over });
+  const withPar = (par: unknown) => {
+    const packed = packRound(fullRound())!;
+    return { ...packed, h: [[par, 1], ...packed.h.slice(1)] };
+  };
+
+  it('refuses a par that is not a hole', () => {
+    // A par of 0 or 72 — the course total leaking into a hole — reaches every
+    // net score, Stableford point and Quota target in the round. The old
+    // check was `typeof number`, which all of these pass.
+    for (const bad of [0, 1, 8, 72, -4, 4.5, '4', null]) {
+      expect(unpackRound(withPar(bad)).ok, String(bad)).toBe(false);
+    }
+  });
+
+  it('keeps the rare pars the course checker only flags', () => {
+    for (const par of [MIN_SHARE_PAR, 3, 4, 5, 6, MAX_SHARE_PAR]) {
+      const result = unpackRound(withPar(par));
+      expect(result.ok, String(par)).toBe(true);
+      if (result.ok) expect(result.round.holes[0].par).toBe(par);
+    }
+  });
+
+  it('refuses a date that is not a yyyy-mm-dd', () => {
+    // History shelves rounds by the year and month in this string.
+    for (const bad of ['2026-13-45', '2026-02-30', 'yesterday', '2026-7-1', '', 20260701]) {
+      expect(unpackRound(payload({ d: bad })).ok, String(bad)).toBe(false);
+    }
+  });
+
+  it('reads a date the way the rest of the app writes one', () => {
+    const result = unpackRound(payload({ d: '2026-02-28' }));
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.round.date).toBe('2026-02-28');
+  });
+
+  it('holds a course link to the same pars', () => {
+    const packed = { v: 1, n: 'Links', h: [[4, 1], [3, 2]] };
+    expect(unpackCourse(packed).ok).toBe(true);
+    expect(unpackCourse({ ...packed, h: [[0, 1], [3, 2]] }).ok).toBe(false);
+    expect(unpackCourse({ ...packed, h: [[4, 1], [9, 2]] }).ok).toBe(false);
+  });
+});
+
+describe('a browser that cannot deflate', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('is not the one the suite runs in', () => {
+    expect(linksSupported()).toBe(true);
+  });
+
+  it('says which browser to update, rather than rejecting a promise nobody catches', async () => {
+    // Safari before 16.4 has no CompressionStream. The decoder used to throw
+    // a ReferenceError from inside the stream, and the arrival screen sat on
+    // "Opening round…" for good.
+    vi.stubGlobal('DecompressionStream', undefined);
+    expect(linksSupported()).toBe(false);
+    expect(await fromPayload('ABC234')).toBeNull();
+
+    const round = await decodeRound('ABC234');
+    expect(round.ok).toBe(false);
+    if (!round.ok) expect(round.error).toMatch(/Safari 16\.4/);
+
+    const course = await decodeCourse('ABC234');
+    expect(course.ok).toBe(false);
+    if (!course.ok) expect(course.error).toMatch(/Safari 16\.4/);
+  });
+
+  it('needs both halves of the pair', () => {
+    vi.stubGlobal('CompressionStream', undefined);
+    expect(linksSupported()).toBe(false);
   });
 });

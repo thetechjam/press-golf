@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { Round, SavedCourse } from './types';
-import { COURSE_KEY, SHARE_KEY, encodeRound, shareUrl, shareUrlQR } from './shareLink';
+import { COURSE_KEY, SHARE_KEY, encodeRound, linksSupported, shareUrl, shareUrlQR } from './shareLink';
 import { encodeCourse } from './shareCourse';
 import { encodeQR, qrPath } from './qr';
 
@@ -20,13 +20,22 @@ export type ShareState =
   /** Encoded, but past what a QR code can hold. The link still carries it. */
   | { kind: 'ready'; url: string; tooBig: true }
   /** Holds something the format cannot carry at all. */
-  | { kind: 'failed' };
+  | { kind: 'failed' }
+  /** This browser has no `CompressionStream` — Safari before 16.4 — so no link can be built. */
+  | { kind: 'unsupported' };
 
 export function useShareLink(round?: Round, course?: SavedCourse): ShareState {
   const [state, setState] = useState<ShareState>({ kind: 'working' });
 
   useEffect(() => {
     let alive = true;
+    // Checked before encoding rather than caught after: the encoder would
+    // throw a ReferenceError inside this promise, nothing would catch it, and
+    // the sheet would sit on "Building the link…" for good.
+    if (!linksSupported()) {
+      setState({ kind: 'unsupported' });
+      return;
+    }
     void (async () => {
       const key = course ? COURSE_KEY : SHARE_KEY;
       const payload = course ? await encodeCourse(course) : round ? await encodeRound(round) : null;
