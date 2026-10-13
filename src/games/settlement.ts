@@ -144,36 +144,145 @@ export function settleBalances(byName: Record<string, number>): Transaction[] {
   return settleTransactions(byName, names);
 }
 
-/** Greedy minimum-transaction settlement from net balances. */
+/** A player with money to move, in whole cents: positive is owed, negative owes. */
+interface Party {
+  id: string;
+  cents: number;
+}
+
+/**
+ * Past this many players with a balance the exact search below is skipped for
+ * the greedy pass. Twelve covers a trip of three four-balls settled as one
+ * ledger, and costs 4,096 subsets — well under a millisecond on a phone. The
+ * search doubles with every player past it, which is why there is a cap at
+ * all rather than where it sits.
+ */
+const MAX_EXACT_PARTIES = 12;
+
+/**
+ * Largest debtor pays largest creditor, repeat. Every payment zeroes at least
+ * one of the two, so this never needs more than n − 1 payments — but it can
+ * need more than the fewest. Kept as the fallback for a group too big to
+ * search, and as the way each group found by `fewestTransactions` is paid
+ * out inside itself.
+ */
+function greedyTransactions(parties: readonly Party[]): [Party, Party, number][] {
+  const creditors = parties.filter((p) => p.cents > 0).map((p) => ({ ...p }));
+  const debtors = parties.filter((p) => p.cents < 0).map((p) => ({ ...p, cents: -p.cents }));
+  creditors.sort((a, b) => b.cents - a.cents);
+  debtors.sort((a, b) => b.cents - a.cents);
+
+  const tx: [Party, Party, number][] = [];
+  let i = 0;
+  let j = 0;
+  while (i < debtors.length && j < creditors.length) {
+    const amount = Math.min(debtors[i].cents, creditors[j].cents);
+    tx.push([debtors[i], creditors[j], amount]);
+    debtors[i].cents -= amount;
+    creditors[j].cents -= amount;
+    if (debtors[i].cents === 0) i += 1;
+    if (creditors[j].cents === 0) j += 1;
+  }
+  return tx;
+}
+
+/**
+ * The fewest payments that settle a zero-sum set of balances.
+ *
+ * The README promises "the fewest payments", and the greedy pass alone did
+ * not keep that promise: Al +5, Bo +4, Cy +1, Di −6, Ed −4 is three payments
+ * (Di pays Al and Cy, Ed pays Bo) and greedy finds four, because it pairs Di
+ * with Al first and then has to spread Di's last dollar and Ed's four across
+ * the rest.
+ *
+ * The fewest is n − g, where g is the most groups the players can be split
+ * into with each group's balances summing to zero: a group of k that cannot
+ * be split again needs exactly k − 1 payments. Finding g is a search over
+ * subsets, which for eight players is 256 of them. `dp[mask]` is the most
+ * zero-sum groups the players in `mask` split into; the answer for a mask is
+ * the best answer with any one player removed, plus one if the mask itself
+ * sums to zero. Walking the recorded choices back from the full set lists the
+ * groups, and greedy settles each one inside itself — which on a group that
+ * cannot be split is exactly k − 1 payments.
+ *
+ * Deterministic: parties arrive in a fixed order and the lowest-indexed
+ * player is chosen on a tie, so two phones reading the same round print the
+ * same payments.
+ */
+function fewestTransactions(parties: readonly Party[]): [Party, Party, number][] {
+  const n = parties.length;
+  const full = (1 << n) - 1;
+  const sum = new Int32Array(1 << n);
+  for (let mask = 1; mask <= full; mask += 1) {
+    const low = mask & -mask;
+    sum[mask] = sum[mask ^ low] + parties[31 - Math.clz32(low)].cents;
+  }
+
+  const dp = new Int8Array(1 << n);
+  const choice = new Int8Array(1 << n);
+  for (let mask = 1; mask <= full; mask += 1) {
+    let best = -1;
+    let at = 0;
+    for (let i = 0; i < n; i += 1) {
+      if (!(mask & (1 << i))) continue;
+      const without = dp[mask ^ (1 << i)];
+      if (without > best) {
+        best = without;
+        at = i;
+      }
+    }
+    dp[mask] = best + (sum[mask] === 0 ? 1 : 0);
+    choice[mask] = at;
+  }
+
+  const tx: [Party, Party, number][] = [];
+  let group: Party[] = [];
+  let mask = full;
+  while (mask) {
+    const i = choice[mask];
+    group.push(parties[i]);
+    mask ^= 1 << i;
+    if (sum[mask] === 0) {
+      tx.push(...greedyTransactions(group));
+      group = [];
+    }
+  }
+  return tx;
+}
+
+/**
+ * Who pays whom, in the fewest payments, from net balances.
+ *
+ * Balances are taken in whole cents, which is what `toCents` already made
+ * them and what the trip ledger sums in; every payment is then an integer and
+ * the "is this zero yet" question has one answer. Above `MAX_EXACT_PARTIES`
+ * players with money to move, or on balances that do not sum to zero (which
+ * no caller produces, but which the search would mis-read as "no groups"),
+ * greedy stands in — at most n − 1 payments, every one of them real.
+ */
 function settleTransactions(
   totals: Record<string, number>,
   nameById: Record<string, string>
 ): Transaction[] {
-  const creditors = Object.entries(totals)
-    .filter(([, v]) => v > 0.005)
-    .map(([id, v]) => ({ id, v }))
-    .sort((a, b) => b.v - a.v);
-  const debtors = Object.entries(totals)
-    .filter(([, v]) => v < -0.005)
-    .map(([id, v]) => ({ id, v: -v }))
-    .sort((a, b) => b.v - a.v);
+  // Biggest creditor first, then biggest debtor, ties in the order the
+  // balances were given: the same order greedy pays in, so the fixed order
+  // the subset search needs is one a reader can also predict.
+  const parties: Party[] = Object.entries(totals)
+    .map(([id, v]) => ({ id, cents: Math.round(v * 100) }))
+    .filter((p) => p.cents !== 0)
+    .sort((a, b) => Math.sign(b.cents) - Math.sign(a.cents) || Math.abs(b.cents) - Math.abs(a.cents));
 
-  const tx: Transaction[] = [];
-  let i = 0;
-  let j = 0;
-  while (i < debtors.length && j < creditors.length) {
-    const amount = Math.min(debtors[i].v, creditors[j].v);
-    tx.push({
-      from: nameById[debtors[i].id],
-      to: nameById[creditors[j].id],
-      amount: Math.round(amount * 100) / 100,
-    });
-    debtors[i].v -= amount;
-    creditors[j].v -= amount;
-    if (debtors[i].v <= 0.005) i += 1;
-    if (creditors[j].v <= 0.005) j += 1;
-  }
-  return tx;
+  const balanced = parties.reduce((a, p) => a + p.cents, 0) === 0;
+  const tx =
+    balanced && parties.length <= MAX_EXACT_PARTIES
+      ? fewestTransactions(parties)
+      : greedyTransactions(parties);
+
+  return tx.map(([from, to, cents]) => ({
+    from: nameById[from.id],
+    to: nameById[to.id],
+    amount: cents / 100,
+  }));
 }
 
 export function computeSettlement(round: Round): Settlement {
