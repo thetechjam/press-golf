@@ -156,13 +156,13 @@ describe('a round that arrives by link', () => {
     expect(screen.getByText(/damaged or incomplete/)).toBeTruthy();
     expect(stored()).toEqual([]);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Go to Press' }));
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Go to Trunk' }));
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
   });
 
   it('ignores a fragment that is not a shared round', async () => {
     await arriveWith('#play');
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
   });
 });
 
@@ -286,7 +286,7 @@ describe('a link tapped while Press is already open', () => {
     // Press already open on the same origin changes only the fragment — a
     // same-document navigation, with no reload and no remount.
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
 
     window.location.hash = `#r=${await encodeRound(sent)}`;
     window.dispatchEvent(new HashChangeEvent('hashchange'));

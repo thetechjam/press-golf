@@ -32,7 +32,7 @@ export function SendRound({ round, course, onClose }: Props) {
     const wasCopied = await sendLink(
       url,
       course ? 'Golf course' : 'Golf round',
-      `${name} — open in Press`
+      `${name} — open in Trunk`
     );
     setCopied(wasCopied);
     if (wasCopied) setTimeout(() => setCopied(false), 2000);
@@ -50,7 +50,7 @@ export function SendRound({ round, course, onClose }: Props) {
       )}
       {state.kind === 'unsupported' && (
         <p className="send-note">
-          This browser can’t make Press links — update it (Safari 16.4 or later) or use
+          This browser can’t make Trunk links — update it (Safari 16.4 or later) or use
           Backup in Settings to move the {course ? 'course' : 'round'} instead.
         </p>
       )}
@@ -76,7 +76,7 @@ export function SendRound({ round, course, onClose }: Props) {
             and it opens with no signal. The link is compressed, not encrypted: anyone who has
             it can read the {course ? 'card' : 'names, scores and stakes'} inside.
             {live &&
-              ' Your copy stays as it is, so if you both keep scoring, Press will ask which card is the real one.'}
+              ' Your copy stays as it is, so if you both keep scoring, Trunk will ask which card is the real one.'}
             {course && ' They see the card before saving anything.'}
           </p>
         </>

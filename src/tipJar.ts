@@ -1,7 +1,7 @@
 /**
  * Where the tip jar points, and whether there is one at all.
  *
- * Press is free, has no ads and no account, and is not going to grow any. The
+ * Trunk is free, has no ads and no account, and is not going to grow any. The
  * one thing it asks for is a coffee, in one row at the bottom of Settings,
  * below everything the app is actually for.
  *
@@ -13,7 +13,7 @@
  * call site.
  */
 
-/** The Buy Me a Coffee handle. Empty string means Press asks for nothing. */
+/** The Buy Me a Coffee handle. Empty string means Trunk asks for nothing. */
 export const TIP_JAR_HANDLE = 'thetechjam';
 
 /**

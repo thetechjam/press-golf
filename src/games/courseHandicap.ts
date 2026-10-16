@@ -3,7 +3,7 @@
  *
  * A Handicap Index is portable — it is the number a player carries between
  * courses. A course handicap is what that Index is worth on a particular set
- * of holes, and it is what stroke allocation actually spends. Press has always
+ * of holes, and it is what stroke allocation actually spends. Trunk has always
  * stored the second; this converts the first into it.
  *
  *   course handicap = Index × (Slope ÷ 113) + (Rating − Par)

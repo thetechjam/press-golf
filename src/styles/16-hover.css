@@ -5,7 +5,7 @@
    until they tap something else. Under the query, no touch device sees any of
    it.
 
-   Press already answers the finger (:active, everywhere) and the keyboard
+   Trunk already answers the finger (:active, everywhere) and the keyboard
    (:focus-visible). This is the third input the app gets used with — it opens
    at a URL on a laptop, and until now nothing on the page acknowledged a
    cursor at all.

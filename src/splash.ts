@@ -27,7 +27,7 @@ export function dismissSplash(): void {
   // A backstop, not a second copy of the 260ms duration in index.html. If the
   // transition never runs — interrupted, or the tab hidden across the whole
   // mount — transitionend never fires, and an opacity-0 splash then sits in
-  // the accessibility tree forever announcing "Press, Golf side games" over
+  // the accessibility tree forever announcing "Trunk, Settle it at the trunk." over
   // the app. Deliberately far longer than the fade so it cannot pre-empt it.
   setTimeout(() => splash.remove(), 1000);
   splash.classList.add('done');

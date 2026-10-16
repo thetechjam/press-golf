@@ -85,7 +85,7 @@ describe('a course that arrives by link', () => {
     await userEvent.click(screen.getByRole('button', { name: 'No thanks' }));
 
     expect(saved()).toEqual([]);
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
   });
 
   it('says what looks wrong with the card, on the way in', async () => {

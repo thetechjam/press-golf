@@ -275,7 +275,7 @@ export function SettingsSheet({
               <span>
                 <span className="set-label">Buy me a coffee</span>
                 <span className="set-hint">
-                  Press is free, with no ads and no account. Tips keep it that way.
+                  Trunk is free, with no ads and no account. Tips keep it that way.
                 </span>
               </span>
               <span aria-hidden="true">↗</span>
@@ -284,7 +284,7 @@ export function SettingsSheet({
 
           <div className="about">
             <div className="about-title">
-              Press <span className="about-ver">v{__APP_VERSION__}</span>
+              Trunk <span className="about-ver">v{__APP_VERSION__}</span>
             </div>
             <div className="about-line">Build {__BUILD_STAMP__}</div>
             <div className="about-line">Layout {layout}</div>
@@ -295,7 +295,7 @@ export function SettingsSheet({
             {/* A static page, so it opens even when the app cannot: what is
                 stored, what leaves the phone, and how to delete it. */}
             <a className="about-line" href="/privacy.html" target="_blank" rel="noopener noreferrer">
-              Privacy — what Press keeps and what leaves your phone
+              Privacy — what Trunk keeps and what leaves your phone
             </a>
           </div>
         </>

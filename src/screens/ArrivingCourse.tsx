@@ -128,7 +128,7 @@ export function ArrivingCourse({ course, clash, onChoose }: Props) {
       )}
 
       <button className="btn-ghost" onClick={() => onChoose('skip')}>
-        {clash.kind === 'same' ? 'Go to Press' : 'No thanks'}
+        {clash.kind === 'same' ? 'Go to Trunk' : 'No thanks'}
       </button>
     </div>
   );

@@ -63,11 +63,11 @@ describe('buildBackup', () => {
 describe('backupFilename', () => {
   it('is dated so downloads sort chronologically', () => {
     // Constructed in local time, because that is what the name reads from.
-    expect(backupFilename(new Date(2026, 8, 11))).toBe('press-backup-2026-09-11.json');
+    expect(backupFilename(new Date(2026, 8, 11))).toBe('trunk-backup-2026-09-11.json');
   });
 
   it('zero-pads single-digit months and days', () => {
-    expect(backupFilename(new Date(2026, 0, 5))).toBe('press-backup-2026-01-05.json');
+    expect(backupFilename(new Date(2026, 0, 5))).toBe('trunk-backup-2026-01-05.json');
   });
 });
 
@@ -78,10 +78,10 @@ describe('parseBackup', () => {
     if (!r.ok) expect(r.error).toMatch(/valid JSON/);
   });
 
-  it('rejects JSON that is not a Press backup', () => {
+  it('rejects JSON that is not a Trunk backup', () => {
     const r = parseBackup(text({ some: 'other file' }));
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error).toMatch(/Press backup/);
+    if (!r.ok) expect(r.error).toMatch(/Trunk backup/);
   });
 
   it('rejects a format from a newer version rather than guessing', () => {

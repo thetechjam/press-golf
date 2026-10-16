@@ -57,7 +57,7 @@ export function BackupRows({ onRestored }: { onRestored?: () => void } = {}) {
       // the share sheet can put the file in Files, iCloud, or a message —
       // somewhere that survives the browser.
       if (navigator.canShare?.({ files: [asFile] })) {
-        await navigator.share({ files: [asFile], title: 'Press backup' });
+        await navigator.share({ files: [asFile], title: 'Trunk backup' });
       } else {
         const a = document.createElement('a');
         a.href = url;

@@ -1,9 +1,9 @@
 /**
  * A QR encoder, because a share link nobody can point a camera at is only half
- * the feature — and because the alternative was Press's first runtime
+ * the feature — and because the alternative was Trunk's first runtime
  * dependency, for a page that has to work with no signal on the 14th tee.
  *
- * Deliberately not general-purpose. It encodes one thing: a Press share URL,
+ * Deliberately not general-purpose. It encodes one thing: a Trunk share URL,
  * at error-correction level L, up to version 20. Those limits are what keep it
  * to one readable file, and each is a decision rather than an omission:
  *
