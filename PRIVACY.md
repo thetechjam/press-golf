@@ -66,11 +66,13 @@ requests and reads nothing back from them.
   a single round's card.
 - **Saved courses:** New Round → Course → the × beside a saved course.
 - **Feedback waiting to send:** Settings → Clear waiting reports.
-- **Everything at once:** there is no single wipe button in Press yet. Clear
-  the site's data in your browser (on iPhone, Settings → Safari → Advanced →
-  Website Data; on Android Chrome, the site's page info → Site settings →
-  Delete data), or uninstall the installed app. That removes every round,
-  course, name and setting Press has stored.
+- **Everything at once:** Settings → Erase everything. The first tap says
+  what goes; the second removes every round, saved course, player name,
+  feedback waiting to send and setting Press has stored, and the app opens
+  again as it did the first time. The same result without opening the app:
+  clear the site's data in your browser (on iPhone, Settings → Safari →
+  Advanced → Website Data; on Android Chrome, the site's page info → Site
+  settings → Delete data), or uninstall the installed app.
 
 A round that someone else sent you by link is not saved until you tap
 "Keep it".

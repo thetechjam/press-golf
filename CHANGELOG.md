@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Erase everything**, in Settings under the backup and feedback rows. The
+  privacy page said there was no single wipe button in Press yet; now there
+  is. Two taps, as deleting from Rounds → Select: the first says what goes —
+  every round, saved course, player name, feedback waiting to send and
+  setting — and the second removes all six things Press stores and relaunches
+  the app as on first open. The browser's own clear-site-data route still
+  works and the page still describes it.
 - **A privacy page**, at `/privacy.html` on the site and as `PRIVACY.md` in the
   repo, linked from the About block in Settings and from the README. Plain
   English, checked against the code: no accounts, no analytics, no server-side

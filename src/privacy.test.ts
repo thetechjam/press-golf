@@ -23,7 +23,7 @@ const CLAIMS = [
   'compressed, not encrypted',
   'plain JSON',
   'Clear waiting reports',
-  'no single wipe button',
+  'Erase everything',
 ];
 
 describe('the privacy page', () => {
