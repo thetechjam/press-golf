@@ -1,4 +1,10 @@
-# Press — "How to use it" · YouTube tutorial script
+# Trunk — "How to use it" · YouTube tutorial script
+
+> **The app was renamed from Press to Trunk in October 2026.** The published
+> cut (below) says Press, shows the old mark and the old tagline, and is not
+> being re-recorded for the name alone. This script is the source for the next
+> cut, so it says Trunk; `press-tutorial.srt` is the caption track of the
+> video that exists and still says Press, as the audio does.
 
 The shooting script for the channel walkthrough. Every scene id here matches a
 scene in `scripts/capture-tutorial.mjs`, and every screen described is the real
@@ -25,10 +31,10 @@ instead of editing them.
 
 ## 01 · Cold open — Home, first run (0:00–0:19)
 
-*On screen: Press opens on an empty Home. The wordmark, "Track golf side games
-— the fun way", Start New Round, Golf League, and "No rounds yet".*
+*On screen: Trunk opens on an empty Home. The wordmark, "Settle it at the
+trunk.", Start New Round, Golf League, and "No rounds yet".*
 
-> This is Press. One phone keeps score for the whole group — skins, Nassau,
+> This is Trunk. One phone keeps score for the whole group — skins, Nassau,
 > Wolf, the lot — and it does the math while you play. No account, no app
 > store, nothing to install. Here's a full round in four minutes.
 
@@ -43,7 +49,7 @@ fix it first. "Here's a full round in under six minutes" scans the same.
 *Start New Round. Four names typed in, a handicap beside each.*
 
 > Start New Round, and type everyone in. Handicap goes in the box beside the
-> name — that's what every net score in the round comes off. Press remembers
+> name — that's what every net score in the round comes off. Trunk remembers
 > your regular crew, so next week this is one tap.
 
 ## 03 · Course, and checking the card (0:36–1:03)
@@ -52,7 +58,7 @@ fix it first. "Here's a full round in under six minutes" scans the same.
 opens itself on the load. The check note at the top of it, then the grid: every
 par and every stroke index, editable, eighteen across.*
 
-> Open Course. Search for it and Press pulls in the pars and the stroke
+> Open Course. Search for it and Trunk pulls in the pars and the stroke
 > indexes, or load one you saved earlier. Either way the card opens right here
 > — and search data gets read before you see it, so anything that looks off is
 > flagged. Check it against the real card once, then save it. Everything
@@ -134,7 +140,7 @@ controls on a hole.*
 
 *Finish Round. The Results screen: winner hero with confetti, then the awards.*
 
-> Finish the round and Press settles it. Winner up top, then the superlatives —
+> Finish the round and Trunk settles it. Winner up top, then the superlatives —
 > Shot of the Day, The Snowman, The ATM, Sandbagger — and each one cites the
 > number it's based on, so the argument is short.
 
@@ -142,7 +148,7 @@ controls on a hole.*
 
 *The Settlement block: the fewest payments that clear the group.*
 
-> Then the bit that normally takes ten minutes in the car park. Press resolves
+> Then the bit that normally takes ten minutes in the car park. Trunk resolves
 > the whole group into the fewest payments that settle it. Three people pay,
 > not twelve.
 
@@ -159,11 +165,11 @@ controls on a hole.*
 as "Sent to you" with a Keep it button.*
 
 > And underneath, the round itself. The whole thing is packed into the link —
-> point another phone's camera at the code and it opens in their copy of Press.
+> point another phone's camera at the code and it opens in their copy of Trunk.
 > Nothing is uploaded. No server ever sees it. On their phone it arrives held —
 > sent to you, not saved — until they tap Keep it. Mid-round, the same link
 > hands the card over and they carry on scoring from where you stopped. And if
-> you both end up keeping score, Press puts the two cards side by side and asks
+> you both end up keeping score, Trunk puts the two cards side by side and asks
 > which one is real, instead of picking one on a timestamp.
 
 ## 16 · Offline (4:59–5:24)
@@ -189,13 +195,13 @@ driven again.*
 
 ## Thumbnail
 
-Felt-green ground (`#0b3d2e`), the Press flag mark, a phone showing the Board
-tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
-"NOBODY PLAYS FREE" or "SETTLE IT ON 18". No face, no arrows, no red circles.
+Felt-green ground (`#0b3d2e`), the Trunk mark, a phone showing the Board tab
+with money on it, and three or four words of gold (`#e7b53c`) Oswald —
+"NOBODY PLAYS FOR FREE" or "SETTLE IT AT THE TRUNK". No face, no arrows, no red circles.
 
 ## Description (draft)
 
-> Press is a free web app for tracking golf side games — skins, Nassau, Wolf,
+> Trunk is a free web app for tracking golf side games — skins, Nassau, Wolf,
 > Vegas, Stableford, Quota, match play and a league format — from one phone.
 > It does the math while you play and settles the whole group into the fewest
 > payments at the end. No account, no app store, works with no signal, and
@@ -203,7 +209,7 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 >
 > ▶️ pressgolf.netlify.app
 >
-> 0:00 What Press is
+> 0:00 What Trunk is
 > 0:19 Adding players and handicaps
 > 0:36 Loading a course, and checking the card
 > 1:03 Picking your games
@@ -219,7 +225,7 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 > 4:11 Sharing the result
 > 4:20 Handing the round to another phone
 > 4:59 Playing offline
-> 5:24 Adding Press to your home screen
+> 5:24 Adding Trunk to your home screen
 
 ---
 

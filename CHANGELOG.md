@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Press are documented here.
+All notable changes to Trunk (Press until October 2026) are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -30,6 +30,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   nvm already did.
 
 ### Changed
+- **Press is now Trunk.** The name, the mark and the lines change; nothing
+  about a round does. The app is called Trunk — the round ends at the trunk of
+  the car, where the money changes hands — and the public title is "Trunk —
+  Golf Side Games". The mark is the U of TRUNK drawn as a trunk: cream stems
+  and bowl, a dark well, a gold lid hinged into the left stem and raised, and
+  the poker-chip golf ball resting in the well; it is the app icon, the Home
+  wordmark, the splash and the share-card header. The favicon is a different
+  cut, the chip ball on a bumper line with the gold pennant behind it, because
+  at 16px a disc on a line with a gold corner survives where a U with a lid
+  does not. The tagline is "Settle it at the trunk." with "Nobody plays for
+  free." under it; "Track golf side games — the fun way." is retired. Share
+  cards sign off `SETTLED AT THE TRUNK`. One file holds the mark's geometry
+  (`src/trunkMark.ts`) and the icons, the link-preview card and the canvas
+  header all draw from it, so the next change to the mark is one edit.
+  Deliberately unchanged: the storage keys (`press.rounds.v1` and the rest —
+  renaming them would lose every round on every phone), the backup file's
+  `app: 'press'` stamp, the Netlify form name `press-feedback` (bound to the
+  Netlify dashboard) and the address, which stays pressgolf.netlify.app
+  until trunk.golf is live. A backup file is now `trunk-backup-<date>.json`;
+  old `press-backup` files restore as before.
 - **Share links are stricter about what a scorecard is.** A round or course
   link whose par on any hole is outside 2–7 is refused as damaged, where the
   reader used to accept any number — a 0 or a 72 reached every net score,

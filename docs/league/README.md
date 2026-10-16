@@ -1,14 +1,14 @@
 # League rollout kit
 
-Material for introducing Press to the Thursday league. Parked in September 2026,
+Material for introducing Trunk to the Thursday league. Parked in September 2026,
 after the season ended; the league starts again in mid-April 2027.
 
 | File | What it is |
 |---|---|
-| `press-league-flyer.pdf` | Print-ready US Letter flyer (pro shop / league night) |
-| `press-league-flyer.png` | The same flyer as an image, for texts and email |
+| `trunk-league-flyer.pdf` | Print-ready US Letter flyer (pro shop / league night) |
+| `trunk-league-flyer.png` | The same flyer as an image, for texts and email |
 | `flyer.html` | Source of the flyer — edit this, then re-export |
-| `qr.svg` | QR code for https://pressgolf.netlify.app/, made with `src/qr.ts` |
+| `qr.svg` | QR code for https://pressgolf.netlify.app/, made with `src/qr.ts` — re-point it at trunk.golf and re-export once the domain is live |
 | `make-qr.mjs` | Regenerates `qr.svg` (`node docs/league/make-qr.mjs`) |
 | `email-to-league-director.md` | Draft email introducing the app to the league director |
 
@@ -30,4 +30,12 @@ after the season ended; the league starts again in mid-April 2027.
 
 Open `flyer.html` in Chrome from this folder (it loads the font and logo from
 `public/`), then Print → Save as PDF, paper size Letter, margins None,
-background graphics on. For the PNG, screenshot the page at 2x.
+background graphics on. For the PNG, screenshot the page at 2x. Or let a
+headless Chromium do both:
+
+```bash
+cd docs/league
+chromium --headless=new --no-pdf-header-footer --print-to-pdf=trunk-league-flyer.pdf flyer.html
+chromium --headless=new --hide-scrollbars --force-device-scale-factor=2 \
+  --window-size=816,1056 --screenshot=trunk-league-flyer.png flyer.html
+```

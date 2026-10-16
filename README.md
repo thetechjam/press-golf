@@ -1,17 +1,19 @@
 [![CI](https://github.com/thetechjam/press-golf/actions/workflows/ci.yml/badge.svg)](https://github.com/thetechjam/press-golf/actions/workflows/ci.yml)
 
-# Press ⛳️
+# Trunk ⛳️
 
-**Press** is a mobile-first web app for tracking golf side-games. One scorekeeper
-enters scores for the whole group on a single phone, and Press does the math —
-live leaderboards and running money totals while you play, then a settle-up
-summary at the end.
+**Trunk** is a mobile-first web app for golf side games. One scorekeeper enters
+scores for the whole group on a single phone, and Trunk does the math — live
+leaderboards and running money totals while you play, then the fewest payments
+to settle it at the trunk. Nobody plays for free.
 
 No accounts, no sign-up, nothing to install from a store. It runs entirely in
 your browser, works offline, and keeps everything on your device — see
 [PRIVACY.md](./PRIVACY.md) for exactly what leaves it and when.
 
-**▶️ Live app: [pressgolf.netlify.app](https://pressgolf.netlify.app)**
+**▶️ Live app: [pressgolf.netlify.app](https://pressgolf.netlify.app)** — moving to
+**trunk.golf** (with trunkgolf.com and trunkgolf.app as redirects) once the
+domains are live; the Netlify address stays up as a redirect after that.
 **📺 Walkthrough: [youtu.be/YDgTmnR_1eo](https://youtu.be/YDgTmnR_1eo)** — a full
 round in under six minutes
 
@@ -47,7 +49,7 @@ live from course search (course data ©
 
 ## Settling up
 
-Set a stake per game and Press tracks everyone's net result live during the
+Set a stake per game and Trunk tracks everyone's net result live during the
 round — a money ticker and per-game breakdown on the Hole and Board tabs —
 then resolves the final total into the fewest payments needed to settle the
 whole group (exactly, for up to twelve people with money to move; past that,
@@ -65,7 +67,7 @@ the shared scoreboard image, and each one cites the number behind it.
 Results can go out as a scoreboard image, a scorecard image, or plain text —
 and the round itself can be handed to another phone by link or QR code. The
 whole round is packed into the link's fragment, so it is decoded by the other
-person's copy of Press and never touches a server: no account, no backend, and
+person's copy of Trunk and never touches a server: no account, no backend, and
 it opens with no signal. A round that arrives is held behind a "Keep it"
 button rather than being saved onto someone's device unasked.
 
@@ -75,7 +77,7 @@ is told if it differs from one they already have.
 
 Mid-round, the same link hands the card over: the other phone carries on
 scoring from where you left off. If both phones end up scoring the same round,
-Press compares the two and asks which card is the real one — or keeps both —
+Trunk compares the two and asks which card is the real one — or keeps both —
 rather than picking one on a timestamp.
 
 ## Getting started
@@ -121,13 +123,24 @@ The accessible-name half of the same check runs in CI without a browser, in
 
 ### The link-preview card
 
-`public/og.png` is what a shared pressgolf link unfurls into. It is drawn by
-`scripts/og-image.mjs` from the brand art in `BRAND.md` and the app's own
-Oswald, and committed, since crawlers need a PNG. Regenerate it when the mark,
-the colours or the tagline change:
+`public/og.png` is what a shared Trunk link unfurls into. It is drawn by
+`scripts/og-image.mjs` from the mark's geometry in `src/trunkMark.ts`, the
+colours in `BRAND.md` and the app's own Oswald, and committed, since crawlers
+need a PNG. Regenerate it when the mark, the colours or the lines change:
 
 ```bash
 npm run og:image   # uses Playwright if installed, else a Chromium/Chrome on PATH
+```
+
+### The icons
+
+`public/app-icon.svg`, `favicon.svg`, `icon-192.png`, `icon-512.png` and
+`apple-touch-icon.png` are written by `scripts/brand-icons.mjs` from the same
+`src/trunkMark.ts` geometry the app and the share cards draw, and committed.
+Regenerate them when the mark changes, the same way:
+
+```bash
+npm run brand:icons   # same browser rule as og:image
 ```
 
 ### The README screenshots
@@ -177,11 +190,11 @@ that, the oldest is discarded to make room for the newest.
 
 ## License
 
-Press is released under the [PolyForm Noncommercial License 1.0.0](./LICENSE) —
+Trunk is released under the [PolyForm Noncommercial License 1.0.0](./LICENSE) —
 free to use, modify, and share for any **noncommercial** purpose (play all the
 golf games you want). Commercial rights are reserved.
 
-**Why this license?** It matches how Press is meant to be used today — shared
+**Why this license?** It matches how Trunk is meant to be used today — shared
 freely with friends for their rounds — while keeping the door open to a paid
 product later. As the sole copyright holder I can always loosen this to a fully
 open license (e.g. MIT), but a permissive release can't be taken back, so
