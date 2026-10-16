@@ -9,6 +9,7 @@ import { FeedbackForm } from './FeedbackForm';
 import { HelpSheet } from './HelpSheet';
 import { BackupRows } from './BackupRows';
 import { clearQueue, listQueue } from '../feedback';
+import { eraseEverything } from '../erase';
 import { tipJarUrl } from '../tipJar';
 import { isNative } from '../native';
 
@@ -112,6 +113,22 @@ export function SettingsSheet({
     setQueued(0);
   };
 
+  // Two taps, as Rounds → Select → Delete: the first shows what goes, the
+  // second does it. Dismissing the sheet disarms it, so a tap that was meant
+  // for Close can never be the second one.
+  const [erasing, setErasing] = useState(false);
+  const erase = () => {
+    eraseEverything();
+    // A reload rather than unwinding state in place. This sheet opens from
+    // four screens, and the round being played lives in App's state: closing
+    // the sheet with it still there would write it straight back on the next
+    // score, and Setup's half-filled form and the painted theme would carry
+    // on as if nothing had happened. A reload lands on Home with nothing
+    // loaded (see the registerType note in vite.config.ts), which is the
+    // first launch this is meant to be.
+    window.location.reload();
+  };
+
   return (
     <Sheet
       title={view === 'feedback' ? 'Send feedback' : view === 'help' ? 'How to Play' : 'Settings'}
@@ -210,6 +227,34 @@ export function SettingsSheet({
               Clear waiting reports
             </button>
           )}
+
+          {/* The wipe the privacy page points at. Under the rows that put
+              data in and take it out, because that is what it is the last
+              of; above the tip jar, because it is still something the app
+              does for the user. */}
+          <div className="set-erase">
+            {erasing ? (
+              <>
+                <p className="set-erase-copy" role="alert">
+                  This erases every round, saved course, player name, feedback waiting to send
+                  and setting on this phone, and there is no undo. Back up first if you want to
+                  keep any of it.
+                </p>
+                <div className="set-erase-actions">
+                  <button type="button" className="btn-ghost" onClick={() => setErasing(false)}>
+                    Cancel
+                  </button>
+                  <button type="button" className="btn-danger" onClick={erase}>
+                    Erase everything for good
+                  </button>
+                </div>
+              </>
+            ) : (
+              <button type="button" className="btn-danger" onClick={() => setErasing(true)}>
+                Erase everything
+              </button>
+            )}
+          </div>
 
           {/* Last row before the version numbers, which is where a thing the
               app wants belongs — under everything the app is for.

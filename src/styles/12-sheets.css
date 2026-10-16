@@ -493,6 +493,34 @@
   min-height: var(--tap);
 }
 
+/* Erase everything. The idle button sits at the left edge like the rows
+   above it; armed, the copy takes the width and the two choices line up under
+   it the way the bulk-delete bar in Rounds does, Cancel first. */
+.set-erase {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.set-erase-copy {
+  margin: 0;
+  color: var(--ink);
+  font-size: var(--fs-md);
+  line-height: 1.4;
+}
+.set-erase-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+.set-erase-actions .btn-ghost {
+  white-space: nowrap;
+}
+.set-erase-actions .btn-danger {
+  margin-left: auto;
+}
+
 /* ---------- Help / How to Play ---------- */
 .help-sheet {
   display: flex;
