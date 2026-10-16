@@ -1,6 +1,6 @@
-# Contributing to Press
+# Contributing to Trunk
 
-Thanks for looking. Press is a small, solo-maintained app, so the bar is
+Thanks for looking. Trunk is a small, solo-maintained app, so the bar is
 "keeps working on a phone with no signal" rather than ceremony.
 
 ## Setup
@@ -54,7 +54,7 @@ already says what.
 
 ## License
 
-Press is released under the PolyForm Noncommercial License 1.0.0 (see
+Trunk is released under the PolyForm Noncommercial License 1.0.0 (see
 `LICENSE`). By contributing you agree your contribution is licensed under the
 same terms. Commercial rights stay with the copyright holder; if that matters
 to you, open an issue before writing code.

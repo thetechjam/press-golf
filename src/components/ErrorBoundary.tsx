@@ -51,7 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
     return (
       <div className="app">
         <div className="screen arriving">
-          <h1 tabIndex={-1}>Press hit a snag</h1>
+          <h1 tabIndex={-1}>Trunk hit a snag</h1>
           <p className="arriving-note">
             Something went wrong drawing this screen. Your saved rounds are not affected — they
             are still on this phone, and you can back them up right here before reloading.
@@ -60,7 +60,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <code className="error-text">{message}</code>
           </p>
           <button type="button" className="btn-primary big" onClick={reload}>
-            Reload Press
+            Reload Trunk
           </button>
           <section className="set-group" aria-label="Backup">
             <BackupRows />

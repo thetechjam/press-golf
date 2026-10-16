@@ -1,6 +1,6 @@
-# Press — Roadmap
+# Trunk — Roadmap
 
-Press is a mobile PWA for tracking golf side games. **v1 is intentionally
+Trunk (Press until October 2026) is a mobile PWA for tracking golf side games. **v1 is intentionally
 local-only, no-login, and offline-first** — one scorekeeper runs a round for the
 group on one phone, then shares the results text. This doc captures what's built,
 what's deferred, and how to expand without a rewrite.
@@ -50,7 +50,7 @@ what's deferred, and how to expand without a rewrite.
   two devices with no backend.
 - **Share a round by link or QR** (`src/shareLink.ts`, `src/qr.ts`,
   `src/components/SendRound.tsx`): the round is packed, deflated and base32'd
-  into a URL *fragment*, so it is decoded by the recipient's copy of Press and
+  into a URL *fragment*, so it is decoded by the recipient's copy of Trunk and
   never reaches a server — no account, no backend, works with no signal. A
   four-ball on eighteen holes is a 535-character payload, which the hand-rolled
   encoder draws as a 69-module QR code. A round that arrives is held unsaved
@@ -124,7 +124,7 @@ Keeping them in step is what accounts and sync are for, below.
 | ~~Cross-round stats / history~~ | **Shipped local-only** via the Stats screen (`stats.ts`) — scoring average, best round, skins, money, all derived from `press.rounds.v1`. *Cross-device* history still needs accounts + sync. |
 | ~~Automatic Nassau presses~~ | **Shipped** — setup toggle, with presses derived from the card by `autoPressStarts()` rather than stored, so correcting a score re-decides them. Presses cascade: a press that goes 2 down presses again. |
 | ~~Course database~~ | **Shipped** via OpenGolfAPI course search (keyless + CORS, so no backend needed; returns per-hole par and `handicap_index`). Coverage is US-strong; Favorite Courses covers gaps and offline use. |
-| Tagline refresh | Current line ("Track golf side games — the fun way.") kept for now. Parked candidates from the July 2026 brand pass (no ranking yet): "Settle it on 18." / "Nobody plays for free." / "Every hole's a bet." / "Keep your friends honest." See `BRAND.md`. |
+| ~~Tagline refresh~~ | **Done with the rename to Trunk (October 2026):** "Settle it at the trunk." with "Nobody plays for free." as the second line. "Track golf side games — the fun way." is retired. See `BRAND.md`. |
 
 ## How to expand without a rewrite
 
@@ -157,12 +157,12 @@ signal, syncing when a connection returns.
 
 ## Monetization (research brief)
 
-_Added 2026-07-01. Research pass on how Press could realistically make money **if
-it gains traction**, and what each path actually costs to build. Press is 100%
+_Added 2026-07-01. Research pass on how Trunk could realistically make money **if
+it gains traction**, and what each path actually costs to build. Trunk is 100%
 client-side today (no backend, no accounts, no DB), so the load-bearing question
 for every model below is: **does it force a backend?**_
 
-**License angle first:** Press ships under [PolyForm Noncommercial 1.0.0](./LICENSE),
+**License angle first:** Trunk ships under [PolyForm Noncommercial 1.0.0](./LICENSE),
 which reserves all commercial rights to the sole copyright holder. Nothing here
 requires a license change — the owner is already clear to monetize. (Public copies
 stay noncommercial; a paid build is the owner's private commercial fork.)
@@ -196,7 +196,7 @@ architecture.
 ### Competitive / pricing benchmarks
 
 Real price points, verified where noted. These are full GPS/handicap platforms —
-Press is narrower (side games + settlement), so treat them as a **ceiling**, not
+Trunk is narrower (side games + settlement), so treat them as a **ceiling**, not
 a comparable.
 
 | App | Price | Confidence |
@@ -211,7 +211,7 @@ a comparable.
 
 **Read on pricing:** the crowded lane is **$30–$100/yr subscriptions**, and the
 free tier (GameBook) still gives away core scoring and side games. A subscription
-for Press's feature set alone would be a hard sell against that. A **one-time
+for Trunk's feature set alone would be a hard sell against that. A **one-time
 unlock in the ~$5–$15 range** or **seasonal pricing** is the more honest fit for a
 solo-maintained, single-purpose tool.
 
@@ -226,7 +226,7 @@ solo-maintained, single-purpose tool.
 
 ### Anti-patterns to avoid
 
-- **Ads / bloat that kill the offline, no-login feel.** Press's whole pitch is
+- **Ads / bloat that kill the offline, no-login feel.** Trunk's whole pitch is
   "nothing to install, works with zero signal." Ads and forced accounts trade the
   differentiator for pennies. Skip ads unless traffic is genuinely large.
 - **Charging a subscription for a client-only app.** Recurring price with no

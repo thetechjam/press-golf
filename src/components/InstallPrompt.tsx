@@ -39,7 +39,7 @@ export function InstallPrompt() {
 
   return (
     <button className="install-btn" onClick={install}>
-      <DownloadIcon size={17} /> Install Press as an app
+      <DownloadIcon size={17} /> Install Trunk as an app
     </button>
   );
 }

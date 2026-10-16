@@ -102,7 +102,7 @@ describe('the foot of the screen', () => {
 
     await waitFor(() => expect(written).toHaveLength(1));
     expect(written[0]).toContain('Half Moon Bay');
-    expect(written[0]).toContain('via Press');
+    expect(written[0]).toContain('via Trunk');
   });
 });
 
