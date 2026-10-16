@@ -4,6 +4,8 @@
  * glare mode automatically. No icon library dependency.
  */
 
+import { GLYPH_RISE, GLYPH_W, trunkGlyph, uPath } from './trunkMark';
+
 interface IconProps {
   size?: number;
   /** Filled glyph instead of stroked (used by StarIcon). */
@@ -23,37 +25,45 @@ const base = (size: number) => ({
 });
 
 /**
- * The Press brand mark ("P Flag"): the pin flag forms the P, with the
- * poker-chip golf ball in the flag. Flag stays brand gold; pole and chip
- * ring follow currentColor so the mark tracks theme and glare modes.
+ * The Trunk brand mark: the U of TRUNK drawn as a car's trunk, with the gold
+ * lid hinged into the left stem and the poker-chip golf ball in the well.
+ * Geometry comes from trunkMark.ts, shared with the share cards, the icons
+ * and the splash. Lid stays brand gold; stems, well and chip ring follow
+ * currentColor so the mark tracks theme and glare modes. `size` is the cap
+ * height — the U stands in for the letter, so it is sized like one.
  */
-export const PressMark = ({ size = 18, className }: IconProps) => (
-  <svg
-    width={size * 0.875}
-    height={size}
-    viewBox="100 64 336 384"
-    fill="none"
-    className={className}
-    aria-hidden
-  >
-    <path
-      d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z"
-      fill="#e7b53c"
-    />
-    <rect x="118" y="84" width="36" height="344" rx="18" fill="currentColor" />
-    <circle cx="268" cy="178" r="58" fill="#f4f7f2" />
-    <circle
-      cx="268"
-      cy="178"
-      r="49"
-      stroke="currentColor"
-      strokeWidth="16"
-      strokeDasharray="18 20.5"
-      strokeDashoffset="9"
-      transform="rotate(-90 268 178)"
-    />
-  </svg>
-);
+export const TrunkMark = ({ size = 18, className }: IconProps) => {
+  const g = trunkGlyph({ x: 0, y: 0, h: 100 });
+  const { lid, slot, ball, box } = g;
+  return (
+    <svg
+      width={size * GLYPH_W}
+      height={size * (1 + GLYPH_RISE)}
+      viewBox={`${box.x} ${box.y} ${box.w} ${box.h}`}
+      fill="none"
+      className={className}
+      aria-hidden
+    >
+      <path d={uPath(g.well, true)} fill="currentColor" opacity={0.16} />
+      <path d={uPath(g.stroke)} stroke="currentColor" strokeWidth={g.stem} />
+      <g transform={`rotate(${lid.angle} ${lid.hx} ${lid.hy})`}>
+        <rect x={slot.x} y={slot.y} width={slot.w} height={slot.t} rx={slot.t / 2} fill="currentColor" opacity={0.3} />
+        <rect x={lid.x} y={lid.y} width={lid.w} height={lid.t} rx={lid.t / 2} fill="#e7b53c" />
+      </g>
+      <circle cx={ball.cx} cy={ball.cy} r={ball.r} fill="#f4f7f2" />
+      <circle
+        cx={ball.cx}
+        cy={ball.cy}
+        r={ball.ringR}
+        stroke="currentColor"
+        strokeWidth={ball.ringW}
+        strokeDasharray={ball.dash ? `${ball.dash.on} ${ball.dash.off}` : undefined}
+        strokeDashoffset={ball.dash ? ball.dash.offset : undefined}
+        transform={`rotate(-90 ${ball.cx} ${ball.cy})`}
+      />
+    </svg>
+  );
+};
 
 /** Golf flag on its pole. */
 export const FlagIcon = ({ size = 18, className }: IconProps) => (

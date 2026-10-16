@@ -1,10 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Favicon cut of the Press "P Flag" mark: bolder forms, no dimples or
-       shadows, so it stays legible at 16px. -->
-  <rect width="512" height="512" rx="112" fill="#14694e"/>
-  <path d="M148 64 C282 72 376 104 430 158 Q448 178 430 198 C376 252 282 284 148 292 Z" fill="#e7b53c"/>
-  <rect x="96" y="60" width="52" height="392" rx="26" fill="#f4f7f2"/>
-  <circle cx="278" cy="178" r="64" fill="#f4f7f2"/>
-  <circle cx="278" cy="178" r="52" fill="none" stroke="#14694e" stroke-width="22"
-          stroke-dasharray="19 21.8" stroke-dashoffset="9.5" transform="rotate(-90 278 178)"/>
+<defs><linearGradient id="felt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#176e51"/><stop offset="1" stop-color="#0a3529"/></linearGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#felt)"/>
+<!-- Favicon: the bumper mark — chip ball on the bumper line, pennant
+     behind — the bold cut that survives 16px. Written by scripts/brand-icons.mjs. -->
+<g transform="translate(0 21)"><rect x="242" y="80" width="28" height="110" rx="14" fill="#f4f7f2"/><g transform="translate(266 84) scale(0.68) translate(-154 -84)"><path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z" fill="#e7b53c"/></g><line x1="92" y1="392" x2="420" y2="392" stroke="#f4f7f2" stroke-width="44" stroke-linecap="round"/><circle cx="256" cy="268" r="108" fill="#f4f7f2"/><circle cx="256" cy="268" r="91.24137931034483" fill="none" stroke="#14694e" stroke-width="40.96551724137931"/></g>
 </svg>

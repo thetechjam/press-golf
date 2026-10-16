@@ -1,27 +1,32 @@
 /**
- * Renders public/og.png — the 1200×630 card that a shared pressgolf link
- * unfurls into in iMessage, WhatsApp, Slack and the rest.
+ * Renders public/og.png — the 1200×630 card that a shared Trunk link unfurls
+ * into in iMessage, WhatsApp, Slack and the rest.
  *
  *   npm run og:image
  *
  * The card is drawn here as SVG from the brand constants (BRAND.md): the felt
- * gradient, the P Flag mark lifted from index.html's splash, the wordmark
- * lockup where the mark stands in for the P, and the tagline. Crawlers do not
- * render SVG, so the PNG is what ships — committed, because generating it at
- * deploy time would need a browser in the Netlify build.
+ * gradient, the wordmark with the Trunk mark standing in for the U (geometry
+ * from src/trunkMark.ts, the same file the app and the icons draw from), the
+ * tagline and the second line. Crawlers do not render SVG, so the PNG is what
+ * ships — committed, because generating it at deploy time would need a
+ * browser in the Netlify build.
  *
  * Rasterised by a headless Chromium rather than an SVG library, for one
  * reason: the wordmark is Oswald, the app's own self-hosted woff2, and a
  * browser is the only renderer here that honours @font-face. Playwright is
  * used when it is installed (it is deliberately not a dependency — see the
  * README's audit section), otherwise a Chromium or Chrome on PATH, or the one
- * named by $CHROME. Regenerate whenever the mark, the colours or the tagline
+ * named by $CHROME. Regenerate whenever the mark, the colours or the lines
  * change, and commit the result.
+ *
+ * The card names no domain on purpose: it is served from wherever the app
+ * lives, and the move to trunk.golf should not need it redrawn.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { trunkGlyph, trunkSvg, GLYPH_W } from '../src/trunkMark.ts';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const W = 1200;
@@ -34,28 +39,23 @@ const GREEN_900 = '#0b3d2e';
 const GREEN_700 = '#14694e';
 const CREAM = '#f4f7f2';
 const GOLD = '#e7b53c';
-const GOLD_DEEP = '#c69a2b';
+const WELL = '#072a1f';
+const DIMPLE = '#ccd8cf';
 
-// The P Flag mark, exactly as the splash draws it (viewBox 100 64 336 384 in
-// index.html), placed and scaled by the group transform below. 0.68 puts its
-// pole at 261px tall, which the wordmark's cap height is sized to match.
-const MARK = `
-  <g transform="translate(112 132) scale(0.68) translate(-100 -64)">
-    <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z" fill="${GOLD}" />
-    <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z"
-          fill="none" stroke="${GOLD_DEEP}" stroke-width="7" stroke-linejoin="round" />
-    <rect x="118" y="84" width="36" height="344" rx="18" fill="${CREAM}" />
-    <circle cx="268" cy="178" r="58" fill="${CREAM}" />
-    <circle cx="268" cy="178" r="49" fill="none" stroke="${GREEN_700}" stroke-width="16"
-            stroke-dasharray="18 20.5" stroke-dashoffset="9" transform="rotate(-90 268 178)" />
-    <g fill="#ccd8cf">
-      <circle cx="268" cy="145" r="5.5" />
-      <circle cx="257" cy="161" r="5.5" /><circle cx="279" cy="161" r="5.5" />
-      <circle cx="246" cy="178" r="5.5" /><circle cx="268" cy="178" r="5.5" /><circle cx="290" cy="178" r="5.5" />
-      <circle cx="257" cy="195" r="5.5" /><circle cx="279" cy="195" r="5.5" />
-      <circle cx="268" cy="211" r="5.5" />
-    </g>
-  </g>`;
+// The wordmark: TR, the mark as the U, NK — set from Oswald 600's own metrics
+// so nothing here has to be measured in a browser. Cap height is 0.8125em;
+// "TR" advances 1.021em; the U has 0.047em side bearings, which the drawn
+// glyph is given back on either side.
+const F = 300;
+const CAP = F * 0.8125;
+const LEFT = 124;
+const BASE = 352;
+const UX = LEFT + F * (1.021 + 0.047);
+const UW = CAP * GLYPH_W;
+const MARK = trunkSvg(
+  trunkGlyph({ x: UX, y: BASE - CAP, h: CAP }),
+  { ink: CREAM, well: WELL, lid: GOLD, ball: CREAM, ring: GREEN_700, dimple: DIMPLE }
+);
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
   <style>
@@ -69,13 +69,13 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
     </linearGradient>
   </defs>
   <rect width="${W}" height="${H}" fill="url(#felt)" />
+  <text x="${LEFT}" y="${BASE}" font-size="${F}" font-weight="600" fill="${CREAM}">TR</text>
   ${MARK}
-  <!-- The wordmark: the mark is the P, so only RESS is set, baseline on the
-       pole's foot (y = 132 + 344·0.68 ≈ 393) and tight against the flag. -->
-  <text x="350" y="393" font-size="330" font-weight="600" fill="${CREAM}" letter-spacing="-4">RESS</text>
-  <text x="124" y="500" font-size="78" font-weight="500" fill="${GOLD}">Settle it on 18.</text>
-  <text x="124" y="564" font-size="30" font-weight="500" fill="${CREAM}" opacity="0.78" letter-spacing="1">
-    GOLF SIDE GAMES · NO ACCOUNT · WORKS OFFLINE · PRESSGOLF.NETLIFY.APP
+  <text x="${UX + UW}" y="${BASE}" font-size="${F}" font-weight="600" fill="${CREAM}">NK</text>
+  <text x="${LEFT}" y="452" font-size="78" font-weight="500" fill="${GOLD}">Settle it at the trunk.</text>
+  <text x="${LEFT}" y="512" font-size="44" font-weight="500" fill="${CREAM}" opacity="0.92">Nobody plays for free.</text>
+  <text x="${LEFT}" y="576" font-size="28" font-weight="500" fill="${CREAM}" opacity="0.72" letter-spacing="1">
+    GOLF SIDE GAMES · NO ACCOUNT · WORKS OFFLINE
   </text>
 </svg>
 `;

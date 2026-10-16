@@ -14,11 +14,18 @@
   letter-spacing: 0.06em;
   color: var(--green-ink);
   display: flex;
-  /* The P Flag mark stands in for the P: its bottom edge sits on the text
-     baseline, and the flag tip runs tight against the R. */
+  /* The mark stands in for the U: its bottom edge sits on the text baseline
+     and its stems rise to the cap line, so it is sized from the cap height
+     (Oswald's is 0.8125em) and given the U's own side bearings (0.047em)
+     plus the letter-spacing the R would have had after it. */
   align-items: baseline;
   justify-content: center;
-  gap: 3px;
+  gap: 0;
+}
+.logo svg {
+  height: 1.04em; /* 0.8125em cap + the raised lid */
+  width: 0.73125em;
+  margin: 0 0.107em 0 0.047em;
 }
 .tagline {
   color: var(--muted);

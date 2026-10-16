@@ -8,7 +8,7 @@ import { ResumeCard } from '../components/ResumeCard';
 import { TripCard } from '../components/TripCard';
 import { activeTrip } from '../trips';
 import { liveRound } from '../roundSummary';
-import { FlagIcon, PressMark, TrophyIcon, GearIcon, ChartIcon } from '../icons';
+import { FlagIcon, TrunkMark, TrophyIcon, GearIcon, ChartIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { countsForStats } from '../stats';
 
@@ -73,16 +73,18 @@ export function Home({
         </button>
         {/* The wordmark is Home's page title, so it is the <h1> — every other
             screen has one, and without this Home's outline opened at <h2>.
-            aria-label carries the name because the visible text is a mark
-            standing in for the P plus the letters "ress"; role="img" would
-            have said the same thing but at the cost of the heading semantics
-            a screen reader navigates by. tabIndex so App can move focus here
-            on navigation. */}
-        <h1 className="logo" aria-label="Press" tabIndex={-1}>
-          <PressMark size={34} />
-          <span aria-hidden="true">ress</span>
+            aria-label carries the name because the visible text is "TR", the
+            mark standing in for the U, and "NK"; role="img" would have said
+            the same thing but at the cost of the heading semantics a screen
+            reader navigates by. tabIndex so App can move focus here on
+            navigation. The mark is sized in em by .logo so it keeps the cap
+            height whatever the type size. */}
+        <h1 className="logo" aria-label="Trunk" tabIndex={-1}>
+          <span aria-hidden="true">TR</span>
+          <TrunkMark size={30} />
+          <span aria-hidden="true">NK</span>
         </h1>
-        <p className="tagline">Track golf side games — the fun way.</p>
+        <p className="tagline">Settle it at the trunk.</p>
       </header>
 
       {live && <ResumeCard round={live} onResume={() => onResume(live)} />}
@@ -112,7 +114,7 @@ export function Home({
             <FlagIcon size={40} />
           </div>
           <p className="empty-title">No rounds yet</p>
-          <p className="empty-sub">Start your first round and Press keeps score for you.</p>
+          <p className="empty-sub">Start your first round and Trunk keeps score for you.</p>
           <button className="btn-ghost empty-help" onClick={openHelp}>
             New here? See how it works ›
           </button>
@@ -150,7 +152,7 @@ export function Home({
         </section>
       )}
 
-      <p className="hint">Tip: add Press to your home screen for one-tap access on the course — and so Safari
+      <p className="hint">Tip: add Trunk to your home screen for one-tap access on the course — and so Safari
         keeps your saved rounds, which it clears from a site left unopened for seven days.</p>
 
       {showSettings && (
