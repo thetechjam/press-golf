@@ -67,6 +67,11 @@
   border-radius: 0;
   padding: 0;
 }
+/* Unframed, the sections also lose the gap the card margin gave them: the
+   Options heading under Games sat flush on the team picker's hint. */
+.setup-row-body .card + .card {
+  margin-top: 18px;
+}
 /* Unframed, the saved-course list loses the card margin that separated it
    from the search above, and its heading ran straight into the attribution
    line. */
