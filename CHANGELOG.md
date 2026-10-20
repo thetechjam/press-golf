@@ -38,6 +38,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounds by the year and month in it.
 
 ### Fixed
+- **Game names fit their cards.** The two-across menu under Games was meant to
+  set each name on its own line under the tick and the ⓘ; the pick button
+  that later took in the tick and the name undid that, and "Stableford" ran
+  under its ⓘ. The button stacks the two again, and a card whose rules are
+  open keeps the name beside the tick, where there is room.
+- **Options under Games sits clear of the team picker.** Nested in the Games
+  row, the sections lose their card frames and the gap that came with them,
+  so the Options heading sat flush on "Add 4 players to enable 2 v 2".
+- **"Hole 12" no longer touches its arrows** on a phone turned sideways or a
+  wider screen, where the hole header is sized to its content.
 - **Settling up finds the fewest payments.** The README and the help sheet
   promised it; the engine paired the biggest debtor with the biggest creditor
   and repeated, which is at most one payment per player but not always the

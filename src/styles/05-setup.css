@@ -731,24 +731,40 @@
 }
 /* Half-width cards put the name on its own line under the tick and the ⓘ:
    side by side, the ⓘ's 48px target left "Stableford" about 50px and every
-   long name was clipped. The name is the one thing the card can't lose. */
+   long name was clipped. The name is the one thing the card can't lose.
+   The tick and the name live inside the pick button (see .game-card-btn
+   below), so the button stacks them and the ⓘ sits level with the tick. */
 .game-list .game-card-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  grid-template-areas:
-    'check . info'
-    'text text text';
-  row-gap: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
 }
-.game-list .game-check {
-  grid-area: check;
+.game-list .game-card-btn {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 10px 0;
 }
+.game-list .game-text strong {
+  overflow-wrap: anywhere;
+}
+/* Centred on the 24px tick: 10px button padding + 12px to the tick's middle,
+   less half the ⓘ's own 48px target. Negative so the target adds no height. */
 .game-list .game-info-btn {
-  grid-area: info;
-  justify-self: end;
+  align-self: flex-start;
+  margin: calc(22px - var(--tap) / 2) calc(var(--tap) / -4) 0 0;
 }
-.game-list .game-text {
-  grid-area: text;
+/* A card whose rules are open takes the full row (see .expanded above), so
+   its name fits beside the tick again. */
+.game-list .game-card.expanded .game-card-btn {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+}
+.game-list .game-card.expanded .game-info-btn {
+  align-self: center;
+  margin: calc(var(--tap) / -2) calc(var(--tap) / -4) calc(var(--tap) / -2) 0;
 }
 .game-text strong {
   line-height: 1.15;

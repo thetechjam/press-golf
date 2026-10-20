@@ -45,6 +45,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  /* In landscape the nav is sized to its content, and space-between alone
+     left "Hole 12" touching the arrows. */
+  gap: 10px;
   color: var(--ink);
   padding: 0 14px;
 }
