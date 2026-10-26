@@ -11,6 +11,8 @@ import { resolve } from 'node:path';
 
 const root = resolve(__dirname, '..');
 const html = readFileSync(resolve(root, 'index.html'), 'utf8');
+// Still the Netlify origin: trunk.golf is bought and pointed in a follow-up,
+// and the canonical moves with it, not before.
 const SITE = 'https://pressgolf.netlify.app/';
 
 const meta = (attr: 'property' | 'name', key: string): string | null => {
@@ -20,9 +22,9 @@ const meta = (attr: 'property' | 'name', key: string): string | null => {
 
 describe('index.html for crawlers and link unfurls', () => {
   it('names the page the same way everywhere', () => {
-    expect(html).toContain('<title>Press — Golf Side Games</title>');
-    expect(meta('property', 'og:title')).toBe('Press — Golf Side Games');
-    expect(meta('name', 'twitter:title')).toBe('Press — Golf Side Games');
+    expect(html).toContain('<title>Trunk — Golf Side Games</title>');
+    expect(meta('property', 'og:title')).toBe('Trunk — Golf Side Games');
+    expect(meta('name', 'twitter:title')).toBe('Trunk — Golf Side Games');
   });
 
   it('points everything at the one canonical URL', () => {
@@ -33,7 +35,7 @@ describe('index.html for crawlers and link unfurls', () => {
 
   it('carries a description in both vocabularies, and a plain one', () => {
     const og = meta('property', 'og:description');
-    expect(og).toMatch(/^Press is a mobile-first web app/);
+    expect(og).toMatch(/^Trunk is a mobile-first web app/);
     expect(meta('name', 'twitter:description')).toBe(og);
     expect(meta('name', 'description')).toBeTruthy();
   });

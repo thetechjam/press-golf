@@ -50,4 +50,4 @@ body:
     id: diag
     attributes:
       label: Anything else
-      description: The Layout line, the Storage line, a screenshot, the text from a "Press hit a snag" screen.
+      description: The Layout line, the Storage line, a screenshot, the text from a "Trunk hit a snag" screen.

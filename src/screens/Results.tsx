@@ -89,7 +89,7 @@ function buildSummary(round: Round): string {
       lines.push(`  ${t.name} — ${t.points}`);
     }
     lines.push('');
-    lines.push('via Press');
+    lines.push('via Trunk');
     return lines.join('\n');
   }
 
@@ -120,7 +120,7 @@ function buildSummary(round: Round): string {
     lines.push('');
   }
 
-  lines.push('via Press');
+  lines.push('via Trunk');
   return lines.join('\n');
 }
 

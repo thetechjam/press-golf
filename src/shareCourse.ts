@@ -7,7 +7,7 @@ import { validSlope, validRating } from './games/courseHandicap';
  * A saved course packed into a link, the same way a round is.
  *
  * This is the other half of the course-accuracy work. Search returns open
- * community data that is sometimes wrong, so Press asks you to check an
+ * community data that is sometimes wrong, so Trunk asks you to check an
  * imported scorecard against the real one and keeps your copy once you have
  * vouched for it. But that checking is done once, by one person, and then the
  * other three in the group each do it again on their own phone — or worse,
@@ -77,7 +77,7 @@ export function unpackCourse(raw: unknown): CourseResult {
   const damaged: CourseResult = { ok: false, error: 'That link is damaged.' };
   if (!isObject(raw)) return damaged;
   if (typeof raw.v !== 'number' || raw.v > COURSE_FORMAT) {
-    return { ok: false, error: 'That link was made by a newer version of Press. Update the app and try again.' };
+    return { ok: false, error: 'That link was made by a newer version of Trunk. Update the app and try again.' };
   }
   if (typeof raw.n !== 'string' || !raw.n.trim() || raw.n.length > MAX_NAME) return damaged;
   if (!Array.isArray(raw.h) || raw.h.length === 0 || raw.h.length > MAX_HOLES) return damaged;

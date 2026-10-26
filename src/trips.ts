@@ -184,6 +184,6 @@ export function tripSettleText(trip: Trip, ledger: TripLedger): string {
     lines.push('');
     for (const t of ledger.transactions) lines.push(`${t.from} pays ${t.to} ${formatMoney(t.amount)}`);
   }
-  lines.push('', 'Scored with Press');
+  lines.push('', 'Settled at the Trunk');
   return lines.join('\n');
 }

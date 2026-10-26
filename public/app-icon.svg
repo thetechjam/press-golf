@@ -1,35 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Press "P Flag" mark: the pin flag forms the P of Press; the poker-chip
-       golf ball (edge spots + dimples) sits in the flag. -->
-  <defs>
-    <linearGradient id="felt" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#176e51"/>
-      <stop offset="1" stop-color="#0a3529"/>
-    </linearGradient>
-  </defs>
-  <rect width="512" height="512" rx="112" fill="url(#felt)"/>
-
-  <ellipse cx="170" cy="430" rx="120" ry="18" fill="#04231a" opacity="0.4"/>
-
-  <g fill="#04231a" opacity="0.35" transform="translate(0 12)">
-    <rect x="118" y="84" width="36" height="344" rx="18"/>
-    <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z"/>
-  </g>
-
-  <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z" fill="#e7b53c"/>
-  <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z"
-        fill="none" stroke="#c69a2b" stroke-width="7" stroke-linejoin="round"/>
-
-  <rect x="118" y="84" width="36" height="344" rx="18" fill="#f4f7f2"/>
-
-  <circle cx="268" cy="178" r="58" fill="#f4f7f2"/>
-  <circle cx="268" cy="178" r="49" fill="none" stroke="#14694e" stroke-width="16"
-          stroke-dasharray="18 20.5" stroke-dashoffset="9" transform="rotate(-90 268 178)"/>
-  <g fill="#ccd8cf">
-    <circle cx="268" cy="145" r="5.5"/>
-    <circle cx="257" cy="161" r="5.5"/><circle cx="279" cy="161" r="5.5"/>
-    <circle cx="246" cy="178" r="5.5"/><circle cx="268" cy="178" r="5.5"/><circle cx="290" cy="178" r="5.5"/>
-    <circle cx="257" cy="195" r="5.5"/><circle cx="279" cy="195" r="5.5"/>
-    <circle cx="268" cy="211" r="5.5"/>
-  </g>
+<defs><linearGradient id="felt" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#176e51"/><stop offset="1" stop-color="#0a3529"/></linearGradient></defs>
+<rect width="512" height="512" rx="112" fill="url(#felt)"/>
+<!-- The Trunk mark: the U of TRUNK as a car's trunk — gold lid hinged into
+     the left stem, the poker-chip golf ball in the well. Geometry from
+     src/trunkMark.ts; written by scripts/brand-icons.mjs. -->
+<path d="M195.74 142 V286.1 A60.26 60.26 0 0 0 316.26 286.1 V142 Z" fill="#072a1f"/><path d="M166.92 142 V286.1 A89.08 89.08 0 0 0 345.08 286.1 V142" fill="none" stroke="#f4f7f2" stroke-width="57.64"/><g transform="rotate(-24 166.92 165.86)"><rect x="159.43" y="165.86" width="39.2" height="7.95" rx="3.98" fill="#072a1f"/><rect x="146.17" y="139.35" width="199.54" height="26.51" rx="13.26" fill="#e7b53c"/></g><circle cx="256" cy="282.48" r="48.21" fill="#f4f7f2"/><circle cx="256" cy="282.48" r="40.73" fill="none" stroke="#14694e" stroke-width="13.3" stroke-dasharray="14.96 17.04" stroke-dashoffset="7.48" transform="rotate(-90 256 282.48)"/><g fill="#ccd8cf"><circle cx="256" cy="255.06" r="4.57"/><circle cx="246.86" cy="268.35" r="4.57"/><circle cx="265.14" cy="268.35" r="4.57"/><circle cx="237.71" cy="282.48" r="4.57"/><circle cx="256" cy="282.48" r="4.57"/><circle cx="274.29" cy="282.48" r="4.57"/><circle cx="246.86" cy="296.61" r="4.57"/><circle cx="265.14" cy="296.61" r="4.57"/><circle cx="256" cy="309.91" r="4.57"/></g>
 </svg>

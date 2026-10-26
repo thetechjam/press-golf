@@ -59,7 +59,7 @@ async function goBack() {
   await new Promise((r) => setTimeout(r, 10));
 }
 
-const onHome = () => screen.queryByRole('heading', { name: 'Press' }) !== null;
+const onHome = () => screen.queryByRole('heading', { name: 'Trunk' }) !== null;
 
 /**
  * Two clicks in one tick, the way a fast double-tap reaches the handler.

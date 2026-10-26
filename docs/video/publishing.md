@@ -1,5 +1,9 @@
 # Publishing the tutorial to YouTube
 
+> **Renamed:** the app is Trunk since October 2026. Everything below is the
+> record of the Press-era upload and is left as published; the next cut takes
+> its title, description and tags from `tutorial-script.md`, which says Trunk.
+
 > **Published https://youtu.be/YDgTmnR_1eo** on 2026-09-22. What follows is the record of what went
 > into that upload, and the procedure to repeat for the next one. To change
 > something on the video that is already live, edit it in Studio — the fields

@@ -8,7 +8,7 @@ import { QUEUE_KEY } from './feedback';
  * `localStorage` is transient in a WKWebView — iOS reclaims it when the device
  * runs short of space — so an App Store build has to keep its rounds somewhere
  * the system will not take back. Capacitor's Preferences plugin is that place
- * (`UserDefaults` underneath), and this is the twenty lines that point Press at
+ * (`UserDefaults` underneath), and this is the twenty lines that point Trunk at
  * it.
  *
  * Nothing here is imported from npm. Capacitor injects a bridge onto the window
@@ -22,7 +22,7 @@ import { QUEUE_KEY } from './feedback';
  * returning false, which is what `main.tsx` does with it.
  */
 
-/** What Press uses of the Preferences plugin. Its full surface is larger. */
+/** What Trunk uses of the Preferences plugin. Its full surface is larger. */
 interface PreferencesPlugin {
   get(options: { key: string }): Promise<{ value: string | null }>;
   set(options: { key: string; value: string }): Promise<void>;
@@ -41,7 +41,7 @@ const bridge = (): CapacitorBridge | undefined =>
 export const isNative = (): boolean => bridge()?.isNativePlatform?.() === true;
 
 /**
- * Every key that has to come across, because everything Press remembers is one
+ * Every key that has to come across, because everything Trunk remembers is one
  * of them. Imported from the modules that own them rather than written out
  * again here: a key added to `storage.ts` and forgotten here would keep working
  * perfectly on the web and quietly stop persisting on a phone, which is the

@@ -218,7 +218,7 @@ export async function renderShareCard(round: Round): Promise<Blob> {
   ctx.fillStyle = GOLD;
   setLS(ctx, 7);
   ctx.textAlign = 'center';
-  ctx.fillText('SCORED WITH PRESS', W / 2, y);
+  ctx.fillText('SETTLED AT THE TRUNK', W / 2, y);
   setLS(ctx, 0);
   y += PAD - 20;
 
