@@ -196,22 +196,30 @@
   .hole-body {
     grid-area: body;
   }
-  /* Wolf and Nassau are one-line strips when collapsed, so stacking two
-     full-width bars spends ~110px on content that fits side by side. The
-     steppers span both columns beneath them. */
+  /* Wolf, Nassau and Junk are one-line strips when collapsed, so stacking
+     full-width bars spends ~110px on content that fits side by side. A
+     wrapping flex row rather than a two-column grid, because the row has to
+     absorb two things a grid cell cannot: a strip left alone on its row (one
+     game, or an odd number of strips) stretches to fill it instead of
+     sitting at half width beside a gap, and a strip that opens into a panel
+     several rows tall takes the whole row rather than leaving that gap
+     beside whichever strip shared its row. The steppers always take a row. */
   .hole-body {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
+    display: flex;
+    /* The portrait rule stacks it as a column; the row has to be said. */
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
   }
-  .hole-body > .steppers {
-    grid-column: 1 / -1;
+  .hole-body > * {
+    flex: 1 1 40%;
+    min-width: 0;
   }
-  /* A round with only one of the two would otherwise leave its strip at half
-     width with a gap beside it. */
-  .hole-body > .wolf:only-of-type:first-child:nth-last-child(2),
-  .hole-body > .nassau:only-of-type:first-child:nth-last-child(2) {
-    grid-column: 1 / -1;
+  .hole-body > .steppers,
+  .hole-body > .wolf:not(.collapsed),
+  .hole-body > .nassau:not(.collapsed),
+  .hole-body > .junk:not(.collapsed) {
+    flex-basis: 100%;
   }
   .steppers {
     display: grid;

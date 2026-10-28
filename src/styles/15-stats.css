@@ -234,6 +234,9 @@
   border-top: 1px solid var(--line);
   padding-top: 8px;
 }
+.stat-best-date {
+  white-space: nowrap;
+}
 .stat-foot {
   font-size: var(--fs-xs);
   color: var(--muted);

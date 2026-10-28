@@ -70,6 +70,12 @@
   color: var(--muted);
   margin: 2px 0 0;
 }
+/* At this size the link's own box is 14px tall. Vertical padding on an inline
+   box paints without moving the line, so this is a 24px target (WCAG 2.5.8)
+   in a line that stays exactly where it was. */
+.cs-attribution a {
+  padding-block: 5px;
+}
 
 /* Inside League's course card the saved courses sit unframed, as they do
    inside New Round's Course row, rather than as a card within a card. */

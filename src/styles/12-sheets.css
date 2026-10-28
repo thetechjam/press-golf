@@ -582,6 +582,10 @@
   font-size: var(--fs-md);
   line-height: 1.45;
 }
+/* The OpenStreetMap link's box is a 20px line; see .cs-attribution a. */
+.help-section p a {
+  padding-block: 2px;
+}
 .help-game {
   border-top: 1px solid var(--line);
   padding-top: 8px;

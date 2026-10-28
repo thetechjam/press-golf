@@ -115,7 +115,11 @@ function PlayerCard({
         <div className="stat-best">
           Best: <strong>{formatToPar(p.best.toPar)}</strong>
           {p.best.holes !== 18 ? ` over ${p.best.holes}` : ''}
-          {p.best.course ? ` at ${p.best.course}` : ''} · {formatRoundDate(p.best.date)}
+          {p.best.course ? ` at ${p.best.course}` : ''} ·{' '}
+          {/* A date is one thing: at phone width this line broke it after
+              the comma, leaving "Thu," at the end of one line and "Jul 30" at
+              the start of the next. */}
+          <span className="stat-best-date">{formatRoundDate(p.best.date)}</span>
         </div>
       )}
 

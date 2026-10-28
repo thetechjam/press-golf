@@ -38,6 +38,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounds by the year and month in it.
 
 ### Fixed
+- **A phone turned sideways lays out the Hole tab's strips properly.** The
+  Wolf, Nassau and Junk strips sit two to a row there, in a two-column grid
+  that had no answer for an odd number of them — one game left its strip at
+  half width beside a gap — or for one that opens: claiming junk grew its
+  half of the row into a panel and left a hole beside it. The row is now
+  a wrapping one, so a strip left alone takes the row and an open panel takes
+  a row of its own.
+- **"Par 5 · SI 14" is a 24px target.** Tapping it opens the par picker, and
+  the button was the 20px text line, under the 24px the audit asks for. The
+  text sits exactly where it did.
+- **The OpenStreetMap link is a 24px target** in the course attribution line
+  under Course, where the small print made its box 14px tall. The line does
+  not move.
+- **A date in Stats stays on one line.** "Best: +9 over 9 at Thursday Night
+  League · Thu, Jul 30" broke after the comma at phone width, leaving "Thu,"
+  on one line and "Jul 30" on the next.
 - **Game names fit their cards.** The two-across menu under Games was meant to
   set each name on its own line under the tick and the ⓘ; the pick button
   that later took in the tick and the name undid that, and "Stableford" ran
