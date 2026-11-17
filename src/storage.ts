@@ -86,30 +86,39 @@ export function saveSettings(patch: Partial<Settings>): Settings {
  * The keep-your-rounds prompt is for the first round finished after it
  * existed. A phone that already has a finished round has had that moment;
  * marking the prompt dismissed here, once, is what stops an update from
- * asking on the next launch. A phone with no finished round is left alone.
+ * asking on the next launch.
+ *
+ * A phone with no finished round and no stored flag is marked eligible by
+ * storing `false`. Without that, a brand-new user who never touched a setting
+ * would finish a round, close the app without answering, and on the next
+ * launch look exactly like a phone from before the update — and lose the
+ * prompt.
  *
  * Read from what was stored, not from `getSettings`. That fills a default,
  * and treating the default as a decision would dismiss the prompt for a
  * brand-new phone the moment any setting was saved.
+ *
+ * Runs before the first render, outside the error boundary, so it must never
+ * throw: on a full phone the write fails and the app still has to start —
+ * that phone is the one most in need of reaching Settings to back up. The
+ * flag is simply not stored, and the same decision is made next launch.
  */
 export function skipKeepPromptIfRoundsExist(): void {
-  let stored: unknown = null;
   try {
     const raw = kv.getItem(SETTINGS_KEY);
-    stored = raw ? JSON.parse(raw) : null;
+    const stored: unknown = raw ? JSON.parse(raw) : null;
+    if (
+      stored &&
+      typeof stored === 'object' &&
+      typeof (stored as { firstFinishPromptDismissed?: unknown }).firstFinishPromptDismissed ===
+        'boolean'
+    ) {
+      return;
+    }
+    const hadFinished = listRounds().some((r) => r.status === 'finished');
+    saveSettings({ firstFinishPromptDismissed: hadFinished });
   } catch {
-    return;
-  }
-  if (
-    stored &&
-    typeof stored === 'object' &&
-    typeof (stored as { firstFinishPromptDismissed?: unknown }).firstFinishPromptDismissed ===
-      'boolean'
-  ) {
-    return;
-  }
-  if (listRounds().some((r) => r.status === 'finished')) {
-    saveSettings({ firstFinishPromptDismissed: true });
+    // Unreadable settings or a refused write: leave it for the next launch.
   }
 }
 

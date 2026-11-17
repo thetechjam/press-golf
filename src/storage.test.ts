@@ -113,9 +113,36 @@ describe('settings', () => {
 describe('skipKeepPromptIfRoundsExist', () => {
   beforeEach(() => store.clear());
 
-  it('leaves a phone that has not finished a round', () => {
+  it('marks a phone that has not finished a round as still eligible', () => {
     skipKeepPromptIfRoundsExist();
     expect(getSettings().firstFinishPromptDismissed).toBe(false);
+    // Stored, not just defaulted: the next launch must be able to tell this
+    // phone from one that finished rounds before the prompt existed.
+    expect(JSON.parse(store.get('press.settings.v1')!).firstFinishPromptDismissed).toBe(false);
+  });
+
+  it('keeps the prompt due for a new user who finishes a round and relaunches', () => {
+    // No settings ever saved. First launch, then a finished round, then the
+    // app is closed without answering the prompt and opened again.
+    skipKeepPromptIfRoundsExist();
+    saveRound(makeRound({ status: 'finished' }));
+    skipKeepPromptIfRoundsExist();
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
+  });
+
+  it('does not throw when the settings write is refused', () => {
+    // A full phone: this runs before render, outside the error boundary, so a
+    // throw here is an app that never starts.
+    saveRound(makeRound({ status: 'finished' }));
+    const setItem = localStorage.setItem;
+    localStorage.setItem = () => {
+      throw new DOMException('full', 'QuotaExceededError');
+    };
+    try {
+      expect(() => skipKeepPromptIfRoundsExist()).not.toThrow();
+    } finally {
+      localStorage.setItem = setItem;
+    }
     expect(store.has('press.settings.v1')).toBe(false);
   });
 
