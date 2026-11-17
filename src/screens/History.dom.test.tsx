@@ -282,12 +282,28 @@ describe('a delete the phone refuses', () => {
       await user.click(screen.getAllByRole('button', { name: /Muirfield/ })[0]);
       await user.click(screen.getByRole('button', { name: 'Delete 2' }));
       await user.click(screen.getByRole('button', { name: 'Delete 2 for good' }));
-      expect(screen.getByRole('alert').textContent).toMatch(/Not saved.*not deleted/);
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved.*Those rounds were not deleted/);
     } finally {
       restore();
     }
     // One write for all of them: none went.
     expect(stored()).toHaveLength(3);
     expect(titles()).toHaveLength(3);
+  });
+
+  it('keeps the singular when only one round was picked', async () => {
+    const user = userEvent.setup();
+    show();
+    const restore = refuseStorageKey('press.rounds.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: 'Select' }));
+      await user.click(screen.getAllByRole('button', { name: /Muirfield/ })[0]);
+      await user.click(screen.getByRole('button', { name: 'Delete 1' }));
+      await user.click(screen.getByRole('button', { name: 'Delete 1 for good' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved.*That round was not deleted/);
+    } finally {
+      restore();
+    }
+    expect(stored()).toHaveLength(3);
   });
 });

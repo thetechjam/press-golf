@@ -69,8 +69,12 @@ export function History({ onBack, onResume, onViewResults }: Props) {
   // but it used to throw out of the button, and on native, for a key Press
   // could not read at startup, it always does.
   const [saveFailed, setSaveFailed] = useState<string | null>(null);
-  const deleted = (ok: boolean) =>
-    setSaveFailed(ok ? null : `That round was not deleted. ${notSavedReason(ROUNDS_KEY, true)}`);
+  const deleted = (ok: boolean, count = 1) =>
+    setSaveFailed(
+      ok
+        ? null
+        : `${count > 1 ? 'Those rounds were' : 'That round was'} not deleted. ${notSavedReason(ROUNDS_KEY, true)}`
+    );
 
   const shown = useMemo(
     () => filterByKind(filterByStatus(searchRounds(rounds, query), status), kind),
@@ -111,7 +115,7 @@ export function History({ onBack, onResume, onViewResults }: Props) {
 
   const deletePicked = () => {
     // One write for all of them, so a refusal leaves every picked round, not some.
-    deleted(deleteRounds(picked));
+    deleted(deleteRounds(picked), picked.size);
     setRounds(listRounds());
     stopSelecting();
   };
