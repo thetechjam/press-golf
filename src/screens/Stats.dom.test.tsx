@@ -4,6 +4,7 @@ import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Round } from '../types';
 import { Stats } from './Stats';
+import { refuseStorageKey } from '../testQuota';
 
 /**
  * Narrowing the history the stats are drawn from.
@@ -294,5 +295,38 @@ describe('merging by hand', () => {
     await user.click(card.querySelector('.merge-open') as HTMLElement);
     const offered = [...card.querySelectorAll('.merge-into .recent-chip')].map((b) => b.textContent);
     expect(offered).toEqual(['Big Mike']);
+  });
+});
+
+describe('a merge the phone refuses', () => {
+  const split = [
+    round({ id: 'a', updatedAt: 5, players: [{ id: 'p1', name: 'Alex' }] }),
+    round({ id: 'b', updatedAt: 4, players: [{ id: 'p1', name: 'Al' }] }),
+  ];
+
+  it('says so instead of throwing, and keeps both names', async () => {
+    const user = userEvent.setup();
+    show(split);
+    const restore = refuseStorageKey('press.rounds.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: 'Same person' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/not merged.*storage is full/);
+    } finally {
+      restore();
+    }
+    expect(names()).toEqual(expect.arrayContaining(['Alex', 'Al']));
+    expect(localStorage.getItem('press.aliases.v1')).toBeNull();
+  });
+
+  it('says so when "two people" cannot be remembered', async () => {
+    const user = userEvent.setup();
+    show(split);
+    const restore = refuseStorageKey('press.distinct.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: 'Two people' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/ask about these names again/);
+    } finally {
+      restore();
+    }
   });
 });

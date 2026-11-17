@@ -4,6 +4,9 @@ import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 import type { Round } from './types';
+import { refuseStorageKey } from './testQuota';
+import { setBackend, snapshotBackend } from './kv';
+import { getSettings, skipKeepPromptIfRoundsExist } from './storage';
 
 /**
  * Navigation and the hardware back button.
@@ -334,5 +337,173 @@ describe('Play toolbar groups', () => {
     // And no tab is loose in the row, which is what made the row unbreakable.
     expect(document.querySelectorAll('.view-toggle > .seg-btn')).toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Settings' }).closest('.view-tabs')).toBeNull();
+  });
+});
+
+/**
+ * Starting a round writes it. A full phone used to ignore the false return
+ * and open the card as if the round were stored.
+ */
+describe('a round that cannot be saved', () => {
+  /** Throws on the rounds key only, the way a full phone refuses one write. */
+  function refuseRounds() {
+    return refuseStorageKey('press.rounds.v1');
+  }
+
+  it('shows the banner when New Round cannot be stored, and keeps the card', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Start New Round' }));
+    const names = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(names[0], 'Al');
+    await user.type(names[1], 'Bo');
+
+    const restore = refuseRounds();
+    try {
+      await user.click(screen.getByRole('button', { name: /Start Round/i }));
+      expect((await screen.findByRole('alert')).textContent).toMatch(/Not saved/);
+      // The round is on screen, not discarded with the failed write.
+      expect(screen.getByRole('button', { name: 'Finish' })).toBeTruthy();
+      expect(screen.getByText('Al')).toBeTruthy();
+      expect(localStorage.getItem('press.rounds.v1')).toBeNull();
+    } finally {
+      restore();
+    }
+  });
+
+  it('gives the real reason when the rounds could not be read at startup', async () => {
+    const user = userEvent.setup();
+    const previous = setBackend(snapshotBackend({}, () => {}, () => {}, ['press.rounds.v1']));
+    try {
+      render(<App />);
+      await user.click(screen.getByRole('button', { name: 'Start New Round' }));
+      const names = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+      await user.type(names[0], 'Al');
+      await user.type(names[1], 'Bo');
+      await user.click(screen.getByRole('button', { name: /Start Round/i }));
+      const banner = (await screen.findByRole('alert')).textContent ?? '';
+      expect(banner).toMatch(/Not saved/);
+      expect(banner).toMatch(/couldn’t read your saved rounds/);
+      // Deleting rounds to make room would not help, so it is not suggested.
+      expect(banner).not.toMatch(/storage is full|make room/);
+    } finally {
+      setBackend(previous);
+    }
+  });
+
+  it('shows the banner when a league night cannot be stored, and keeps the card', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Golf League' }));
+    await screen.findByRole('heading', { name: 'Golf League' });
+
+    const names = ['Al', 'Bo', 'Cy', 'Di'];
+    const fields = document.querySelectorAll<HTMLInputElement>('.player-name');
+    for (const [i, field] of [...fields].entries()) await user.type(field, names[i]);
+    for (const [i, field] of screen.getAllByPlaceholderText('HCP').entries()) {
+      await user.type(field, String([4, 9, 6, 12][i]));
+    }
+
+    const restore = refuseRounds();
+    try {
+      await user.click(screen.getByRole('button', { name: /Start League Round/ }));
+      expect((await screen.findByRole('alert')).textContent).toMatch(/Not saved/);
+      expect(screen.getByRole('button', { name: 'Finish' })).toBeTruthy();
+      expect(screen.getByText('Al')).toBeTruthy();
+      expect(localStorage.getItem('press.rounds.v1')).toBeNull();
+    } finally {
+      restore();
+    }
+  });
+});
+
+/**
+ * Safari drops a site's data after seven days unless the app is on the home
+ * screen. The ask waits until a round is actually finished, and it waits once.
+ */
+describe('the prompt after the first finished round', () => {
+  const finished = () =>
+    round({
+      status: 'in_progress',
+      scores: Object.fromEntries(hs.map((h) => [h.number, { p1: 4, p2: 5 }])),
+    });
+
+  it('asks to back up and to add Press to the home screen, and only once', async () => {
+    seed([finished()]);
+    const user = userEvent.setup();
+    const view = render(<App />);
+
+    // Home's standing hint mentions the seven days too. The prompt is the one
+    // with the backup button, and it waits until a round is finished.
+    expect(screen.queryByRole('button', { name: 'Save a backup' })).toBeNull();
+
+    await user.click(screen.getByText('Test Links'));
+    await user.click(await screen.findByRole('button', { name: 'Finish' }));
+    expect(await screen.findByRole('heading', { name: 'Results' })).toBeTruthy();
+
+    const prompt = screen.getByText('Keep these rounds.').parentElement!;
+    expect(prompt.textContent).toMatch(/seven days/);
+    expect(prompt.textContent).toMatch(/home screen/);
+    expect(screen.getByRole('button', { name: 'Save a backup' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: /Don.t ask again/ }));
+    expect(screen.queryByText('Keep these rounds.')).toBeNull();
+    expect(getSettings().firstFinishPromptDismissed).toBe(true);
+
+    await user.click(screen.getByRole('button', { name: 'Home' }));
+    expect(screen.queryByRole('button', { name: 'Save a backup' })).toBeNull();
+
+    view.unmount();
+    render(<App />);
+    expect(screen.queryByRole('button', { name: 'Save a backup' })).toBeNull();
+  });
+
+  it('saves a backup from the prompt, then stops asking', async () => {
+    seed([round({ status: 'finished' })]);
+    const user = userEvent.setup();
+    const view = render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Save a backup' }));
+    expect(await screen.findByText('Backup saved.')).toBeTruthy();
+    // The backup was the answer: it is remembered, and the way out says so.
+    expect(getSettings().firstFinishPromptDismissed).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Save a backup' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+    expect(screen.queryByText('Keep these rounds.')).toBeNull();
+
+    view.unmount();
+    render(<App />);
+    expect(screen.queryByText('Keep these rounds.')).toBeNull();
+  });
+
+  it('still closes when the dismissal cannot be stored', async () => {
+    seed([round({ status: 'finished' })]);
+    const user = userEvent.setup();
+    render(<App />);
+    const restore = refuseStorageKey('press.settings.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: /Don.t ask again/ }));
+      expect(screen.queryByText('Keep these rounds.')).toBeNull();
+    } finally {
+      restore();
+    }
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
+  });
+
+  it('is still due after relaunch for a new user who never saved a setting', async () => {
+    // First launch on a fresh phone: no settings stored at all.
+    skipKeepPromptIfRoundsExist();
+    seed([finished()]);
+    const user = userEvent.setup();
+    const view = render(<App />);
+    await user.click(screen.getByText('Test Links'));
+    await user.click(await screen.findByRole('button', { name: 'Finish' }));
+    expect(await screen.findByText('Keep these rounds.')).toBeTruthy();
+
+    // Closed without answering, then opened again.
+    view.unmount();
+    skipKeepPromptIfRoundsExist();
+    render(<App />);
+    expect(screen.getByText('Keep these rounds.')).toBeTruthy();
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
   });
 });

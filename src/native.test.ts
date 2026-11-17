@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { isNative, initNativeStorage, PERSISTED_KEYS } from './native';
+import { isNative, initNativeStorage, reportNativeStorageError, PERSISTED_KEYS } from './native';
 import { kv, setBackend, type KvBackend } from './kv';
 import { listRounds, saveRound, getSettings, saveSettings } from './storage';
 import { makeRound } from './games/testFixtures';
@@ -175,6 +175,26 @@ describe('inside the shell', () => {
     expect(bridge.reads).toEqual([...PERSISTED_KEYS]);
   });
 
+  it('refuses to overwrite a key it could not read, so the saved list survives', async () => {
+    // The key reads as absent, but the rounds are still on disk. A save is
+    // read-modify-write; letting it through would replace them all with one.
+    const saved = [{ ...makeRound(), id: 'r1', course: 'Pebble Beach' }];
+    const bridge = installBridge(
+      { 'press.rounds.v1': JSON.stringify(saved) },
+      { onGet: 'press.rounds.v1' }
+    );
+    original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
+    await initNativeStorage(() => {});
+
+    expect(saveRound({ ...makeRound(), id: 'r2', course: 'Oakmont' })).toBe(false);
+    expect(bridge.writes.filter((w) => w.key === 'press.rounds.v1')).toEqual([]);
+    expect(JSON.parse(bridge.disk.get('press.rounds.v1')!)).toEqual(saved);
+
+    // Only that key. Everything that was read is written as usual.
+    saveSettings({ glare: true });
+    expect(bridge.writes.map((w) => w.key)).toEqual(['press.settings.v1']);
+  });
+
   it('reports a write the store rejects instead of losing it silently', async () => {
     // A rejected promise is not a thrown error, so this is caught where the
     // promise is, not where the write was made.
@@ -183,9 +203,12 @@ describe('inside the shell', () => {
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
     await initNativeStorage((key) => seen.push(key));
 
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => saveRound({ ...makeRound(), id: 'r1', course: 'Oakmont' })).not.toThrow();
     await new Promise((r) => setTimeout(r, 0));
     expect(seen).toEqual(['press.rounds.v1']);
+    expect(logged.mock.calls.some((c) => String(c[0]).includes('press.rounds.v1'))).toBe(true);
+    logged.mockRestore();
     // The app still agrees with itself, whatever the disk did.
     expect(listRounds().map((r) => r.course)).toEqual(['Oakmont']);
   });
@@ -210,5 +233,27 @@ describe('every key the app writes is a key the phone hydrates', () => {
     }
     expect(found.size).toBeGreaterThan(0);
     expect([...found].sort()).toEqual([...PERSISTED_KEYS].sort());
+  });
+
+  it('does not claim the Capacitor package is installed here', () => {
+    // It is not in package.json. The old comment said it was, which is how a
+    // native build would be started on a dependency this repo does not have.
+    const src = source('./native.ts');
+    expect(src).not.toMatch(/package is still installed/);
+    expect(src).toMatch(/not a dependency of this repo/);
+  });
+
+  it('is wired from main, so a failed read at startup is not ignored', () => {
+    const main = source('./main.tsx');
+    expect(main).toContain('initNativeStorage(reportNativeStorageError)');
+  });
+});
+
+describe('reportNativeStorageError', () => {
+  it('logs the key that failed', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    reportNativeStorageError('press.rounds.v1', new Error('unavailable'));
+    expect(logged.mock.calls.some((c) => String(c[0]).includes('press.rounds.v1'))).toBe(true);
+    logged.mockRestore();
   });
 });

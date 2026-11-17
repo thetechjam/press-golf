@@ -4,6 +4,7 @@ import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Round } from '../types';
 import { History } from './History';
+import { refuseStorageKey } from '../testQuota';
 
 /**
  * Finding one round among many, and clearing some out.
@@ -266,6 +267,27 @@ describe('league nights', () => {
     expect(titles()).toEqual(['Thursday Night League']);
     await user.click(screen.getByRole('button', { name: 'Regular' }));
     expect(titles()).not.toContain('Thursday Night League');
+    expect(titles()).toHaveLength(3);
+  });
+});
+
+describe('a delete the phone refuses', () => {
+  it('says so instead of throwing, and keeps the round', async () => {
+    const user = userEvent.setup();
+    show();
+    const restore = refuseStorageKey('press.rounds.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: 'Select' }));
+      await user.click(screen.getAllByRole('button', { name: /Torrey Pines South/ })[0]);
+      await user.click(screen.getAllByRole('button', { name: /Muirfield/ })[0]);
+      await user.click(screen.getByRole('button', { name: 'Delete 2' }));
+      await user.click(screen.getByRole('button', { name: 'Delete 2 for good' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved.*not deleted/);
+    } finally {
+      restore();
+    }
+    // One write for all of them: none went.
+    expect(stored()).toHaveLength(3);
     expect(titles()).toHaveLength(3);
   });
 });

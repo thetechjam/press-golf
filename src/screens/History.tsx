@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Round } from '../types';
-import { listRounds, deleteRound } from '../storage';
+import { listRounds, deleteRound, deleteRounds, ROUNDS_KEY } from '../storage';
+import { notSavedReason } from '../notSaved';
 import { RoundCard } from '../components/RoundCard';
 import {
   searchRounds,
@@ -64,6 +65,12 @@ export function History({ onBack, onResume, onViewResults }: Props) {
   const [selecting, setSelecting] = useState(false);
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
+  // A delete the phone refused. Rare — a delete only shrinks what is stored —
+  // but it used to throw out of the button, and on native, for a key Press
+  // could not read at startup, it always does.
+  const [saveFailed, setSaveFailed] = useState<string | null>(null);
+  const deleted = (ok: boolean) =>
+    setSaveFailed(ok ? null : `That round was not deleted. ${notSavedReason(ROUNDS_KEY, true)}`);
 
   const shown = useMemo(
     () => filterByKind(filterByStatus(searchRounds(rounds, query), status), kind),
@@ -83,7 +90,7 @@ export function History({ onBack, onResume, onViewResults }: Props) {
     round.status === 'finished' ? onViewResults(round) : onResume(round);
 
   const removeOne = (id: string) => {
-    deleteRound(id);
+    deleted(deleteRound(id));
     setRounds(listRounds());
   };
 
@@ -103,7 +110,8 @@ export function History({ onBack, onResume, onViewResults }: Props) {
   };
 
   const deletePicked = () => {
-    for (const id of picked) deleteRound(id);
+    // One write for all of them, so a refusal leaves every picked round, not some.
+    deleted(deleteRounds(picked));
     setRounds(listRounds());
     stopSelecting();
   };
@@ -127,6 +135,12 @@ export function History({ onBack, onResume, onViewResults }: Props) {
           <span />
         )}
       </header>
+
+      {saveFailed && (
+        <div className="unsaved" role="alert">
+          <strong>Not saved.</strong> {saveFailed}
+        </div>
+      )}
 
       {rounds.length > 0 && (
         <div className="history-tools">

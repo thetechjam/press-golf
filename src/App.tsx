@@ -4,7 +4,8 @@ import { Home } from './screens/Home';
 import { Setup } from './screens/Setup';
 import { Play } from './screens/Play';
 import { Results } from './screens/Results';
-import { saveRound, getRound, listCourses, saveCourse } from './storage';
+import { saveRound, getRound, listCourses, saveCourse, ROUNDS_KEY, COURSES_KEY } from './storage';
+import { kv } from './kv';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { dismissSplash } from './splash';
 import { createNavigator } from './navigation';
@@ -66,6 +67,10 @@ export default function App() {
    * reload is doing so after an hour of scoring that looked saved.
    */
   const [unsaved, setUnsaved] = useState(false);
+  // A course that arrived by link and could not be stored. Separate from
+  // `unsaved`, which is about the round: a course write succeeding says
+  // nothing about whether the round on the card is kept.
+  const [courseUnsaved, setCourseUnsaved] = useState(false);
 
   // The history/back-gesture logic lives in navigation.ts, where it can be
   // tested against a history double that models asynchronous traversal — a DOM
@@ -241,15 +246,30 @@ export default function App() {
   };
 
   /**
+   * Writes a round the user has decided to keep.
+   *
+   * False leaves whatever is already on screen alone: a failed save used to
+   * be ignored, so the round looked stored and was gone on the next launch.
+   * The banner is the same one scoring uses; the round stays up so the write
+   * can be tried again.
+   */
+  const persistRound = (next: Round): boolean => {
+    const ok = saveRound(next);
+    setUnsaved(!ok);
+    return ok;
+  };
+
+  /**
    * Writes a round that arrived by link onto this device, once asked.
    *
    * A round still being played goes straight to the card, because taking one
    * on is not filing it away — it is agreeing to keep score, and the next
-   * thing that happens is somebody hitting a shot.
+   * thing that happens is somebody hitting a shot. A refusal leaves the
+   * "sent to you" row up, so keeping it can be tried again.
    */
   const keep = () => {
     if (!round) return;
-    saveRound(round);
+    if (!persistRound(round)) return;
     setUnkept(false);
     if (round.status !== 'finished') goTo('play');
   };
@@ -266,27 +286,34 @@ export default function App() {
 
   /** Applies what the user chose about a round that this device already had. */
   const resolve = (incomingRound: Round, resolution: Resolution) => {
-    const mine = getRound(incomingRound.id);
-    setIncoming(null);
-
     if (resolution.action === 'open-mine') {
       // Nothing is written: the copy here is already the one being opened.
+      // A failed replace or fork before this choice is moot now, and its
+      // banner would claim the stored round is not saved.
+      const mine = getRound(incomingRound.id);
+      setUnsaved(false);
+      setIncoming(null);
       load(mine ?? incomingRound);
-    } else if (resolution.action === 'replace') {
-      saveRound(incomingRound);
-      load(incomingRound);
-    } else {
-      const fork = forkRound(incomingRound);
-      saveRound(fork);
-      load(fork);
+      nav.goTo('results');
+      return;
     }
+    // Replace and fork both write. A refusal leaves the decision on screen —
+    // the arriving card is still in `incoming` — rather than dropping it and
+    // pretending the phone now holds it.
+    const next = resolution.action === 'replace' ? incomingRound : forkRound(incomingRound);
+    if (!persistRound(next)) return;
+    setIncoming(null);
+    load(next);
     nav.goTo('results');
   };
 
   /** Applies what the user chose about a course that arrived by link. */
   const resolveCourse = (course: SavedCourse, choice: CourseChoice) => {
-    setIncoming(null);
-    if (choice === 'skip') return;
+    if (choice === 'skip') {
+      setCourseUnsaved(false);
+      setIncoming(null);
+      return;
+    }
     // `saveCourse` upserts by id, so replacing means reusing the local record's
     // id and saving separately means taking a fresh one — which is exactly
     // what `asSeparateCourse` hands back.
@@ -294,14 +321,27 @@ export default function App() {
     const existing = mine.find(
       (c) => c.name.trim().toLowerCase() === course.name.trim().toLowerCase()
     );
-    if (choice === 'replace' && existing) saveCourse({ ...course, id: existing.id });
-    else if (choice === 'both') saveCourse(asSeparateCourse(course, mine));
-    else saveCourse(course);
+    const toSave =
+      choice === 'replace' && existing
+        ? { ...course, id: existing.id }
+        : choice === 'both'
+          ? asSeparateCourse(course, mine)
+          : course;
+    // Stay on the card when the write fails. The payload has already been
+    // taken out of the address bar, so leaving this screen would drop the
+    // only copy of the course still on the phone.
+    if (!saveCourse(toSave)) {
+      setCourseUnsaved(true);
+      return;
+    }
+    setCourseUnsaved(false);
+    setIncoming(null);
   };
 
   if (incoming?.state === 'course') {
     return (
       <div className="app">
+        {courseUnsaved && <NotSavedBanner what="course" />}
         <Suspense fallback={null}>
           <ArrivingCourse
             course={incoming.course}
@@ -316,6 +356,7 @@ export default function App() {
   if (incoming?.state === 'deciding') {
     return (
       <div className="app">
+        {unsaved && <NotSavedBanner />}
         <Suspense fallback={null}>
           <Arrival
             incoming={incoming.round}
@@ -351,13 +392,7 @@ export default function App() {
           the prompt itself stays hidden while a round is being scored. */}
       <UpdatePrompt suppressed={view === 'play'} />
 
-      {unsaved && (
-        <div className="unsaved" role="alert">
-          <strong>Not saved.</strong> This phone’s storage is full, so scores entered now will be
-          lost if Press is closed. Back up from Settings, then delete old rounds from Rounds to
-          make room.
-        </div>
-      )}
+      {unsaved && <NotSavedBanner />}
 
       {/* No fallback: the chunks are preloaded at idle, so the wait is a frame
           or two at most, and a spinner flashing for that long is worse than
@@ -430,10 +465,11 @@ export default function App() {
           onCancel={() => goTo('home')}
           onStart={(r) => {
             load(r);
-            saveRound(r);
+            persistRound(r);
             // In place of Setup: Back from a round just started goes Home.
             // Popping to a blank Setup over a saved round invited starting it
-            // twice.
+            // twice. A failed save still opens the card — the round is in
+            // memory, and the banner says it is not on the phone yet.
             nav.replace('play');
           }}
         />
@@ -445,7 +481,7 @@ export default function App() {
           onStandings={() => goTo('standings')}
           onStart={(r) => {
             load(r);
-            saveRound(r);
+            persistRound(r);
             nav.replace('play');
           }}
         />
@@ -467,6 +503,47 @@ export default function App() {
         />
       )}
       </Suspense>
+    </div>
+  );
+}
+
+/**
+ * A write storage refused. Shown wherever a round or course is still on screen.
+ *
+ * Two reasons, and the advice differs. Usually storage is full. In the native
+ * shell the key may instead be one Press could not read at startup, which it
+ * refuses to write over — deleting rounds would not help that, reopening does.
+ */
+function NotSavedBanner({ what = 'round' }: { what?: 'round' | 'course' }) {
+  if (kv.isUnreadable(what === 'course' ? COURSES_KEY : ROUNDS_KEY)) {
+    return what === 'course' ? (
+      <div className="unsaved" role="alert">
+        <strong>Not saved.</strong> Press couldn’t read your saved courses when it opened, so it
+        won’t write over them and this course could not be kept. Close Press completely, open it
+        again, and open the link again.
+      </div>
+    ) : (
+      <div className="unsaved" role="alert">
+        <strong>Not saved.</strong> Press couldn’t read your saved rounds when it opened, so it
+        won’t write over them and scores entered now are not being kept. Note the scores, then
+        close Press completely and open it again.
+      </div>
+    );
+  }
+  if (what === 'course') {
+    return (
+      <div className="unsaved" role="alert">
+        <strong>Not saved.</strong> This phone’s storage is full, so this course could not be
+        kept. Back up from Settings, then delete old rounds from Rounds to make room, and open
+        the link again.
+      </div>
+    );
+  }
+  return (
+    <div className="unsaved" role="alert">
+      <strong>Not saved.</strong> This phone’s storage is full, so scores entered now will be
+      lost if Press is closed. Back up from Settings, then delete old rounds from Rounds to
+      make room.
     </div>
   );
 }

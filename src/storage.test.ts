@@ -1,5 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getSettings, saveSettings, DEFAULT_SETTINGS, listRounds, listCourses, saveRound } from './storage';
+import {
+  getSettings,
+  saveSettings,
+  DEFAULT_SETTINGS,
+  listRounds,
+  listCourses,
+  saveRound,
+  saveCourse,
+  skipKeepPromptIfRoundsExist,
+} from './storage';
 import { makeRound, player } from './games/testFixtures';
 
 // Vitest runs in node — back localStorage with a Map.
@@ -58,6 +67,7 @@ describe('settings', () => {
       theme: 'system',
       glare: true,
       reporterName: '',
+      firstFinishPromptDismissed: false,
     });
   });
 
@@ -87,6 +97,69 @@ describe('settings', () => {
     saveSettings({ reporterName: 'Bo' });
     saveSettings({ keepAwake: false });
     expect(getSettings().reporterName).toBe('Bo');
+  });
+
+  it('defaults the first-round prompt to not dismissed', () => {
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
+  });
+
+  it('keeps a dismissed first-round prompt across an unrelated save', () => {
+    saveSettings({ firstFinishPromptDismissed: true });
+    saveSettings({ keepAwake: false });
+    expect(getSettings().firstFinishPromptDismissed).toBe(true);
+  });
+});
+
+describe('skipKeepPromptIfRoundsExist', () => {
+  beforeEach(() => store.clear());
+
+  it('marks a phone that has not finished a round as still eligible', () => {
+    skipKeepPromptIfRoundsExist();
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
+    // Stored, not just defaulted: the next launch must be able to tell this
+    // phone from one that finished rounds before the prompt existed.
+    expect(JSON.parse(store.get('press.settings.v1')!).firstFinishPromptDismissed).toBe(false);
+  });
+
+  it('keeps the prompt due for a new user who finishes a round and relaunches', () => {
+    // No settings ever saved. First launch, then a finished round, then the
+    // app is closed without answering the prompt and opened again.
+    skipKeepPromptIfRoundsExist();
+    saveRound(makeRound({ status: 'finished' }));
+    skipKeepPromptIfRoundsExist();
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
+  });
+
+  it('does not throw when the settings write is refused', () => {
+    // A full phone: this runs before render, outside the error boundary, so a
+    // throw here is an app that never starts.
+    saveRound(makeRound({ status: 'finished' }));
+    const setItem = localStorage.setItem;
+    localStorage.setItem = () => {
+      throw new DOMException('full', 'QuotaExceededError');
+    };
+    try {
+      expect(() => skipKeepPromptIfRoundsExist()).not.toThrow();
+    } finally {
+      localStorage.setItem = setItem;
+    }
+    expect(store.has('press.settings.v1')).toBe(false);
+  });
+
+  it('dismisses the prompt when a finished round predates the flag', () => {
+    saveRound(makeRound({ status: 'finished' }));
+    store.set('press.settings.v1', JSON.stringify({ keepAwake: true }));
+    skipKeepPromptIfRoundsExist();
+    expect(getSettings().firstFinishPromptDismissed).toBe(true);
+  });
+
+  it('does not override a prompt that is still waiting to be seen', () => {
+    // The flag is already stored, so this is a phone that finished its first
+    // round after the prompt existed and has not dismissed it.
+    saveRound(makeRound({ status: 'finished' }));
+    saveSettings({ firstFinishPromptDismissed: false });
+    skipKeepPromptIfRoundsExist();
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
   });
 });
 
@@ -131,5 +204,27 @@ describe('saveRound', () => {
     }
     // What was there is still there.
     expect(listRounds()[0].course).toBeUndefined();
+  });
+});
+
+describe('saveCourse', () => {
+  beforeEach(() => store.clear());
+
+  const course = { id: 'c1', name: 'Pebble Beach', holes: [{ number: 1, par: 4 }] };
+
+  it('reports a QuotaExceededError and leaves the courses that were already there', () => {
+    expect(saveCourse(course)).toBe(true);
+    expect(listCourses().map((c) => c.name)).toEqual(['Pebble Beach']);
+
+    const real = localStorage.setItem;
+    localStorage.setItem = () => {
+      throw new DOMException('full', 'QuotaExceededError');
+    };
+    try {
+      expect(saveCourse({ ...course, id: 'c2', name: 'Torrey Pines South' })).toBe(false);
+    } finally {
+      localStorage.setItem = real;
+    }
+    expect(listCourses().map((c) => c.name)).toEqual(['Pebble Beach']);
   });
 });

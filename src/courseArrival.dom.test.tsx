@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 import type { SavedCourse } from './types';
 import { encodeCourse } from './shareCourse';
+import { refuseStorageKey } from './testQuota';
 
 /**
  * A course arriving from somebody else's phone.
@@ -149,5 +150,60 @@ describe('a course you already have', () => {
     // named this course still names the same one.
     expect(saved()).toHaveLength(1);
     expect(saved()[0].id).toBe('local001');
+  });
+});
+
+describe('a course the phone cannot store', () => {
+  function refuseCourses() {
+    return refuseStorageKey('press.courses.v1');
+  }
+
+  it('stays on the card and says so', async () => {
+    await arriveWith(torrey);
+    const restore = refuseCourses();
+    try {
+      await userEvent.click(screen.getByRole('button', { name: 'Save this course' }));
+      const alert = screen.getByRole('alert').textContent;
+      expect(alert).toMatch(/Not saved/);
+      // About the course, not about scores on a round nobody is playing.
+      expect(alert).toMatch(/course/);
+      expect(alert).not.toMatch(/scores/);
+      // The card is still the one they can try to save again. The link has
+      // already been taken out of the address bar, so this screen is the copy.
+      expect(screen.getByRole('heading', { name: 'A course was sent to you' })).toBeTruthy();
+      expect(saved()).toEqual([]);
+    } finally {
+      restore();
+    }
+  });
+
+  it('drops the banner when the course is skipped after a failed save', async () => {
+    await arriveWith(torrey);
+    const restore = refuseCourses();
+    try {
+      await userEvent.click(screen.getByRole('button', { name: 'Save this course' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+      await userEvent.click(screen.getByRole('button', { name: /No thanks|Go to Press/ }));
+      // Back in the app, where nothing is unsaved: the course was let go.
+      expect(await screen.findByRole('heading', { name: 'Press' })).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
+    } finally {
+      restore();
+    }
+  });
+
+  it('does not replace the course already on the phone', async () => {
+    seed([{ ...torrey, holes: torrey.holes.map((h) => (h.number === 4 ? { ...h, par: 4 } : h)) }]);
+    const before = localStorage.getItem('press.courses.v1');
+    await arriveWith(torrey);
+    const restore = refuseCourses();
+    try {
+      await userEvent.click(screen.getByRole('button', { name: 'Replace mine with theirs' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+      expect(screen.getByRole('heading', { name: 'You already have this course' })).toBeTruthy();
+      expect(localStorage.getItem('press.courses.v1')).toBe(before);
+    } finally {
+      restore();
+    }
   });
 });

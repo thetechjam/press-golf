@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { todayIso } from '../roundDate';
 import type { Round, Player, Hole, SavedCourse, LeagueTeam } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
-import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
+import { uid, listCourses, saveCourse, deleteCourse, listRounds, COURSES_KEY } from '../storage';
+import { notSavedReason } from '../notSaved';
 import { CourseSearch } from '../components/CourseSearch';
 import { SavedCourseList } from '../components/SavedCourseList';
 import { ParGrid } from '../components/ParGrid';
@@ -130,7 +131,7 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     const name = course.trim();
     if (!name) return setError('Add a course name before saving.');
     const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
-    saveCourse({
+    const saved = saveCourse({
       id: existing?.id ?? uid(),
       name,
       holes: holes.map((h) => ({ ...h })),
@@ -138,12 +139,20 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
       slope,
       rating: ratingHoles === holes.length ? rating : undefined,
     });
+    if (!saved) {
+      setSavedNote('');
+      setError(`Not saved. This course wasn’t kept. ${notSavedReason(COURSES_KEY)}`);
+      return;
+    }
     setCourses(listCourses());
     setError('');
     setSavedNote(`Saved "${name}"`);
   };
   const removeCourse = (id: string) => {
-    deleteCourse(id);
+    if (!deleteCourse(id)) {
+      setSavedNote('');
+      setError(`Not saved. That course wasn’t deleted. ${notSavedReason(COURSES_KEY, true)}`);
+    }
     setCourses(listCourses());
   };
 

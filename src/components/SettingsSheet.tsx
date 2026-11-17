@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { Theme } from '../storage';
 import type { Round } from '../types';
-import { getSettings, saveSettings } from '../storage';
+import { getSettings, saveSettings, SETTINGS_KEY } from '../storage';
+import { notSavedReason } from '../notSaved';
 import { describePersistence } from '../persistence';
 import { applyTheme } from '../theme';
 import { Sheet } from './Sheet';
 import { FeedbackForm } from './FeedbackForm';
 import { HelpSheet } from './HelpSheet';
 import { BackupRows } from './BackupRows';
-import { clearQueue, listQueue } from '../feedback';
+import { clearQueue, listQueue, QUEUE_KEY } from '../feedback';
 import { eraseEverything } from '../erase';
 import { tipJarUrl } from '../tipJar';
 import { isNative } from '../native';
@@ -102,14 +103,32 @@ export function SettingsSheet({
     if (view === 'settings') setQueued(listQueue().length);
   }, [view]);
 
+  // A setting or a clear the phone refused, and why. The change still takes
+  // effect for this session — a theme that does not repaint until relaunch
+  // would look broken — but the sheet says it will not be remembered.
+  const [notKept, setNotKept] = useState<string | null>(null);
+
   const set = (patch: Partial<typeof s>) => {
-    const next = saveSettings(patch);
+    const saved = saveSettings(patch);
+    const next = saved ?? { ...s, ...patch };
+    setNotKept(
+      saved
+        ? null
+        : `That setting is on for now but won’t be remembered. ${notSavedReason(SETTINGS_KEY)}`
+    );
     setS(next);
     applyTheme(next.theme, next.glare);
   };
 
   const clearReports = () => {
-    clearQueue();
+    if (!clearQueue()) {
+      setNotKept(
+        `The waiting reports weren’t cleared. ${notSavedReason(QUEUE_KEY, true)}`
+      );
+      setQueued(listQueue().length);
+      return;
+    }
+    setNotKept(null);
     setQueued(0);
   };
 
@@ -117,8 +136,14 @@ export function SettingsSheet({
   // second does it. Dismissing the sheet disarms it, so a tap that was meant
   // for Close can never be the second one.
   const [erasing, setErasing] = useState(false);
+  // True when some key could not be removed. The screen says so instead of
+  // reloading into what looks like a fresh start with data still on it.
+  const [eraseFailed, setEraseFailed] = useState(false);
   const erase = () => {
-    eraseEverything();
+    if (eraseEverything().length > 0) {
+      setEraseFailed(true);
+      return;
+    }
     // A reload rather than unwinding state in place. This sheet opens from
     // four screens, and the round being played lives in App's state: closing
     // the sheet with it still there would write it straight back on the next
@@ -140,6 +165,11 @@ export function SettingsSheet({
         <HelpSheet onBack={() => setView('settings')} />
       ) : (
         <>
+          {notKept && (
+            <div className="unsaved" role="alert">
+              <strong>Not saved.</strong> {notKept}
+            </div>
+          )}
           <div className="set-group">
             <div className="set-label">Appearance</div>
             <div className="seg">
@@ -233,7 +263,23 @@ export function SettingsSheet({
               of; above the tip jar, because it is still something the app
               does for the user. */}
           <div className="set-erase">
-            {erasing ? (
+            {eraseFailed ? (
+              <>
+                <p className="set-erase-copy" role="alert">
+                  Press couldn’t erase everything — some of your data is still on this phone. Close
+                  Press completely, open it again, and erase again.
+                </p>
+                <div className="set-erase-actions">
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => window.location.reload()}
+                  >
+                    Reload Press
+                  </button>
+                </div>
+              </>
+            ) : erasing ? (
               <>
                 <p className="set-erase-copy" role="alert">
                   This erases every round, saved course, player name, feedback waiting to send

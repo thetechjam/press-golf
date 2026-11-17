@@ -1,4 +1,5 @@
 import type { Player } from '../../types';
+import { IndexWarning } from './IndexWarning';
 import { formatHandicap } from '../../games/handicap';
 import type { RosterEntry } from '../../roster';
 import { CrewChip, RecentChips } from '../../components/RosterChips';
@@ -22,6 +23,12 @@ interface Props {
   onUpdate: (id: string, patch: Partial<Player>) => void;
   onAdd: () => void;
   onRemove: (id: string) => void;
+  /**
+   * A player already has a Handicap Index and this course cannot use it.
+   * Shown here only while Holes & pars is collapsed — once that row is open
+   * the same warning sits on the slope and rating fields.
+   */
+  indexWaiting: boolean;
 }
 
 /** The Players card at the top of New Round. */
@@ -37,6 +44,7 @@ export function PlayersSection({
   onUpdate,
   onAdd,
   onRemove,
+  indexWaiting,
 }: Props) {
   /** The seat row `i` takes in the round: how many named rows sit above it. */
   const seatOf = (i: number) => players.slice(0, i).filter((p) => p.name.trim()).length;
@@ -147,6 +155,7 @@ export function PlayersSection({
         </button>
         <RecentChips recent={recent} onAdd={onAddFromRoster} />
       </div>
+      {indexWaiting && <IndexWarning />}
       {showNet && (
         <p className="hint">
           {rated

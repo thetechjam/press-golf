@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react';
 import type { Round } from '../types';
-import { getDistinct, listRounds, markDistinct, mergePeople, saveRound } from '../storage';
+import {
+  ALIASES_KEY,
+  DISTINCT_KEY,
+  ROUNDS_KEY,
+  getDistinct,
+  listRounds,
+  markDistinct,
+  mergePeople,
+  saveRounds,
+} from '../storage';
+import { notSavedReason } from '../notSaved';
 import { SamePersonNudge } from '../components/SamePerson';
 import { likelySame } from '../people';
 import { findTrip, tripCandidates, tripLedger, tripSettleText, withTrip } from '../trips';
@@ -77,10 +87,24 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
     [trip, distinct]
   );
 
-  /** Writes every changed round and re-reads, so the screen shows what was saved. */
-  const save = (changed: Round[]) => {
-    for (const r of changed) saveRound(r);
+  // Why a write the phone refused was refused. The screen re-reads storage
+  // either way, so what is shown is what was kept; this is what says the
+  // change was not.
+  const [saveFailed, setSaveFailed] = useState<string | null>(null);
+  const failed = (ok: boolean, keys: string[]) =>
+    setSaveFailed(ok ? null : notSavedReason(keys));
+
+  /**
+   * Writes every changed round in one write and re-reads, so the screen shows
+   * what was saved. All or nothing: a rename that stopped partway used to
+   * leave the trip's rounds under two names. False so the caller can leave
+   * its form up.
+   */
+  const save = (changed: Round[]): boolean => {
+    const ok = saveRounds(changed);
+    failed(ok, [ROUNDS_KEY]);
     setRounds(listRounds());
+    return ok;
   };
 
   if (!trip || !ledger) {
@@ -101,7 +125,10 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
 
   const rename = () => {
     const name = draft.trim();
-    if (name && name !== trip.name) save(trip.rounds.map((r) => withTrip(r, { id: trip.id, name })));
+    if (name && name !== trip.name) {
+      // A refused rename keeps the form up with the typed name in it.
+      if (!save(trip.rounds.map((r) => withTrip(r, { id: trip.id, name })))) return;
+    }
     setRenaming(false);
   };
 
@@ -137,6 +164,12 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
         </button>
       </header>
 
+      {saveFailed && (
+        <div className="unsaved" role="alert">
+          <strong>Not saved.</strong> That change was not kept. {saveFailed}
+        </div>
+      )}
+
       {renaming && (
         <form
           className="card trip-rename"
@@ -164,11 +197,11 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
         <SamePersonNudge
           pair={suggestion}
           onMerge={() => {
-            mergePeople(suggestion.from, suggestion.into);
+            failed(mergePeople(suggestion.from, suggestion.into), [ALIASES_KEY, ROUNDS_KEY]);
             setRounds(listRounds());
           }}
           onDistinct={() => {
-            markDistinct(suggestion.from, suggestion.into);
+            failed(markDistinct(suggestion.from, suggestion.into), [DISTINCT_KEY]);
             setDistinct(getDistinct());
           }}
         />

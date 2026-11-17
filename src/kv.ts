@@ -25,6 +25,36 @@ export interface KvBackend {
   /** Throws if the value could not be stored — `writeAll` relies on this. */
   setItem(key: string, value: string): void;
   removeItem(key: string): void;
+  /**
+   * Removes a key even if it could not be read at startup. Only "Erase
+   * everything" wants this: deleting cannot replace data the app never saw
+   * with less of it, which is what the write block is there to stop. Absent
+   * on backends with no such block, where `removeItem` already does it.
+   */
+  forget?(key: string): void;
+  /** True when writes to this key are refused because it could not be read at startup. */
+  isUnreadable?(key: string): boolean;
+}
+
+/**
+ * The write block's refusal. Its own class so a screen can say the real
+ * reason — Press could not read this at startup — instead of blaming a full
+ * phone.
+ */
+export class UnreadableKeyError extends Error {
+  readonly key: string;
+  constructor(key: string) {
+    super(`Press could not read “${key}” at startup, so it will not overwrite it.`);
+    this.name = 'UnreadableKeyError';
+    this.key = key;
+  }
+}
+
+/** Why a write did not land, in the terms a screen can explain. */
+export type WriteFailure = 'unreadable' | 'full';
+
+export function writeFailureReason(err: unknown): WriteFailure {
+  return err instanceof UnreadableKeyError ? 'unreadable' : 'full';
 }
 
 /**
@@ -55,12 +85,25 @@ export function setBackend(next: KvBackend): KvBackend {
   return previous;
 }
 
-/** Same three methods as `localStorage`, against whatever backend is current. */
-export const kv: KvBackend = {
+/** `localStorage`'s three methods, plus the two the write block needs, against whatever backend is current. */
+export const kv: Required<KvBackend> = {
   getItem: (key) => backend.getItem(key),
   setItem: (key, value) => backend.setItem(key, value),
   removeItem: (key) => backend.removeItem(key),
+  forget: (key) => (backend.forget ? backend.forget(key) : backend.removeItem(key)),
+  isUnreadable: (key) => backend.isUnreadable?.(key) ?? false,
 };
+
+/**
+ * A native write that did not land. The caller has already moved on — `persist`
+ * returns before the store answers — so this is the record of it.
+ *
+ * Logged here, not only handed to `onError`, because a fire-and-forget promise
+ * that nobody catches is otherwise a round that looks saved and is not.
+ */
+export function logStorageFailure(key: string, err: unknown): void {
+  console.error(`Press could not store “${key}”.`, err);
+}
 
 /**
  * A synchronous face over a store that can only be reached asynchronously.
@@ -75,11 +118,12 @@ export const kv: KvBackend = {
  * Two consequences worth being explicit about, because both are real:
  *
  * A write that fails cannot be reported to the caller — `persist` has already
- * returned by the time the store rejects. `writeAll`'s rollback, which exists
- * to leave storage untouched when a restore hits `QuotaExceededError`, is a
- * guarantee of the web path only. It is not weakened here so much as
- * inapplicable: `UserDefaults` has no quota of that kind. `onError` is where a
- * native build finds out anyway.
+ * returned by the time the store rejects. It is logged, and handed to
+ * `onError` when one was given; that is what `main.tsx` passes. `writeAll`'s
+ * rollback, which exists to leave storage untouched when a restore hits
+ * `QuotaExceededError`, is a guarantee of the web path only. It is not
+ * weakened here so much as inapplicable: `UserDefaults` has no quota of that
+ * kind.
  *
  * The snapshot is the source of truth for the life of the process. Nothing
  * else writes these keys, so it cannot go stale — but it would the moment
@@ -87,32 +131,68 @@ export const kv: KvBackend = {
  */
 export function snapshotBackend(
   loaded: Record<string, string>,
-  persist: (key: string, value: string | null) => void,
-  onError?: (key: string, err: unknown) => void
+  persist: (key: string, value: string | null) => void | Promise<void>,
+  onError?: (key: string, err: unknown) => void,
+  unreadable: Iterable<string> = []
 ): KvBackend {
   const snapshot = new Map(Object.entries(loaded));
+  // Keys the store would not give up at startup. They read as absent, but
+  // they are not: whatever is on disk is still there. Every writer in
+  // `storage.ts` is read-modify-write — `saveRound` lists the rounds, adds
+  // one, and writes the list back — so a write to one of these keys would
+  // replace a whole list the app never saw with a one-item list. Refusing it
+  // is a throw, which is how every caller already hears "not stored".
+  const locked = new Set(unreadable);
+  const guard = (key: string) => {
+    if (locked.has(key)) throw new UnreadableKeyError(key);
+  };
 
   // The snapshot is updated first and unconditionally. A reader that saw the
   // old value because the write is still in flight would be a bug nobody could
   // reproduce; a value that is in memory but not yet on disk is just a write
   // in flight, which is what it is.
+  const report = (key: string, err: unknown) => {
+    // Always, even when a caller also handles it: the promise has already
+    // left the function that wrote, and a handler that forgets to log would
+    // put the failure back where it was.
+    if (onError !== logStorageFailure) logStorageFailure(key, err);
+    onError?.(key, err);
+  };
   const push = (key: string, value: string | null) => {
     try {
-      persist(key, value);
+      const pending = persist(key, value);
+      // A rejected promise is not a thrown error. Capacitor's Preferences
+      // calls return one, and leaving it uncaught is a write that failed
+      // with nothing on screen and nothing in the log.
+      // Any thenable, not only this realm's Promise: a bridge can hand back
+      // one from another realm, and `instanceof` would miss it.
+      if (pending && typeof (pending as PromiseLike<void>).then === 'function') {
+        void Promise.resolve(pending).catch((err: unknown) => report(key, err));
+      }
     } catch (err) {
-      onError?.(key, err);
+      report(key, err);
     }
   };
 
   return {
     getItem: (key) => snapshot.get(key) ?? null,
     setItem: (key, value) => {
+      guard(key);
       snapshot.set(key, value);
       push(key, value);
     },
     removeItem: (key) => {
+      guard(key);
       snapshot.delete(key);
       push(key, null);
     },
+    forget: (key) => {
+      // Once it is gone there is nothing left to overwrite, so the key is
+      // writable again.
+      locked.delete(key);
+      snapshot.delete(key);
+      push(key, null);
+    },
+    isUnreadable: (key) => locked.has(key),
   };
 }

@@ -1,5 +1,13 @@
 import type { Round, SavedCourse } from './types';
-import { listRounds, listCourses, writeAll, getAliases, getDistinct } from './storage';
+import {
+  listRounds,
+  listCourses,
+  writeAll,
+  getAliases,
+  getDistinct,
+  RestoreUndoError,
+} from './storage';
+import { writeFailureReason } from './kv';
 import { mergePeopleData, type PeopleData } from './people';
 import { GAMES } from './games';
 
@@ -16,8 +24,9 @@ import { GAMES } from './games';
  * It is also, incidentally, the only way to move a round between two devices
  * without a backend.
  *
- * Everything here except `restoreBackup` is a pure function of its arguments,
- * so the merge rules can be unit-tested without touching storage.
+ * Everything here except `restoreBackup` and `offerBackup` is a pure function
+ * of its arguments, so the merge rules can be unit-tested without touching
+ * storage. `offerBackup` is the one that hands the file to the user.
  */
 
 /**
@@ -66,6 +75,40 @@ export function buildBackup(
 
 /** The phone's people data as it stands, for a backup. */
 export const currentPeople = (): PeopleData => ({ aliases: getAliases(), distinct: [...getDistinct()] });
+
+export type BackupOffer = { ok: true } | { ok: false; aborted: boolean };
+
+/**
+ * Hands the user a backup of everything on this phone.
+ *
+ * Sharing first is what makes this useful on a phone: a download lands in a
+ * sandboxed folder an installed app can be uninstalled out of, while the
+ * share sheet can put the file in Files, iCloud, or a message. `aborted` is
+ * the user closing that sheet, which is a decision rather than a failure.
+ */
+export async function offerBackup(now: Date = new Date()): Promise<BackupOffer> {
+  const file = buildBackup(listRounds(), listCourses(), __APP_VERSION__, now, currentPeople());
+  const name = backupFilename(now);
+  const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
+  const asFile = new File([blob], name, { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  try {
+    if (navigator.canShare?.({ files: [asFile] })) {
+      await navigator.share({ files: [asFile], title: 'Press backup' });
+    } else {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.click();
+    }
+    return { ok: true };
+  } catch (err) {
+    if ((err as Error)?.name === 'AbortError') return { ok: false, aborted: true };
+    return { ok: false, aborted: false };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 /**
  * The people data in a file, keeping only well-formed entries: a string
@@ -303,6 +346,22 @@ export type RestoreResult =
   | { ok: false; error: string };
 
 /**
+ * Why a restore failed, in words that match the cause. Every failure used to
+ * read "There wasn't room", which on native is wrong when the real cause is
+ * a key Press could not read at startup — deleting rounds would not help.
+ */
+export function restoreFailureMessage(err: unknown): string {
+  const cause = err instanceof RestoreUndoError ? err.cause : err;
+  const why =
+    writeFailureReason(cause) === 'unreadable'
+      ? "Press couldn't read some of your saved data when it opened, so it won't write over it. Close Press completely, open it again and try again."
+      : "There wasn't room to save the restored rounds. Delete a few old rounds and try again.";
+  if (!(err instanceof RestoreUndoError)) return why;
+  // Rare: the undo itself was refused. Say so rather than promise nothing changed.
+  return `${why} Part of the restore couldn't be undone, so some restored names or rounds may already be on this phone.`;
+}
+
+/**
  * The one function here that touches storage: parse, merge, write.
  *
  * Both stores go through `writeAll`, which rolls back if either write fails,
@@ -321,11 +380,8 @@ export function restoreBackup(text: string): RestoreResult {
   try {
     // One write for all of it, so the names merge with the rounds or not at all.
     writeAll(rounds.rounds, courses.courses, people.people);
-  } catch {
-    return {
-      ok: false,
-      error: "There wasn't room to save the restored rounds. Delete a few old rounds and try again.",
-    };
+  } catch (err) {
+    return { ok: false, error: restoreFailureMessage(err) };
   }
 
   return {

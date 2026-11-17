@@ -3,7 +3,7 @@ import { todayIso } from '../roundDate';
 import type { Round, Player, GameType, SavedCourse, TeamSetup, RoundTrip } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { GAMES } from '../games';
-import { usesHandicap } from '../games/scoring';
+import { canScoreNet, usesHandicap } from '../games/scoring';
 import { wolfForHole } from '../games/wolf';
 import { effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import {
@@ -14,7 +14,11 @@ import {
   listRounds,
   getAliases,
   mergePeople,
+  ALIASES_KEY,
+  COURSES_KEY,
+  ROUNDS_KEY,
 } from '../storage';
+import { notSavedReason } from '../notSaved';
 import { SetupRow } from '../components/SetupRow';
 import { TripPicker } from '../components/TripPicker';
 import { activeTrip, listTrips } from '../trips';
@@ -164,20 +168,26 @@ export function Setup({ onCancel, onStart }: Props) {
       return;
     }
     const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
-    saveCourse({
+    const saved = saveCourse({
       id: existing?.id ?? uid(),
       name,
       holes: cs.holes.map((h) => ({ number: h.number, par: h.par, strokeIndex: h.strokeIndex })),
       slope: cs.slope,
       rating: cs.rating,
     });
+    if (!saved) {
+      setError(`Not saved. This course wasn’t kept. ${notSavedReason(COURSES_KEY)}`);
+      return;
+    }
     setCourses(listCourses());
     setError('');
     dispatch({ type: 'saved', name, from });
   };
 
   const removeCourse = (id: string) => {
-    deleteCourse(id);
+    if (!deleteCourse(id)) {
+      setError(`Not saved. That course wasn’t deleted. ${notSavedReason(COURSES_KEY, true)}`);
+    }
     setCourses(listCourses());
   };
 
@@ -244,7 +254,24 @@ export function Setup({ onCancel, onStart }: Props) {
     setGames((gs) => (gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g]));
 
   const namedPlayers = players.filter((p) => p.name.trim());
+  // An Index with nowhere to apply it. Course search clears slope and rating,
+  // and a recalled player still carries the number. The warning sits on the
+  // slope fields when that row is open, and on the players card otherwise —
+  // a collapsed row is not a place a warning can live.
+  //
+  // Only when an Index could matter: some selected game uses handicaps and
+  // has not had net scoring switched off. Otherwise the missing slope costs
+  // nothing and the warning is noise.
   const showNet = games.some(usesHandicap);
+  // Quota has no gross/net choice and always spends the handicap.
+  const netMatters = games.some(
+    (g) => usesHandicap(g) && (!canScoreNet(g) || netByGame[g] !== false)
+  );
+  const indexWaiting =
+    !rated &&
+    showNet &&
+    netMatters &&
+    namedPlayers.some((p) => typeof p.index === 'number' && Number.isFinite(p.index));
   // Gross and net are the same card until somebody has a handicap, so the
   // per-game picker stays out of the way until the choice means something.
   // An Index counts: on a rated course it is what their strokes come from.
@@ -408,6 +435,7 @@ export function Setup({ onCancel, onStart }: Props) {
         onUpdate={updatePlayer}
         onAdd={addPlayer}
         onRemove={removePlayer}
+        indexWaiting={indexWaiting && !openRows.holes}
       />
 
       <div className="setup-rows">
@@ -463,7 +491,13 @@ export function Setup({ onCancel, onStart }: Props) {
           open={!!openRows.holes}
           onToggle={() => toggleRow('holes')}
         >
-          <HolesSection state={cs} derived={derived} dispatch={dispatch} onSave={saveFavorite} />
+          <HolesSection
+            state={cs}
+            derived={derived}
+            dispatch={dispatch}
+            onSave={saveFavorite}
+            indexWaiting={indexWaiting}
+          />
         </SetupRow>
 
         <SetupRow
@@ -517,7 +551,16 @@ export function Setup({ onCancel, onStart }: Props) {
                 className="btn-secondary"
                 onClick={() => {
                   // Yes: one person from now on, in past rounds too.
-                  mergePeople(askSame.typed, askSame.known);
+                  // A refused merge stays here with the question still up,
+                  // rather than starting a round whose past rounds were not
+                  // brought into line: "Yes" can be tried again, or "No"
+                  // carries on without merging.
+                  if (!mergePeople(askSame.typed, askSame.known)) {
+                    setError(
+                      `Not saved. Those names weren’t merged. ${notSavedReason([ALIASES_KEY, ROUNDS_KEY])}`
+                    );
+                    return;
+                  }
                   updatePlayer(askSame.id, { name: askSame.known });
                   start({ id: askSame.id, name: askSame.known });
                 }}

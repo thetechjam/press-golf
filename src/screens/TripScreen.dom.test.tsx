@@ -8,6 +8,8 @@ import { TripScreen, tripDates } from './TripScreen';
 import { Home } from './Home';
 import { Setup } from './Setup';
 import { listRounds } from '../storage';
+import { refuseStorageKey } from '../testQuota';
+import { setBackend, snapshotBackend } from '../kv';
 import { makeRound, player, holes, scoresFrom } from '../games/testFixtures';
 
 /**
@@ -85,6 +87,45 @@ describe('Trip screen', () => {
     await user.click(screen.getByRole('button', { name: 'Save name' }));
     expect(listRounds().map((r) => r.trip?.name)).toEqual(['Myrtle Beach', 'Myrtle Beach']);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Myrtle Beach');
+  });
+
+  it('says so when a rename cannot be stored, and keeps the old name', async () => {
+    const user = userEvent.setup();
+    store([round('a', { Al: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })]);
+    show();
+    await user.click(screen.getByRole('button', { name: 'Rename' }));
+    const input = screen.getByLabelText('Trip name');
+    await user.clear(input);
+    await user.type(input, 'Myrtle Beach');
+    const restore = refuseStorageKey('press.rounds.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: 'Save name' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+    } finally {
+      restore();
+    }
+    expect(listRounds().map((r) => r.trip?.name)).toEqual([TRIP.name, TRIP.name]);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(TRIP.name);
+    // The form is still there with what they typed, to try again.
+    expect((screen.getByLabelText('Trip name') as HTMLInputElement).value).toBe('Myrtle Beach');
+  });
+
+  it('says so when a round cannot be put on the trip', async () => {
+    const user = userEvent.setup();
+    store([round('a', { Al: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 }, { trip: undefined })]);
+    show();
+    await user.click(screen.getByRole('button', { name: 'Add or remove' }));
+    const restore = refuseStorageKey('press.rounds.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: /Course b/ }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+    } finally {
+      restore();
+    }
+    expect(listRounds().find((r) => r.id === 'b')?.trip).toBeUndefined();
+    // A later write that lands clears it.
+    await user.click(screen.getByRole('button', { name: /Course b/ }));
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('puts a nearby round on the trip and takes it off again', async () => {
@@ -202,5 +243,58 @@ describe('the ways in', () => {
     await user.click(screen.getByRole('button', { name: /Start Round/ }));
     expect(started[0]?.trip?.name).toBe('Pinehurst');
     expect(started[0]?.trip?.id).toBeTruthy();
+  });
+});
+
+describe('trip writes the phone refuses', () => {
+  it('says so when a merge cannot be stored, and keeps the names apart', async () => {
+    const user = userEvent.setup();
+    store([round('a', { Alex: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })]);
+    show();
+    const restore = refuseStorageKey('press.rounds.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: /Same person/ }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+    } finally {
+      restore();
+    }
+    expect(document.querySelectorAll('.net-row')).toHaveLength(3);
+    expect(localStorage.getItem('press.aliases.v1')).toBeNull();
+  });
+
+  it('says so when "two people" cannot be stored', async () => {
+    const user = userEvent.setup();
+    store([round('a', { Alex: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })]);
+    show();
+    const restore = refuseStorageKey('press.distinct.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: 'Two people' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+    } finally {
+      restore();
+    }
+  });
+
+  it('gives the real reason when the rounds could not be read at startup', async () => {
+    const user = userEvent.setup();
+    const rounds = [round('a', { Al: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })];
+    // Readable rounds are in the snapshot; the block is what refuses the write.
+    const previous = setBackend(
+      snapshotBackend({ 'press.rounds.v1': JSON.stringify(rounds) }, () => {}, () => {}, [
+        'press.rounds.v1',
+      ])
+    );
+    try {
+      show();
+      await user.click(screen.getByRole('button', { name: 'Rename' }));
+      await user.clear(screen.getByLabelText('Trip name'));
+      await user.type(screen.getByLabelText('Trip name'), 'Myrtle Beach');
+      await user.click(screen.getByRole('button', { name: 'Save name' }));
+      const alert = screen.getByRole('alert').textContent ?? '';
+      expect(alert).toMatch(/couldn’t read/);
+      expect(alert).not.toMatch(/storage is full/);
+    } finally {
+      setBackend(previous);
+    }
   });
 });

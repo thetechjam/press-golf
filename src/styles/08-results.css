@@ -1,4 +1,29 @@
 /* ---------- Results ---------- */
+/* After the first finished round: Safari's seven-day eviction, and a backup.
+   Gold, like the other "this matters and you can dismiss it" notes. */
+.keep-rounds {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--gold);
+  border-radius: var(--r-lg);
+  padding: 12px 14px;
+  margin: 0 0 14px;
+}
+.keep-rounds p {
+  margin: 6px 0 10px;
+  color: var(--muted);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+.keep-rounds-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.keep-rounds .install-btn {
+  margin: 0 0 10px;
+}
+
 .results-meta {
   text-align: center;
 }

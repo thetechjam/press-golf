@@ -10,7 +10,7 @@ interface Props {
   onBack: () => void;
 }
 
-type Status = null | 'sent' | 'queued';
+type Status = null | 'sent' | 'queued' | 'unsaved';
 
 const KINDS: { id: FeedbackKind; label: string }[] = [
   { id: 'bug', label: 'Bug' },
@@ -32,6 +32,8 @@ export function FeedbackForm({ screen, round, onBack }: Props) {
     // can't be mistaken for this attempt's outcome while it's in flight.
     setStatus(null);
     const name = reporter.trim();
+    // Null on a refused write: the name is not remembered, which is not
+    // worth stopping a report for.
     if (name) saveSettings({ reporterName: name });
     const entry = buildFeedback(
       { kind, reporter: name, message, includeRound },
@@ -43,7 +45,23 @@ export function FeedbackForm({ screen, round, onBack }: Props) {
         round,
       }
     );
-    enqueue(entry);
+    if (!enqueue(entry)) {
+      // The phone would not keep it to send later, so it gets one direct
+      // try. If that fails too the message stays in the box, because it is
+      // the only copy there is.
+      try {
+        await postFeedback(entry);
+      } catch {
+        setStatus('unsaved');
+        setSending(false);
+        return;
+      }
+      setStatus('sent');
+      setMessage('');
+      setIncludeRound(false);
+      setSending(false);
+      return;
+    }
     await flushQueue(postFeedback);
     // `remaining` from flushQueue is queue-wide — a stale, still-failing
     // entry from an earlier report would make this one report "Saved" even
@@ -127,7 +145,9 @@ export function FeedbackForm({ screen, round, onBack }: Props) {
           ? 'Sent — thanks!'
           : status === 'queued'
             ? "Saved — it'll send when you're back online."
-            : ''}
+            : status === 'unsaved'
+              ? "Not sent, and this phone couldn't keep it to send later. Your message is still here — try again when you're online."
+              : ''}
       </p>
     </div>
   );

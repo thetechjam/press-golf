@@ -85,17 +85,36 @@ export function listQueue(): QueuedFeedback[] {
   }
 }
 
-function writeQueue(q: QueuedFeedback[]): void {
-  kv.setItem(QUEUE_KEY, JSON.stringify(q));
+/**
+ * False when the phone refused the write. Never throws: a full phone, or on
+ * native a queue key Press could not read at startup, used to throw out of
+ * the Send button and out of the background flush.
+ */
+function writeQueue(q: QueuedFeedback[]): boolean {
+  try {
+    kv.setItem(QUEUE_KEY, JSON.stringify(q));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-export function enqueue(entry: QueuedFeedback): void {
-  writeQueue([...listQueue(), entry].slice(-MAX_QUEUE));
+/** False when the report could not be queued; the caller can still try sending it directly. */
+export function enqueue(entry: QueuedFeedback): boolean {
+  return writeQueue([...listQueue(), entry].slice(-MAX_QUEUE));
 }
 
-/** Discards every queued report. Used when a user wants stale round data gone. */
-export function clearQueue(): void {
-  kv.removeItem(QUEUE_KEY);
+/**
+ * Discards every queued report. Used when a user wants stale round data gone.
+ * False when the phone refused, and the reports are still queued.
+ */
+export function clearQueue(): boolean {
+  try {
+    kv.removeItem(QUEUE_KEY);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // Guards against concurrent flushes double-sending, and against a slow earlier
@@ -128,6 +147,9 @@ export async function flushQueue(post: Poster): Promise<{ sent: number; remainin
     // by the snapshot we started with.
     const attempted = new Set(snapshot.map((e) => e.id));
     const arrived = listQueue().filter((e) => !attempted.has(e.id));
+    // A refused write leaves the old queue stored, so a report that just
+    // went may go again on the next flush. A duplicate is the safe side of
+    // that: nothing is lost.
     writeQueue([...keep, ...arrived].slice(-MAX_QUEUE));
     return { sent, remaining: keep.length };
   } finally {

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { getDistinct, listRounds, markDistinct, mergePeople } from '../storage';
+import { getDistinct, listRounds, markDistinct, mergePeople, ALIASES_KEY, DISTINCT_KEY, ROUNDS_KEY } from '../storage';
+import { notSavedReason } from '../notSaved';
 import { MergeInto, SamePersonNudge } from '../components/SamePerson';
 import { likelySame, pairKey } from '../people';
 import { computeStats, countsForStats, formatToPar, type PlayerStats } from '../stats';
@@ -151,8 +152,14 @@ export function Stats({ onBack }: Props) {
       for (const a of r.players) for (const b of r.players) if (a !== b) set.add(pairKey(a.name, b.name));
     return set;
   }, [counted]);
+  // A merge or "different people" the phone refused, and why.
+  const [saveFailed, setSaveFailed] = useState<string | null>(null);
   const merge = (from: string, into: string) => {
-    mergePeople(from, into);
+    setSaveFailed(
+      mergePeople(from, into)
+        ? null
+        : `Those names were not merged. ${notSavedReason([ALIASES_KEY, ROUNDS_KEY])}`
+    );
     setCounted(read());
   };
   const [query, setQuery] = useState('');
@@ -214,6 +221,12 @@ export function Stats({ onBack }: Props) {
         {/* Balances the back button so the title stays optically centered. */}
         <span className="bar-spacer" aria-hidden="true" />
       </header>
+
+      {saveFailed && (
+        <div className="unsaved" role="alert">
+          <strong>Not saved.</strong> {saveFailed}
+        </div>
+      )}
 
       {counted.length === 0 ? (
         <div className="empty-state">
@@ -314,7 +327,11 @@ export function Stats({ onBack }: Props) {
                   pair={suggestion}
                   onMerge={() => merge(suggestion.from, suggestion.into)}
                   onDistinct={() => {
-                    markDistinct(suggestion.from, suggestion.into);
+                    setSaveFailed(
+                      markDistinct(suggestion.from, suggestion.into)
+                        ? null
+                        : `Press will ask about these names again. ${notSavedReason(DISTINCT_KEY)}`
+                    );
                     setDistinct(getDistinct());
                   }}
                 />

@@ -25,6 +25,12 @@ export interface Settings {
   glare: boolean;
   /** Remembered so a reporter types their name once. '' means not set. */
   reporterName: string;
+  /**
+   * The prompt after the first finished round — back up, and add Press to the
+   * home screen — has been dismissed. Absent in settings written before the
+   * prompt existed; `skipKeepPromptIfRoundsExist` fills that in.
+   */
+  firstFinishPromptDismissed: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -32,6 +38,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   glare: false,
   reporterName: '',
+  firstFinishPromptDismissed: false,
 };
 
 const THEMES: readonly string[] = ['system', 'light', 'dark'];
@@ -50,13 +57,37 @@ export function getSettings(): Settings {
       glare: typeof p.glare === 'boolean' ? p.glare : p.sunlight === true,
       reporterName:
         typeof p.reporterName === 'string' ? p.reporterName : DEFAULT_SETTINGS.reporterName,
+      firstFinishPromptDismissed:
+        typeof p.firstFinishPromptDismissed === 'boolean'
+          ? p.firstFinishPromptDismissed
+          : DEFAULT_SETTINGS.firstFinishPromptDismissed,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
   }
 }
 
-export function saveSettings(patch: Partial<Settings>): Settings {
+/**
+ * One write, answered as true or false. Every writer below goes through this
+ * or catches for itself: a refused write — a full phone, or on native a key
+ * that could not be read at startup — used to throw out of whatever button
+ * asked for it, and on native that ended on the crash screen.
+ */
+function tryWrite(key: string, value: string): boolean {
+  try {
+    kv.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Stores the settings with `patch` applied. Null when the write was refused;
+ * the caller decides whether to keep showing the change anyway (a theme can
+ * still be painted for this session) and says it was not kept.
+ */
+export function saveSettings(patch: Partial<Settings>): Settings | null {
   const cur = getSettings();
   // Field-by-field rather than a spread, so the legacy `sunlight` key is not
   // carried forward into the next write.
@@ -65,9 +96,50 @@ export function saveSettings(patch: Partial<Settings>): Settings {
     theme: patch.theme ?? cur.theme,
     glare: patch.glare ?? cur.glare,
     reporterName: patch.reporterName ?? cur.reporterName,
+    firstFinishPromptDismissed: patch.firstFinishPromptDismissed ?? cur.firstFinishPromptDismissed,
   };
-  kv.setItem(SETTINGS_KEY, JSON.stringify(next));
-  return next;
+  return tryWrite(SETTINGS_KEY, JSON.stringify(next)) ? next : null;
+}
+
+/**
+ * The keep-your-rounds prompt is for the first round finished after it
+ * existed. A phone that already has a finished round has had that moment;
+ * marking the prompt dismissed here, once, is what stops an update from
+ * asking on the next launch.
+ *
+ * A phone with no finished round and no stored flag is marked eligible by
+ * storing `false`. Without that, a brand-new user who never touched a setting
+ * would finish a round, close the app without answering, and on the next
+ * launch look exactly like a phone from before the update — and lose the
+ * prompt.
+ *
+ * Read from what was stored, not from `getSettings`. That fills a default,
+ * and treating the default as a decision would dismiss the prompt for a
+ * brand-new phone the moment any setting was saved.
+ *
+ * Runs before the first render, outside the error boundary, so it must never
+ * throw: on a full phone the write fails and the app still has to start —
+ * that phone is the one most in need of reaching Settings to back up. The
+ * flag is simply not stored, and the same decision is made next launch.
+ */
+export function skipKeepPromptIfRoundsExist(): void {
+  try {
+    const raw = kv.getItem(SETTINGS_KEY);
+    const stored: unknown = raw ? JSON.parse(raw) : null;
+    if (
+      stored &&
+      typeof stored === 'object' &&
+      typeof (stored as { firstFinishPromptDismissed?: unknown }).firstFinishPromptDismissed ===
+        'boolean'
+    ) {
+      return;
+    }
+    const hadFinished = listRounds().some((r) => r.status === 'finished');
+    // Null on a refused write, which is fine: the same decision is made next launch.
+    saveSettings({ firstFinishPromptDismissed: hadFinished });
+  } catch {
+    // Unreadable settings or a refused write: leave it for the next launch.
+  }
 }
 
 export function uid(): string {
@@ -125,26 +197,42 @@ export function getDistinct(): Set<string> {
   }
 }
 
-export function markDistinct(a: string, b: string): void {
+/** False when the write was refused, and the pair will be asked about again. */
+export function markDistinct(a: string, b: string): boolean {
   const set = getDistinct();
   set.add(pairKey(a, b));
-  kv.setItem(DISTINCT_KEY, JSON.stringify([...set]));
+  return tryWrite(DISTINCT_KEY, JSON.stringify([...set]));
 }
 
 /**
  * Makes `from` the same person as `into`: every saved round is rewritten to
  * the one spelling, and the alias is kept so a round that arrives later with
  * the old one — typed, shared, restored — is brought into line as it saves.
+ *
+ * Both writes or neither, and false when it is neither. An alias stored
+ * without the rounds rewritten would rename every round saved from now on
+ * and leave the old ones split, with nothing on screen to say why.
  */
-export function mergePeople(from: string, into: string): void {
-  kv.setItem(ALIASES_KEY, JSON.stringify(withAlias(getAliases(), from, into)));
+export function mergePeople(from: string, into: string): boolean {
+  const prevAliases = kv.getItem(ALIASES_KEY);
+  if (!tryWrite(ALIASES_KEY, JSON.stringify(withAlias(getAliases(), from, into)))) return false;
   const before = listRounds();
   const after = mergeInRounds(before, from, into);
   const now = Date.now();
   // A changed round counts as changed, so a restore's newest-wins merge keeps
   // the merged spelling over an older backup's.
   const stamped = after.map((r, i) => (r === before[i] ? r : { ...r, updatedAt: now }));
-  kv.setItem(ROUNDS_KEY, JSON.stringify(stamped));
+  if (tryWrite(ROUNDS_KEY, JSON.stringify(stamped))) return true;
+  try {
+    if (prevAliases === null) kv.removeItem(ALIASES_KEY);
+    else kv.setItem(ALIASES_KEY, prevAliases);
+  } catch (err) {
+    // Putting back a value that was stored a moment ago only shrinks it, so
+    // this should not happen; if it does, the alias stays, which renames
+    // rounds as they are next saved — the merge the user asked for.
+    console.error('Press could not undo a name merge that half failed.', err);
+  }
+  return false;
 }
 
 /**
@@ -155,19 +243,33 @@ export function mergePeople(from: string, into: string): void {
  * from places that have nowhere to say it.
  */
 export function saveRound(round: Round): boolean {
-  const rounds = listRounds().filter((r) => r.id !== round.id);
-  rounds.push({ ...applyAliases(round, getAliases()), updatedAt: Date.now() });
-  try {
-    kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
-    return true;
-  } catch {
-    return false;
-  }
+  return saveRounds([round]);
 }
 
-export function deleteRound(id: string): void {
-  const rounds = listRounds().filter((r) => r.id !== id);
-  kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
+/**
+ * Writes several rounds in one write, so either all of them are kept or none
+ * are. A trip rename used to save its rounds one at a time and stop at the
+ * first refusal, leaving some rounds with the new name and some with the old.
+ */
+export function saveRounds(changed: Round[]): boolean {
+  const ids = new Set(changed.map((r) => r.id));
+  const aliases = getAliases();
+  const now = Date.now();
+  const rounds = listRounds().filter((r) => !ids.has(r.id));
+  for (const round of changed) rounds.push({ ...applyAliases(round, aliases), updatedAt: now });
+  return tryWrite(ROUNDS_KEY, JSON.stringify(rounds));
+}
+
+/** False when the write was refused and the round is still stored. */
+export function deleteRound(id: string): boolean {
+  return deleteRounds([id]);
+}
+
+/** Removes several rounds in one write: all of them go, or none do. */
+export function deleteRounds(ids: Iterable<string>): boolean {
+  const gone = new Set(ids);
+  const rounds = listRounds().filter((r) => !gone.has(r.id));
+  return tryWrite(ROUNDS_KEY, JSON.stringify(rounds));
 }
 
 export function listCourses(): SavedCourse[] {
@@ -187,16 +289,37 @@ export function listCourses(): SavedCourse[] {
   }
 }
 
-/** Upserts a course (matched by id). */
-export function saveCourse(course: SavedCourse): void {
+/**
+ * Upserts a course (matched by id). False when the write failed.
+ *
+ * The realistic failure is `QuotaExceededError`, the same one `writeAll`
+ * catches and rolls back: a full phone used to throw out of the button that
+ * asked, so the screen never got to say the course was not kept. The previous
+ * list is untouched — the write never landed — and the caller says so.
+ */
+export function saveCourse(course: SavedCourse): boolean {
   const courses = listCourses().filter((c) => c.id !== course.id);
   courses.push(course);
-  kv.setItem(COURSES_KEY, JSON.stringify(courses));
+  return tryWrite(COURSES_KEY, JSON.stringify(courses));
 }
 
-export function deleteCourse(id: string): void {
+/** False when the write was refused and the course is still stored. */
+export function deleteCourse(id: string): boolean {
   const courses = listCourses().filter((c) => c.id !== id);
-  kv.setItem(COURSES_KEY, JSON.stringify(courses));
+  return tryWrite(COURSES_KEY, JSON.stringify(courses));
+}
+
+/**
+ * A restore that failed and could not be fully undone. `cause` is why the
+ * restore failed; `keys` are the ones that may still hold restored data.
+ */
+export class RestoreUndoError extends Error {
+  readonly keys: string[];
+  constructor(cause: unknown, keys: string[]) {
+    super(`A restore failed and could not be undone for ${keys.join(', ')}.`, { cause });
+    this.name = 'RestoreUndoError';
+    this.keys = keys;
+  }
 }
 
 /**
@@ -207,33 +330,48 @@ export function deleteCourse(id: string): void {
  * is `QuotaExceededError` on a large file, which would otherwise land the
  * first key and reject the second. So both previous values are captured and
  * put back if either write throws, leaving storage exactly as it was and
- * letting the caller report one clean failure. The rollback writes only
- * shrink what is stored, so they cannot fail for the same reason.
+ * letting the caller report one clean failure.
  *
- * Re-throws so the caller can tell a failed restore from a successful one.
+ * Only keys that were actually written are put back. A write that threw did
+ * not land — on native the refusal of an unreadable key comes before
+ * anything changes — and "putting back" such a key would be a write to it
+ * too: for a key read as empty, a delete of whatever is really on disk.
+ * Each key is put back on its own, so one that refuses does not stop the
+ * others.
+ *
+ * Re-throws the error that stopped the restore, so the caller can tell a
+ * failed restore from a successful one and say why. If any key could not be
+ * put back, throws `RestoreUndoError` instead, carrying that error as `cause`.
  */
 export function writeAll(rounds: Round[], courses: SavedCourse[], people?: PeopleData): void {
-  const prevRounds = kv.getItem(ROUNDS_KEY);
-  const prevCourses = kv.getItem(COURSES_KEY);
-  const prevAliases = kv.getItem(ALIASES_KEY);
-  const prevDistinct = kv.getItem(DISTINCT_KEY);
-  const restore = (key: string, prev: string | null) =>
-    prev === null ? kv.removeItem(key) : kv.setItem(key, prev);
+  const written = new Map<string, string | null>();
+  const write = (key: string, value: string) => {
+    const prev = kv.getItem(key);
+    kv.setItem(key, value);
+    written.set(key, prev);
+  };
   try {
     // Names from the people data being written, not the old: a merge made on
     // the other phone renames this phone's rounds too.
     const aliases = people?.aliases ?? getAliases();
     if (people) {
-      kv.setItem(ALIASES_KEY, JSON.stringify(people.aliases));
-      kv.setItem(DISTINCT_KEY, JSON.stringify(people.distinct));
+      write(ALIASES_KEY, JSON.stringify(people.aliases));
+      write(DISTINCT_KEY, JSON.stringify(people.distinct));
     }
-    kv.setItem(ROUNDS_KEY, JSON.stringify(rounds.map((r) => applyAliases(r, aliases))));
-    kv.setItem(COURSES_KEY, JSON.stringify(courses));
+    write(ROUNDS_KEY, JSON.stringify(rounds.map((r) => applyAliases(r, aliases))));
+    write(COURSES_KEY, JSON.stringify(courses));
   } catch (err) {
-    restore(ROUNDS_KEY, prevRounds);
-    restore(COURSES_KEY, prevCourses);
-    restore(ALIASES_KEY, prevAliases);
-    restore(DISTINCT_KEY, prevDistinct);
+    const stuck: string[] = [];
+    for (const [key, prev] of written) {
+      try {
+        if (prev === null) kv.removeItem(key);
+        else kv.setItem(key, prev);
+      } catch {
+        stuck.push(key);
+      }
+    }
+    if (stuck.length > 0) throw new RestoreUndoError(err, stuck);
     throw err;
   }
 }
+
