@@ -9,6 +9,7 @@ import { Home } from './Home';
 import { Setup } from './Setup';
 import { listRounds } from '../storage';
 import { refuseStorageKey } from '../testQuota';
+import { setBackend, snapshotBackend } from '../kv';
 import { makeRound, player, holes, scoresFrom } from '../games/testFixtures';
 
 /**
@@ -242,5 +243,58 @@ describe('the ways in', () => {
     await user.click(screen.getByRole('button', { name: /Start Round/ }));
     expect(started[0]?.trip?.name).toBe('Pinehurst');
     expect(started[0]?.trip?.id).toBeTruthy();
+  });
+});
+
+describe('trip writes the phone refuses', () => {
+  it('says so when a merge cannot be stored, and keeps the names apart', async () => {
+    const user = userEvent.setup();
+    store([round('a', { Alex: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })]);
+    show();
+    const restore = refuseStorageKey('press.rounds.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: /Same person/ }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+    } finally {
+      restore();
+    }
+    expect(document.querySelectorAll('.net-row')).toHaveLength(3);
+    expect(localStorage.getItem('press.aliases.v1')).toBeNull();
+  });
+
+  it('says so when "two people" cannot be stored', async () => {
+    const user = userEvent.setup();
+    store([round('a', { Alex: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })]);
+    show();
+    const restore = refuseStorageKey('press.distinct.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: 'Two people' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+    } finally {
+      restore();
+    }
+  });
+
+  it('gives the real reason when the rounds could not be read at startup', async () => {
+    const user = userEvent.setup();
+    const rounds = [round('a', { Al: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })];
+    // Readable rounds are in the snapshot; the block is what refuses the write.
+    const previous = setBackend(
+      snapshotBackend({ 'press.rounds.v1': JSON.stringify(rounds) }, () => {}, () => {}, [
+        'press.rounds.v1',
+      ])
+    );
+    try {
+      show();
+      await user.click(screen.getByRole('button', { name: 'Rename' }));
+      await user.clear(screen.getByLabelText('Trip name'));
+      await user.type(screen.getByLabelText('Trip name'), 'Myrtle Beach');
+      await user.click(screen.getByRole('button', { name: 'Save name' }));
+      const alert = screen.getByRole('alert').textContent ?? '';
+      expect(alert).toMatch(/couldn’t read/);
+      expect(alert).not.toMatch(/storage is full/);
+    } finally {
+      setBackend(previous);
+    }
   });
 });

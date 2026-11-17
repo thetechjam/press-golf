@@ -1,6 +1,16 @@
 import { useMemo, useState } from 'react';
 import type { Round } from '../types';
-import { getDistinct, listRounds, markDistinct, mergePeople, saveRound } from '../storage';
+import {
+  ALIASES_KEY,
+  DISTINCT_KEY,
+  ROUNDS_KEY,
+  getDistinct,
+  listRounds,
+  markDistinct,
+  mergePeople,
+  saveRounds,
+} from '../storage';
+import { notSavedReason } from '../notSaved';
 import { SamePersonNudge } from '../components/SamePerson';
 import { likelySame } from '../people';
 import { findTrip, tripCandidates, tripLedger, tripSettleText, withTrip } from '../trips';
@@ -77,24 +87,22 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
     [trip, distinct]
   );
 
-  // A write the phone refused. The screen re-reads storage either way, so
-  // what is shown is what was kept; this is what says the change was not.
-  const [saveFailed, setSaveFailed] = useState(false);
+  // Why a write the phone refused was refused. The screen re-reads storage
+  // either way, so what is shown is what was kept; this is what says the
+  // change was not.
+  const [saveFailed, setSaveFailed] = useState<string | null>(null);
+  const failed = (ok: boolean, keys: string[]) =>
+    setSaveFailed(ok ? null : notSavedReason(keys));
 
   /**
-   * Writes every changed round and re-reads, so the screen shows what was
-   * saved. Stops at the first refusal — a full phone will refuse the rest
-   * too — and returns false so the caller can leave its form up.
+   * Writes every changed round in one write and re-reads, so the screen shows
+   * what was saved. All or nothing: a rename that stopped partway used to
+   * leave the trip's rounds under two names. False so the caller can leave
+   * its form up.
    */
   const save = (changed: Round[]): boolean => {
-    let ok = true;
-    for (const r of changed) {
-      if (!saveRound(r)) {
-        ok = false;
-        break;
-      }
-    }
-    setSaveFailed(!ok);
+    const ok = saveRounds(changed);
+    failed(ok, [ROUNDS_KEY]);
     setRounds(listRounds());
     return ok;
   };
@@ -158,8 +166,7 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
 
       {saveFailed && (
         <div className="unsaved" role="alert">
-          <strong>Not saved.</strong> This phone’s storage is full, so that change was not
-          kept. Back up from Settings, then delete old rounds from Rounds to make room.
+          <strong>Not saved.</strong> That change was not kept. {saveFailed}
         </div>
       )}
 
@@ -190,11 +197,11 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
         <SamePersonNudge
           pair={suggestion}
           onMerge={() => {
-            mergePeople(suggestion.from, suggestion.into);
+            failed(mergePeople(suggestion.from, suggestion.into), [ALIASES_KEY, ROUNDS_KEY]);
             setRounds(listRounds());
           }}
           onDistinct={() => {
-            markDistinct(suggestion.from, suggestion.into);
+            failed(markDistinct(suggestion.from, suggestion.into), [DISTINCT_KEY]);
             setDistinct(getDistinct());
           }}
         />

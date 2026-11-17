@@ -67,6 +67,21 @@ export function getSettings(): Settings {
   }
 }
 
+/**
+ * One write, answered as true or false. Every writer below goes through this
+ * or catches for itself: a refused write — a full phone, or on native a key
+ * that could not be read at startup — used to throw out of whatever button
+ * asked for it, and on native that ended on the crash screen.
+ */
+function tryWrite(key: string, value: string): boolean {
+  try {
+    kv.setItem(key, value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function saveSettings(patch: Partial<Settings>): Settings {
   const cur = getSettings();
   // Field-by-field rather than a spread, so the legacy `sunlight` key is not
@@ -177,26 +192,42 @@ export function getDistinct(): Set<string> {
   }
 }
 
-export function markDistinct(a: string, b: string): void {
+/** False when the write was refused, and the pair will be asked about again. */
+export function markDistinct(a: string, b: string): boolean {
   const set = getDistinct();
   set.add(pairKey(a, b));
-  kv.setItem(DISTINCT_KEY, JSON.stringify([...set]));
+  return tryWrite(DISTINCT_KEY, JSON.stringify([...set]));
 }
 
 /**
  * Makes `from` the same person as `into`: every saved round is rewritten to
  * the one spelling, and the alias is kept so a round that arrives later with
  * the old one — typed, shared, restored — is brought into line as it saves.
+ *
+ * Both writes or neither, and false when it is neither. An alias stored
+ * without the rounds rewritten would rename every round saved from now on
+ * and leave the old ones split, with nothing on screen to say why.
  */
-export function mergePeople(from: string, into: string): void {
-  kv.setItem(ALIASES_KEY, JSON.stringify(withAlias(getAliases(), from, into)));
+export function mergePeople(from: string, into: string): boolean {
+  const prevAliases = kv.getItem(ALIASES_KEY);
+  if (!tryWrite(ALIASES_KEY, JSON.stringify(withAlias(getAliases(), from, into)))) return false;
   const before = listRounds();
   const after = mergeInRounds(before, from, into);
   const now = Date.now();
   // A changed round counts as changed, so a restore's newest-wins merge keeps
   // the merged spelling over an older backup's.
   const stamped = after.map((r, i) => (r === before[i] ? r : { ...r, updatedAt: now }));
-  kv.setItem(ROUNDS_KEY, JSON.stringify(stamped));
+  if (tryWrite(ROUNDS_KEY, JSON.stringify(stamped))) return true;
+  try {
+    if (prevAliases === null) kv.removeItem(ALIASES_KEY);
+    else kv.setItem(ALIASES_KEY, prevAliases);
+  } catch (err) {
+    // Putting back a value that was stored a moment ago only shrinks it, so
+    // this should not happen; if it does, the alias stays, which renames
+    // rounds as they are next saved — the merge the user asked for.
+    console.error('Press could not undo a name merge that half failed.', err);
+  }
+  return false;
 }
 
 /**
@@ -207,19 +238,33 @@ export function mergePeople(from: string, into: string): void {
  * from places that have nowhere to say it.
  */
 export function saveRound(round: Round): boolean {
-  const rounds = listRounds().filter((r) => r.id !== round.id);
-  rounds.push({ ...applyAliases(round, getAliases()), updatedAt: Date.now() });
-  try {
-    kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
-    return true;
-  } catch {
-    return false;
-  }
+  return saveRounds([round]);
 }
 
-export function deleteRound(id: string): void {
-  const rounds = listRounds().filter((r) => r.id !== id);
-  kv.setItem(ROUNDS_KEY, JSON.stringify(rounds));
+/**
+ * Writes several rounds in one write, so either all of them are kept or none
+ * are. A trip rename used to save its rounds one at a time and stop at the
+ * first refusal, leaving some rounds with the new name and some with the old.
+ */
+export function saveRounds(changed: Round[]): boolean {
+  const ids = new Set(changed.map((r) => r.id));
+  const aliases = getAliases();
+  const now = Date.now();
+  const rounds = listRounds().filter((r) => !ids.has(r.id));
+  for (const round of changed) rounds.push({ ...applyAliases(round, aliases), updatedAt: now });
+  return tryWrite(ROUNDS_KEY, JSON.stringify(rounds));
+}
+
+/** False when the write was refused and the round is still stored. */
+export function deleteRound(id: string): boolean {
+  return deleteRounds([id]);
+}
+
+/** Removes several rounds in one write: all of them go, or none do. */
+export function deleteRounds(ids: Iterable<string>): boolean {
+  const gone = new Set(ids);
+  const rounds = listRounds().filter((r) => !gone.has(r.id));
+  return tryWrite(ROUNDS_KEY, JSON.stringify(rounds));
 }
 
 export function listCourses(): SavedCourse[] {
@@ -250,17 +295,13 @@ export function listCourses(): SavedCourse[] {
 export function saveCourse(course: SavedCourse): boolean {
   const courses = listCourses().filter((c) => c.id !== course.id);
   courses.push(course);
-  try {
-    kv.setItem(COURSES_KEY, JSON.stringify(courses));
-    return true;
-  } catch {
-    return false;
-  }
+  return tryWrite(COURSES_KEY, JSON.stringify(courses));
 }
 
-export function deleteCourse(id: string): void {
+/** False when the write was refused and the course is still stored. */
+export function deleteCourse(id: string): boolean {
   const courses = listCourses().filter((c) => c.id !== id);
-  kv.setItem(COURSES_KEY, JSON.stringify(courses));
+  return tryWrite(COURSES_KEY, JSON.stringify(courses));
 }
 
 /**

@@ -1,16 +1,37 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { setBackend, snapshotBackend, UnreadableKeyError, type KvBackend } from './kv';
+import {
+  kv,
+  setBackend,
+  snapshotBackend,
+  UnreadableKeyError,
+  writeFailureReason,
+  type KvBackend,
+} from './kv';
 import {
   ALIASES_KEY,
   COURSES_KEY,
   DISTINCT_KEY,
   ROUNDS_KEY,
+  SETTINGS_KEY,
   RestoreUndoError,
+  deleteCourse,
+  deleteRound,
+  deleteRounds,
   getAliases,
   getDistinct,
+  listCourses,
+  listRounds,
+  markDistinct,
+  mergePeople,
+  saveCourse,
+  saveRound,
+  saveRounds,
   writeAll,
 } from './storage';
+import { eraseEverything } from './erase';
+import { PERSISTED_KEYS } from './native';
 import { buildBackup, restoreBackup, restoreFailureMessage } from './backup';
+import { notSavedReason } from './notSaved';
 import { makeRound, player } from './games/testFixtures';
 
 /**
@@ -53,6 +74,24 @@ function onNative(disk: Record<string, string>, blocked: string[]) {
   return onDisk;
 }
 
+/** Throws `QuotaExceededError` for the given keys, as a full phone does. */
+function refuse(...keys: string[]) {
+  const real = localStorage.setItem;
+  const realRemove = localStorage.removeItem;
+  localStorage.setItem = (k: string, v: string) => {
+    if (keys.includes(k)) throw new DOMException('full', 'QuotaExceededError');
+    real(k, v);
+  };
+  localStorage.removeItem = (k: string) => {
+    if (keys.includes(k)) throw new DOMException('refused', 'SecurityError');
+    realRemove(k);
+  };
+  return () => {
+    localStorage.setItem = real;
+    localStorage.removeItem = realRemove;
+  };
+}
+
 const r = (id: string, name = 'Al') => ({ ...makeRound({ players: [player('p1', name)] }), id });
 
 let original: KvBackend | null = null;
@@ -63,6 +102,62 @@ beforeEach(() => {
 afterEach(() => {
   if (original) setBackend(original);
 });
+describe('the write block says why', () => {
+  it('refuses with its own error, which reads as "unreadable"', () => {
+    const backend = snapshotBackend({}, () => {}, () => {}, [ROUNDS_KEY]);
+    let thrown: unknown;
+    try {
+      backend.setItem(ROUNDS_KEY, '[]');
+    } catch (err) {
+      thrown = err;
+    }
+    expect(thrown).toBeInstanceOf(UnreadableKeyError);
+    expect(writeFailureReason(thrown)).toBe('unreadable');
+    expect(writeFailureReason(new DOMException('full', 'QuotaExceededError'))).toBe('full');
+  });
+
+  it('answers which keys are blocked, and none on the web', () => {
+    expect(kv.isUnreadable(ROUNDS_KEY)).toBe(false);
+    onNative({}, [ROUNDS_KEY]);
+    expect(kv.isUnreadable(ROUNDS_KEY)).toBe(true);
+    expect(kv.isUnreadable(COURSES_KEY)).toBe(false);
+  });
+
+  it('gives the screen a reason that matches the cause', () => {
+    expect(notSavedReason(ROUNDS_KEY)).toMatch(/storage is full/);
+    onNative({}, [ROUNDS_KEY]);
+    expect(notSavedReason(ROUNDS_KEY)).toMatch(/couldn’t read/);
+    expect(notSavedReason([ALIASES_KEY, ROUNDS_KEY])).toMatch(/couldn’t read/);
+    expect(notSavedReason(COURSES_KEY)).toMatch(/storage is full/);
+    // A failed delete is not answered with "delete old rounds".
+    expect(notSavedReason(COURSES_KEY, true)).not.toMatch(/delete old rounds/);
+  });
+});
+
+describe('Erase everything on a phone with an unreadable key (A)', () => {
+  it('removes every key, the unreadable one included, and reports nothing left', () => {
+    const disk = Object.fromEntries(PERSISTED_KEYS.map((k) => [k, '"something"']));
+    // A key in the middle of the list, so a stop there would leave some behind.
+    const blocked = PERSISTED_KEYS[Math.floor(PERSISTED_KEYS.length / 2)];
+    const onDisk = onNative(disk, [blocked]);
+    expect(eraseEverything()).toEqual([]);
+    expect([...onDisk.keys()]).toEqual([]);
+    // Gone, so writable again: a new round after the wipe is kept.
+    expect(kv.isUnreadable(blocked)).toBe(false);
+  });
+
+  it('carries on past a key the store refuses, and returns it', () => {
+    for (const k of PERSISTED_KEYS) store.set(k, '"x"');
+    const restore = refuse(SETTINGS_KEY);
+    try {
+      expect(eraseEverything()).toEqual([SETTINGS_KEY]);
+    } finally {
+      restore();
+    }
+    expect([...store.keys()]).toEqual([SETTINGS_KEY]);
+  });
+});
+
 describe('a restore that fails on an unreadable key (B)', () => {
   const people = { aliases: { al: 'Alex' }, distinct: ['a|b'] };
 
@@ -139,3 +234,84 @@ describe('a restore that fails on an unreadable key (B)', () => {
   });
 });
 
+describe('several rounds in one write (C)', () => {
+  it('saves all of them or none of them', () => {
+    saveRounds([r('a'), r('b')]);
+    const renamed = listRounds().map((x) => ({ ...x, course: 'Renamed' }));
+    const restore = refuse(ROUNDS_KEY);
+    try {
+      expect(saveRounds(renamed)).toBe(false);
+    } finally {
+      restore();
+    }
+    expect(listRounds().map((x) => x.course)).toEqual([undefined, undefined]);
+    expect(saveRounds(renamed)).toBe(true);
+    expect(listRounds().map((x) => x.course)).toEqual(['Renamed', 'Renamed']);
+  });
+});
+
+describe('the writes that used to throw', () => {
+  beforeEach(() => {
+    saveRounds([r('a', 'Al'), r('b', 'Alex')]);
+    saveCourse({ id: 'c1', name: 'Pebble', holes: [] });
+  });
+
+  it('deleting rounds answers false and keeps them', () => {
+    const restore = refuse(ROUNDS_KEY);
+    try {
+      expect(deleteRound('a')).toBe(false);
+      expect(deleteRounds(['a', 'b'])).toBe(false);
+    } finally {
+      restore();
+    }
+    expect(listRounds()).toHaveLength(2);
+    expect(deleteRounds(['a', 'b'])).toBe(true);
+    expect(listRounds()).toHaveLength(0);
+  });
+
+  it('deleting a course answers false and keeps it', () => {
+    const restore = refuse(COURSES_KEY);
+    try {
+      expect(deleteCourse('c1')).toBe(false);
+    } finally {
+      restore();
+    }
+    expect(listCourses()).toHaveLength(1);
+  });
+
+  it('marking two people different answers false', () => {
+    const restore = refuse(DISTINCT_KEY);
+    try {
+      expect(markDistinct('Al', 'Alex')).toBe(false);
+    } finally {
+      restore();
+    }
+    expect(getDistinct().size).toBe(0);
+  });
+
+  it('a merge is both writes or neither', () => {
+    const restore = refuse(ROUNDS_KEY);
+    try {
+      expect(mergePeople('Al', 'Alex')).toBe(false);
+    } finally {
+      restore();
+    }
+    // The alias that went in first is taken back out.
+    expect(getAliases()).toEqual({});
+    expect(listRounds().map((x) => x.players[0].name).sort()).toEqual(['Al', 'Alex']);
+    expect(mergePeople('Al', 'Alex')).toBe(true);
+    expect(listRounds().map((x) => x.players[0].name)).toEqual(['Alex', 'Alex']);
+  });
+
+  it('a merge refused on an unreadable alias key changes nothing', () => {
+    const rounds = JSON.stringify([r('a', 'Al'), r('b', 'Alex')]);
+    const onDisk = onNative({ [ROUNDS_KEY]: rounds }, [ALIASES_KEY]);
+    expect(mergePeople('Al', 'Alex')).toBe(false);
+    expect(onDisk.get(ROUNDS_KEY)).toBe(rounds);
+  });
+
+  it('a round save on an unreadable rounds key is refused, not thrown', () => {
+    onNative({}, [ROUNDS_KEY]);
+    expect(saveRound(r('x'))).toBe(false);
+  });
+});
