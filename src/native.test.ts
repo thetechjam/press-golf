@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { isNative, initNativeStorage, PERSISTED_KEYS } from './native';
+import { isNative, initNativeStorage, reportNativeStorageError, PERSISTED_KEYS } from './native';
 import { kv, setBackend, type KvBackend } from './kv';
 import { listRounds, saveRound, getSettings, saveSettings } from './storage';
 import { makeRound } from './games/testFixtures';
@@ -183,9 +183,12 @@ describe('inside the shell', () => {
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
     await initNativeStorage((key) => seen.push(key));
 
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
     expect(() => saveRound({ ...makeRound(), id: 'r1', course: 'Oakmont' })).not.toThrow();
     await new Promise((r) => setTimeout(r, 0));
     expect(seen).toEqual(['press.rounds.v1']);
+    expect(logged.mock.calls.some((c) => String(c[0]).includes('press.rounds.v1'))).toBe(true);
+    logged.mockRestore();
     // The app still agrees with itself, whatever the disk did.
     expect(listRounds().map((r) => r.course)).toEqual(['Oakmont']);
   });
@@ -210,5 +213,27 @@ describe('every key the app writes is a key the phone hydrates', () => {
     }
     expect(found.size).toBeGreaterThan(0);
     expect([...found].sort()).toEqual([...PERSISTED_KEYS].sort());
+  });
+
+  it('does not claim the Capacitor package is installed here', () => {
+    // It is not in package.json. The old comment said it was, which is how a
+    // native build would be started on a dependency this repo does not have.
+    const src = source('./native.ts');
+    expect(src).not.toMatch(/package is still installed/);
+    expect(src).toMatch(/not a dependency of this repo/);
+  });
+
+  it('is wired from main, so a failed read at startup is not ignored', () => {
+    const main = source('./main.tsx');
+    expect(main).toContain('initNativeStorage(reportNativeStorageError)');
+  });
+});
+
+describe('reportNativeStorageError', () => {
+  it('logs the key that failed', () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    reportNativeStorageError('press.rounds.v1', new Error('unavailable'));
+    expect(logged.mock.calls.some((c) => String(c[0]).includes('press.rounds.v1'))).toBe(true);
+    logged.mockRestore();
   });
 });

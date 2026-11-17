@@ -63,6 +63,17 @@ export const kv: KvBackend = {
 };
 
 /**
+ * A native write that did not land. The caller has already moved on — `persist`
+ * returns before the store answers — so this is the record of it.
+ *
+ * Logged here, not only handed to `onError`, because a fire-and-forget promise
+ * that nobody catches is otherwise a round that looks saved and is not.
+ */
+export function logStorageFailure(key: string, err: unknown): void {
+  console.error(`Press could not store “${key}”.`, err);
+}
+
+/**
  * A synchronous face over a store that can only be reached asynchronously.
  *
  * Capacitor's Preferences API — the thing that survives on iOS — is async, and
@@ -75,11 +86,12 @@ export const kv: KvBackend = {
  * Two consequences worth being explicit about, because both are real:
  *
  * A write that fails cannot be reported to the caller — `persist` has already
- * returned by the time the store rejects. `writeAll`'s rollback, which exists
- * to leave storage untouched when a restore hits `QuotaExceededError`, is a
- * guarantee of the web path only. It is not weakened here so much as
- * inapplicable: `UserDefaults` has no quota of that kind. `onError` is where a
- * native build finds out anyway.
+ * returned by the time the store rejects. It is logged, and handed to
+ * `onError` when one was given; that is what `main.tsx` passes. `writeAll`'s
+ * rollback, which exists to leave storage untouched when a restore hits
+ * `QuotaExceededError`, is a guarantee of the web path only. It is not
+ * weakened here so much as inapplicable: `UserDefaults` has no quota of that
+ * kind.
  *
  * The snapshot is the source of truth for the life of the process. Nothing
  * else writes these keys, so it cannot go stale — but it would the moment
@@ -87,7 +99,7 @@ export const kv: KvBackend = {
  */
 export function snapshotBackend(
   loaded: Record<string, string>,
-  persist: (key: string, value: string | null) => void,
+  persist: (key: string, value: string | null) => void | Promise<void>,
   onError?: (key: string, err: unknown) => void
 ): KvBackend {
   const snapshot = new Map(Object.entries(loaded));
@@ -96,11 +108,22 @@ export function snapshotBackend(
   // old value because the write is still in flight would be a bug nobody could
   // reproduce; a value that is in memory but not yet on disk is just a write
   // in flight, which is what it is.
+  const report = (key: string, err: unknown) => {
+    // Always, even when a caller also handles it: the promise has already
+    // left the function that wrote, and a handler that forgets to log would
+    // put the failure back where it was.
+    if (onError !== logStorageFailure) logStorageFailure(key, err);
+    onError?.(key, err);
+  };
   const push = (key: string, value: string | null) => {
     try {
-      persist(key, value);
+      const pending = persist(key, value);
+      // A rejected promise is not a thrown error. Capacitor's Preferences
+      // calls return one, and leaving it uncaught is a write that failed
+      // with nothing on screen and nothing in the log.
+      if (pending instanceof Promise) void pending.catch((err) => report(key, err));
     } catch (err) {
-      onError?.(key, err);
+      report(key, err);
     }
   };
 

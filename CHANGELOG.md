@@ -38,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounds by the year and month in it.
 
 ### Fixed
+- **A native storage failure is no longer silent.** Starting the app now
+  passes an error handler into native storage, and a write the phone’s store
+  rejects — which comes back as a promise after the call has returned — is
+  logged instead of discarded. The note that said the Capacitor preferences
+  package was installed was wrong; it is not a dependency of this repo.
 - **A save that fails says so.** Starting a round, keeping a shared one, and
   replacing or forking one on handover used to ignore a full phone and carry
   on as if the round were stored. The “Not saved” banner now shows, and the

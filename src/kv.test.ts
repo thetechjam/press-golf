@@ -129,12 +129,42 @@ describe('snapshotBackend — the shape iOS needs', () => {
     // it can be reported.
     const native = fakeNativeStore();
     const seen: string[] = [];
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
     const backend = snapshotBackend({}, native.persist, (key) => seen.push(key));
     native.failWrites();
     expect(() => backend.setItem('press.rounds.v1', '[]')).not.toThrow();
     expect(seen).toEqual(['press.rounds.v1']);
+    expect(logged).toHaveBeenCalled();
     // And the snapshot still moved, so the app is consistent with itself.
     expect(backend.getItem('press.rounds.v1')).toBe('[]');
+    logged.mockRestore();
+  });
+
+  it('reports a write whose promise rejects, which a try/catch cannot see', async () => {
+    // Capacitor's Preferences calls return a promise. Leaving that promise
+    // uncaught is a full disk with a round that looks saved.
+    const seen: string[] = [];
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const backend = snapshotBackend(
+      {},
+      () => Promise.reject(new Error('disk full')),
+      (key) => seen.push(key)
+    );
+    expect(() => backend.setItem('press.rounds.v1', '[]')).not.toThrow();
+    await Promise.resolve();
+    expect(seen).toEqual(['press.rounds.v1']);
+    expect(logged.mock.calls.some((c) => String(c[0]).includes('press.rounds.v1'))).toBe(true);
+    expect(backend.getItem('press.rounds.v1')).toBe('[]');
+    logged.mockRestore();
+  });
+
+  it('still logs when nobody handed in a handler', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const backend = snapshotBackend({}, () => Promise.reject(new Error('disk full')));
+    backend.setItem('press.settings.v1', '{}');
+    await Promise.resolve();
+    expect(logged.mock.calls.some((c) => String(c[0]).includes('press.settings.v1'))).toBe(true);
+    logged.mockRestore();
   });
 });
 

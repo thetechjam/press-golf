@@ -1,4 +1,4 @@
-import { setBackend, snapshotBackend } from './kv';
+import { logStorageFailure, setBackend, snapshotBackend } from './kv';
 import { ROUNDS_KEY, COURSES_KEY, SETTINGS_KEY, ALIASES_KEY, DISTINCT_KEY } from './storage';
 import { QUEUE_KEY } from './feedback';
 
@@ -13,10 +13,11 @@ import { QUEUE_KEY } from './feedback';
  *
  * Nothing here is imported from npm. Capacitor injects a bridge onto the window
  * of the web view it hosts, and reading the plugin off that bridge is what
- * keeps `@capacitor/preferences` out of the web bundle entirely — the browser
- * build ships not one byte of this path, because `isNative()` is false and the
- * bridge is not there. The package is still installed for the native build:
- * that is how its Swift half gets compiled in. It is simply never imported.
+ * keeps this path out of the web bundle entirely — the browser build ships
+ * not one byte of it, because `isNative()` is false and the bridge is not
+ * there. `@capacitor/preferences` is not a dependency of this repo. A native
+ * shell would add the package to its own project so the Swift half is compiled
+ * in; this file only talks to the bridge that shell would inject.
  *
  * On the web this module does nothing at all and `initNativeStorage` says so by
  * returning false, which is what `main.tsx` does with it.
@@ -85,16 +86,22 @@ export async function initNativeStorage(
   setBackend(
     snapshotBackend(
       loaded,
-      (key, value) => {
-        // A rejected promise is not a thrown error, so snapshotBackend's own
-        // catch cannot see this one. Caught here instead, and reported through
-        // the same hook, so a store that has started refusing writes surfaces
-        // the same way whichever kind of failure it is.
-        const done = value === null ? prefs.remove({ key }) : prefs.set({ key, value });
-        void done.catch((err) => onError?.(key, err));
-      },
+      (key, value) =>
+        // Returned rather than caught here. The promise rejects after this
+        // function has gone, and `snapshotBackend` is what attaches the
+        // handler — a rejection nobody is waiting on used to vanish.
+        value === null ? prefs.remove({ key }) : prefs.set({ key, value }),
       onError
     )
   );
   return true;
 }
+
+/**
+ * What `main.tsx` passes to `initNativeStorage`.
+ *
+ * A key that cannot be read at startup, and a write the store later refuses,
+ * both arrive here. Logging is the whole of it: there is no screen yet when
+ * the first one happens, and the write has already returned to its caller.
+ */
+export const reportNativeStorageError = logStorageFailure;
