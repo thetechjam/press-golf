@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 import type { Round } from './types';
 import { refuseStorageKey } from './testQuota';
+import { setBackend, snapshotBackend } from './kv';
 import { getSettings, skipKeepPromptIfRoundsExist } from './storage';
 
 /**
@@ -367,6 +368,26 @@ describe('a round that cannot be saved', () => {
       expect(localStorage.getItem('press.rounds.v1')).toBeNull();
     } finally {
       restore();
+    }
+  });
+
+  it('gives the real reason when the rounds could not be read at startup', async () => {
+    const user = userEvent.setup();
+    const previous = setBackend(snapshotBackend({}, () => {}, () => {}, ['press.rounds.v1']));
+    try {
+      render(<App />);
+      await user.click(screen.getByRole('button', { name: 'Start New Round' }));
+      const names = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+      await user.type(names[0], 'Al');
+      await user.type(names[1], 'Bo');
+      await user.click(screen.getByRole('button', { name: /Start Round/i }));
+      const banner = (await screen.findByRole('alert')).textContent ?? '';
+      expect(banner).toMatch(/Not saved/);
+      expect(banner).toMatch(/couldn’t read your saved rounds/);
+      // Deleting rounds to make room would not help, so it is not suggested.
+      expect(banner).not.toMatch(/storage is full|make room/);
+    } finally {
+      setBackend(previous);
     }
   });
 

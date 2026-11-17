@@ -4,7 +4,8 @@ import { Home } from './screens/Home';
 import { Setup } from './screens/Setup';
 import { Play } from './screens/Play';
 import { Results } from './screens/Results';
-import { saveRound, getRound, listCourses, saveCourse } from './storage';
+import { saveRound, getRound, listCourses, saveCourse, ROUNDS_KEY, COURSES_KEY } from './storage';
+import { kv } from './kv';
 import { UpdatePrompt } from './components/UpdatePrompt';
 import { dismissSplash } from './splash';
 import { createNavigator } from './navigation';
@@ -506,8 +507,29 @@ export default function App() {
   );
 }
 
-/** A write storage refused. Shown wherever a round or course is still on screen. */
+/**
+ * A write storage refused. Shown wherever a round or course is still on screen.
+ *
+ * Two reasons, and the advice differs. Usually storage is full. In the native
+ * shell the key may instead be one Press could not read at startup, which it
+ * refuses to write over — deleting rounds would not help that, reopening does.
+ */
 function NotSavedBanner({ what = 'round' }: { what?: 'round' | 'course' }) {
+  if (kv.isUnreadable(what === 'course' ? COURSES_KEY : ROUNDS_KEY)) {
+    return what === 'course' ? (
+      <div className="unsaved" role="alert">
+        <strong>Not saved.</strong> Press couldn’t read your saved courses when it opened, so it
+        won’t write over them and this course could not be kept. Close Press completely, open it
+        again, and open the link again.
+      </div>
+    ) : (
+      <div className="unsaved" role="alert">
+        <strong>Not saved.</strong> Press couldn’t read your saved rounds when it opened, so it
+        won’t write over them and scores entered now are not being kept. Note the scores, then
+        close Press completely and open it again.
+      </div>
+    );
+  }
   if (what === 'course') {
     return (
       <div className="unsaved" role="alert">
