@@ -163,11 +163,30 @@ describe('a course the phone cannot store', () => {
     const restore = refuseCourses();
     try {
       await userEvent.click(screen.getByRole('button', { name: 'Save this course' }));
-      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+      const alert = screen.getByRole('alert').textContent;
+      expect(alert).toMatch(/Not saved/);
+      // About the course, not about scores on a round nobody is playing.
+      expect(alert).toMatch(/course/);
+      expect(alert).not.toMatch(/scores/);
       // The card is still the one they can try to save again. The link has
       // already been taken out of the address bar, so this screen is the copy.
       expect(screen.getByRole('heading', { name: 'A course was sent to you' })).toBeTruthy();
       expect(saved()).toEqual([]);
+    } finally {
+      restore();
+    }
+  });
+
+  it('drops the banner when the course is skipped after a failed save', async () => {
+    await arriveWith(torrey);
+    const restore = refuseCourses();
+    try {
+      await userEvent.click(screen.getByRole('button', { name: 'Save this course' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+      await userEvent.click(screen.getByRole('button', { name: /No thanks|Go to Press/ }));
+      // Back in the app, where nothing is unsaved: the course was let go.
+      expect(await screen.findByRole('heading', { name: 'Press' })).toBeTruthy();
+      expect(screen.queryByRole('alert')).toBeNull();
     } finally {
       restore();
     }

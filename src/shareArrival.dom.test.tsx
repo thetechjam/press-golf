@@ -364,6 +364,36 @@ describe('a save the phone refuses', () => {
     }
   });
 
+  it('drops the banner when the user keeps their own copy after a failed write', async () => {
+    const live: Round = { ...sent, status: 'in_progress' };
+    const asDecoded = (round: Round, n: number): Round =>
+      scoredTo(
+        { ...round, players: round.players.map((p, i) => ({ ...p, id: `p${i}` })) },
+        n,
+        ['p0', 'p1']
+      );
+    const mine = asDecoded(live, 6);
+    const theirs = {
+      ...asDecoded(live, 4),
+      scores: { ...asDecoded(live, 4).scores, 7: { p0: 5, p1: 5 } },
+    };
+    seed(mine);
+    await arriveWith(`#r=${await encodeRound(theirs)}`);
+
+    const restore = refuseRounds();
+    try {
+      await userEvent.click(screen.getByRole('button', { name: 'Use theirs, discard mine' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+    } finally {
+      restore();
+    }
+    // Their copy is let go; the one opened is already stored, so nothing on
+    // screen is unsaved.
+    await userEvent.click(screen.getByRole('button', { name: 'Keep mine, discard theirs' }));
+    expect(await screen.findByRole('heading', { name: 'Results' })).toBeTruthy();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('does not fork onto this phone when the write fails', async () => {
     const live: Round = { ...sent, status: 'in_progress' };
     const asDecoded = (round: Round, n: number): Round =>

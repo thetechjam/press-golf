@@ -66,6 +66,10 @@ export default function App() {
    * reload is doing so after an hour of scoring that looked saved.
    */
   const [unsaved, setUnsaved] = useState(false);
+  // A course that arrived by link and could not be stored. Separate from
+  // `unsaved`, which is about the round: a course write succeeding says
+  // nothing about whether the round on the card is kept.
+  const [courseUnsaved, setCourseUnsaved] = useState(false);
 
   // The history/back-gesture logic lives in navigation.ts, where it can be
   // tested against a history double that models asynchronous traversal — a DOM
@@ -283,7 +287,10 @@ export default function App() {
   const resolve = (incomingRound: Round, resolution: Resolution) => {
     if (resolution.action === 'open-mine') {
       // Nothing is written: the copy here is already the one being opened.
+      // A failed replace or fork before this choice is moot now, and its
+      // banner would claim the stored round is not saved.
       const mine = getRound(incomingRound.id);
+      setUnsaved(false);
       setIncoming(null);
       load(mine ?? incomingRound);
       nav.goTo('results');
@@ -302,6 +309,7 @@ export default function App() {
   /** Applies what the user chose about a course that arrived by link. */
   const resolveCourse = (course: SavedCourse, choice: CourseChoice) => {
     if (choice === 'skip') {
+      setCourseUnsaved(false);
       setIncoming(null);
       return;
     }
@@ -322,17 +330,17 @@ export default function App() {
     // taken out of the address bar, so leaving this screen would drop the
     // only copy of the course still on the phone.
     if (!saveCourse(toSave)) {
-      setUnsaved(true);
+      setCourseUnsaved(true);
       return;
     }
-    setUnsaved(false);
+    setCourseUnsaved(false);
     setIncoming(null);
   };
 
   if (incoming?.state === 'course') {
     return (
       <div className="app">
-        {unsaved && <NotSavedBanner />}
+        {courseUnsaved && <NotSavedBanner what="course" />}
         <Suspense fallback={null}>
           <ArrivingCourse
             course={incoming.course}
@@ -499,7 +507,16 @@ export default function App() {
 }
 
 /** A write storage refused. Shown wherever a round or course is still on screen. */
-function NotSavedBanner() {
+function NotSavedBanner({ what = 'round' }: { what?: 'round' | 'course' }) {
+  if (what === 'course') {
+    return (
+      <div className="unsaved" role="alert">
+        <strong>Not saved.</strong> This phone’s storage is full, so this course could not be
+        kept. Back up from Settings, then delete old rounds from Rounds to make room, and open
+        the link again.
+      </div>
+    );
+  }
   return (
     <div className="unsaved" role="alert">
       <strong>Not saved.</strong> This phone’s storage is full, so scores entered now will be
