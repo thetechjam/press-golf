@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { getSettings, saveSettings, DEFAULT_SETTINGS, listRounds, listCourses, saveRound } from './storage';
+import {
+  getSettings,
+  saveSettings,
+  DEFAULT_SETTINGS,
+  listRounds,
+  listCourses,
+  saveRound,
+  saveCourse,
+} from './storage';
 import { makeRound, player } from './games/testFixtures';
 
 // Vitest runs in node — back localStorage with a Map.
@@ -131,5 +139,27 @@ describe('saveRound', () => {
     }
     // What was there is still there.
     expect(listRounds()[0].course).toBeUndefined();
+  });
+});
+
+describe('saveCourse', () => {
+  beforeEach(() => store.clear());
+
+  const course = { id: 'c1', name: 'Pebble Beach', holes: [{ number: 1, par: 4 }] };
+
+  it('reports a QuotaExceededError and leaves the courses that were already there', () => {
+    expect(saveCourse(course)).toBe(true);
+    expect(listCourses().map((c) => c.name)).toEqual(['Pebble Beach']);
+
+    const real = localStorage.setItem;
+    localStorage.setItem = () => {
+      throw new DOMException('full', 'QuotaExceededError');
+    };
+    try {
+      expect(saveCourse({ ...course, id: 'c2', name: 'Torrey Pines South' })).toBe(false);
+    } finally {
+      localStorage.setItem = real;
+    }
+    expect(listCourses().map((c) => c.name)).toEqual(['Pebble Beach']);
   });
 });

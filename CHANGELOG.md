@@ -38,6 +38,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounds by the year and month in it.
 
 ### Fixed
+- **A save that fails says so.** Starting a round, keeping a shared one, and
+  replacing or forking one on handover used to ignore a full phone and carry
+  on as if the round were stored. The “Not saved” banner now shows, and the
+  round or course stays on screen so it can be tried again. Saving a course
+  reports the same failure instead of throwing out of the button that asked.
 - **Game names fit their cards.** The two-across menu under Games was meant to
   set each name on its own line under the tick and the ⓘ; the pick button
   that later took in the tick and the name undid that, and "Stableford" ran

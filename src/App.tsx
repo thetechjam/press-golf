@@ -241,15 +241,30 @@ export default function App() {
   };
 
   /**
+   * Writes a round the user has decided to keep.
+   *
+   * False leaves whatever is already on screen alone: a failed save used to
+   * be ignored, so the round looked stored and was gone on the next launch.
+   * The banner is the same one scoring uses; the round stays up so the write
+   * can be tried again.
+   */
+  const persistRound = (next: Round): boolean => {
+    const ok = saveRound(next);
+    setUnsaved(!ok);
+    return ok;
+  };
+
+  /**
    * Writes a round that arrived by link onto this device, once asked.
    *
    * A round still being played goes straight to the card, because taking one
    * on is not filing it away — it is agreeing to keep score, and the next
-   * thing that happens is somebody hitting a shot.
+   * thing that happens is somebody hitting a shot. A refusal leaves the
+   * "sent to you" row up, so keeping it can be tried again.
    */
   const keep = () => {
     if (!round) return;
-    saveRound(round);
+    if (!persistRound(round)) return;
     setUnkept(false);
     if (round.status !== 'finished') goTo('play');
   };
@@ -266,27 +281,30 @@ export default function App() {
 
   /** Applies what the user chose about a round that this device already had. */
   const resolve = (incomingRound: Round, resolution: Resolution) => {
-    const mine = getRound(incomingRound.id);
-    setIncoming(null);
-
     if (resolution.action === 'open-mine') {
       // Nothing is written: the copy here is already the one being opened.
+      const mine = getRound(incomingRound.id);
+      setIncoming(null);
       load(mine ?? incomingRound);
-    } else if (resolution.action === 'replace') {
-      saveRound(incomingRound);
-      load(incomingRound);
-    } else {
-      const fork = forkRound(incomingRound);
-      saveRound(fork);
-      load(fork);
+      nav.goTo('results');
+      return;
     }
+    // Replace and fork both write. A refusal leaves the decision on screen —
+    // the arriving card is still in `incoming` — rather than dropping it and
+    // pretending the phone now holds it.
+    const next = resolution.action === 'replace' ? incomingRound : forkRound(incomingRound);
+    if (!persistRound(next)) return;
+    setIncoming(null);
+    load(next);
     nav.goTo('results');
   };
 
   /** Applies what the user chose about a course that arrived by link. */
   const resolveCourse = (course: SavedCourse, choice: CourseChoice) => {
-    setIncoming(null);
-    if (choice === 'skip') return;
+    if (choice === 'skip') {
+      setIncoming(null);
+      return;
+    }
     // `saveCourse` upserts by id, so replacing means reusing the local record's
     // id and saving separately means taking a fresh one — which is exactly
     // what `asSeparateCourse` hands back.
@@ -294,14 +312,27 @@ export default function App() {
     const existing = mine.find(
       (c) => c.name.trim().toLowerCase() === course.name.trim().toLowerCase()
     );
-    if (choice === 'replace' && existing) saveCourse({ ...course, id: existing.id });
-    else if (choice === 'both') saveCourse(asSeparateCourse(course, mine));
-    else saveCourse(course);
+    const toSave =
+      choice === 'replace' && existing
+        ? { ...course, id: existing.id }
+        : choice === 'both'
+          ? asSeparateCourse(course, mine)
+          : course;
+    // Stay on the card when the write fails. The payload has already been
+    // taken out of the address bar, so leaving this screen would drop the
+    // only copy of the course still on the phone.
+    if (!saveCourse(toSave)) {
+      setUnsaved(true);
+      return;
+    }
+    setUnsaved(false);
+    setIncoming(null);
   };
 
   if (incoming?.state === 'course') {
     return (
       <div className="app">
+        {unsaved && <NotSavedBanner />}
         <Suspense fallback={null}>
           <ArrivingCourse
             course={incoming.course}
@@ -316,6 +347,7 @@ export default function App() {
   if (incoming?.state === 'deciding') {
     return (
       <div className="app">
+        {unsaved && <NotSavedBanner />}
         <Suspense fallback={null}>
           <Arrival
             incoming={incoming.round}
@@ -351,13 +383,7 @@ export default function App() {
           the prompt itself stays hidden while a round is being scored. */}
       <UpdatePrompt suppressed={view === 'play'} />
 
-      {unsaved && (
-        <div className="unsaved" role="alert">
-          <strong>Not saved.</strong> This phone’s storage is full, so scores entered now will be
-          lost if Press is closed. Back up from Settings, then delete old rounds from Rounds to
-          make room.
-        </div>
-      )}
+      {unsaved && <NotSavedBanner />}
 
       {/* No fallback: the chunks are preloaded at idle, so the wait is a frame
           or two at most, and a spinner flashing for that long is worse than
@@ -430,10 +456,11 @@ export default function App() {
           onCancel={() => goTo('home')}
           onStart={(r) => {
             load(r);
-            saveRound(r);
+            persistRound(r);
             // In place of Setup: Back from a round just started goes Home.
             // Popping to a blank Setup over a saved round invited starting it
-            // twice.
+            // twice. A failed save still opens the card — the round is in
+            // memory, and the banner says it is not on the phone yet.
             nav.replace('play');
           }}
         />
@@ -445,7 +472,7 @@ export default function App() {
           onStandings={() => goTo('standings')}
           onStart={(r) => {
             load(r);
-            saveRound(r);
+            persistRound(r);
             nav.replace('play');
           }}
         />
@@ -467,6 +494,17 @@ export default function App() {
         />
       )}
       </Suspense>
+    </div>
+  );
+}
+
+/** A write storage refused. Shown wherever a round or course is still on screen. */
+function NotSavedBanner() {
+  return (
+    <div className="unsaved" role="alert">
+      <strong>Not saved.</strong> This phone’s storage is full, so scores entered now will be
+      lost if Press is closed. Back up from Settings, then delete old rounds from Rounds to
+      make room.
     </div>
   );
 }

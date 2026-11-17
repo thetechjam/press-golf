@@ -130,7 +130,7 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     const name = course.trim();
     if (!name) return setError('Add a course name before saving.');
     const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
-    saveCourse({
+    const saved = saveCourse({
       id: existing?.id ?? uid(),
       name,
       holes: holes.map((h) => ({ ...h })),
@@ -138,6 +138,13 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
       slope,
       rating: ratingHoles === holes.length ? rating : undefined,
     });
+    if (!saved) {
+      setSavedNote('');
+      setError(
+        'Not saved. This phone’s storage is full, so this course wasn’t kept. Back up from Settings, then delete old rounds to make room.'
+      );
+      return;
+    }
     setCourses(listCourses());
     setError('');
     setSavedNote(`Saved "${name}"`);

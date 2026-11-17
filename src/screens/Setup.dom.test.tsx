@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { Setup } from './Setup';
 import type { Round, SavedCourse } from '../types';
 import { realCard18 } from '../games/testFixtures';
+import { refuseStorageKey } from '../testQuota';
 
 /**
  * The scorecard a round is about to be played on, and how much the screen
@@ -785,6 +786,27 @@ describe('telling you what just happened, where it happened', () => {
     expect(
       note.closest('.setup-row')?.querySelector('.setup-row-head')?.textContent
     ).toContain('Holes & pars');
+  });
+
+  it('says the course was not saved when the phone is full, and keeps the name', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.type(document.querySelector('.course-search input')!, 'Muirfield');
+    await openRow(user, 'Holes & pars');
+
+    const restore = refuseStorageKey('press.courses.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: /Save this course for next time/ }));
+      expect(screen.getByRole('alert').textContent).toMatch(/wasn’t kept/);
+      expect(screen.queryByText('Saved "Muirfield"')).toBeNull();
+      expect((document.querySelector('.course-search input') as HTMLInputElement).value).toBe(
+        'Muirfield'
+      );
+      expect(localStorage.getItem('press.courses.v1')).toBeNull();
+    } finally {
+      restore();
+    }
   });
 
   it('announces the confirmation rather than only drawing it', async () => {

@@ -4,6 +4,7 @@ import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 import type { Round } from './types';
+import { refuseStorageKey } from './testQuota';
 
 /**
  * Navigation and the hardware back button.
@@ -334,5 +335,62 @@ describe('Play toolbar groups', () => {
     // And no tab is loose in the row, which is what made the row unbreakable.
     expect(document.querySelectorAll('.view-toggle > .seg-btn')).toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Settings' }).closest('.view-tabs')).toBeNull();
+  });
+});
+
+/**
+ * Starting a round writes it. A full phone used to ignore the false return
+ * and open the card as if the round were stored.
+ */
+describe('a round that cannot be saved', () => {
+  /** Throws on the rounds key only, the way a full phone refuses one write. */
+  function refuseRounds() {
+    return refuseStorageKey('press.rounds.v1');
+  }
+
+  it('shows the banner when New Round cannot be stored, and keeps the card', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Start New Round' }));
+    const names = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(names[0], 'Al');
+    await user.type(names[1], 'Bo');
+
+    const restore = refuseRounds();
+    try {
+      await user.click(screen.getByRole('button', { name: /Start Round/i }));
+      expect((await screen.findByRole('alert')).textContent).toMatch(/Not saved/);
+      // The round is on screen, not discarded with the failed write.
+      expect(screen.getByRole('button', { name: 'Finish' })).toBeTruthy();
+      expect(screen.getByText('Al')).toBeTruthy();
+      expect(localStorage.getItem('press.rounds.v1')).toBeNull();
+    } finally {
+      restore();
+    }
+  });
+
+  it('shows the banner when a league night cannot be stored, and keeps the card', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Golf League' }));
+    await screen.findByRole('heading', { name: 'Golf League' });
+
+    const names = ['Al', 'Bo', 'Cy', 'Di'];
+    const fields = document.querySelectorAll<HTMLInputElement>('.player-name');
+    for (const [i, field] of [...fields].entries()) await user.type(field, names[i]);
+    for (const [i, field] of screen.getAllByPlaceholderText('HCP').entries()) {
+      await user.type(field, String([4, 9, 6, 12][i]));
+    }
+
+    const restore = refuseRounds();
+    try {
+      await user.click(screen.getByRole('button', { name: /Start League Round/ }));
+      expect((await screen.findByRole('alert')).textContent).toMatch(/Not saved/);
+      expect(screen.getByRole('button', { name: 'Finish' })).toBeTruthy();
+      expect(screen.getByText('Al')).toBeTruthy();
+      expect(localStorage.getItem('press.rounds.v1')).toBeNull();
+    } finally {
+      restore();
+    }
   });
 });

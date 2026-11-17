@@ -187,11 +187,23 @@ export function listCourses(): SavedCourse[] {
   }
 }
 
-/** Upserts a course (matched by id). */
-export function saveCourse(course: SavedCourse): void {
+/**
+ * Upserts a course (matched by id). False when the write failed.
+ *
+ * The realistic failure is `QuotaExceededError`, the same one `writeAll`
+ * catches and rolls back: a full phone used to throw out of the button that
+ * asked, so the screen never got to say the course was not kept. The previous
+ * list is untouched — the write never landed — and the caller says so.
+ */
+export function saveCourse(course: SavedCourse): boolean {
   const courses = listCourses().filter((c) => c.id !== course.id);
   courses.push(course);
-  kv.setItem(COURSES_KEY, JSON.stringify(courses));
+  try {
+    kv.setItem(COURSES_KEY, JSON.stringify(courses));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function deleteCourse(id: string): void {

@@ -4,6 +4,7 @@ import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { LeagueSetup } from './LeagueSetup';
 import type { Round, SavedCourse } from '../types';
+import { refuseStorageKey } from '../testQuota';
 
 /**
  * League handicaps on the League Setup screen.
@@ -241,5 +242,24 @@ describe('the pinned Start bar', () => {
     const error = document.querySelector('.screen-foot .error')!;
     expect(error).not.toBeNull();
     expect(error.getAttribute('role')).toBe('alert');
+  });
+});
+
+describe('saving a league course the phone cannot store', () => {
+  it('says so and does not claim the course was saved', async () => {
+    const user = userEvent.setup();
+    show([]);
+    await user.type(document.querySelector('.course-search input')!, 'Thursday');
+    await user.click(screen.getByRole('button', { name: /Pars & Stroke Index/ }));
+    const restore = refuseStorageKey('press.courses.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: /Save this course for next time/ }));
+      expect(screen.getByRole('alert').textContent).toMatch(/wasn’t kept/);
+      expect(screen.queryByText(/Saved "Thursday"/)).toBeNull();
+      // Seeded empty before the refusal. The save must not have added the course.
+      expect(JSON.parse(localStorage.getItem('press.courses.v1') ?? 'null')).toEqual([]);
+    } finally {
+      restore();
+    }
   });
 });

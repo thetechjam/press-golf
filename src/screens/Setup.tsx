@@ -164,13 +164,19 @@ export function Setup({ onCancel, onStart }: Props) {
       return;
     }
     const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
-    saveCourse({
+    const saved = saveCourse({
       id: existing?.id ?? uid(),
       name,
       holes: cs.holes.map((h) => ({ number: h.number, par: h.par, strokeIndex: h.strokeIndex })),
       slope: cs.slope,
       rating: cs.rating,
     });
+    if (!saved) {
+      setError(
+        'Not saved. This phone’s storage is full, so this course wasn’t kept. Back up from Settings, then delete old rounds to make room.'
+      );
+      return;
+    }
     setCourses(listCourses());
     setError('');
     dispatch({ type: 'saved', name, from });

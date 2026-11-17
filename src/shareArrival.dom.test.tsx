@@ -6,6 +6,7 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 import type { Round } from './types';
 import { encodeRound } from './shareLink';
+import { refuseStorageKey } from './testQuota';
 
 /**
  * A round arriving from somebody else's phone.
@@ -310,6 +311,86 @@ describe('under StrictMode', () => {
     );
     expect(await screen.findByRole('heading', { name: 'Results' })).toBeTruthy();
     expect(window.location.hash).toBe('');
+  });
+});
+
+/** Throws when the rounds key is written, and leaves every other key alone. */
+function refuseRounds() {
+  return refuseStorageKey('press.rounds.v1');
+}
+
+describe('a save the phone refuses', () => {
+  it('keeps a sent round on screen and says it was not saved', async () => {
+    await arriveWith(`#r=${await encodeRound(sent)}`);
+    const restore = refuseRounds();
+    try {
+      await userEvent.click(screen.getByRole('button', { name: 'Keep it' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+      // Still the round they were sent, still waiting to be kept.
+      expect(screen.getByText('Sent to you')).toBeTruthy();
+      expect(screen.getByText('Someone Else’s Club')).toBeTruthy();
+      expect(stored()).toEqual([]);
+    } finally {
+      restore();
+    }
+  });
+
+  it('does not replace the copy on this phone when the write fails', async () => {
+    const live: Round = { ...sent, status: 'in_progress' };
+    const asDecoded = (round: Round, n: number): Round =>
+      scoredTo(
+        { ...round, players: round.players.map((p, i) => ({ ...p, id: `p${i}` })) },
+        n,
+        ['p0', 'p1']
+      );
+    const mine = asDecoded(live, 6);
+    const theirs = {
+      ...asDecoded(live, 4),
+      scores: { ...asDecoded(live, 4).scores, 7: { p0: 5, p1: 5 } },
+    };
+    seed(mine);
+    const before = localStorage.getItem('press.rounds.v1');
+    await arriveWith(`#r=${await encodeRound(theirs)}`);
+
+    const restore = refuseRounds();
+    try {
+      await userEvent.click(screen.getByRole('button', { name: 'Use theirs, discard mine' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+      // The decision stays up: leaving it would drop the only copy of theirs.
+      expect(screen.getByRole('heading', { name: 'Two versions of this round' })).toBeTruthy();
+      expect(localStorage.getItem('press.rounds.v1')).toBe(before);
+    } finally {
+      restore();
+    }
+  });
+
+  it('does not fork onto this phone when the write fails', async () => {
+    const live: Round = { ...sent, status: 'in_progress' };
+    const asDecoded = (round: Round, n: number): Round =>
+      scoredTo(
+        { ...round, players: round.players.map((p, i) => ({ ...p, id: `p${i}` })) },
+        n,
+        ['p0', 'p1']
+      );
+    const mine = asDecoded(live, 6);
+    const theirs = {
+      ...asDecoded(live, 4),
+      scores: { ...asDecoded(live, 4).scores, 7: { p0: 5, p1: 5 } },
+    };
+    seed(mine);
+    const before = localStorage.getItem('press.rounds.v1');
+    await arriveWith(`#r=${await encodeRound(theirs)}`);
+
+    const restore = refuseRounds();
+    try {
+      await userEvent.click(screen.getByRole('button', { name: 'Keep both' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+      expect(screen.getByRole('heading', { name: 'Two versions of this round' })).toBeTruthy();
+      expect(stored()).toHaveLength(1);
+      expect(localStorage.getItem('press.rounds.v1')).toBe(before);
+    } finally {
+      restore();
+    }
   });
 });
 
