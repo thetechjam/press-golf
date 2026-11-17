@@ -138,26 +138,57 @@ describe('the write block says why', () => {
 });
 
 describe('Erase everything on a phone with an unreadable key (A)', () => {
-  it('removes every key, the unreadable one included, and reports nothing left', () => {
+  it('removes every key, the unreadable one included, and reports nothing left', async () => {
     const disk = Object.fromEntries(PERSISTED_KEYS.map((k) => [k, '"something"']));
     // A key in the middle of the list, so a stop there would leave some behind.
     const blocked = PERSISTED_KEYS[Math.floor(PERSISTED_KEYS.length / 2)];
     const onDisk = onNative(disk, [blocked]);
-    expect(eraseEverything()).toEqual([]);
+    expect(await eraseEverything()).toEqual([]);
     expect([...onDisk.keys()]).toEqual([]);
     // Gone, so writable again: a new round after the wipe is kept.
     expect(kv.isUnreadable(blocked)).toBe(false);
   });
 
-  it('carries on past a key the store refuses, and returns it', () => {
+  it('carries on past a key the store refuses, and returns it', async () => {
     for (const k of PERSISTED_KEYS) store.set(k, '"x"');
     const restore = refuse(SETTINGS_KEY);
     try {
-      expect(eraseEverything()).toEqual([SETTINGS_KEY]);
+      expect(await eraseEverything()).toEqual([SETTINGS_KEY]);
     } finally {
       restore();
     }
     expect([...store.keys()]).toEqual([SETTINGS_KEY]);
+  });
+
+  it('returns a key whose native delete is refused later, as a rejected promise', async () => {
+    // How Capacitor Preferences refuses: not a throw, a promise that rejects
+    // after the call has returned. The wipe has to wait for it.
+    const onDisk = new Map(PERSISTED_KEYS.map((k) => [k, '"x"']));
+    const blocked = ROUNDS_KEY;
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const previous = setBackend(
+      snapshotBackend(
+        Object.fromEntries([...onDisk].filter(([k]) => k !== blocked)),
+        async (key, value) => {
+          await new Promise((r) => setTimeout(r, 0));
+          if (key === SETTINGS_KEY || key === blocked) throw new Error('refused');
+          if (value === null) onDisk.delete(key);
+          else onDisk.set(key, value);
+        },
+        () => {},
+        [blocked]
+      )
+    );
+    original ??= previous;
+    try {
+      expect((await eraseEverything()).sort()).toEqual([ROUNDS_KEY, SETTINGS_KEY].sort());
+    } finally {
+      logged.mockRestore();
+    }
+    expect([...onDisk.keys()].sort()).toEqual([ROUNDS_KEY, SETTINGS_KEY].sort());
+    // A delete that did not land leaves the unreadable key locked: whatever
+    // is on disk is still there.
+    expect(kv.isUnreadable(blocked)).toBe(true);
   });
 });
 

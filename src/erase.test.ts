@@ -64,17 +64,17 @@ describe('eraseEverything', () => {
     expect([...store.keys()].sort()).toEqual([...PERSISTED_KEYS].sort());
   });
 
-  it('leaves nothing behind', () => {
+  it('leaves nothing behind', async () => {
     fillEverything();
     expect(localStorage.length).toBeGreaterThan(0);
-    eraseEverything();
+    expect(await eraseEverything()).toEqual([]);
     expect(localStorage.length).toBe(0);
     expect([...store.keys()]).toEqual([]);
   });
 
-  it('reads back as a first launch', () => {
+  it('reads back as a first launch', async () => {
     fillEverything();
-    eraseEverything();
+    await eraseEverything();
     expect(listRounds()).toEqual([]);
     expect(listCourses()).toEqual([]);
     expect(getSettings()).toEqual(DEFAULT_SETTINGS);
@@ -83,8 +83,8 @@ describe('eraseEverything', () => {
     expect(listQueue()).toEqual([]);
   });
 
-  it('is safe to run on a phone with nothing on it', () => {
-    expect(() => eraseEverything()).not.toThrow();
+  it('is safe to run on a phone with nothing on it', async () => {
+    expect(await eraseEverything()).toEqual([]);
     expect(localStorage.length).toBe(0);
   });
 });

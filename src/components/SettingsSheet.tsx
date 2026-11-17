@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Theme } from '../storage';
 import type { Round } from '../types';
 import { getSettings, saveSettings, SETTINGS_KEY } from '../storage';
@@ -108,8 +108,20 @@ export function SettingsSheet({
   // would look broken — but the sheet says it will not be remembered.
   const [notKept, setNotKept] = useState<string | null>(null);
 
+  // Every change made here that the phone refused, merged. `saveSettings`
+  // starts from what is stored, so without these the next toggle that did
+  // save would quietly undo them on screen — a refused theme, then a glare
+  // toggle that stores, used to snap the theme back. Carried as changes
+  // rather than the whole of `s`, because the feedback view in this same
+  // sheet stores the reporter's name, and `s` has not seen it.
+  const unsaved = useRef<Partial<typeof s>>({});
+
   const set = (patch: Partial<typeof s>) => {
-    const saved = saveSettings(patch);
+    const wanted = { ...unsaved.current, ...patch };
+    const saved = saveSettings(wanted);
+    // Stored: everything on screen is now remembered. Refused: all of it is
+    // still waiting for the next write that lands.
+    unsaved.current = saved ? {} : wanted;
     const next = saved ?? { ...s, ...patch };
     setNotKept(
       saved
@@ -139,8 +151,17 @@ export function SettingsSheet({
   // True when some key could not be removed. The screen says so instead of
   // reloading into what looks like a fresh start with data still on it.
   const [eraseFailed, setEraseFailed] = useState(false);
-  const erase = () => {
-    if (eraseEverything().length > 0) {
+  // While the deletes are in flight. On native they only answer later, and a
+  // second tap in that gap would start a second wipe over the first.
+  const [wiping, setWiping] = useState(false);
+  const erase = async () => {
+    if (wiping) return;
+    setWiping(true);
+    // Waited for, so a delete the phone refuses later — which is the only way
+    // native refuses one — still lands here and not on a "fresh start".
+    const failed = await eraseEverything();
+    setWiping(false);
+    if (failed.length > 0) {
       setEraseFailed(true);
       return;
     }
@@ -158,6 +179,10 @@ export function SettingsSheet({
     <Sheet
       title={view === 'feedback' ? 'Send feedback' : view === 'help' ? 'How to Play' : 'Settings'}
       onClose={onClose}
+      // Held open while the deletes are in flight, as Cancel is: closed
+      // early, a refusal that lands afterwards would only reach the log, and
+      // the app would look empty with that data still on the phone.
+      locked={wiping}
     >
       {view === 'feedback' ? (
         <FeedbackForm screen={screen} round={round} onBack={() => setView('settings')} />
@@ -287,10 +312,20 @@ export function SettingsSheet({
                   keep any of it.
                 </p>
                 <div className="set-erase-actions">
-                  <button type="button" className="btn-ghost" onClick={() => setErasing(false)}>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => setErasing(false)}
+                    disabled={wiping}
+                  >
                     Cancel
                   </button>
-                  <button type="button" className="btn-danger" onClick={erase}>
+                  <button
+                    type="button"
+                    className="btn-danger"
+                    onClick={() => void erase()}
+                    disabled={wiping}
+                  >
                     Erase everything for good
                   </button>
                 </div>

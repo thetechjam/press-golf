@@ -22,24 +22,20 @@ import { PERSISTED_KEYS } from './native';
  * only stop an installed Press from opening with no signal.
  *
  * What happens on screen afterwards is the caller's job; see the Settings
- * sheet for why that is a reload. Returns the keys that could not be removed,
- * empty when everything went.
+ * sheet for why that is a reload. Resolves, once every delete has settled,
+ * to the keys that could not be removed — empty when everything went.
  */
-export function eraseEverything(): string[] {
+export async function eraseEverything(): Promise<string[]> {
   // `forget`, not `removeItem`: on a phone where a key could not be read at
   // startup, `removeItem` refuses that key, and the loop used to stop there
   // with half the keys gone and nothing on screen. Deleting is what the user
   // asked for, and it cannot overwrite anything with less of it.
   //
   // Each key on its own, so one the store refuses does not keep the rest.
-  // The ones that failed are handed back for the caller to report.
-  const failed: string[] = [];
-  for (const key of PERSISTED_KEYS) {
-    try {
-      kv.forget(key);
-    } catch {
-      failed.push(key);
-    }
-  }
-  return failed;
+  // Every delete is waited for: on native a refusal only arrives later, as a
+  // rejected promise, and a wipe that answered before then would always say
+  // it had worked. The ones that failed are handed back for the caller to
+  // report.
+  const results = await Promise.allSettled(PERSISTED_KEYS.map((key) => kv.forget(key)));
+  return PERSISTED_KEYS.filter((_, i) => results[i].status === 'rejected');
 }

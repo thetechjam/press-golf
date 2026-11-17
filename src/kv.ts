@@ -30,8 +30,11 @@ export interface KvBackend {
    * everything" wants this: deleting cannot replace data the app never saw
    * with less of it, which is what the write block is there to stop. Absent
    * on backends with no such block, where `removeItem` already does it.
+   *
+   * May answer with a promise that settles when the delete has landed, and
+   * rejects if it did not — on native the store is only reachable that way.
    */
-  forget?(key: string): void;
+  forget?(key: string): void | Promise<void>;
   /** True when writes to this key are refused because it could not be read at startup. */
   isUnreadable?(key: string): boolean;
 }
@@ -86,11 +89,22 @@ export function setBackend(next: KvBackend): KvBackend {
 }
 
 /** `localStorage`'s three methods, plus the two the write block needs, against whatever backend is current. */
-export const kv: Required<KvBackend> = {
+export const kv: Required<Omit<KvBackend, 'forget'>> & {
+  /**
+   * Resolves once the key is really gone and rejects if it is not, on every
+   * backend. A wipe has to know, and on native the answer only comes later.
+   */
+  forget(key: string): Promise<void>;
+} = {
   getItem: (key) => backend.getItem(key),
   setItem: (key, value) => backend.setItem(key, value),
   removeItem: (key) => backend.removeItem(key),
-  forget: (key) => (backend.forget ? backend.forget(key) : backend.removeItem(key)),
+  // Async, so a synchronous refusal on the web arrives the same way a
+  // rejected promise does on native.
+  forget: async (key) => {
+    if (backend.forget) await backend.forget(key);
+    else backend.removeItem(key);
+  },
   isUnreadable: (key) => backend.isUnreadable?.(key) ?? false,
 };
 
@@ -119,7 +133,10 @@ export function logStorageFailure(key: string, err: unknown): void {
  *
  * A write that fails cannot be reported to the caller — `persist` has already
  * returned by the time the store rejects. It is logged, and handed to
- * `onError` when one was given; that is what `main.tsx` passes. `writeAll`'s
+ * `onError` when one was given; that is what `main.tsx` passes. The one
+ * exception is `forget`, which "Erase everything" waits on: it returns the
+ * store's promise, so a delete refused later is still a failure the wipe can
+ * report. `writeAll`'s
  * rollback, which exists to leave storage untouched when a restore hits
  * `QuotaExceededError`, is a guarantee of the web path only. It is not
  * weakened here so much as inapplicable: `UserDefaults` has no quota of that
@@ -158,17 +175,24 @@ export function snapshotBackend(
     if (onError !== logStorageFailure) logStorageFailure(key, err);
     onError?.(key, err);
   };
+  // Hands a write to the store. Throws if the store throws straight away;
+  // otherwise returns the promise it answered with, or null when it answered
+  // with nothing and the write has landed already.
+  const start = (key: string, value: string | null): Promise<void> | null => {
+    const pending = persist(key, value);
+    // A rejected promise is not a thrown error. Capacitor's Preferences
+    // calls return one, and leaving it uncaught is a write that failed
+    // with nothing on screen and nothing in the log.
+    // Any thenable, not only this realm's Promise: a bridge can hand back
+    // one from another realm, and `instanceof` would miss it.
+    if (pending && typeof (pending as PromiseLike<void>).then === 'function') {
+      return Promise.resolve(pending as PromiseLike<void>);
+    }
+    return null;
+  };
   const push = (key: string, value: string | null) => {
     try {
-      const pending = persist(key, value);
-      // A rejected promise is not a thrown error. Capacitor's Preferences
-      // calls return one, and leaving it uncaught is a write that failed
-      // with nothing on screen and nothing in the log.
-      // Any thenable, not only this realm's Promise: a bridge can hand back
-      // one from another realm, and `instanceof` would miss it.
-      if (pending && typeof (pending as PromiseLike<void>).then === 'function') {
-        void Promise.resolve(pending).catch((err: unknown) => report(key, err));
-      }
+      void start(key, value)?.catch((err: unknown) => report(key, err));
     } catch (err) {
       report(key, err);
     }
@@ -186,12 +210,20 @@ export function snapshotBackend(
       snapshot.delete(key);
       push(key, null);
     },
-    forget: (key) => {
-      // Once it is gone there is nothing left to overwrite, so the key is
-      // writable again.
-      locked.delete(key);
+    forget: async (key) => {
       snapshot.delete(key);
-      push(key, null);
+      // Waited on, unlike every other write: "Erase everything" has to know
+      // whether the data is really gone before it relaunches as a first open.
+      // A failure is still logged, and then handed back to the caller.
+      try {
+        await start(key, null);
+      } catch (err) {
+        report(key, err);
+        throw err;
+      }
+      // Only once it is gone is there nothing left to overwrite, so only then
+      // is the key writable again. A delete that failed leaves the lock on.
+      locked.delete(key);
     },
     isUnreadable: (key) => locked.has(key),
   };

@@ -56,6 +56,66 @@ describe('a Settings toggle the phone refuses', () => {
   });
 });
 
+describe('a refused Settings change, then one that saves', () => {
+  const dark = () => screen.getByRole('button', { name: 'Dark' });
+  const awake = () => screen.getByRole('checkbox', { name: /Keep screen awake/ }) as HTMLInputElement;
+
+  it('keeps the refused change on screen, and stores it with the next write that lands', () => {
+    saveSettings({ theme: 'light', keepAwake: true });
+    render(<SettingsSheet onClose={() => {}} screen="home" />);
+
+    const restore = refuseStorageKey('press.settings.v1');
+    try {
+      fireEvent.click(dark());
+    } finally {
+      restore();
+    }
+    expect(dark().getAttribute('aria-pressed')).toBe('true');
+    expect(getSettings().theme).toBe('light');
+
+    // Storage works again; an unrelated toggle saves.
+    fireEvent.click(awake());
+    expect(awake().checked).toBe(false);
+    // The theme did not snap back to what was stored…
+    expect(dark().getAttribute('aria-pressed')).toBe('true');
+    expect(document.documentElement.classList.contains('dark')).toBe(true);
+    // …and it is now remembered along with the toggle.
+    expect(getSettings()).toMatchObject({ theme: 'dark', keepAwake: false });
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it('keeps every refused change on screen, and the message, while storage still refuses', () => {
+    saveSettings({ theme: 'light', keepAwake: true });
+    render(<SettingsSheet onClose={() => {}} screen="home" />);
+    const restore = refuseStorageKey('press.settings.v1');
+    try {
+      fireEvent.click(dark());
+      fireEvent.click(awake());
+      expect(dark().getAttribute('aria-pressed')).toBe('true');
+      expect(awake().checked).toBe(false);
+      expect(screen.getByRole('alert').textContent).toMatch(/won’t be remembered/);
+    } finally {
+      restore();
+    }
+    expect(getSettings()).toMatchObject({ theme: 'light', keepAwake: true });
+  });
+
+  it('does not write back a reporter name the feedback view stored meanwhile', () => {
+    saveSettings({ theme: 'light' });
+    render(<SettingsSheet onClose={() => {}} screen="home" />);
+    const restore = refuseStorageKey('press.settings.v1');
+    try {
+      fireEvent.click(dark());
+    } finally {
+      restore();
+    }
+    // What the feedback form does when a report goes out.
+    saveSettings({ reporterName: 'Al' });
+    fireEvent.click(awake());
+    expect(getSettings()).toMatchObject({ theme: 'dark', reporterName: 'Al' });
+  });
+});
+
 describe('waiting reports the phone will not clear', () => {
   it('says so and keeps the count', () => {
     enqueue(

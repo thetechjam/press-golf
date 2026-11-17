@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup, fireEvent, waitFor } from '@testing-library/react';
 import { SettingsSheet } from './SettingsSheet';
 import { saveRound, saveSettings, listRounds } from '../storage';
 import { makeRound } from '../games/testFixtures';
@@ -73,19 +73,19 @@ describe('Erase everything', () => {
     expect(reload).not.toHaveBeenCalled();
   });
 
-  it('erases on the second tap and relaunches', () => {
+  it('erases on the second tap and relaunches', async () => {
     render(<SettingsSheet onClose={() => {}} screen="home" />);
     fireEvent.click(armButton());
     fireEvent.click(confirmButton());
 
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
     expect(localStorage.length).toBe(0);
     expect(listRounds()).toEqual([]);
-    expect(reload).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('Erase everything when a key will not go', () => {
-  it('erases a key Press could not read at startup, and every key after it', () => {
+  it('erases a key Press could not read at startup, and every key after it', async () => {
     const disk = new Map<string, string>(PERSISTED_KEYS.map((k) => [k, '"x"']));
     const blocked = PERSISTED_KEYS[0];
     const previous = setBackend(
@@ -100,14 +100,14 @@ describe('Erase everything when a key will not go', () => {
       render(<SettingsSheet onClose={() => {}} screen="home" />);
       fireEvent.click(armButton());
       fireEvent.click(confirmButton());
+      await waitFor(() => expect(reload).toHaveBeenCalledOnce());
     } finally {
       setBackend(previous);
     }
     expect([...disk.keys()]).toEqual([]);
-    expect(reload).toHaveBeenCalledOnce();
   });
 
-  it('says so, and does not reload into a "fresh start", when the store refuses one', () => {
+  it('says so, and does not reload into a "fresh start", when the store refuses one', async () => {
     const original = Object.getPrototypeOf(localStorage).removeItem as Storage['removeItem'];
     vi.spyOn(localStorage, 'removeItem').mockImplementation((k) => {
       if (k === 'press.settings.v1') throw new DOMException('refused', 'SecurityError');
@@ -116,9 +116,92 @@ describe('Erase everything when a key will not go', () => {
     render(<SettingsSheet onClose={() => {}} screen="home" />);
     fireEvent.click(armButton());
     fireEvent.click(confirmButton());
-    expect(screen.getByRole('alert').textContent).toMatch(/couldn’t erase everything/);
+    await waitFor(() =>
+      expect(screen.getByRole('alert').textContent).toMatch(/couldn’t erase everything/)
+    );
     expect(reload).not.toHaveBeenCalled();
     // The rest still went.
     expect(listRounds()).toHaveLength(0);
+  });
+
+  it('says so on native too, where the refusal only arrives later as a rejected promise', async () => {
+    const disk = new Map<string, string>(PERSISTED_KEYS.map((k) => [k, '"x"']));
+    let refuse!: (err: Error) => void;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const previous = setBackend(
+      snapshotBackend(Object.fromEntries(disk), (key, value) => {
+        if (key === 'press.settings.v1' && value === null) {
+          // Capacitor's shape: the call returns at once, the answer comes later.
+          return new Promise<void>((_, reject) => (refuse = reject));
+        }
+        if (value === null) disk.delete(key);
+        else disk.set(key, value);
+      })
+    );
+    try {
+      render(<SettingsSheet onClose={() => {}} screen="home" />);
+      fireEvent.click(armButton());
+      fireEvent.click(confirmButton());
+      // Still in flight: no reload, and no second wipe from a second tap.
+      await Promise.resolve();
+      expect(reload).not.toHaveBeenCalled();
+      expect((confirmButton() as HTMLButtonElement).disabled).toBe(true);
+      refuse(new Error('refused'));
+      await waitFor(() =>
+        expect(screen.getByRole('alert').textContent).toMatch(/couldn’t erase everything/)
+      );
+    } finally {
+      setBackend(previous);
+    }
+    expect(reload).not.toHaveBeenCalled();
+    expect([...disk.keys()]).toEqual(['press.settings.v1']);
+  });
+
+  it('cannot be dismissed while the deletes are in flight, so a late refusal is still shown', async () => {
+    const disk = new Map<string, string>(PERSISTED_KEYS.map((k) => [k, '"x"']));
+    let refuse!: (err: Error) => void;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const previous = setBackend(
+      snapshotBackend(Object.fromEntries(disk), (key, value) => {
+        if (key === 'press.settings.v1' && value === null) {
+          return new Promise<void>((_, reject) => (refuse = reject));
+        }
+        if (value === null) disk.delete(key);
+        else disk.set(key, value);
+      })
+    );
+    const onClose = vi.fn();
+    try {
+      render(<SettingsSheet onClose={onClose} screen="home" />);
+      fireEvent.click(armButton());
+      fireEvent.click(confirmButton());
+      await Promise.resolve();
+
+      // Every way out: the X, Escape (which reaches a dialog as `cancel`),
+      // and a tap on the scrim, which lands on the dialog itself.
+      const close = screen.getByRole('button', { name: 'Close' }) as HTMLButtonElement;
+      expect(close.disabled).toBe(true);
+      fireEvent.click(close);
+      const dialog = document.querySelector('dialog')!;
+      fireEvent(dialog, new Event('cancel', { cancelable: true }));
+      fireEvent.click(dialog);
+      // Longer than the sheet's exit, so a close that had started would land.
+      await new Promise((r) => setTimeout(r, 250));
+      expect(onClose).not.toHaveBeenCalled();
+      expect(dialog.classList.contains('closing')).toBe(false);
+
+      refuse(new Error('refused'));
+      await waitFor(() =>
+        expect(screen.getByRole('alert').textContent).toMatch(/couldn’t erase everything/)
+      );
+
+      // Once it has answered, the sheet closes as usual.
+      expect(close.disabled).toBe(false);
+      fireEvent.click(close);
+      await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    } finally {
+      setBackend(previous);
+    }
+    expect(reload).not.toHaveBeenCalled();
   });
 });
