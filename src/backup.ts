@@ -1,5 +1,13 @@
 import type { Round, SavedCourse } from './types';
-import { listRounds, listCourses, writeAll, getAliases, getDistinct } from './storage';
+import {
+  listRounds,
+  listCourses,
+  writeAll,
+  getAliases,
+  getDistinct,
+  RestoreUndoError,
+} from './storage';
+import { writeFailureReason } from './kv';
 import { mergePeopleData, type PeopleData } from './people';
 import { GAMES } from './games';
 
@@ -338,6 +346,22 @@ export type RestoreResult =
   | { ok: false; error: string };
 
 /**
+ * Why a restore failed, in words that match the cause. Every failure used to
+ * read "There wasn't room", which on native is wrong when the real cause is
+ * a key Press could not read at startup — deleting rounds would not help.
+ */
+export function restoreFailureMessage(err: unknown): string {
+  const cause = err instanceof RestoreUndoError ? err.cause : err;
+  const why =
+    writeFailureReason(cause) === 'unreadable'
+      ? "Press couldn't read some of your saved data when it opened, so it won't write over it. Close Press completely, open it again and try again."
+      : "There wasn't room to save the restored rounds. Delete a few old rounds and try again.";
+  if (!(err instanceof RestoreUndoError)) return why;
+  // Rare: the undo itself was refused. Say so rather than promise nothing changed.
+  return `${why} Part of the restore couldn't be undone, so some restored names or rounds may already be on this phone.`;
+}
+
+/**
  * The one function here that touches storage: parse, merge, write.
  *
  * Both stores go through `writeAll`, which rolls back if either write fails,
@@ -356,11 +380,8 @@ export function restoreBackup(text: string): RestoreResult {
   try {
     // One write for all of it, so the names merge with the rounds or not at all.
     writeAll(rounds.rounds, courses.courses, people.people);
-  } catch {
-    return {
-      ok: false,
-      error: "There wasn't room to save the restored rounds. Delete a few old rounds and try again.",
-    };
+  } catch (err) {
+    return { ok: false, error: restoreFailureMessage(err) };
   }
 
   return {

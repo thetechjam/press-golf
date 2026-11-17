@@ -264,6 +264,19 @@ export function deleteCourse(id: string): void {
 }
 
 /**
+ * A restore that failed and could not be fully undone. `cause` is why the
+ * restore failed; `keys` are the ones that may still hold restored data.
+ */
+export class RestoreUndoError extends Error {
+  readonly keys: string[];
+  constructor(cause: unknown, keys: string[]) {
+    super(`A restore failed and could not be undone for ${keys.join(', ')}.`, { cause });
+    this.name = 'RestoreUndoError';
+    this.keys = keys;
+  }
+}
+
+/**
  * Bulk write of both stores at once, used by restore.
  *
  * Restoring writes two keys that have to agree — a round can name a course
@@ -271,33 +284,48 @@ export function deleteCourse(id: string): void {
  * is `QuotaExceededError` on a large file, which would otherwise land the
  * first key and reject the second. So both previous values are captured and
  * put back if either write throws, leaving storage exactly as it was and
- * letting the caller report one clean failure. The rollback writes only
- * shrink what is stored, so they cannot fail for the same reason.
+ * letting the caller report one clean failure.
  *
- * Re-throws so the caller can tell a failed restore from a successful one.
+ * Only keys that were actually written are put back. A write that threw did
+ * not land — on native the refusal of an unreadable key comes before
+ * anything changes — and "putting back" such a key would be a write to it
+ * too: for a key read as empty, a delete of whatever is really on disk.
+ * Each key is put back on its own, so one that refuses does not stop the
+ * others.
+ *
+ * Re-throws the error that stopped the restore, so the caller can tell a
+ * failed restore from a successful one and say why. If any key could not be
+ * put back, throws `RestoreUndoError` instead, carrying that error as `cause`.
  */
 export function writeAll(rounds: Round[], courses: SavedCourse[], people?: PeopleData): void {
-  const prevRounds = kv.getItem(ROUNDS_KEY);
-  const prevCourses = kv.getItem(COURSES_KEY);
-  const prevAliases = kv.getItem(ALIASES_KEY);
-  const prevDistinct = kv.getItem(DISTINCT_KEY);
-  const restore = (key: string, prev: string | null) =>
-    prev === null ? kv.removeItem(key) : kv.setItem(key, prev);
+  const written = new Map<string, string | null>();
+  const write = (key: string, value: string) => {
+    const prev = kv.getItem(key);
+    kv.setItem(key, value);
+    written.set(key, prev);
+  };
   try {
     // Names from the people data being written, not the old: a merge made on
     // the other phone renames this phone's rounds too.
     const aliases = people?.aliases ?? getAliases();
     if (people) {
-      kv.setItem(ALIASES_KEY, JSON.stringify(people.aliases));
-      kv.setItem(DISTINCT_KEY, JSON.stringify(people.distinct));
+      write(ALIASES_KEY, JSON.stringify(people.aliases));
+      write(DISTINCT_KEY, JSON.stringify(people.distinct));
     }
-    kv.setItem(ROUNDS_KEY, JSON.stringify(rounds.map((r) => applyAliases(r, aliases))));
-    kv.setItem(COURSES_KEY, JSON.stringify(courses));
+    write(ROUNDS_KEY, JSON.stringify(rounds.map((r) => applyAliases(r, aliases))));
+    write(COURSES_KEY, JSON.stringify(courses));
   } catch (err) {
-    restore(ROUNDS_KEY, prevRounds);
-    restore(COURSES_KEY, prevCourses);
-    restore(ALIASES_KEY, prevAliases);
-    restore(DISTINCT_KEY, prevDistinct);
+    const stuck: string[] = [];
+    for (const [key, prev] of written) {
+      try {
+        if (prev === null) kv.removeItem(key);
+        else kv.setItem(key, prev);
+      } catch {
+        stuck.push(key);
+      }
+    }
+    if (stuck.length > 0) throw new RestoreUndoError(err, stuck);
     throw err;
   }
 }
+
