@@ -1,14 +1,15 @@
 import { useEffect, useState } from 'react';
 import type { Theme } from '../storage';
 import type { Round } from '../types';
-import { getSettings, saveSettings } from '../storage';
+import { getSettings, saveSettings, SETTINGS_KEY } from '../storage';
+import { notSavedReason } from '../notSaved';
 import { describePersistence } from '../persistence';
 import { applyTheme } from '../theme';
 import { Sheet } from './Sheet';
 import { FeedbackForm } from './FeedbackForm';
 import { HelpSheet } from './HelpSheet';
 import { BackupRows } from './BackupRows';
-import { clearQueue, listQueue } from '../feedback';
+import { clearQueue, listQueue, QUEUE_KEY } from '../feedback';
 import { eraseEverything } from '../erase';
 import { tipJarUrl } from '../tipJar';
 import { isNative } from '../native';
@@ -102,14 +103,32 @@ export function SettingsSheet({
     if (view === 'settings') setQueued(listQueue().length);
   }, [view]);
 
+  // A setting or a clear the phone refused, and why. The change still takes
+  // effect for this session — a theme that does not repaint until relaunch
+  // would look broken — but the sheet says it will not be remembered.
+  const [notKept, setNotKept] = useState<string | null>(null);
+
   const set = (patch: Partial<typeof s>) => {
-    const next = saveSettings(patch);
+    const saved = saveSettings(patch);
+    const next = saved ?? { ...s, ...patch };
+    setNotKept(
+      saved
+        ? null
+        : `That setting is on for now but won’t be remembered. ${notSavedReason(SETTINGS_KEY)}`
+    );
     setS(next);
     applyTheme(next.theme, next.glare);
   };
 
   const clearReports = () => {
-    clearQueue();
+    if (!clearQueue()) {
+      setNotKept(
+        `The waiting reports weren’t cleared. ${notSavedReason(QUEUE_KEY, true)}`
+      );
+      setQueued(listQueue().length);
+      return;
+    }
+    setNotKept(null);
     setQueued(0);
   };
 
@@ -146,6 +165,11 @@ export function SettingsSheet({
         <HelpSheet onBack={() => setView('settings')} />
       ) : (
         <>
+          {notKept && (
+            <div className="unsaved" role="alert">
+              <strong>Not saved.</strong> {notKept}
+            </div>
+          )}
           <div className="set-group">
             <div className="set-label">Appearance</div>
             <div className="seg">

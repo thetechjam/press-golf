@@ -82,7 +82,12 @@ function tryWrite(key: string, value: string): boolean {
   }
 }
 
-export function saveSettings(patch: Partial<Settings>): Settings {
+/**
+ * Stores the settings with `patch` applied. Null when the write was refused;
+ * the caller decides whether to keep showing the change anyway (a theme can
+ * still be painted for this session) and says it was not kept.
+ */
+export function saveSettings(patch: Partial<Settings>): Settings | null {
   const cur = getSettings();
   // Field-by-field rather than a spread, so the legacy `sunlight` key is not
   // carried forward into the next write.
@@ -93,8 +98,7 @@ export function saveSettings(patch: Partial<Settings>): Settings {
     reporterName: patch.reporterName ?? cur.reporterName,
     firstFinishPromptDismissed: patch.firstFinishPromptDismissed ?? cur.firstFinishPromptDismissed,
   };
-  kv.setItem(SETTINGS_KEY, JSON.stringify(next));
-  return next;
+  return tryWrite(SETTINGS_KEY, JSON.stringify(next)) ? next : null;
 }
 
 /**
@@ -131,6 +135,7 @@ export function skipKeepPromptIfRoundsExist(): void {
       return;
     }
     const hadFinished = listRounds().some((r) => r.status === 'finished');
+    // Null on a refused write, which is fine: the same decision is made next launch.
     saveSettings({ firstFinishPromptDismissed: hadFinished });
   } catch {
     // Unreadable settings or a refused write: leave it for the next launch.

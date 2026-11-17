@@ -17,11 +17,8 @@ export function keepRoundsPromptDue(): boolean {
  * of a dismissal that could not be stored.
  */
 function rememberDismissed(): void {
-  try {
-    saveSettings({ firstFinishPromptDismissed: true });
-  } catch {
-    // Not stored; see above.
-  }
+  // Null when not stored; see above. `saveSettings` no longer throws.
+  saveSettings({ firstFinishPromptDismissed: true });
 }
 
 /** The body copy, which depends on where Press is running. */

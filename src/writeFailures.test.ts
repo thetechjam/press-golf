@@ -19,6 +19,7 @@ import {
   deleteRounds,
   getAliases,
   getDistinct,
+  getSettings,
   listCourses,
   listRounds,
   markDistinct,
@@ -26,11 +27,13 @@ import {
   saveCourse,
   saveRound,
   saveRounds,
+  saveSettings,
   writeAll,
 } from './storage';
 import { eraseEverything } from './erase';
 import { PERSISTED_KEYS } from './native';
 import { buildBackup, restoreBackup, restoreFailureMessage } from './backup';
+import { QUEUE_KEY, buildFeedback, clearQueue, enqueue, flushQueue, listQueue } from './feedback';
 import { notSavedReason } from './notSaved';
 import { makeRound, player } from './games/testFixtures';
 
@@ -310,8 +313,58 @@ describe('the writes that used to throw', () => {
     expect(onDisk.get(ROUNDS_KEY)).toBe(rounds);
   });
 
+  it('settings answer null and keep what was stored', () => {
+    saveSettings({ glare: true });
+    const restore = refuse(SETTINGS_KEY);
+    try {
+      expect(saveSettings({ glare: false })).toBeNull();
+    } finally {
+      restore();
+    }
+    expect(getSettings().glare).toBe(true);
+  });
+
   it('a round save on an unreadable rounds key is refused, not thrown', () => {
     onNative({}, [ROUNDS_KEY]);
     expect(saveRound(r('x'))).toBe(false);
+  });
+});
+
+describe('the feedback queue', () => {
+  const entry = () =>
+    buildFeedback(
+      { kind: 'bug', reporter: '', message: 'hi', includeRound: false },
+      { screen: 'home', version: '0', userAgent: 'ua', viewport: '1x1' }
+    );
+
+  it('answers false when a report cannot be queued', () => {
+    const restore = refuse(QUEUE_KEY);
+    try {
+      expect(enqueue(entry())).toBe(false);
+    } finally {
+      restore();
+    }
+    expect(listQueue()).toEqual([]);
+  });
+
+  it('answers false when the queue cannot be cleared, and keeps it', () => {
+    expect(enqueue(entry())).toBe(true);
+    const restore = refuse(QUEUE_KEY);
+    try {
+      expect(clearQueue()).toBe(false);
+    } finally {
+      restore();
+    }
+    expect(listQueue()).toHaveLength(1);
+  });
+
+  it('does not throw out of a flush whose final write is refused', async () => {
+    expect(enqueue(entry())).toBe(true);
+    const restore = refuse(QUEUE_KEY);
+    try {
+      await expect(flushQueue(async () => {})).resolves.toEqual({ sent: 1, remaining: 0 });
+    } finally {
+      restore();
+    }
   });
 });
