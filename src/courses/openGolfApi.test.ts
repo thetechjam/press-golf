@@ -1,5 +1,10 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
-import { searchCourses, fetchCourse, COURSE_REQUEST_TIMEOUT_MS } from './openGolfApi';
+import {
+  searchCourses,
+  fetchCourse,
+  COURSE_REQUEST_TIMEOUT_MS,
+  CourseTimeoutError,
+} from './openGolfApi';
 
 /** A fetch that never answers, and rejects once its signal aborts. */
 function hang(_url: string, init?: RequestInit): Promise<Response> {
@@ -31,15 +36,19 @@ describe('OpenGolfAPI requests', () => {
 
   it('says when the search itself failed', async () => {
     vi.stubGlobal('fetch', async () => ({ ok: false, status: 503, json: async () => ({}) }));
-    await expect(searchCourses('pebble')).rejects.toThrow('Search failed (503)');
+    const failed = searchCourses('pebble');
+    await expect(failed).rejects.toThrow('Search failed (503)');
+    // Not a timeout, so the screen does not show this message as is.
+    await expect(failed).rejects.not.toBeInstanceOf(CourseTimeoutError);
   });
 
   it('stops waiting after 8 seconds and says so', async () => {
     vi.useFakeTimers();
     vi.stubGlobal('fetch', hang);
     const pending = searchCourses('pebble');
-    const asserted = expect(pending).rejects.toThrow(/taking too long/);
+    const asserted = expect(pending).rejects.toThrow(/^Course search is taking too long/);
     await vi.advanceTimersByTimeAsync(COURSE_REQUEST_TIMEOUT_MS);
+    await expect(pending).rejects.toBeInstanceOf(CourseTimeoutError);
     await asserted;
   });
 
@@ -47,7 +56,8 @@ describe('OpenGolfAPI requests', () => {
     vi.useFakeTimers();
     vi.stubGlobal('fetch', hang);
     const pending = fetchCourse('course-1');
-    const asserted = expect(pending).rejects.toThrow(/taking too long/);
+    // Its own words: this is a scorecard, not a search.
+    const asserted = expect(pending).rejects.toThrow(/^Loading that course is taking too long/);
     await vi.advanceTimersByTimeAsync(COURSE_REQUEST_TIMEOUT_MS);
     await asserted;
   });

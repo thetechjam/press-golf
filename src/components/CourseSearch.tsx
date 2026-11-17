@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   searchCourses,
   fetchCourse,
-  CourseRequestError,
+  CourseTimeoutError,
   type CourseHit,
   type FetchedCourse,
 } from '../courses/openGolfApi';
@@ -63,7 +63,7 @@ export function CourseSearch({ value, onChange, onPick, label = 'Course (optiona
         .catch((err: unknown) => {
           if (!ctrl.signal.aborted)
             setError(
-              err instanceof CourseRequestError
+              err instanceof CourseTimeoutError
                 ? err.message
                 : 'Search unavailable — your typed course name still works.'
             );
@@ -102,7 +102,7 @@ export function CourseSearch({ value, onChange, onPick, label = 'Course (optiona
       })
       .catch((err: unknown) =>
         setError(
-          err instanceof CourseRequestError
+          err instanceof CourseTimeoutError
             ? err.message
             : 'Could not load that course. Pick another or keep your typed name.'
         )

@@ -10,7 +10,11 @@ const BASE = 'https://api.opengolfapi.org';
 /** How long a search or a scorecard fetch is allowed to sit with no answer. */
 export const COURSE_REQUEST_TIMEOUT_MS = 8000;
 
-/** A lookup that failed in a way the screen can say out loud. */
+/**
+ * A lookup that failed. The message carries the HTTP status for logs and bug
+ * reports; it is not written for the screen, which has its own words for a
+ * service that is down.
+ */
 export class CourseRequestError extends Error {
   constructor(message: string) {
     super(message);
@@ -18,8 +22,21 @@ export class CourseRequestError extends Error {
   }
 }
 
-const TIMEOUT_MESSAGE =
+/**
+ * A lookup that got no answer in time. The one failure whose message is meant
+ * to be shown as is, because it tells the user something they can act on.
+ */
+export class CourseTimeoutError extends CourseRequestError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CourseTimeoutError';
+  }
+}
+
+const SEARCH_TIMEOUT_MESSAGE =
   'Course search is taking too long. Check your connection and try again.';
+const COURSE_TIMEOUT_MESSAGE =
+  'Loading that course is taking too long. Check your connection and try again.';
 
 /**
  * Abort the request after {@link COURSE_REQUEST_TIMEOUT_MS}, and also when
@@ -52,7 +69,12 @@ function withTimeout(parent?: AbortSignal): {
   };
 }
 
-async function fetchJson(url: string, signal: AbortSignal | undefined, failure: string): Promise<unknown> {
+async function fetchJson(
+  url: string,
+  signal: AbortSignal | undefined,
+  failure: string,
+  timeoutMessage: string
+): Promise<unknown> {
   const timed = withTimeout(signal);
   try {
     const res = await fetch(url, { signal: timed.signal });
@@ -60,7 +82,7 @@ async function fetchJson(url: string, signal: AbortSignal | undefined, failure: 
     return await res.json();
   } catch (err) {
     if (signal?.aborted) throw err;
-    if (timed.timedOut()) throw new CourseRequestError(TIMEOUT_MESSAGE);
+    if (timed.timedOut()) throw new CourseTimeoutError(timeoutMessage);
     throw err;
   } finally {
     timed.done();
@@ -95,7 +117,8 @@ export async function searchCourses(q: string, signal?: AbortSignal): Promise<Co
   const data = (await fetchJson(
     `${BASE}/v1/courses/search?q=${encodeURIComponent(q)}`,
     signal,
-    'Search failed'
+    'Search failed',
+    SEARCH_TIMEOUT_MESSAGE
   )) as { courses?: Record<string, unknown>[] };
   return (data.courses ?? []).map(
     (c: Record<string, unknown>): CourseHit => ({
@@ -119,7 +142,8 @@ export async function fetchCourse(id: string, signal?: AbortSignal): Promise<Fet
   const data = (await fetchJson(
     `${BASE}/api/v1/courses/${encodeURIComponent(id)}`,
     signal,
-    'Course lookup failed'
+    'Course lookup failed',
+    COURSE_TIMEOUT_MESSAGE
   )) as {
     holes_data?: HoleRow[];
     scorecard?: { hole: number; par: number }[];
