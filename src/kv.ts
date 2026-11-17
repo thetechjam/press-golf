@@ -25,6 +25,36 @@ export interface KvBackend {
   /** Throws if the value could not be stored — `writeAll` relies on this. */
   setItem(key: string, value: string): void;
   removeItem(key: string): void;
+  /**
+   * Removes a key even if it could not be read at startup. Only "Erase
+   * everything" wants this: deleting cannot replace data the app never saw
+   * with less of it, which is what the write block is there to stop. Absent
+   * on backends with no such block, where `removeItem` already does it.
+   */
+  forget?(key: string): void;
+  /** True when writes to this key are refused because it could not be read at startup. */
+  isUnreadable?(key: string): boolean;
+}
+
+/**
+ * The write block's refusal. Its own class so a screen can say the real
+ * reason — Press could not read this at startup — instead of blaming a full
+ * phone.
+ */
+export class UnreadableKeyError extends Error {
+  readonly key: string;
+  constructor(key: string) {
+    super(`Press could not read “${key}” at startup, so it will not overwrite it.`);
+    this.name = 'UnreadableKeyError';
+    this.key = key;
+  }
+}
+
+/** Why a write did not land, in the terms a screen can explain. */
+export type WriteFailure = 'unreadable' | 'full';
+
+export function writeFailureReason(err: unknown): WriteFailure {
+  return err instanceof UnreadableKeyError ? 'unreadable' : 'full';
 }
 
 /**
@@ -55,11 +85,13 @@ export function setBackend(next: KvBackend): KvBackend {
   return previous;
 }
 
-/** Same three methods as `localStorage`, against whatever backend is current. */
-export const kv: KvBackend = {
+/** `localStorage`'s three methods, plus the two the write block needs, against whatever backend is current. */
+export const kv: Required<KvBackend> = {
   getItem: (key) => backend.getItem(key),
   setItem: (key, value) => backend.setItem(key, value),
   removeItem: (key) => backend.removeItem(key),
+  forget: (key) => (backend.forget ? backend.forget(key) : backend.removeItem(key)),
+  isUnreadable: (key) => backend.isUnreadable?.(key) ?? false,
 };
 
 /**
@@ -112,9 +144,7 @@ export function snapshotBackend(
   // is a throw, which is how every caller already hears "not stored".
   const locked = new Set(unreadable);
   const guard = (key: string) => {
-    if (locked.has(key)) {
-      throw new Error(`Press could not read “${key}” at startup, so it will not overwrite it.`);
-    }
+    if (locked.has(key)) throw new UnreadableKeyError(key);
   };
 
   // The snapshot is updated first and unconditionally. A reader that saw the
@@ -156,5 +186,13 @@ export function snapshotBackend(
       snapshot.delete(key);
       push(key, null);
     },
+    forget: (key) => {
+      // Once it is gone there is nothing left to overwrite, so the key is
+      // writable again.
+      locked.delete(key);
+      snapshot.delete(key);
+      push(key, null);
+    },
+    isUnreadable: (key) => locked.has(key),
   };
 }

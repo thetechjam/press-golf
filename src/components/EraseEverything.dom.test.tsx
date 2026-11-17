@@ -4,6 +4,8 @@ import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import { SettingsSheet } from './SettingsSheet';
 import { saveRound, saveSettings, listRounds } from '../storage';
 import { makeRound } from '../games/testFixtures';
+import { setBackend, snapshotBackend } from '../kv';
+import { PERSISTED_KEYS } from '../native';
 
 /**
  * The wipe button in Settings, from the user's side of the glass.
@@ -79,5 +81,44 @@ describe('Erase everything', () => {
     expect(localStorage.length).toBe(0);
     expect(listRounds()).toEqual([]);
     expect(reload).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Erase everything when a key will not go', () => {
+  it('erases a key Press could not read at startup, and every key after it', () => {
+    const disk = new Map<string, string>(PERSISTED_KEYS.map((k) => [k, '"x"']));
+    const blocked = PERSISTED_KEYS[0];
+    const previous = setBackend(
+      snapshotBackend(
+        Object.fromEntries([...disk].filter(([k]) => k !== blocked)),
+        (key, value) => void (value === null ? disk.delete(key) : disk.set(key, value)),
+        () => {},
+        [blocked]
+      )
+    );
+    try {
+      render(<SettingsSheet onClose={() => {}} screen="home" />);
+      fireEvent.click(armButton());
+      fireEvent.click(confirmButton());
+    } finally {
+      setBackend(previous);
+    }
+    expect([...disk.keys()]).toEqual([]);
+    expect(reload).toHaveBeenCalledOnce();
+  });
+
+  it('says so, and does not reload into a "fresh start", when the store refuses one', () => {
+    const original = Object.getPrototypeOf(localStorage).removeItem as Storage['removeItem'];
+    vi.spyOn(localStorage, 'removeItem').mockImplementation((k) => {
+      if (k === 'press.settings.v1') throw new DOMException('refused', 'SecurityError');
+      return original.call(localStorage, k);
+    });
+    render(<SettingsSheet onClose={() => {}} screen="home" />);
+    fireEvent.click(armButton());
+    fireEvent.click(confirmButton());
+    expect(screen.getByRole('alert').textContent).toMatch(/couldn’t erase everything/);
+    expect(reload).not.toHaveBeenCalled();
+    // The rest still went.
+    expect(listRounds()).toHaveLength(0);
   });
 });

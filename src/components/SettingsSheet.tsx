@@ -117,8 +117,14 @@ export function SettingsSheet({
   // second does it. Dismissing the sheet disarms it, so a tap that was meant
   // for Close can never be the second one.
   const [erasing, setErasing] = useState(false);
+  // True when some key could not be removed. The screen says so instead of
+  // reloading into what looks like a fresh start with data still on it.
+  const [eraseFailed, setEraseFailed] = useState(false);
   const erase = () => {
-    eraseEverything();
+    if (eraseEverything().length > 0) {
+      setEraseFailed(true);
+      return;
+    }
     // A reload rather than unwinding state in place. This sheet opens from
     // four screens, and the round being played lives in App's state: closing
     // the sheet with it still there would write it straight back on the next
@@ -233,7 +239,23 @@ export function SettingsSheet({
               of; above the tip jar, because it is still something the app
               does for the user. */}
           <div className="set-erase">
-            {erasing ? (
+            {eraseFailed ? (
+              <>
+                <p className="set-erase-copy" role="alert">
+                  Press couldn’t erase everything — some of your data is still on this phone. Close
+                  Press completely, open it again, and erase again.
+                </p>
+                <div className="set-erase-actions">
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => window.location.reload()}
+                  >
+                    Reload Press
+                  </button>
+                </div>
+              </>
+            ) : erasing ? (
               <>
                 <p className="set-erase-copy" role="alert">
                   This erases every round, saved course, player name, feedback waiting to send
