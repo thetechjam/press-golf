@@ -139,8 +139,17 @@ export function SettingsSheet({
   // True when some key could not be removed. The screen says so instead of
   // reloading into what looks like a fresh start with data still on it.
   const [eraseFailed, setEraseFailed] = useState(false);
-  const erase = () => {
-    if (eraseEverything().length > 0) {
+  // While the deletes are in flight. On native they only answer later, and a
+  // second tap in that gap would start a second wipe over the first.
+  const [wiping, setWiping] = useState(false);
+  const erase = async () => {
+    if (wiping) return;
+    setWiping(true);
+    // Waited for, so a delete the phone refuses later — which is the only way
+    // native refuses one — still lands here and not on a "fresh start".
+    const failed = await eraseEverything();
+    setWiping(false);
+    if (failed.length > 0) {
       setEraseFailed(true);
       return;
     }
@@ -287,10 +296,20 @@ export function SettingsSheet({
                   keep any of it.
                 </p>
                 <div className="set-erase-actions">
-                  <button type="button" className="btn-ghost" onClick={() => setErasing(false)}>
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={() => setErasing(false)}
+                    disabled={wiping}
+                  >
                     Cancel
                   </button>
-                  <button type="button" className="btn-danger" onClick={erase}>
+                  <button
+                    type="button"
+                    className="btn-danger"
+                    onClick={() => void erase()}
+                    disabled={wiping}
+                  >
                     Erase everything for good
                   </button>
                 </div>

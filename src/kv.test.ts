@@ -70,6 +70,39 @@ describe('the default backend', () => {
   });
 });
 
+describe('kv.forget', () => {
+  it('answers a refusal on the web as a rejection, the same way native does', async () => {
+    localStorage.removeItem = () => {
+      throw new DOMException('refused', 'SecurityError');
+    };
+    await expect(kv.forget('press.rounds.v1')).rejects.toThrow('refused');
+  });
+
+  it('waits for a native delete to land before resolving', async () => {
+    let land!: () => void;
+    let landed = false;
+    original = setBackend(
+      snapshotBackend({ 'press.rounds.v1': '[]' }, () =>
+        new Promise<void>((resolve) => {
+          land = () => {
+            landed = true;
+            resolve();
+          };
+        })
+      )
+    );
+    const forgetting = kv.forget('press.rounds.v1');
+    let settled = false;
+    void forgetting.then(() => (settled = true));
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(settled).toBe(false);
+    land();
+    await forgetting;
+    expect(landed).toBe(true);
+  });
+});
+
 describe('swapping the backend', () => {
   it('hands back the one it replaced, so a caller can put it back', () => {
     const fake: KvBackend = { getItem: () => 'x', setItem: () => {}, removeItem: () => {} };
@@ -184,6 +217,49 @@ describe('snapshotBackend — the shape iOS needs', () => {
     expect(native.writes).toEqual([]);
     backend.setItem('press.settings.v1', '{}');
     expect(native.writes).toEqual([{ key: 'press.settings.v1', value: '{}' }]);
+  });
+
+  it('forgets a key that could not be read, and unlocks it only once the delete lands', async () => {
+    let land!: () => void;
+    const persist = vi.fn(
+      (_key: string, _value: string | null) => new Promise<void>((resolve) => (land = resolve))
+    );
+    const backend = snapshotBackend({}, persist, () => {}, ['press.rounds.v1']);
+    const forgetting = backend.forget!('press.rounds.v1');
+    expect(persist).toHaveBeenCalledWith('press.rounds.v1', null);
+    // In flight: whatever is on disk is still there, so writes stay refused.
+    expect(backend.isUnreadable!('press.rounds.v1')).toBe(true);
+    expect(() => backend.setItem('press.rounds.v1', '[]')).toThrow(/will not overwrite/);
+    land();
+    await forgetting;
+    expect(backend.isUnreadable!('press.rounds.v1')).toBe(false);
+    backend.setItem('press.rounds.v1', '[]');
+    expect(backend.getItem('press.rounds.v1')).toBe('[]');
+  });
+
+  it('rejects a forget whose delete the store later refuses, logs it, and keeps the lock', async () => {
+    const seen: string[] = [];
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const backend = snapshotBackend(
+      {},
+      () => Promise.reject(new Error('refused')),
+      (key) => seen.push(key),
+      ['press.rounds.v1']
+    );
+    await expect(backend.forget!('press.rounds.v1')).rejects.toThrow('refused');
+    expect(seen).toEqual(['press.rounds.v1']);
+    expect(logged.mock.calls.some((c) => String(c[0]).includes('press.rounds.v1'))).toBe(true);
+    expect(backend.isUnreadable!('press.rounds.v1')).toBe(true);
+    logged.mockRestore();
+  });
+
+  it('rejects a forget whose store throws straight away', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const backend = snapshotBackend({ 'press.settings.v1': '{}' }, () => {
+      throw new Error('bridge gone');
+    });
+    await expect(backend.forget!('press.settings.v1')).rejects.toThrow('bridge gone');
+    logged.mockRestore();
   });
 
   it('still logs when nobody handed in a handler', async () => {
