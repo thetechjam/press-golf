@@ -16,6 +16,7 @@ import { ShareSheet } from '../lazyScreens';
 import { Awards } from '../components/Awards';
 import { formatRoundDate, formatRoundDateAbsolute } from '../roundDate';
 import { count } from '../plural';
+import { KeepRoundsPrompt } from '../components/KeepRoundsPrompt';
 
 interface Hero {
   players: { name: string; color: string }[];
@@ -150,6 +151,8 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep,
           Home
         </button>
       </header>
+
+      {!unkept && round.status === 'finished' && <KeepRoundsPrompt />}
 
       {unkept && (
         <div className="unkept" role="status">

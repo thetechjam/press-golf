@@ -10,6 +10,7 @@ import { activeTrip } from '../trips';
 import { liveRound } from '../roundSummary';
 import { FlagIcon, PressMark, TrophyIcon, GearIcon, ChartIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
+import { KeepRoundsPrompt } from '../components/KeepRoundsPrompt';
 import { countsForStats } from '../stats';
 
 /**
@@ -105,6 +106,9 @@ export function Home({
       </div>
 
       <InstallPrompt />
+
+      {/* Home already offers Install above. The prompt's own button would be a second one. */}
+      <KeepRoundsPrompt offerInstall={false} />
 
       {rounds.length === 0 && (
         <div className="empty-state">

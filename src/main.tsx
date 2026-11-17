@@ -2,7 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { getSettings } from './storage'
+import { getSettings, skipKeepPromptIfRoundsExist } from './storage'
 import { applyTheme, watchSystemTheme } from './theme'
 import { flushQueue, postFeedback, watchConnectivity } from './feedback'
 import { initNativeStorage, isNative, reportNativeStorageError } from './native'
@@ -13,6 +13,10 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 // it — and the first read is two lines down. On the web this resolves
 // immediately having done nothing, so the browser path is unchanged.
 await initNativeStorage(reportNativeStorageError)
+
+// Before the first paint, so a phone that already finished a round before
+// this prompt existed does not see it flash and then vanish.
+skipKeepPromptIfRoundsExist()
 
 // Applied before render so there is no flash of the wrong palette.
 const settings = getSettings()

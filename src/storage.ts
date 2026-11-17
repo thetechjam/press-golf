@@ -25,6 +25,12 @@ export interface Settings {
   glare: boolean;
   /** Remembered so a reporter types their name once. '' means not set. */
   reporterName: string;
+  /**
+   * The prompt after the first finished round — back up, and add Press to the
+   * home screen — has been dismissed. Absent in settings written before the
+   * prompt existed; `skipKeepPromptIfRoundsExist` fills that in.
+   */
+  firstFinishPromptDismissed: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -32,6 +38,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   glare: false,
   reporterName: '',
+  firstFinishPromptDismissed: false,
 };
 
 const THEMES: readonly string[] = ['system', 'light', 'dark'];
@@ -50,6 +57,10 @@ export function getSettings(): Settings {
       glare: typeof p.glare === 'boolean' ? p.glare : p.sunlight === true,
       reporterName:
         typeof p.reporterName === 'string' ? p.reporterName : DEFAULT_SETTINGS.reporterName,
+      firstFinishPromptDismissed:
+        typeof p.firstFinishPromptDismissed === 'boolean'
+          ? p.firstFinishPromptDismissed
+          : DEFAULT_SETTINGS.firstFinishPromptDismissed,
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
@@ -65,9 +76,41 @@ export function saveSettings(patch: Partial<Settings>): Settings {
     theme: patch.theme ?? cur.theme,
     glare: patch.glare ?? cur.glare,
     reporterName: patch.reporterName ?? cur.reporterName,
+    firstFinishPromptDismissed: patch.firstFinishPromptDismissed ?? cur.firstFinishPromptDismissed,
   };
   kv.setItem(SETTINGS_KEY, JSON.stringify(next));
   return next;
+}
+
+/**
+ * The keep-your-rounds prompt is for the first round finished after it
+ * existed. A phone that already has a finished round has had that moment;
+ * marking the prompt dismissed here, once, is what stops an update from
+ * asking on the next launch. A phone with no finished round is left alone.
+ *
+ * Read from what was stored, not from `getSettings`. That fills a default,
+ * and treating the default as a decision would dismiss the prompt for a
+ * brand-new phone the moment any setting was saved.
+ */
+export function skipKeepPromptIfRoundsExist(): void {
+  let stored: unknown = null;
+  try {
+    const raw = kv.getItem(SETTINGS_KEY);
+    stored = raw ? JSON.parse(raw) : null;
+  } catch {
+    return;
+  }
+  if (
+    stored &&
+    typeof stored === 'object' &&
+    typeof (stored as { firstFinishPromptDismissed?: unknown }).firstFinishPromptDismissed ===
+      'boolean'
+  ) {
+    return;
+  }
+  if (listRounds().some((r) => r.status === 'finished')) {
+    saveSettings({ firstFinishPromptDismissed: true });
+  }
 }
 
 export function uid(): string {

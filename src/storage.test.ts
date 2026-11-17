@@ -7,6 +7,7 @@ import {
   listCourses,
   saveRound,
   saveCourse,
+  skipKeepPromptIfRoundsExist,
 } from './storage';
 import { makeRound, player } from './games/testFixtures';
 
@@ -66,6 +67,7 @@ describe('settings', () => {
       theme: 'system',
       glare: true,
       reporterName: '',
+      firstFinishPromptDismissed: false,
     });
   });
 
@@ -95,6 +97,42 @@ describe('settings', () => {
     saveSettings({ reporterName: 'Bo' });
     saveSettings({ keepAwake: false });
     expect(getSettings().reporterName).toBe('Bo');
+  });
+
+  it('defaults the first-round prompt to not dismissed', () => {
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
+  });
+
+  it('keeps a dismissed first-round prompt across an unrelated save', () => {
+    saveSettings({ firstFinishPromptDismissed: true });
+    saveSettings({ keepAwake: false });
+    expect(getSettings().firstFinishPromptDismissed).toBe(true);
+  });
+});
+
+describe('skipKeepPromptIfRoundsExist', () => {
+  beforeEach(() => store.clear());
+
+  it('leaves a phone that has not finished a round', () => {
+    skipKeepPromptIfRoundsExist();
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
+    expect(store.has('press.settings.v1')).toBe(false);
+  });
+
+  it('dismisses the prompt when a finished round predates the flag', () => {
+    saveRound(makeRound({ status: 'finished' }));
+    store.set('press.settings.v1', JSON.stringify({ keepAwake: true }));
+    skipKeepPromptIfRoundsExist();
+    expect(getSettings().firstFinishPromptDismissed).toBe(true);
+  });
+
+  it('does not override a prompt that is still waiting to be seen', () => {
+    // The flag is already stored, so this is a phone that finished its first
+    // round after the prompt existed and has not dismissed it.
+    saveRound(makeRound({ status: 'finished' }));
+    saveSettings({ firstFinishPromptDismissed: false });
+    skipKeepPromptIfRoundsExist();
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
   });
 });
 

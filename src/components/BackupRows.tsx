@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { listRounds, listCourses } from '../storage';
-import { buildBackup, backupFilename, currentPeople, restoreBackup, type MergeReport } from '../backup';
+import { offerBackup, restoreBackup, type MergeReport } from '../backup';
 
 /**
  * The Settings sheet's "Your rounds" block: write a backup file, or merge one
@@ -45,33 +45,13 @@ export function BackupRows({ onRestored }: { onRestored?: () => void } = {}) {
   };
 
   const exportBackup = async () => {
-    const file = buildBackup(listRounds(), listCourses(), __APP_VERSION__, new Date(), currentPeople());
-    const name = backupFilename();
-    const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
-    const asFile = new File([blob], name, { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    try {
-      // Sharing first is what makes this useful on a phone: a download lands in
-      // a sandboxed folder an installed PWA can be uninstalled out of, while
-      // the share sheet can put the file in Files, iCloud, or a message —
-      // somewhere that survives the browser.
-      if (navigator.canShare?.({ files: [asFile] })) {
-        await navigator.share({ files: [asFile], title: 'Press backup' });
-      } else {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = name;
-        a.click();
-      }
-      say(`Backed up ${plural(counts.rounds, 'round')} and ${plural(counts.courses, 'course')}.`);
-    } catch (err) {
-      // Closing the share sheet is a decision, not a failure.
-      if ((err as Error)?.name === 'AbortError') return;
+    const result = await offerBackup();
+    if (!result.ok) {
+      if (result.aborted) return;
       say("That backup couldn't be saved.", true);
-    } finally {
-      URL.revokeObjectURL(url);
+      return;
     }
+    say(`Backed up ${plural(counts.rounds, 'round')} and ${plural(counts.courses, 'course')}.`);
   };
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {

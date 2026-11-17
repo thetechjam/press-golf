@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 import type { Round } from './types';
 import { refuseStorageKey } from './testQuota';
+import { getSettings } from './storage';
 
 /**
  * Navigation and the hardware back button.
@@ -392,5 +393,55 @@ describe('a round that cannot be saved', () => {
     } finally {
       restore();
     }
+  });
+});
+
+/**
+ * Safari drops a site's data after seven days unless the app is on the home
+ * screen. The ask waits until a round is actually finished, and it waits once.
+ */
+describe('the prompt after the first finished round', () => {
+  const finished = () =>
+    round({
+      status: 'in_progress',
+      scores: Object.fromEntries(hs.map((h) => [h.number, { p1: 4, p2: 5 }])),
+    });
+
+  it('asks to back up and to add Press to the home screen, and only once', async () => {
+    seed([finished()]);
+    const user = userEvent.setup();
+    const view = render(<App />);
+
+    // Home's standing hint mentions the seven days too. The prompt is the one
+    // with the backup button, and it waits until a round is finished.
+    expect(screen.queryByRole('button', { name: 'Save a backup' })).toBeNull();
+
+    await user.click(screen.getByText('Test Links'));
+    await user.click(await screen.findByRole('button', { name: 'Finish' }));
+    expect(await screen.findByRole('heading', { name: 'Results' })).toBeTruthy();
+
+    const prompt = screen.getByText('Keep these rounds.').parentElement!;
+    expect(prompt.textContent).toMatch(/seven days/);
+    expect(prompt.textContent).toMatch(/home screen/);
+    expect(screen.getByRole('button', { name: 'Save a backup' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Not now' }));
+    expect(screen.queryByText('Keep these rounds.')).toBeNull();
+    expect(getSettings().firstFinishPromptDismissed).toBe(true);
+
+    await user.click(screen.getByRole('button', { name: 'Home' }));
+    expect(screen.queryByRole('button', { name: 'Save a backup' })).toBeNull();
+
+    view.unmount();
+    render(<App />);
+    expect(screen.queryByRole('button', { name: 'Save a backup' })).toBeNull();
+  });
+
+  it('saves a backup from the prompt', async () => {
+    seed([round({ status: 'finished' })]);
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Save a backup' }));
+    expect(await screen.findByText('Backup saved.')).toBeTruthy();
   });
 });

@@ -16,8 +16,9 @@ import { GAMES } from './games';
  * It is also, incidentally, the only way to move a round between two devices
  * without a backend.
  *
- * Everything here except `restoreBackup` is a pure function of its arguments,
- * so the merge rules can be unit-tested without touching storage.
+ * Everything here except `restoreBackup` and `offerBackup` is a pure function
+ * of its arguments, so the merge rules can be unit-tested without touching
+ * storage. `offerBackup` is the one that hands the file to the user.
  */
 
 /**
@@ -66,6 +67,40 @@ export function buildBackup(
 
 /** The phone's people data as it stands, for a backup. */
 export const currentPeople = (): PeopleData => ({ aliases: getAliases(), distinct: [...getDistinct()] });
+
+export type BackupOffer = { ok: true } | { ok: false; aborted: boolean };
+
+/**
+ * Hands the user a backup of everything on this phone.
+ *
+ * Sharing first is what makes this useful on a phone: a download lands in a
+ * sandboxed folder an installed app can be uninstalled out of, while the
+ * share sheet can put the file in Files, iCloud, or a message. `aborted` is
+ * the user closing that sheet, which is a decision rather than a failure.
+ */
+export async function offerBackup(now: Date = new Date()): Promise<BackupOffer> {
+  const file = buildBackup(listRounds(), listCourses(), __APP_VERSION__, now, currentPeople());
+  const name = backupFilename(now);
+  const blob = new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' });
+  const asFile = new File([blob], name, { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  try {
+    if (navigator.canShare?.({ files: [asFile] })) {
+      await navigator.share({ files: [asFile], title: 'Press backup' });
+    } else {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      a.click();
+    }
+    return { ok: true };
+  } catch (err) {
+    if ((err as Error)?.name === 'AbortError') return { ok: false, aborted: true };
+    return { ok: false, aborted: false };
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
 
 /**
  * The people data in a file, keeping only well-formed entries: a string

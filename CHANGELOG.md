@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **A prompt after the first finished round** to save a backup and add Press
+  to the home screen. Safari deletes a site’s data after seven days without
+  a visit otherwise. It is dismissed once, and that choice is remembered.
+  Phones that already had a finished round are not asked.
 - **Erase everything**, in Settings under the backup and feedback rows. The
   privacy page said there was no single wipe button in Press yet; now there
   is. Two taps, as deleting from Rounds → Select: the first says what goes —
