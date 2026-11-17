@@ -3,7 +3,7 @@ import { todayIso } from '../roundDate';
 import type { Round, Player, GameType, SavedCourse, TeamSetup, RoundTrip } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { GAMES } from '../games';
-import { usesHandicap } from '../games/scoring';
+import { canScoreNet, usesHandicap } from '../games/scoring';
 import { wolfForHole } from '../games/wolf';
 import { effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
 import {
@@ -254,9 +254,20 @@ export function Setup({ onCancel, onStart }: Props) {
   // and a recalled player still carries the number. The warning sits on the
   // slope fields when that row is open, and on the players card otherwise —
   // a collapsed row is not a place a warning can live.
-  const indexWaiting =
-    !rated && namedPlayers.some((p) => typeof p.index === 'number' && Number.isFinite(p.index));
+  //
+  // Only when an Index could matter: some selected game uses handicaps and
+  // has not had net scoring switched off. Otherwise the missing slope costs
+  // nothing and the warning is noise.
   const showNet = games.some(usesHandicap);
+  // Quota has no gross/net choice and always spends the handicap.
+  const netMatters = games.some(
+    (g) => usesHandicap(g) && (!canScoreNet(g) || netByGame[g] !== false)
+  );
+  const indexWaiting =
+    !rated &&
+    showNet &&
+    netMatters &&
+    namedPlayers.some((p) => typeof p.index === 'number' && Number.isFinite(p.index));
   // Gross and net are the same card until somebody has a handicap, so the
   // per-game picker stays out of the way until the choice means something.
   // An Index counts: on a rated course it is what their strokes come from.

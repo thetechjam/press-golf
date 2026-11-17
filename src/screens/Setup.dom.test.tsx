@@ -785,6 +785,31 @@ describe('a Handicap Index and a course with no slope or rating', () => {
     await waitFor(() => expect(warning()).toBeNull());
   });
 
+  it('says nothing when no selected game uses handicaps', async () => {
+    localStorage.setItem('press.rounds.v1', JSON.stringify([prior]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await user.click(screen.getByRole('button', { name: /Same crew/ }));
+    expect(warning()).not.toBeNull();
+
+    // Skins was the only game; without it nothing on the card is net.
+    await openRow(user, 'Games');
+    await user.click(screen.getByRole('button', { name: 'Skins' }));
+    await waitFor(() => expect(warning()).toBeNull());
+  });
+
+  it('says nothing when the only handicap game is set to gross', async () => {
+    localStorage.setItem('press.rounds.v1', JSON.stringify([prior]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await user.click(screen.getByRole('button', { name: /Same crew/ }));
+    expect(warning()).not.toBeNull();
+
+    if (!document.querySelector('.score-mode-row')) await openRow(user, 'Games');
+    await user.click(screen.getByRole('button', { name: 'Gross' }));
+    await waitFor(() => expect(warning()).toBeNull());
+  });
+
   it('says nothing when nobody has an Index', async () => {
     const user = userEvent.setup();
     render(<Setup onCancel={() => {}} onStart={() => {}} />);
