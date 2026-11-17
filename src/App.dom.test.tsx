@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import App from './App';
 import type { Round } from './types';
 import { refuseStorageKey } from './testQuota';
-import { getSettings } from './storage';
+import { getSettings, skipKeepPromptIfRoundsExist } from './storage';
 
 /**
  * Navigation and the hardware back button.
@@ -425,7 +425,7 @@ describe('the prompt after the first finished round', () => {
     expect(prompt.textContent).toMatch(/home screen/);
     expect(screen.getByRole('button', { name: 'Save a backup' })).toBeTruthy();
 
-    await user.click(screen.getByRole('button', { name: 'Not now' }));
+    await user.click(screen.getByRole('button', { name: /Don.t ask again/ }));
     expect(screen.queryByText('Keep these rounds.')).toBeNull();
     expect(getSettings().firstFinishPromptDismissed).toBe(true);
 
@@ -437,11 +437,52 @@ describe('the prompt after the first finished round', () => {
     expect(screen.queryByRole('button', { name: 'Save a backup' })).toBeNull();
   });
 
-  it('saves a backup from the prompt', async () => {
+  it('saves a backup from the prompt, then stops asking', async () => {
+    seed([round({ status: 'finished' })]);
+    const user = userEvent.setup();
+    const view = render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Save a backup' }));
+    expect(await screen.findByText('Backup saved.')).toBeTruthy();
+    // The backup was the answer: it is remembered, and the way out says so.
+    expect(getSettings().firstFinishPromptDismissed).toBe(true);
+    expect(screen.queryByRole('button', { name: 'Save a backup' })).toBeNull();
+    await user.click(screen.getByRole('button', { name: 'Done' }));
+    expect(screen.queryByText('Keep these rounds.')).toBeNull();
+
+    view.unmount();
+    render(<App />);
+    expect(screen.queryByText('Keep these rounds.')).toBeNull();
+  });
+
+  it('still closes when the dismissal cannot be stored', async () => {
     seed([round({ status: 'finished' })]);
     const user = userEvent.setup();
     render(<App />);
-    await user.click(screen.getByRole('button', { name: 'Save a backup' }));
-    expect(await screen.findByText('Backup saved.')).toBeTruthy();
+    const restore = refuseStorageKey('press.settings.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: /Don.t ask again/ }));
+      expect(screen.queryByText('Keep these rounds.')).toBeNull();
+    } finally {
+      restore();
+    }
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
+  });
+
+  it('is still due after relaunch for a new user who never saved a setting', async () => {
+    // First launch on a fresh phone: no settings stored at all.
+    skipKeepPromptIfRoundsExist();
+    seed([finished()]);
+    const user = userEvent.setup();
+    const view = render(<App />);
+    await user.click(screen.getByText('Test Links'));
+    await user.click(await screen.findByRole('button', { name: 'Finish' }));
+    expect(await screen.findByText('Keep these rounds.')).toBeTruthy();
+
+    // Closed without answering, then opened again.
+    view.unmount();
+    skipKeepPromptIfRoundsExist();
+    render(<App />);
+    expect(screen.getByText('Keep these rounds.')).toBeTruthy();
+    expect(getSettings().firstFinishPromptDismissed).toBe(false);
   });
 });
