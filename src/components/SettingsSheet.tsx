@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { Theme } from '../storage';
 import type { Round } from '../types';
 import { getSettings, saveSettings, SETTINGS_KEY } from '../storage';
@@ -108,8 +108,20 @@ export function SettingsSheet({
   // would look broken — but the sheet says it will not be remembered.
   const [notKept, setNotKept] = useState<string | null>(null);
 
+  // Every change made here that the phone refused, merged. `saveSettings`
+  // starts from what is stored, so without these the next toggle that did
+  // save would quietly undo them on screen — a refused theme, then a glare
+  // toggle that stores, used to snap the theme back. Carried as changes
+  // rather than the whole of `s`, because the feedback view in this same
+  // sheet stores the reporter's name, and `s` has not seen it.
+  const unsaved = useRef<Partial<typeof s>>({});
+
   const set = (patch: Partial<typeof s>) => {
-    const saved = saveSettings(patch);
+    const wanted = { ...unsaved.current, ...patch };
+    const saved = saveSettings(wanted);
+    // Stored: everything on screen is now remembered. Refused: all of it is
+    // still waiting for the next write that lands.
+    unsaved.current = saved ? {} : wanted;
     const next = saved ?? { ...s, ...patch };
     setNotKept(
       saved
