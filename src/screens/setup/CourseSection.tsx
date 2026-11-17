@@ -7,6 +7,7 @@ import { ParGrid } from '../../components/ParGrid';
 import { StrokeIndexNote } from '../../components/StrokeIndexNote';
 import { StarIcon } from '../../icons';
 import type { CourseAction, CourseState, DerivedCourse } from './courseState';
+import { IndexWarning } from './IndexWarning';
 
 interface CourseProps {
   course: string;
@@ -43,10 +44,12 @@ interface HolesProps {
   dispatch: Dispatch<CourseAction>;
   /** `from` is which button asked — see `saveFavorite` in Setup.tsx. */
   onSave: (from: 'check' | 'foot') => void;
+  /** A player has a Handicap Index and these holes have no usable slope and rating. */
+  indexWaiting: boolean;
 }
 
 /** The body of New Round's Holes & pars row. */
-export function HolesSection({ state, derived, dispatch, onSave }: HolesProps) {
+export function HolesSection({ state, derived, dispatch, onSave, indexWaiting }: HolesProps) {
   const { holeCount, holes, source, nine, holesSource, savedNote, slope, rating, advancedHoles } =
     state;
   const { rated, importIssues, siProblem } = derived;
@@ -153,11 +156,15 @@ export function HolesSection({ state, derived, dispatch, onSave }: HolesProps) {
           />
         </label>
       </div>
-      <p className="hint-inline">
-        {rated
-          ? `Handicap Index converts to strokes for these ${holes.length} holes.`
-          : `Optional — off the card, for these ${holes.length} holes. With both, players can enter a Handicap Index instead of working out their own strokes.`}
-      </p>
+      {indexWaiting ? (
+        <IndexWarning />
+      ) : (
+        <p className="hint-inline">
+          {rated
+            ? `Handicap Index converts to strokes for these ${holes.length} holes.`
+            : `Optional — off the card, for these ${holes.length} holes. With both, players can enter a Handicap Index instead of working out their own strokes.`}
+        </p>
+      )}
       <div className="preset-row">
         <span>Quick set:</span>
         <button className="chip" onClick={() => dispatch({ type: 'preset', kind: 'standard' })}>

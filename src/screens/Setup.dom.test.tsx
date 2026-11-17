@@ -709,6 +709,92 @@ describe('handicap allowances', () => {
   });
 });
 
+describe('a Handicap Index and a course with no slope or rating', () => {
+  /** Two players, one of them carrying an Index from a previous round. */
+  const prior = {
+    id: 'r1',
+    date: '2026-09-01',
+    createdAt: 1,
+    updatedAt: 2,
+    players: [
+      { id: 'p1', name: 'Al', index: 12.4 },
+      { id: 'p2', name: 'Bo', index: 8.1 },
+    ],
+    holes: Array.from({ length: 9 }, (_, i) => ({ number: i + 1, par: 4 })),
+    games: ['skins'],
+    options: {
+      useNet: true,
+      stablefordMode: 'standard',
+      loneWolfMultiplier: 2,
+      blindWolfMultiplier: 3,
+      stakes: {},
+    },
+    scores: {},
+    wolf: {},
+    status: 'finished',
+  };
+
+  /** The note, not the <strong> inside it — that node's text is only the lead-in. */
+  const warning = () => screen.queryByText(/Handicaps won’t apply/)?.closest('p') ?? null;
+
+  it('says so when a recalled crew brings Indexes and the course has neither', async () => {
+    localStorage.setItem('press.rounds.v1', JSON.stringify([prior]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await user.click(screen.getByRole('button', { name: /Same crew/ }));
+
+    const note = warning();
+    expect(note).not.toBeNull();
+    expect(note!.textContent).toMatch(/until slope and rating are entered/);
+    // The holes row is still shut, so the warning has to be up here — a note
+    // inside a collapsed row is a note nobody can see.
+    expect(note!.closest('.setup-row')).toBeNull();
+  });
+
+  it('moves onto the slope and rating once course search has cleared them', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Holes & pars');
+    await user.type(screen.getByLabelText(/^Slope$/i), '113');
+    await user.type(screen.getByLabelText(/^Rating$/i), '72');
+    const names = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(names[0], 'Al');
+    const index = await screen.findByLabelText(/Handicap Index for Al/i);
+    await user.type(index, '12.4');
+
+    await pickFromSearch(user);
+
+    const note = warning();
+    expect(note).not.toBeNull();
+    // Beside the fields that have to be filled, not up on the players card.
+    expect(note!.closest('.setup-row')?.textContent).toMatch(/Holes & pars/);
+    expect(screen.getByLabelText(/^Slope$/i)).toHaveProperty('value', '');
+    expect(screen.getByLabelText(/^Rating$/i)).toHaveProperty('value', '');
+  });
+
+  it('goes away once slope and rating are entered', async () => {
+    localStorage.setItem('press.rounds.v1', JSON.stringify([prior]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await user.click(screen.getByRole('button', { name: /Same crew/ }));
+    expect(warning()).not.toBeNull();
+
+    await openRow(user, 'Holes & pars');
+    await user.type(screen.getByLabelText(/^Slope$/i), '113');
+    await user.type(screen.getByLabelText(/^Rating$/i), '72');
+    await waitFor(() => expect(warning()).toBeNull());
+  });
+
+  it('says nothing when nobody has an Index', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    const names = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(names[0], 'Al');
+    await user.type(screen.getByLabelText(/^Handicap for Al$/i), '14');
+    expect(warning()).toBeNull();
+  });
+});
+
 describe('telling the two handicap numbers apart', () => {
   it('says which figure is entered and which is worked out', async () => {
     const user = userEvent.setup();

@@ -38,6 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounds by the year and month in it.
 
 ### Fixed
+- **A Handicap Index with no slope or rating is called out on New Round.**
+  Course search clears both figures, and a player who already has an Index
+  was then scored gross with nothing on screen to say why. The screen now
+  says handicaps won’t apply until slope and rating are entered.
 - **A native storage failure is no longer silent.** Starting the app now
   passes an error handler into native storage, and a write the phone’s store
   rejects — which comes back as a promise after the call has returned — is

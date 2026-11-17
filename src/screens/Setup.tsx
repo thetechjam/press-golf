@@ -250,6 +250,12 @@ export function Setup({ onCancel, onStart }: Props) {
     setGames((gs) => (gs.includes(g) ? gs.filter((x) => x !== g) : [...gs, g]));
 
   const namedPlayers = players.filter((p) => p.name.trim());
+  // An Index with nowhere to apply it. Course search clears slope and rating,
+  // and a recalled player still carries the number. The warning sits on the
+  // slope fields when that row is open, and on the players card otherwise —
+  // a collapsed row is not a place a warning can live.
+  const indexWaiting =
+    !rated && namedPlayers.some((p) => typeof p.index === 'number' && Number.isFinite(p.index));
   const showNet = games.some(usesHandicap);
   // Gross and net are the same card until somebody has a handicap, so the
   // per-game picker stays out of the way until the choice means something.
@@ -414,6 +420,7 @@ export function Setup({ onCancel, onStart }: Props) {
         onUpdate={updatePlayer}
         onAdd={addPlayer}
         onRemove={removePlayer}
+        indexWaiting={indexWaiting && !openRows.holes}
       />
 
       <div className="setup-rows">
@@ -469,7 +476,13 @@ export function Setup({ onCancel, onStart }: Props) {
           open={!!openRows.holes}
           onToggle={() => toggleRow('holes')}
         >
-          <HolesSection state={cs} derived={derived} dispatch={dispatch} onSave={saveFavorite} />
+          <HolesSection
+            state={cs}
+            derived={derived}
+            dispatch={dispatch}
+            onSave={saveFavorite}
+            indexWaiting={indexWaiting}
+          />
         </SetupRow>
 
         <SetupRow
