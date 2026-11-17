@@ -1087,3 +1087,26 @@ describe('a course with more than eighteen holes', () => {
     expect(document.querySelectorAll('.par-tile').length).toBe(18);
   });
 });
+
+describe('deleting a saved course the phone refuses', () => {
+  it('says so instead of throwing, and keeps the course', async () => {
+    localStorage.setItem(
+      'press.courses.v1',
+      JSON.stringify([{ id: 'c9', name: 'Bramble Ridge GC', holes: realCard18() }])
+    );
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    const restore = refuseStorageKey('press.courses.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: 'Delete saved course Bramble Ridge GC' }));
+      await user.click(
+        screen.getByRole('button', { name: 'Tap again to delete saved course Bramble Ridge GC' })
+      );
+      expect(document.querySelector('.error')?.textContent).toMatch(/wasn’t deleted/);
+    } finally {
+      restore();
+    }
+    expect(JSON.parse(localStorage.getItem('press.courses.v1')!)).toHaveLength(1);
+  });
+});

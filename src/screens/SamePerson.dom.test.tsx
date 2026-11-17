@@ -6,6 +6,7 @@ import type { Round } from '../types';
 import { Setup } from './Setup';
 import { getAliases, listRounds, mergePeople } from '../storage';
 import { makeRound, player } from '../games/testFixtures';
+import { refuseStorageKey } from '../testQuota';
 
 /**
  * "Al" typed on a phone that knows an Alex. New Round asks once, at Start,
@@ -78,5 +79,22 @@ describe('is this the same person?', () => {
     );
     expect(options).toEqual(['Alex', 'Sam']);
     expect(listRounds()).toHaveLength(1);
+  });
+});
+
+describe('a "yes" the phone refuses', () => {
+  it('stays on the question with the reason, and starts nothing', async () => {
+    const { user, started } = await start(['Al', 'Sam']);
+    const restore = refuseStorageKey('press.rounds.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: 'Yes, Alex' }));
+    } finally {
+      restore();
+    }
+    expect(started).toHaveLength(0);
+    expect(document.querySelector('.error')?.textContent).toMatch(/weren’t merged/);
+    // Asked again, not half-merged: the alias went back out.
+    expect(getAliases()).toEqual({});
+    expect(screen.getByRole('button', { name: 'Yes, Alex' })).toBeTruthy();
   });
 });

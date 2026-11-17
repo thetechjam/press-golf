@@ -263,3 +263,21 @@ describe('saving a league course the phone cannot store', () => {
     }
   });
 });
+
+describe('deleting a saved course the phone refuses', () => {
+  it('says so instead of throwing, and keeps the course', async () => {
+    const user = userEvent.setup();
+    show();
+    const restore = refuseStorageKey('press.courses.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: `Delete saved course ${course.name}` }));
+      await user.click(
+        screen.getByRole('button', { name: `Tap again to delete saved course ${course.name}` })
+      );
+      expect(screen.getByRole('alert').textContent).toMatch(/wasn’t deleted/);
+    } finally {
+      restore();
+    }
+    expect(JSON.parse(localStorage.getItem('press.courses.v1')!)).toHaveLength(1);
+  });
+});

@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { todayIso } from '../roundDate';
 import type { Round, Player, Hole, SavedCourse, LeagueTeam } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
-import { uid, listCourses, saveCourse, deleteCourse, listRounds } from '../storage';
+import { uid, listCourses, saveCourse, deleteCourse, listRounds, COURSES_KEY } from '../storage';
+import { notSavedReason } from '../notSaved';
 import { CourseSearch } from '../components/CourseSearch';
 import { SavedCourseList } from '../components/SavedCourseList';
 import { ParGrid } from '../components/ParGrid';
@@ -140,9 +141,7 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     });
     if (!saved) {
       setSavedNote('');
-      setError(
-        'Not saved. This phone’s storage is full, so this course wasn’t kept. Back up from Settings, then delete old rounds to make room.'
-      );
+      setError(`Not saved. This course wasn’t kept. ${notSavedReason(COURSES_KEY)}`);
       return;
     }
     setCourses(listCourses());
@@ -150,7 +149,10 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     setSavedNote(`Saved "${name}"`);
   };
   const removeCourse = (id: string) => {
-    deleteCourse(id);
+    if (!deleteCourse(id)) {
+      setSavedNote('');
+      setError(`Not saved. That course wasn’t deleted. ${notSavedReason(COURSES_KEY, true)}`);
+    }
     setCourses(listCourses());
   };
 

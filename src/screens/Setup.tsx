@@ -14,7 +14,11 @@ import {
   listRounds,
   getAliases,
   mergePeople,
+  ALIASES_KEY,
+  COURSES_KEY,
+  ROUNDS_KEY,
 } from '../storage';
+import { notSavedReason } from '../notSaved';
 import { SetupRow } from '../components/SetupRow';
 import { TripPicker } from '../components/TripPicker';
 import { activeTrip, listTrips } from '../trips';
@@ -172,9 +176,7 @@ export function Setup({ onCancel, onStart }: Props) {
       rating: cs.rating,
     });
     if (!saved) {
-      setError(
-        'Not saved. This phone’s storage is full, so this course wasn’t kept. Back up from Settings, then delete old rounds to make room.'
-      );
+      setError(`Not saved. This course wasn’t kept. ${notSavedReason(COURSES_KEY)}`);
       return;
     }
     setCourses(listCourses());
@@ -183,7 +185,9 @@ export function Setup({ onCancel, onStart }: Props) {
   };
 
   const removeCourse = (id: string) => {
-    deleteCourse(id);
+    if (!deleteCourse(id)) {
+      setError(`Not saved. That course wasn’t deleted. ${notSavedReason(COURSES_KEY, true)}`);
+    }
     setCourses(listCourses());
   };
 
@@ -547,7 +551,16 @@ export function Setup({ onCancel, onStart }: Props) {
                 className="btn-secondary"
                 onClick={() => {
                   // Yes: one person from now on, in past rounds too.
-                  mergePeople(askSame.typed, askSame.known);
+                  // A refused merge stays here with the question still up,
+                  // rather than starting a round whose past rounds were not
+                  // brought into line: "Yes" can be tried again, or "No"
+                  // carries on without merging.
+                  if (!mergePeople(askSame.typed, askSame.known)) {
+                    setError(
+                      `Not saved. Those names weren’t merged. ${notSavedReason([ALIASES_KEY, ROUNDS_KEY])}`
+                    );
+                    return;
+                  }
                   updatePlayer(askSame.id, { name: askSame.known });
                   start({ id: askSame.id, name: askSame.known });
                 }}
