@@ -7,6 +7,66 @@ import type { Hole } from '../types';
 
 const BASE = 'https://api.opengolfapi.org';
 
+/** How long a search or a scorecard fetch is allowed to sit with no answer. */
+export const COURSE_REQUEST_TIMEOUT_MS = 8000;
+
+/** A lookup that failed in a way the screen can say out loud. */
+export class CourseRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CourseRequestError';
+  }
+}
+
+const TIMEOUT_MESSAGE =
+  'Course search is taking too long. Check your connection and try again.';
+
+/**
+ * Abort the request after {@link COURSE_REQUEST_TIMEOUT_MS}, and also when
+ * the caller does. The caller's abort is theirs — typing on past a search —
+ * and must not be reported as a timeout.
+ */
+function withTimeout(parent?: AbortSignal): {
+  signal: AbortSignal;
+  done: () => void;
+  timedOut: () => boolean;
+} {
+  const ctrl = new AbortController();
+  let timed = false;
+  const timer = setTimeout(() => {
+    timed = true;
+    ctrl.abort();
+  }, COURSE_REQUEST_TIMEOUT_MS);
+  const onParent = () => ctrl.abort();
+  if (parent) {
+    if (parent.aborted) ctrl.abort();
+    else parent.addEventListener('abort', onParent);
+  }
+  return {
+    signal: ctrl.signal,
+    timedOut: () => timed && !parent?.aborted,
+    done: () => {
+      clearTimeout(timer);
+      parent?.removeEventListener('abort', onParent);
+    },
+  };
+}
+
+async function fetchJson(url: string, signal: AbortSignal | undefined, failure: string): Promise<unknown> {
+  const timed = withTimeout(signal);
+  try {
+    const res = await fetch(url, { signal: timed.signal });
+    if (!res.ok) throw new CourseRequestError(`${failure} (${res.status})`);
+    return await res.json();
+  } catch (err) {
+    if (signal?.aborted) throw err;
+    if (timed.timedOut()) throw new CourseRequestError(TIMEOUT_MESSAGE);
+    throw err;
+  } finally {
+    timed.done();
+  }
+}
+
 // The two calls below sit on different prefixes — search on `/v1`, the course
 // lookup on `/api/v1`. That reads like a typo and is not: both paths are what
 // the service answers on, and the pair is confirmed working against the live
@@ -32,9 +92,11 @@ export interface FetchedCourse {
 
 /** Search courses by name. Returns lightweight hits (no scorecard yet). */
 export async function searchCourses(q: string, signal?: AbortSignal): Promise<CourseHit[]> {
-  const res = await fetch(`${BASE}/v1/courses/search?q=${encodeURIComponent(q)}`, { signal });
-  if (!res.ok) throw new Error(`Search failed (${res.status})`);
-  const data = await res.json();
+  const data = (await fetchJson(
+    `${BASE}/v1/courses/search?q=${encodeURIComponent(q)}`,
+    signal,
+    'Search failed'
+  )) as { courses?: Record<string, unknown>[] };
   return (data.courses ?? []).map(
     (c: Record<string, unknown>): CourseHit => ({
       id: String(c.id),
@@ -54,9 +116,16 @@ interface HoleRow {
 
 /** Fetch one course's full scorecard (par + stroke index per hole). */
 export async function fetchCourse(id: string, signal?: AbortSignal): Promise<FetchedCourse> {
-  const res = await fetch(`${BASE}/api/v1/courses/${encodeURIComponent(id)}`, { signal });
-  if (!res.ok) throw new Error(`Course lookup failed (${res.status})`);
-  const data = await res.json();
+  const data = (await fetchJson(
+    `${BASE}/api/v1/courses/${encodeURIComponent(id)}`,
+    signal,
+    'Course lookup failed'
+  )) as {
+    holes_data?: HoleRow[];
+    scorecard?: { hole: number; par: number }[];
+    course_name?: string;
+    name?: string;
+  };
 
   // Prefer holes_data (has handicap_index); fall back to the par-only scorecard.
   const rows: HoleRow[] = Array.isArray(data.holes_data) && data.holes_data.length

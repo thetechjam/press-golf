@@ -1,5 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import { searchCourses, fetchCourse, type CourseHit, type FetchedCourse } from '../courses/openGolfApi';
+import {
+  searchCourses,
+  fetchCourse,
+  CourseRequestError,
+  type CourseHit,
+  type FetchedCourse,
+} from '../courses/openGolfApi';
 
 interface Props {
   /** The course name (owned by the parent screen). */
@@ -54,9 +60,13 @@ export function CourseSearch({ value, onChange, onPick, label = 'Course (optiona
           setHits(results.slice(0, 8));
           setOpen(true);
         })
-        .catch(() => {
+        .catch((err: unknown) => {
           if (!ctrl.signal.aborted)
-            setError('Search unavailable — your typed course name still works.');
+            setError(
+              err instanceof CourseRequestError
+                ? err.message
+                : 'Search unavailable — your typed course name still works.'
+            );
         })
         .finally(() => {
           if (!ctrl.signal.aborted) setSearching(false);
@@ -90,7 +100,13 @@ export function CourseSearch({ value, onChange, onPick, label = 'Course (optiona
         setHits([]);
         setOpen(false);
       })
-      .catch(() => setError('Could not load that course. Pick another or keep your typed name.'))
+      .catch((err: unknown) =>
+        setError(
+          err instanceof CourseRequestError
+            ? err.message
+            : 'Could not load that course. Pick another or keep your typed name.'
+        )
+      )
       .finally(() => setLoadingId(null));
   };
 

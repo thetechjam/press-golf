@@ -42,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounds by the year and month in it.
 
 ### Fixed
+- **Course search gives up after 8 seconds.** A lookup that never answered
+  used to sit on “Searching…” until the page was closed. It now stops and
+  says to check the connection and try again; a name already typed still works.
 - **A Handicap Index with no slope or rating is called out on New Round.**
   Course search clears both figures, and a player who already has an Index
   was then scored gross with nothing on screen to say why. The screen now
