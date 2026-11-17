@@ -57,8 +57,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   caught a rejected write, but the app passed it no handler, so the failure
   was dropped; it is now logged. A key the phone’s store cannot read at
   startup is no longer overwritten by the next save, which used to replace
-  every saved round with one. If storage cannot be opened at all, Press shows
-  an error screen with a reload button instead of a blank page. The note that
+  every saved round with one. If Press fails before it can show anything,
+  it shows an error screen with a reload button instead of a blank page.
+  "Erase everything" still removes such a key, and every key after it, and
+  says so if anything could not be removed. A restore that fails on such a
+  key undoes every other change it made and says why, instead of blaming a
+  lack of room. The note that
   said the Capacitor preferences package was installed was wrong; it is not a
   dependency of this repo.
 - **A save that fails says so.** Starting a round, keeping a shared one, and
@@ -67,7 +71,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   round or course stays on screen so it can be tried again. Saving a course
   reports the same failure, in its own words, instead of throwing out of the
   button that asked. Renaming a trip or moving a round on or off one says so
-  too.
+  too, and a rename is all or nothing rather than leaving the trip's rounds
+  under two names. Deleting rounds or a saved course, merging two names,
+  "two people", a Settings toggle, and queueing or clearing feedback no
+  longer throw out of the button either; each says it was not kept. When
+  the cause is a key Press could not read at startup rather than a full
+  phone, the message says that and to reopen Press.
 - **Game names fit their cards.** The two-across menu under Games was meant to
   set each name on its own line under the tick and the ⓘ; the pick button
   that later took in the tick and the name undid that, and "Stableford" ran
