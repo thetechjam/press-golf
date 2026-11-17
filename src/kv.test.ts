@@ -158,6 +158,34 @@ describe('snapshotBackend — the shape iOS needs', () => {
     logged.mockRestore();
   });
 
+  it('reports a rejection from a thenable that is not this realm’s Promise', async () => {
+    // A bridge can hand back a promise built in another realm, which
+    // `instanceof Promise` does not recognise.
+    const seen: string[] = [];
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const foreign = {
+      then(_ok: unknown, fail: (err: unknown) => void) {
+        fail(new Error('disk full'));
+      },
+    } as unknown as Promise<void>;
+    const backend = snapshotBackend({}, () => foreign, (key) => seen.push(key));
+    backend.setItem('press.rounds.v1', '[]');
+    await new Promise((r) => setTimeout(r, 0));
+    expect(seen).toEqual(['press.rounds.v1']);
+    logged.mockRestore();
+  });
+
+  it('refuses to write or remove a key that could not be read', () => {
+    const native = fakeNativeStore();
+    const backend = snapshotBackend({}, native.persist, undefined, ['press.rounds.v1']);
+    expect(() => backend.setItem('press.rounds.v1', '[]')).toThrow(/will not overwrite/);
+    expect(() => backend.removeItem('press.rounds.v1')).toThrow(/will not overwrite/);
+    expect(backend.getItem('press.rounds.v1')).toBeNull();
+    expect(native.writes).toEqual([]);
+    backend.setItem('press.settings.v1', '{}');
+    expect(native.writes).toEqual([{ key: 'press.settings.v1', value: '{}' }]);
+  });
+
   it('still logs when nobody handed in a handler', async () => {
     const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
     const backend = snapshotBackend({}, () => Promise.reject(new Error('disk full')));

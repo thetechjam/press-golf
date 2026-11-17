@@ -100,9 +100,22 @@ export function logStorageFailure(key: string, err: unknown): void {
 export function snapshotBackend(
   loaded: Record<string, string>,
   persist: (key: string, value: string | null) => void | Promise<void>,
-  onError?: (key: string, err: unknown) => void
+  onError?: (key: string, err: unknown) => void,
+  unreadable: Iterable<string> = []
 ): KvBackend {
   const snapshot = new Map(Object.entries(loaded));
+  // Keys the store would not give up at startup. They read as absent, but
+  // they are not: whatever is on disk is still there. Every writer in
+  // `storage.ts` is read-modify-write — `saveRound` lists the rounds, adds
+  // one, and writes the list back — so a write to one of these keys would
+  // replace a whole list the app never saw with a one-item list. Refusing it
+  // is a throw, which is how every caller already hears "not stored".
+  const locked = new Set(unreadable);
+  const guard = (key: string) => {
+    if (locked.has(key)) {
+      throw new Error(`Press could not read “${key}” at startup, so it will not overwrite it.`);
+    }
+  };
 
   // The snapshot is updated first and unconditionally. A reader that saw the
   // old value because the write is still in flight would be a bug nobody could
@@ -121,7 +134,11 @@ export function snapshotBackend(
       // A rejected promise is not a thrown error. Capacitor's Preferences
       // calls return one, and leaving it uncaught is a write that failed
       // with nothing on screen and nothing in the log.
-      if (pending instanceof Promise) void pending.catch((err) => report(key, err));
+      // Any thenable, not only this realm's Promise: a bridge can hand back
+      // one from another realm, and `instanceof` would miss it.
+      if (pending && typeof (pending as PromiseLike<void>).then === 'function') {
+        void Promise.resolve(pending).catch((err: unknown) => report(key, err));
+      }
     } catch (err) {
       report(key, err);
     }
@@ -130,10 +147,12 @@ export function snapshotBackend(
   return {
     getItem: (key) => snapshot.get(key) ?? null,
     setItem: (key, value) => {
+      guard(key);
       snapshot.set(key, value);
       push(key, value);
     },
     removeItem: (key) => {
+      guard(key);
       snapshot.delete(key);
       push(key, null);
     },

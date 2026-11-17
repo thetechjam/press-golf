@@ -71,14 +71,18 @@ export async function initNativeStorage(
   if (!isNative() || !prefs) return false;
 
   const loaded: Record<string, string> = {};
+  const unreadable: string[] = [];
   for (const key of PERSISTED_KEYS) {
     try {
       const { value } = await prefs.get({ key });
       if (value != null) loaded[key] = value;
     } catch (err) {
-      // One unreadable key is not a reason to abandon the other three. It
-      // reads as absent, which for every one of them means "nothing saved yet"
-      // — the same answer a fresh install gives.
+      // One unreadable key is not a reason to abandon the others. It reads as
+      // absent for this launch — but it is remembered, and `snapshotBackend`
+      // refuses to write it, because "absent" here is not "nothing saved":
+      // the next save would otherwise replace what is on disk with a list of
+      // one.
+      unreadable.push(key);
       onError?.(key, err);
     }
   }
@@ -91,7 +95,8 @@ export async function initNativeStorage(
         // function has gone, and `snapshotBackend` is what attaches the
         // handler — a rejection nobody is waiting on used to vanish.
         value === null ? prefs.remove({ key }) : prefs.set({ key, value }),
-      onError
+      onError,
+      unreadable
     )
   );
   return true;
