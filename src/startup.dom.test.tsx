@@ -70,4 +70,10 @@ describe('StartupError', () => {
     await user.click(screen.getByRole('button', { name: 'Reload Press' }));
     expect(reload).toHaveBeenCalledOnce();
   });
+  it('does not blame storage for a failure that may be something else', () => {
+    render(<StartupError error={new Error('matchMedia is not a function')} />);
+    const copy = document.querySelector('.arriving-note')?.textContent ?? '';
+    expect(copy).toMatch(/hit a problem while starting/);
+    expect(copy).not.toMatch(/storage/);
+  });
 });
