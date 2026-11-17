@@ -81,7 +81,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   for each delete to land before relaunching, so a delete the store refuses
   later shows "Press couldn’t erase everything" there as it already did on
   the web, and a key Press could not read stays protected until it is really
-  gone. A Settings change the phone refused is no longer undone by the next
+  gone. While those deletes are still running, the sheet cannot be closed —
+  not with the X, Escape or a tap outside it — so a refusal that arrives
+  late still has somewhere to be shown. A Settings change the phone refused is no longer undone by the next
   toggle that saves; it stays on screen and is stored with that save.
   Deleting several rounds that the phone refuses now says "Those rounds were
   not deleted".

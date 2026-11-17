@@ -6,6 +6,13 @@ interface Props {
   title: string;
   onClose: () => void;
   children: React.ReactNode;
+  /**
+   * Hold the sheet open: the scrim, the X, Escape and a drag all do nothing.
+   * For work the sheet has to stay up to report on — Settings sets it while
+   * Erase everything is waiting on the phone, because a refusal that arrives
+   * after the sheet has gone has nowhere to be shown.
+   */
+  locked?: boolean;
 }
 
 /**
@@ -76,7 +83,7 @@ let scrollLocks = 0;
  * the parent's onClose once it has finished. Every dismissal path — scrim,
  * the X, Escape — goes through `close()` so none of them can skip the exit.
  */
-export function Sheet({ title, onClose, children }: Props) {
+export function Sheet({ title, onClose, children, locked = false }: Props) {
   const dialog = useRef<HTMLDialogElement>(null);
   const panel = useRef<HTMLDivElement>(null);
   const [closing, setClosing] = useState(false);
@@ -85,9 +92,15 @@ export function Sheet({ title, onClose, children }: Props) {
   // before the re-render, and scheduling the timer inside a state updater would
   // fire it twice under StrictMode's double-invoke.
   const closingRef = useRef(false);
+  // Read through a ref so close() keeps one identity and the touch handlers
+  // see the current value without re-subscribing.
+  const lockedRef = useRef(locked);
+  useLayoutEffect(() => {
+    lockedRef.current = locked;
+  }, [locked]);
 
   const close = useCallback(() => {
-    if (closingRef.current) return;
+    if (closingRef.current || lockedRef.current) return;
     closingRef.current = true;
     setClosing(true);
     exitTimer.current = setTimeout(onClose, EXIT_MS);
@@ -177,7 +190,7 @@ export function Sheet({ title, onClose, children }: Props) {
     // Not mid-exit, and not while the panel is scrolled: a Settings sheet
     // taller than the screen scrolls itself, and pulling down from anywhere
     // but its top has to keep meaning "scroll up".
-    if (closingRef.current || (panel.current?.scrollTop ?? 0) > 0) return;
+    if (closingRef.current || lockedRef.current || (panel.current?.scrollTop ?? 0) > 0) return;
     const t = e.touches[0];
     dragFrom.current = { y: t.clientY, at: performance.now() };
     dragBy.current = 0;
@@ -241,6 +254,14 @@ export function Sheet({ title, onClose, children }: Props) {
         e.preventDefault();
         close();
       }}
+      // A browser may close a modal on a repeated Escape without asking via
+      // `cancel` first. While locked, put it straight back: a closed dialog
+      // is display: none, and the sheet would be hiding what it is held open
+      // to show.
+      onClose={(e) => {
+        const d = e.currentTarget;
+        if (lockedRef.current && !closingRef.current && d.isConnected && !d.open) d.showModal();
+      }}
       // A click on the scrim lands on the dialog itself; one inside the sheet
       // lands on a descendant. Comparing target to currentTarget is what
       // separates them, and it replaces the stopPropagation the panel used to
@@ -261,7 +282,7 @@ export function Sheet({ title, onClose, children }: Props) {
         <div className="sheet-grab" aria-hidden="true" />
         <div className="sheet-head">
           <h2>{title}</h2>
-          <button className="sheet-close" onClick={close} aria-label="Close">
+          <button className="sheet-close" onClick={close} aria-label="Close" disabled={locked}>
             <XIcon />
           </button>
         </div>

@@ -179,6 +179,10 @@ export function SettingsSheet({
     <Sheet
       title={view === 'feedback' ? 'Send feedback' : view === 'help' ? 'How to Play' : 'Settings'}
       onClose={onClose}
+      // Held open while the deletes are in flight, as Cancel is: closed
+      // early, a refusal that lands afterwards would only reach the log, and
+      // the app would look empty with that data still on the phone.
+      locked={wiping}
     >
       {view === 'feedback' ? (
         <FeedbackForm screen={screen} round={round} onBack={() => setView('settings')} />

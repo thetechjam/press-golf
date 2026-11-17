@@ -156,4 +156,52 @@ describe('Erase everything when a key will not go', () => {
     expect(reload).not.toHaveBeenCalled();
     expect([...disk.keys()]).toEqual(['press.settings.v1']);
   });
+
+  it('cannot be dismissed while the deletes are in flight, so a late refusal is still shown', async () => {
+    const disk = new Map<string, string>(PERSISTED_KEYS.map((k) => [k, '"x"']));
+    let refuse!: (err: Error) => void;
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const previous = setBackend(
+      snapshotBackend(Object.fromEntries(disk), (key, value) => {
+        if (key === 'press.settings.v1' && value === null) {
+          return new Promise<void>((_, reject) => (refuse = reject));
+        }
+        if (value === null) disk.delete(key);
+        else disk.set(key, value);
+      })
+    );
+    const onClose = vi.fn();
+    try {
+      render(<SettingsSheet onClose={onClose} screen="home" />);
+      fireEvent.click(armButton());
+      fireEvent.click(confirmButton());
+      await Promise.resolve();
+
+      // Every way out: the X, Escape (which reaches a dialog as `cancel`),
+      // and a tap on the scrim, which lands on the dialog itself.
+      const close = screen.getByRole('button', { name: 'Close' }) as HTMLButtonElement;
+      expect(close.disabled).toBe(true);
+      fireEvent.click(close);
+      const dialog = document.querySelector('dialog')!;
+      fireEvent(dialog, new Event('cancel', { cancelable: true }));
+      fireEvent.click(dialog);
+      // Longer than the sheet's exit, so a close that had started would land.
+      await new Promise((r) => setTimeout(r, 250));
+      expect(onClose).not.toHaveBeenCalled();
+      expect(dialog.classList.contains('closing')).toBe(false);
+
+      refuse(new Error('refused'));
+      await waitFor(() =>
+        expect(screen.getByRole('alert').textContent).toMatch(/couldn’t erase everything/)
+      );
+
+      // Once it has answered, the sheet closes as usual.
+      expect(close.disabled).toBe(false);
+      fireEvent.click(close);
+      await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    } finally {
+      setBackend(previous);
+    }
+    expect(reload).not.toHaveBeenCalled();
+  });
 });
