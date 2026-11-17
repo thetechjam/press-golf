@@ -77,6 +77,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   longer throw out of the button either; each says it was not kept. When
   the cause is a key Press could not read at startup rather than a full
   phone, the message says that and to reopen Press.
+- **Three loose ends after #111.** On a phone, "Erase everything" now waits
+  for each delete to land before relaunching, so a delete the store refuses
+  later shows "Press couldn’t erase everything" there as it already did on
+  the web, and a key Press could not read stays protected until it is really
+  gone. A Settings change the phone refused is no longer undone by the next
+  toggle that saves; it stays on screen and is stored with that save.
+  Deleting several rounds that the phone refuses now says "Those rounds were
+  not deleted".
 - **Game names fit their cards.** The two-across menu under Games was meant to
   set each name on its own line under the tick and the ⓘ; the pick button
   that later took in the tick and the name undid that, and "Stableford" ran
