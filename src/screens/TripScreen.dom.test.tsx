@@ -8,6 +8,7 @@ import { TripScreen, tripDates } from './TripScreen';
 import { Home } from './Home';
 import { Setup } from './Setup';
 import { listRounds } from '../storage';
+import { refuseStorageKey } from '../testQuota';
 import { makeRound, player, holes, scoresFrom } from '../games/testFixtures';
 
 /**
@@ -85,6 +86,45 @@ describe('Trip screen', () => {
     await user.click(screen.getByRole('button', { name: 'Save name' }));
     expect(listRounds().map((r) => r.trip?.name)).toEqual(['Myrtle Beach', 'Myrtle Beach']);
     expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('Myrtle Beach');
+  });
+
+  it('says so when a rename cannot be stored, and keeps the old name', async () => {
+    const user = userEvent.setup();
+    store([round('a', { Al: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 })]);
+    show();
+    await user.click(screen.getByRole('button', { name: 'Rename' }));
+    const input = screen.getByLabelText('Trip name');
+    await user.clear(input);
+    await user.type(input, 'Myrtle Beach');
+    const restore = refuseStorageKey('press.rounds.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: 'Save name' }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+    } finally {
+      restore();
+    }
+    expect(listRounds().map((r) => r.trip?.name)).toEqual([TRIP.name, TRIP.name]);
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(TRIP.name);
+    // The form is still there with what they typed, to try again.
+    expect((screen.getByLabelText('Trip name') as HTMLInputElement).value).toBe('Myrtle Beach');
+  });
+
+  it('says so when a round cannot be put on the trip', async () => {
+    const user = userEvent.setup();
+    store([round('a', { Al: 3, Bo: 5 }), round('b', { Al: 5, Bo: 3 }, { trip: undefined })]);
+    show();
+    await user.click(screen.getByRole('button', { name: 'Add or remove' }));
+    const restore = refuseStorageKey('press.rounds.v1');
+    try {
+      await user.click(screen.getByRole('button', { name: /Course b/ }));
+      expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
+    } finally {
+      restore();
+    }
+    expect(listRounds().find((r) => r.id === 'b')?.trip).toBeUndefined();
+    // A later write that lands clears it.
+    await user.click(screen.getByRole('button', { name: /Course b/ }));
+    expect(screen.queryByRole('alert')).toBeNull();
   });
 
   it('puts a nearby round on the trip and takes it off again', async () => {

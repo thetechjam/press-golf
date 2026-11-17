@@ -77,10 +77,26 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
     [trip, distinct]
   );
 
-  /** Writes every changed round and re-reads, so the screen shows what was saved. */
-  const save = (changed: Round[]) => {
-    for (const r of changed) saveRound(r);
+  // A write the phone refused. The screen re-reads storage either way, so
+  // what is shown is what was kept; this is what says the change was not.
+  const [saveFailed, setSaveFailed] = useState(false);
+
+  /**
+   * Writes every changed round and re-reads, so the screen shows what was
+   * saved. Stops at the first refusal — a full phone will refuse the rest
+   * too — and returns false so the caller can leave its form up.
+   */
+  const save = (changed: Round[]): boolean => {
+    let ok = true;
+    for (const r of changed) {
+      if (!saveRound(r)) {
+        ok = false;
+        break;
+      }
+    }
+    setSaveFailed(!ok);
     setRounds(listRounds());
+    return ok;
   };
 
   if (!trip || !ledger) {
@@ -101,7 +117,10 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
 
   const rename = () => {
     const name = draft.trim();
-    if (name && name !== trip.name) save(trip.rounds.map((r) => withTrip(r, { id: trip.id, name })));
+    if (name && name !== trip.name) {
+      // A refused rename keeps the form up with the typed name in it.
+      if (!save(trip.rounds.map((r) => withTrip(r, { id: trip.id, name })))) return;
+    }
     setRenaming(false);
   };
 
@@ -136,6 +155,13 @@ export function TripScreen({ tripId, onBack, onOpenRound }: Props) {
           {renaming ? 'Cancel' : 'Rename'}
         </button>
       </header>
+
+      {saveFailed && (
+        <div className="unsaved" role="alert">
+          <strong>Not saved.</strong> This phone’s storage is full, so that change was not
+          kept. Back up from Settings, then delete old rounds from Rounds to make room.
+        </div>
+      )}
 
       {renaming && (
         <form
