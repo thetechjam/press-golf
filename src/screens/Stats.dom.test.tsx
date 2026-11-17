@@ -70,7 +70,7 @@ const years = () =>
   [...document.querySelectorAll('.stat-years .seg-btn')].map((b) => b.textContent);
 
 const show = (rounds: Round[] = ROUNDS) => {
-  localStorage.setItem('press.rounds.v1', JSON.stringify(rounds));
+  localStorage.setItem('trunk.rounds.v1', JSON.stringify(rounds));
   return render(<Stats onBack={() => {}} />);
 };
 

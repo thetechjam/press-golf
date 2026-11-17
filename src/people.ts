@@ -14,7 +14,7 @@ import type { Round } from './types';
  * received later with the old spelling is brought into line as it is saved.
  *
  * Nothing here ever merges two names on its own: `nearMatches` only suggests,
- * and the user says yes or no. Press moves money between people, and two Mikes
+ * and the user says yes or no. Trunk moves money between people, and two Mikes
  * quietly becoming one is a bill sent to the wrong person.
  */
 

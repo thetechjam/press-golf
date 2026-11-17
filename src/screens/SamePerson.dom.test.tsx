@@ -32,7 +32,7 @@ const start = async (names: string[]) => {
 
 beforeEach(() => {
   localStorage.clear();
-  localStorage.setItem('press.rounds.v1', JSON.stringify([past(['Alex', 'Sam'])]));
+  localStorage.setItem('trunk.rounds.v1', JSON.stringify([past(['Alex', 'Sam'])]));
 });
 afterEach(cleanup);
 

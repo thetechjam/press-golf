@@ -1,6 +1,6 @@
 1
 00:00:00,000 --> 00:00:01,480
-This is Press.
+This is Trunk.
 
 2
 00:00:02,860 --> 00:00:04,760
@@ -40,7 +40,7 @@ the round comes off.
 
 11
 00:00:31,408 --> 00:00:34,128
-Press remembers your regular crew, so next
+Trunk remembers your regular crew, so next
 
 12
 00:00:34,128 --> 00:00:35,808
@@ -48,7 +48,7 @@ week this is one tap.
 
 13
 00:00:36,934 --> 00:00:39,994
-Open Course. Search for it and Press
+Open Course. Search for it and Trunk
 
 14
 00:00:39,994 --> 00:00:41,614
@@ -312,7 +312,7 @@ a hole to jump straight back to it.
 
 79
 00:03:39,221 --> 00:03:41,821
-Finish the round and Press settles it.
+Finish the round and Trunk settles it.
 
 80
 00:03:42,661 --> 00:03:46,361
@@ -340,7 +340,7 @@ minutes in the car park.
 
 86
 00:04:02,085 --> 00:04:04,365
-Press resolves the whole group into the
+Trunk resolves the whole group into the
 
 87
 00:04:04,365 --> 00:04:06,465
@@ -380,7 +380,7 @@ code and it opens in their copy
 
 96
 00:04:30,099 --> 00:04:32,879
-of Press. Nothing is uploaded.
+of Trunk. Nothing is uploaded.
 
 97
 00:04:33,479 --> 00:04:34,999
@@ -412,7 +412,7 @@ And if you both end up keeping
 
 104
 00:04:51,259 --> 00:04:53,719
-score, Press puts the two cards side
+score, Trunk puts the two cards side
 
 105
 00:04:53,719 --> 00:04:55,759

@@ -21,7 +21,7 @@ import { parseRoundDate } from './roundDate';
 /**
  * A whole round packed small enough to travel in a URL fragment.
  *
- * Press has no backend, so the only way a round has ever moved between two
+ * Trunk has no backend, so the only way a round has ever moved between two
  * phones is the backup file — which means email, or AirDrop, or a cable, for
  * something the group wants to look at in the car park. A link is the version
  * of that you can send in a text message, and a QR code is the version you can
@@ -29,7 +29,7 @@ import { parseRoundDate } from './roundDate';
  *
  * Two properties make this work without a server. The payload rides in the
  * **fragment**, which browsers never put on the wire: the round is decoded by
- * the recipient's copy of Press and is never seen by Netlify or anyone else.
+ * the recipient's copy of Trunk and is never seen by Netlify or anyone else.
  * And it is packed hard, because the size of the link is not a nicety — it
  * decides whether the QR code is a square you can scan from a phone screen or
  * a wall of noise you cannot.
@@ -99,7 +99,7 @@ export function linksSupported(): boolean {
 
 /** What the recipient reads when their browser cannot open a link. */
 export const UNSUPPORTED_BROWSER =
-  'This browser can’t open Press links. Update it — Safari 16.4 or later, or a current Chrome or Firefox — and open the link again.';
+  'This browser can’t open Trunk links. Update it — Safari 16.4 or later, or a current Chrome or Firefox — and open the link again.';
 
 const GAME_TYPES: readonly string[] = GAMES.map((g) => g.id);
 
@@ -335,7 +335,7 @@ function indexChecker(playerCount: number): (id: unknown) => id is string {
  * else's phone, and every field below is dereferenced by a scoring engine
  * without checking first. A `stablefordMode` of `"banana"` or a stake of
  * `"lots"` would reach the money. Anything unrecognised falls back to the
- * default for that field rather than rejecting the round — an option Press
+ * default for that field rather than rejecting the round — an option Trunk
  * cannot read is a preference lost, not a scorecard lost.
  */
 function readOptions(raw: Record<string, unknown>, playerCount: number): GameOptions {
@@ -469,7 +469,7 @@ function readWolf(v: unknown, playerCount: number): Record<number, WolfHole> {
  * a player position nobody occupies would count for a phantom, and an unknown
  * kind from a later version would count as junk without anyone being able to
  * say what it was. Both are dropped rather than rejecting the round — a claim
- * Press cannot read is a side bet lost, not a scorecard lost.
+ * Trunk cannot read is a side bet lost, not a scorecard lost.
  */
 function readJunk(v: unknown, playerCount: number): JunkClaims | undefined {
   if (!isObject(v)) return undefined;
@@ -492,7 +492,7 @@ function readJunk(v: unknown, playerCount: number): JunkClaims | undefined {
 
 /**
  * League pick-ups out of a payload: hole -> player positions, keeping only
- * positions somebody occupies. Same posture as `readJunk` — a pick-up Press
+ * positions somebody occupies. Same posture as `readJunk` — a pick-up Trunk
  * cannot place is dropped rather than rejecting the round.
  */
 function readPickups(v: unknown, playerCount: number): Record<number, string[]> | undefined {
@@ -519,8 +519,8 @@ function readPickups(v: unknown, playerCount: number): Record<number, string[]> 
  * from a stranger's phone rather than a file this app wrote.
  */
 export function unpackRound(raw: unknown): UnpackResult {
-  const stale = 'That link was made by a newer version of Press. Update the app and try again.';
-  if (!isObject(raw)) return { ok: false, error: "That link doesn't hold a Press round." };
+  const stale = 'That link was made by a newer version of Trunk. Update the app and try again.';
+  if (!isObject(raw)) return { ok: false, error: "That link doesn't hold a Trunk round." };
   if (typeof raw.v !== 'number' || raw.v > SHARE_FORMAT) return { ok: false, error: stale };
 
   if (typeof raw.i !== 'string' || !raw.i) return { ok: false, error: 'That link is damaged.' };

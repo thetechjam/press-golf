@@ -27,7 +27,7 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
     expect(screen.getByText('All fine')).toBeTruthy();
-    expect(screen.queryByRole('heading', { name: 'Press hit a snag' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Trunk hit a snag' })).toBeNull();
   });
 
   it('shows the error, a reload, and the backup rows when a child throws', async () => {
@@ -41,7 +41,7 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>
     );
 
-    expect(screen.getByRole('heading', { name: 'Press hit a snag' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk hit a snag' })).toBeTruthy();
     // The message, verbatim, so a bug report can carry it.
     expect(screen.getByText('scores[undefined] is not iterable')).toBeTruthy();
 
@@ -50,7 +50,7 @@ describe('ErrorBoundary', () => {
     expect(screen.getByRole('button', { name: /Back up your rounds/i })).toBeTruthy();
     expect(screen.getByRole('button', { name: /Restore from a backup/i })).toBeTruthy();
 
-    await user.click(screen.getByRole('button', { name: 'Reload Press' }));
+    await user.click(screen.getByRole('button', { name: 'Reload Trunk' }));
     expect(reload).toHaveBeenCalledTimes(1);
   });
 

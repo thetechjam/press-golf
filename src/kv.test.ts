@@ -11,7 +11,7 @@ const round = (id: string, course: string) => ({ ...makeRound(), id, course });
  *
  * On the web that is `localStorage` and nothing here changes what happens. The
  * reason the seam exists is iOS: inside a WKWebView, local storage is transient
- * and the system reclaims it, so an App Store build of Press would lose every
+ * and the system reclaims it, so an App Store build of Trunk would lose every
  * round somebody had played. `snapshotBackend` is the shape that survives —
  * and it is tested here, against a fake asynchronous store, rather than
  * discovered on a device.
@@ -55,18 +55,18 @@ afterEach(() => {
 
 describe('the default backend', () => {
   it('is the browser store itself, not a copy of it', () => {
-    kv.setItem('press.probe', 'a');
-    expect(localStorage.getItem('press.probe')).toBe('a');
-    localStorage.setItem('press.probe', 'b');
+    kv.setItem('trunk.probe', 'a');
+    expect(localStorage.getItem('trunk.probe')).toBe('a');
+    localStorage.setItem('trunk.probe', 'b');
     // No cache in front of it: a value written behind the seam is still read
     // through it. Twelve test files seed localStorage directly and rely on this.
-    expect(kv.getItem('press.probe')).toBe('b');
+    expect(kv.getItem('trunk.probe')).toBe('b');
   });
 
   it('removes through to the same place', () => {
-    kv.setItem('press.probe', 'a');
-    kv.removeItem('press.probe');
-    expect(localStorage.getItem('press.probe')).toBeNull();
+    kv.setItem('trunk.probe', 'a');
+    kv.removeItem('trunk.probe');
+    expect(localStorage.getItem('trunk.probe')).toBeNull();
   });
 });
 
@@ -82,9 +82,9 @@ describe('swapping the backend', () => {
 
 describe('snapshotBackend — the shape iOS needs', () => {
   it('answers reads from the snapshot it was loaded with', async () => {
-    const native = fakeNativeStore({ 'press.rounds.v1': '[]' });
+    const native = fakeNativeStore({ 'trunk.rounds.v1': '[]' });
     const backend = snapshotBackend(await native.load(), native.persist);
-    expect(backend.getItem('press.rounds.v1')).toBe('[]');
+    expect(backend.getItem('trunk.rounds.v1')).toBe('[]');
     expect(backend.getItem('press.missing')).toBeNull();
     // Reading is not a store operation at all, which is the entire point:
     // the store is only reachable by promise and readers are synchronous.
@@ -96,30 +96,30 @@ describe('snapshotBackend — the shape iOS needs', () => {
     // bug nobody could reproduce.
     const native = fakeNativeStore();
     const backend = snapshotBackend({}, native.persist);
-    backend.setItem('press.rounds.v1', '[1]');
-    expect(backend.getItem('press.rounds.v1')).toBe('[1]');
+    backend.setItem('trunk.rounds.v1', '[1]');
+    expect(backend.getItem('trunk.rounds.v1')).toBe('[1]');
   });
 
   it('forgets a removed key the instant it is removed', () => {
     // The mirror of the test above, and the one the feedback queue depends on:
     // it clears itself with removeItem, and a read that still saw the old
     // queue would resend reports that were already delivered.
-    const native = fakeNativeStore({ 'press.feedback.queue.v1': '[{}]' });
-    const backend = snapshotBackend({ 'press.feedback.queue.v1': '[{}]' }, native.persist);
-    backend.removeItem('press.feedback.queue.v1');
-    expect(backend.getItem('press.feedback.queue.v1')).toBeNull();
+    const native = fakeNativeStore({ 'trunk.feedback.queue.v1': '[{}]' });
+    const backend = snapshotBackend({ 'trunk.feedback.queue.v1': '[{}]' }, native.persist);
+    backend.removeItem('trunk.feedback.queue.v1');
+    expect(backend.getItem('trunk.feedback.queue.v1')).toBeNull();
   });
 
   it('sends every write out to the store', () => {
     const native = fakeNativeStore();
     const backend = snapshotBackend({}, native.persist);
-    backend.setItem('press.settings.v1', '{"glare":true}');
-    backend.removeItem('press.settings.v1');
+    backend.setItem('trunk.settings.v1', '{"glare":true}');
+    backend.removeItem('trunk.settings.v1');
     expect(native.writes).toEqual([
-      { key: 'press.settings.v1', value: '{"glare":true}' },
-      { key: 'press.settings.v1', value: null },
+      { key: 'trunk.settings.v1', value: '{"glare":true}' },
+      { key: 'trunk.settings.v1', value: null },
     ]);
-    expect(native.disk.has('press.settings.v1')).toBe(false);
+    expect(native.disk.has('trunk.settings.v1')).toBe(false);
   });
 
   it('keeps going when the store rejects a write, and says so', () => {
@@ -131,10 +131,10 @@ describe('snapshotBackend — the shape iOS needs', () => {
     const seen: string[] = [];
     const backend = snapshotBackend({}, native.persist, (key) => seen.push(key));
     native.failWrites();
-    expect(() => backend.setItem('press.rounds.v1', '[]')).not.toThrow();
-    expect(seen).toEqual(['press.rounds.v1']);
+    expect(() => backend.setItem('trunk.rounds.v1', '[]')).not.toThrow();
+    expect(seen).toEqual(['trunk.rounds.v1']);
     // And the snapshot still moved, so the app is consistent with itself.
-    expect(backend.getItem('press.rounds.v1')).toBe('[]');
+    expect(backend.getItem('trunk.rounds.v1')).toBe('[]');
   });
 });
 

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Press are documented here.
+All notable changes to Trunk are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -9,10 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Erase everything**, in Settings under the backup and feedback rows. The
-  privacy page said there was no single wipe button in Press yet; now there
+  privacy page said there was no single wipe button in Trunk yet; now there
   is. Two taps, as deleting from Rounds → Select: the first says what goes —
   every round, saved course, player name, feedback waiting to send and
-  setting — and the second removes all six things Press stores and relaunches
+  setting — and the second removes all six things Trunk stores and relaunches
   the app as on first open. The browser's own clear-site-data route still
   works and the page still describes it.
 - **A privacy page**, at `/privacy.html` on the site and as `PRIVACY.md` in the
@@ -30,6 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   nvm already did.
 
 ### Changed
+- **The app is Trunk.** It was Press. The page title, install name, share
+  cards, backup filename and on-device storage keys use the new name. A
+  backup stamped `"app": "press"` still restores. Rounds saved under the old
+  `press.*` keys are copied to `trunk.*` on launch and the old keys are
+  removed. A press bet is still called a press.
 - **Share links are stricter about what a scorecard is.** A round or course
   link whose par on any hole is outside 2–7 is refused as damaged, where the
   reader used to accept any number — a 0 or a 72 reached every net score,
@@ -91,11 +96,11 @@ tidied for contributors.
   on every push and pull request.
 - `PolyForm Noncommercial 1.0.0` license.
 - `.nvmrc` and a `node` engines constraint pinning the Node major version.
-- Brand identity: the "P Flag" mark (pin flag forms the P of Press, with a
+- Brand identity: the "P Flag" mark (pin flag forms a P, with a
   poker-chip golf ball in the flag). New `app-icon.svg`, simplified
   `favicon.svg`, PNG manifest icons (192/512, maskable), a real 180px
   `apple-touch-icon.png` (iOS ignores SVG touch icons), the mark on the splash
-  screen and Home header (`PressMark` in `src/icons.tsx`), and `BRAND.md`
+  screen and Home header (`TrunkMark` in `src/icons.tsx`), and `BRAND.md`
   documenting the system. The old favicon was an unrelated placeholder
   graphic.
 - Live money during the round: stakes are set at setup, a ticker shows each
@@ -124,7 +129,7 @@ tidied for contributors.
 - **Direct scorecard entry**: tap a scorecard cell and type the score (1–15,
   clamped; empty clears) instead of stepping through `+`/`−`.
 - **About block and in-app feedback**: the Settings sheet now ends with an About
-  block — `Press v<version>`, "Created by Jesse Morrison", and the PolyForm
+  block — `Trunk v<version>`, "Created by Jesse Morrison", and the PolyForm
   Noncommercial License 1.0.0 — the first attribution reachable from inside the
   app itself. The version is read from `package.json` at build time, so it
   can't drift out of sync with a release. A new "Send feedback" row opens a
@@ -176,7 +181,7 @@ tidied for contributors.
   would have cost contrast. All of it sits behind `@media (hover: hover)`: a
   phone reports hover support for the emulated mouse behind a tap, so without
   that guard the last control you touched stays lit until you touch something
-  else. Press had answered the finger and the keyboard for a while; this is the
+  else. Trunk had answered the finger and the keyboard for a while; this is the
   third input it gets used with, and the one it had been ignoring.
 - **Sheets can be pushed back down.** Settings, How to Play, Send feedback and
   Edit handicaps now follow a downward drag and dismiss on release — either
@@ -187,8 +192,8 @@ tidied for contributors.
   still scrolls it. A grab handle appears wherever a finger is available to use
   it, and not on mouse-only machines, where the gesture does not exist.
 - **Back up and restore your rounds.** Settings now writes every saved round
-  and favorite course to a single `press-backup-YYYY-MM-DD.json` file, and
-  reads one back. Press keeps everything in `localStorage` and nowhere else —
+  and favorite course to a single `trunk-backup-YYYY-MM-DD.json` file, and
+  reads one back. Trunk keeps everything in `localStorage` and nowhere else —
   that is what lets it work with no account and no signal, and it also meant
   clearing site data, switching phones, or reinstalling took every round with
   it, permanently and without warning. This is the way out, and incidentally
@@ -204,7 +209,7 @@ tidied for contributors.
   carries no timestamp to judge by and the local copy may be the corrected
   one. A damaged entry is dropped and counted rather than costing the user
   the rest of the file, and a round naming a game this build has no engine
-  for is dropped too — a backup from a newer Press would otherwise crash the
+  for is dropped too — a backup from a newer Trunk would otherwise crash the
   Home screen. Both stores are written together and rolled back if either
   write fails, so a restore that runs out of room leaves the device exactly
   as it was.
@@ -213,7 +218,7 @@ tidied for contributors.
   against par, best round, the scoring mix (eagles through doubles-and-worse),
   skins won, and where each player stands on the money across every round with
   stakes. Nothing new is stored — every figure is derived from
-  `press.rounds.v1` on demand, which is what keeps cross-round history on the
+  `trunk.rounds.v1` on demand, which is what keeps cross-round history on the
   free side of the accounts-and-sync question rather than behind it. Averages
   are quoted per 18 holes so a league nine and a full round compare honestly,
   and each card says how many holes it counted. Only a fully scored round can
@@ -356,14 +361,14 @@ tidied for contributors.
   people's golf. A link that arrives damaged — the usual cause is a messaging
   app wrapping it and only the first line being copied — says so plainly
   instead of showing a blank screen, and a round naming a game the receiving
-  copy of Press is too old to score is refused outright rather than settled
+  copy of Trunk is too old to score is refused outright rather than settled
   for less money than it was played for.
 - **Hand the card to another phone mid-round.** Settings during a round offers
   "Hand over scoring". The other phone gets the whole card and carries on from
   where you left off — the closest thing to everyone scoring on their own phone
   that works with no server and no signal.
 
-  Both phones then hold the same round, so Press asks about it rather than
+  Both phones then hold the same round, so Trunk asks about it rather than
   guessing. If the copy coming back is simply further along, it offers to bring
   yours up to date. If both phones have scored — including the same hole
   entered differently on each — it says so and offers to keep both, because
@@ -382,7 +387,7 @@ tidied for contributors.
   scorecard is printed, and anything odd about it — two holes ranked the same,
   a par that looks wrong — is called out on arrival rather than discovered on
   the sixteenth tee. Nothing is saved until you ask. If you already have a
-  course by that name, Press says exactly what differs ("par differs on hole
+  course by that name, Trunk says exactly what differs ("par differs on hole
   4") and lets you keep both or replace yours.
 - **A screen for your rounds.** Home used to list every round ever played,
   under the two buttons you came to press. It now shows the five most recent
@@ -394,13 +399,13 @@ tidied for contributors.
 - **Clearing rounds out in bulk.** A select mode on the Rounds screen, with a
   two-step delete that names the number before it commits. "Select all" takes
   what the filter is showing, not everything behind it.
-- **A screen for when Press breaks, with the backup on it.** A render error
+- **A screen for when Trunk breaks, with the backup on it.** A render error
   used to leave a blank page under a splash that never faded — on an
   installed app, a green rectangle with no way out and the rounds behind it.
   It now shows what went wrong in words a bug report can carry, a Reload
   button, and the Back up / Restore rows themselves, so the rounds on the
   phone can be saved to a file before anything else is tried.
-- **Press asks the browser to keep its storage.** `navigator.storage.persist()`
+- **Trunk asks the browser to keep its storage.** `navigator.storage.persist()`
   is requested once at launch, and the answer is a new line at the bottom of
   Settings — "Storage protected" or "Storage not protected — back up or
   install" — beside the build stamp. The home-screen tip now says why
@@ -707,9 +712,9 @@ tidied for contributors.
   the ⓘ, rather than a button wrapping a button, which assistive tech
   exposes unreliably. Nothing moved.
 - **Security headers on the site.** `netlify.toml` now sends a Content
-  Security Policy (scripts, styles, fonts and the service worker from Press
-  itself; network calls only to Press and the course-search API; images from
-  Press, data: and blob: for the share cards), plus `X-Frame-Options: DENY`,
+  Security Policy (scripts, styles, fonts and the service worker from Trunk
+  itself; network calls only to Trunk and the course-search API; images from
+  Trunk, data: and blob: for the share cards), plus `X-Frame-Options: DENY`,
   `X-Content-Type-Options: nosniff`, a strict referrer policy and a minimal
   Permissions-Policy.
 - **Course data is credited properly:** "© OpenStreetMap contributors (ODbL
@@ -842,9 +847,9 @@ tidied for contributors.
   once needs several. Offered only where there are handicap strokes to cut: a
   game set to gross has none, while Quota always asks, since it spends the
   handicap on the target whatever else is happening.
-- A share link tapped while Press was already open did nothing. Following a
+- A share link tapped while Trunk was already open did nothing. Following a
   link with the app open changes only the URL fragment, which reloads nothing;
-  Press now notices.
+  Trunk now notices.
 - **New Round screen polish.** The Handicap Index field was narrower than the
   word "Index", so its own placeholder was cut off until you typed; slope and
   rating clipped "129" and "74.6" at every phone width. The "Loaded …" and
@@ -875,7 +880,7 @@ tidied for contributors.
 - **A nine played off an eighteen-hole rating now converts instead of giving
   up.** A rating belongs to a set of holes, and that set is not always the set
   in front of you — a league night, or any nine-hole round loaded from a saved
-  eighteen-hole card. Press now records how many holes a rating covers and
+  eighteen-hole card. Trunk now records how many holes a rating covers and
   halves it accordingly, where before it judged the eighteen-hole figure
   against nine holes, found it implausible, and quietly fell back to typed
   stroke counts.
@@ -1007,7 +1012,7 @@ tidied for contributors.
   finger — which reads as having dismissed it. The confirmation now takes the
   caveat's own slot: the gold note becomes a green one, same shape, no jump.
   Saving from the button at the foot of the row still answers at the foot.
-- **A tip jar, in one row at the bottom of Settings.** Press is free, has no
+- **A tip jar, in one row at the bottom of Settings.** Trunk is free, has no
   ads and no account, and none of that is changing — so the one thing it asks
   for sits below everything the app is actually for, above the version numbers,
   and asks once. It links out to Buy Me a Coffee. Two things can switch it off
@@ -1104,7 +1109,7 @@ tidied for contributors.
   renamed, its name shows on its rounds' cards and finds them in search, and
   it travels with share links and backups. League nights stay out: they
   settle on points.
-- **One person, one name.** Press follows people from round to round by name,
+- **One person, one name.** Trunk follows people from round to round by name,
   so "Al" and "Alex" were two people — on Stats, in league standings, and in a
   trip's settle-up, where it could have Alex owing himself. Now:
   - New Round's name fields suggest everyone the phone has scored.
@@ -1124,10 +1129,10 @@ tidied for contributors.
     rounds, so a restored phone renames the old spelling just as before — and
     a merge made on the other phone renames this one's rounds too. Where the
     two phones disagree, this phone's answer stands. Older backup files, and
-    older versions of Press reading new ones, work exactly as they did.
+    older versions of Trunk reading new ones, work exactly as they did.
   - Every screen now compares names the same way, in one place.
 - **How to Play explains trips**: putting rounds on a trip, where the trip
-  settle-up lives, and that Press asks before counting two spellings of a
+  settle-up lives, and that Trunk asks before counting two spellings of a
   name as one person.
 - **Quota treated an Index as scratch.** A player who entered a Handicap
   Index on a rated course got strokes in every other net game but none in
@@ -1313,6 +1318,6 @@ side-games — one scorekeeper enters scores for the whole group on one phone.
   (top and horizontal safe-area insets).
 - Hole-navigation and progress overlap on the play screen.
 
-[Unreleased]: https://github.com/thetechjam/press-golf/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/thetechjam/press-golf/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/thetechjam/press-golf/releases/tag/v0.1.0
+[Unreleased]: https://github.com/thetechjam/trunk-golf/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/thetechjam/trunk-golf/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/thetechjam/trunk-golf/releases/tag/v0.1.0

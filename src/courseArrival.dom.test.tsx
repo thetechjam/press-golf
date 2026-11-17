@@ -27,9 +27,9 @@ const torrey: SavedCourse = {
   rating: 74.6,
 };
 
-const saved = (): SavedCourse[] => JSON.parse(localStorage.getItem('press.courses.v1') ?? '[]');
+const saved = (): SavedCourse[] => JSON.parse(localStorage.getItem('trunk.courses.v1') ?? '[]');
 const seed = (courses: SavedCourse[]) =>
-  localStorage.setItem('press.courses.v1', JSON.stringify(courses));
+  localStorage.setItem('trunk.courses.v1', JSON.stringify(courses));
 
 async function arriveWith(course: SavedCourse) {
   window.history.replaceState(null, '', `/#c=${await encodeCourse(course)}`);
@@ -85,7 +85,7 @@ describe('a course that arrives by link', () => {
     await userEvent.click(screen.getByRole('button', { name: 'No thanks' }));
 
     expect(saved()).toEqual([]);
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
   });
 
   it('says what looks wrong with the card, on the way in', async () => {

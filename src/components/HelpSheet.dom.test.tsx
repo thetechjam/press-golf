@@ -66,7 +66,7 @@ describe('the walkthrough link', () => {
 
     // From the working directory, not import.meta.url — this file runs under
     // happy-dom, where that is not a file: URL.
-    const srt = readFileSync(resolve('docs/video/press-tutorial.srt'), 'utf8');
+    const srt = readFileSync(resolve('docs/video/trunk-tutorial.srt'), 'utf8');
     const last = srt.trim().split(/\n\s*\n/).pop()!.split('\n')[1];
     const [h, m, rest] = last.split('-->')[1].trim().split(':');
     const seconds = (Number(h) * 60 + Number(m)) * 60 + Number(rest.replace(',', '.'));

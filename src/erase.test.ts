@@ -87,4 +87,10 @@ describe('eraseEverything', () => {
     expect(() => eraseEverything()).not.toThrow();
     expect(localStorage.length).toBe(0);
   });
+
+  it('also clears a key left over from when the app was called Press', () => {
+    store.set('press.rounds.v1', '[]');
+    eraseEverything();
+    expect(store.has('press.rounds.v1')).toBe(false);
+  });
 });

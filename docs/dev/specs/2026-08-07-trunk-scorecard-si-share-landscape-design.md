@@ -3,7 +3,7 @@
 **Date:** 2026-08-07
 **Status:** Approved, ready for planning
 
-Three independent user-facing changes to Press, plus one correctness fix that
+Three independent user-facing changes to Trunk, plus one correctness fix that
 falls out of the first two. All four apply to regular rounds and league rounds
 alike — league parity was an explicit requirement, not an afterthought.
 
@@ -146,8 +146,8 @@ count.
   letter pips for league rounds
 
 **Chrome:** identical to the results card — dark green board, gold trim, Oswald
-condensed caps, `PRESS` wordmark, course title, date/players/holes meta line,
-`SCORED WITH PRESS` footer, double gold frame. Both cards should read as the
+condensed caps, `TRUNK` wordmark, course title, date/players/holes meta line,
+`SCORED WITH TRUNK` footer, double gold frame. Both cards should read as the
 same object from the same app.
 
 **League:** no branch needed beyond the stroke markers. Unlike the results card,

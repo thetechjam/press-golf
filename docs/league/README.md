@@ -1,12 +1,12 @@
 # League rollout kit
 
-Material for introducing Press to the Thursday league. Parked in September 2026,
+Material for introducing Trunk to the Thursday league. Parked in September 2026,
 after the season ended; the league starts again in mid-April 2027.
 
 | File | What it is |
 |---|---|
-| `press-league-flyer.pdf` | Print-ready US Letter flyer (pro shop / league night) |
-| `press-league-flyer.png` | The same flyer as an image, for texts and email |
+| `trunk-league-flyer.pdf` | Print-ready US Letter flyer (pro shop / league night) |
+| `trunk-league-flyer.png` | The same flyer as an image, for texts and email |
 | `flyer.html` | Source of the flyer — edit this, then re-export |
 | `qr.svg` | QR code for https://pressgolf.netlify.app/, made with `src/qr.ts` |
 | `make-qr.mjs` | Regenerates `qr.svg` (`node docs/league/make-qr.mjs`) |

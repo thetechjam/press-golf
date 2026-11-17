@@ -1,6 +1,7 @@
 import { setBackend, snapshotBackend } from './kv';
 import { ROUNDS_KEY, COURSES_KEY, SETTINGS_KEY, ALIASES_KEY, DISTINCT_KEY } from './storage';
 import { QUEUE_KEY } from './feedback';
+import { LEGACY_KEYS, migratedRecord } from './legacyKeys';
 
 /**
  * Storage that survives inside the native shell.
@@ -8,7 +9,7 @@ import { QUEUE_KEY } from './feedback';
  * `localStorage` is transient in a WKWebView — iOS reclaims it when the device
  * runs short of space — so an App Store build has to keep its rounds somewhere
  * the system will not take back. Capacitor's Preferences plugin is that place
- * (`UserDefaults` underneath), and this is the twenty lines that point Press at
+ * (`UserDefaults` underneath), and this is the twenty lines that point Trunk at
  * it.
  *
  * Nothing here is imported from npm. Capacitor injects a bridge onto the window
@@ -22,7 +23,7 @@ import { QUEUE_KEY } from './feedback';
  * returning false, which is what `main.tsx` does with it.
  */
 
-/** What Press uses of the Preferences plugin. Its full surface is larger. */
+/** What Trunk uses of the Preferences plugin. Its full surface is larger. */
 interface PreferencesPlugin {
   get(options: { key: string }): Promise<{ value: string | null }>;
   set(options: { key: string; value: string }): Promise<void>;
@@ -41,7 +42,7 @@ const bridge = (): CapacitorBridge | undefined =>
 export const isNative = (): boolean => bridge()?.isNativePlatform?.() === true;
 
 /**
- * Every key that has to come across, because everything Press remembers is one
+ * Every key that has to come across, because everything Trunk remembers is one
  * of them. Imported from the modules that own them rather than written out
  * again here: a key added to `storage.ts` and forgotten here would keep working
  * perfectly on the web and quietly stop persisting on a phone, which is the
@@ -49,6 +50,13 @@ export const isNative = (): boolean => bridge()?.isNativePlatform?.() === true;
  * those files actually write.
  */
 export const PERSISTED_KEYS = [ROUNDS_KEY, COURSES_KEY, SETTINGS_KEY, ALIASES_KEY, DISTINCT_KEY, QUEUE_KEY] as const;
+
+/**
+ * What a launch reads. The current keys, then the names they had when the app
+ * was called Press. A value found only under an old name is copied across
+ * before the snapshot is installed, so the first read already sees it.
+ */
+export const HYDRATE_KEYS = [...PERSISTED_KEYS, ...LEGACY_KEYS];
 
 /**
  * Hydrates from the native store and points the app at it. Awaited once,
@@ -70,21 +78,42 @@ export async function initNativeStorage(
   if (!isNative() || !prefs) return false;
 
   const loaded: Record<string, string> = {};
-  for (const key of PERSISTED_KEYS) {
+  for (const key of HYDRATE_KEYS) {
     try {
       const { value } = await prefs.get({ key });
       if (value != null) loaded[key] = value;
     } catch (err) {
-      // One unreadable key is not a reason to abandon the other three. It
+      // One unreadable key is not a reason to abandon the others. It
       // reads as absent, which for every one of them means "nothing saved yet"
       // — the same answer a fresh install gives.
       onError?.(key, err);
     }
   }
 
+  // Copy off the old names before anything reads. A copy that the store
+  // refuses stays in memory for this launch and on the old key on disk, so
+  // the next launch tries again. The old key is removed only after the new
+  // one has been written.
+  const { record, copies, drops } = migratedRecord(loaded);
+  for (const copy of copies) {
+    try {
+      await prefs.set({ key: copy.key, value: copy.value });
+      await prefs.remove({ key: copy.drop });
+    } catch (err) {
+      onError?.(copy.key, err);
+    }
+  }
+  for (const key of drops) {
+    try {
+      await prefs.remove({ key });
+    } catch (err) {
+      onError?.(key, err);
+    }
+  }
+
   setBackend(
     snapshotBackend(
-      loaded,
+      record,
       (key, value) => {
         // A rejected promise is not a thrown error, so snapshotBackend's own
         // catch cannot see this one. Caught here instead, and reported through

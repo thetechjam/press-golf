@@ -4,11 +4,11 @@ _Design spec — 2026-08-04_
 
 ## Problem
 
-Press is named after doubling a bet. `BRAND.md` says "the bet is the point."
+A press is doubling the bet, and `BRAND.md` says "the bet is the point."
 But `stakes` appears in exactly one UI file (`components/Settlement.tsx`), which
 renders only on the Results screen. You cannot set a stake at setup, and you
 cannot see money at any point during the round. For the three-plus hours the app
-is actually in your hand, Press is an ordinary scorecard; the money — the one
+is actually in your hand, Trunk is an ordinary scorecard; the money — the one
 thing no free scorecard app does — appears once, after everyone has walked off
 18.
 
@@ -48,7 +48,7 @@ both claim handicap strokes are "capped at one stroke per hole" when
 
 ## Non-goals
 
-- No backend, accounts, or sync. Press stays local-only and offline-first.
+- No backend, accounts, or sync. Trunk stays local-only and offline-first.
 - No changes to the existing scoring engines. Every game engine in `src/games/*`
   is left byte-for-byte alone; the one new module added there (`money.ts`) is a
   pure derivation layered on top of `computeSettlement`, not a new engine.
@@ -258,8 +258,8 @@ gold-tinted hero rather than white.
 Confirmed with the owner on 2026-08-04. Recorded so the reasoning survives the
 conversation that produced it.
 
-**Tab label — "Board" over "Money".** "Money" is more on-brand for an app named
-Press and is the more tempting word to tap, but the tab also holds the four game
+**Tab label — "Board" over "Money".** "Money" is more on-brand for an app then
+named Press, and is the more tempting word to tap, but the tab also holds the four game
 leaderboards; in a friendly round with no stakes it would be a Money tab with no
 money in it. A dynamic label ("Money" when stakes exist, "Board" otherwise) was
 considered and rejected because it flips while you are editing stakes from that
@@ -269,7 +269,7 @@ same tab.
 completed hole gives you something to read when swiping back, but for any hole
 except the last, the delta answers "what if this hole had never been played"
 rather than "what was this hole worth" — and with skins carry-over those differ.
-Press would be displaying a quietly wrong number. Dropping the swing line
+Trunk would be displaying a quietly wrong number. Dropping the swing line
 entirely was also considered; it is the most emotionally direct part of the
 feature and worth the constraint.
 

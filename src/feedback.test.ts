@@ -228,7 +228,7 @@ describe('postFeedback — Netlify form-handler stub guard', () => {
 
   it('rejects when the response is 200 with the unattached-handler stub body', async () => {
     stubFetch(
-      '<!doctype html><html><head><title>Press form definitions</title></head><body></body></html>'
+      '<!doctype html><html><head><title>Trunk form definitions</title></head><body></body></html>'
     );
     await expect(postFeedback(buildFeedback(draft(), ctx()))).rejects.toThrow(/not attached/);
   });
@@ -247,7 +247,7 @@ describe('postFeedback — Netlify field contract', () => {
   it('posts exactly the fields declared in __forms.html, minus the honeypot', async () => {
     const html = readFileSync(new URL('../public/__forms.html', import.meta.url), 'utf8');
     // Only <input>/<textarea> name attributes are posted fields — the <form>
-    // tag also carries a `name="press-feedback"` (the Netlify form name
+    // tag also carries a `name="trunk-feedback"` (the Netlify form name
     // itself, sent as the `form-name` field's value, not its own key).
     const declared = new Set(
       Array.from(html.matchAll(/<(?:input|textarea)\b[^>]*\bname="([^"]+)"/g), (m) => m[1])

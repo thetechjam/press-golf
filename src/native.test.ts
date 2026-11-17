@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { isNative, initNativeStorage, PERSISTED_KEYS } from './native';
+import { isNative, initNativeStorage, PERSISTED_KEYS, HYDRATE_KEYS } from './native';
 import { kv, setBackend, type KvBackend } from './kv';
 import { listRounds, saveRound, getSettings, saveSettings } from './storage';
 import { makeRound } from './games/testFixtures';
 
 /**
- * Pointing Press at storage that survives on a phone.
+ * Pointing Trunk at storage that survives on a phone.
  *
  * All of it runs against a fake bridge, because the real one only exists
  * inside the native shell. What that can prove is everything except the Swift:
@@ -84,8 +84,8 @@ describe('on the web', () => {
     expect(await initNativeStorage()).toBe(false);
     // The backend is still the browser's own store — this is the guarantee
     // that shipping this file changes nothing for anyone using the website.
-    kv.setItem('press.probe', 'a');
-    expect(localStorage.getItem('press.probe')).toBe('a');
+    kv.setItem('trunk.probe', 'a');
+    expect(localStorage.getItem('trunk.probe')).toBe('a');
   });
 
   it('stays on the web path when the bridge says it is a browser', async () => {
@@ -105,8 +105,8 @@ describe('on the web', () => {
       },
     });
     expect(await initNativeStorage()).toBe(false);
-    kv.setItem('press.probe', 'a');
-    expect(localStorage.getItem('press.probe')).toBe('a');
+    kv.setItem('trunk.probe', 'a');
+    expect(localStorage.getItem('trunk.probe')).toBe('a');
   });
 
   it('stays on the web path when the bridge is there but the plugin is not', async () => {
@@ -122,12 +122,22 @@ describe('inside the shell', () => {
     const bridge = installBridge();
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
     await initNativeStorage();
-    expect(bridge.reads).toEqual([...PERSISTED_KEYS]);
+    expect(bridge.reads).toEqual([...HYDRATE_KEYS]);
+  });
+
+  it('copies a round saved when the app was called Press', async () => {
+    const saved = [{ ...makeRound(), id: 'r1', course: 'Pebble Beach' }];
+    const bridge = installBridge({ 'press.rounds.v1': JSON.stringify(saved) });
+    original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
+    await initNativeStorage();
+    expect(listRounds().map((r) => r.course)).toEqual(['Pebble Beach']);
+    expect(bridge.disk.has('press.rounds.v1')).toBe(false);
+    expect(JSON.parse(bridge.disk.get('trunk.rounds.v1') as string)[0].course).toBe('Pebble Beach');
   });
 
   it('serves what the store already held', async () => {
     const saved = [{ ...makeRound(), id: 'r1', course: 'Pebble Beach' }];
-    const bridge = installBridge({ 'press.rounds.v1': JSON.stringify(saved) });
+    const bridge = installBridge({ 'trunk.rounds.v1': JSON.stringify(saved) });
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
     await initNativeStorage();
     expect(listRounds().map((r) => r.course)).toEqual(['Pebble Beach']);
@@ -142,7 +152,7 @@ describe('inside the shell', () => {
     saveRound({ ...makeRound(), id: 'r1', course: 'Torrey Pines South' });
     saveSettings({ glare: true });
 
-    expect(bridge.writes.map((w) => w.key)).toEqual(['press.rounds.v1', 'press.settings.v1']);
+    expect(bridge.writes.map((w) => w.key)).toEqual(['trunk.rounds.v1', 'trunk.settings.v1']);
     // The whole point: nothing reached the store iOS is allowed to empty.
     expect(localStorage.length).toBe(0);
   });
@@ -162,17 +172,17 @@ describe('inside the shell', () => {
   it('keeps going when one key cannot be read', async () => {
     // That key reads as absent, which for all four means "nothing saved yet".
     const bridge = installBridge(
-      { 'press.settings.v1': JSON.stringify({ glare: true }) },
-      { onGet: 'press.rounds.v1' }
+      { 'trunk.settings.v1': JSON.stringify({ glare: true }) },
+      { onGet: 'trunk.rounds.v1' }
     );
     const seen: string[] = [];
     original = setBackend({ getItem: () => null, setItem: () => {}, removeItem: () => {} });
     expect(await initNativeStorage((key) => seen.push(key))).toBe(true);
 
-    expect(seen).toEqual(['press.rounds.v1']);
+    expect(seen).toEqual(['trunk.rounds.v1']);
     expect(listRounds()).toEqual([]);
     expect(getSettings().glare).toBe(true);
-    expect(bridge.reads).toEqual([...PERSISTED_KEYS]);
+    expect(bridge.reads).toEqual([...HYDRATE_KEYS]);
   });
 
   it('reports a write the store rejects instead of losing it silently', async () => {
@@ -185,7 +195,7 @@ describe('inside the shell', () => {
 
     expect(() => saveRound({ ...makeRound(), id: 'r1', course: 'Oakmont' })).not.toThrow();
     await new Promise((r) => setTimeout(r, 0));
-    expect(seen).toEqual(['press.rounds.v1']);
+    expect(seen).toEqual(['trunk.rounds.v1']);
     // The app still agrees with itself, whatever the disk did.
     expect(listRounds().map((r) => r.course)).toEqual(['Oakmont']);
   });
@@ -203,10 +213,10 @@ describe('every key the app writes is a key the phone hydrates', () => {
   const source = (file: string) =>
     readFileSync(fileURLToPath(new URL(file, import.meta.url)), 'utf8');
 
-  it('covers every press.* key in storage.ts and feedback.ts', () => {
+  it('covers every trunk.* key in storage.ts and feedback.ts', () => {
     const found = new Set<string>();
     for (const file of ['./storage.ts', './feedback.ts']) {
-      for (const m of source(file).matchAll(/'(press\.[a-z.]+v\d+)'/g)) found.add(m[1]);
+      for (const m of source(file).matchAll(/'(trunk\.[a-z.]+v\d+)'/g)) found.add(m[1]);
     }
     expect(found.size).toBeGreaterThan(0);
     expect([...found].sort()).toEqual([...PERSISTED_KEYS].sort());

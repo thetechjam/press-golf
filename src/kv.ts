@@ -4,7 +4,7 @@
  * Every round, every saved course, every setting and the unsent feedback queue
  * are strings under four keys, and until now each was written straight to
  * `localStorage`. That is correct on the web and unsafe anywhere else: inside a
- * WKWebView — which is what an App Store build of Press would be — iOS treats
+ * WKWebView — which is what an App Store build of Trunk would be — iOS treats
  * local storage as *transient* and reclaims it when the device runs short of
  * space. For an app whose entire data model lives there, that is every round
  * somebody has played, gone, with nothing on screen to say so.

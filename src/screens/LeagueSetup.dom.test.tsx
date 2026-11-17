@@ -31,7 +31,7 @@ const course: SavedCourse = {
 };
 
 const show = (saved: SavedCourse[] = [course]) => {
-  localStorage.setItem('press.courses.v1', JSON.stringify(saved));
+  localStorage.setItem('trunk.courses.v1', JSON.stringify(saved));
   const started: Round[] = [];
   render(<LeagueSetup onCancel={() => {}} onStart={(r) => started.push(r)} />);
   return started;
@@ -196,7 +196,7 @@ describe('working out a handicap', () => {
       status: 'finished',
     });
     localStorage.setItem(
-      'press.rounds.v1',
+      'trunk.rounds.v1',
       JSON.stringify(['2026-05-01', '2026-05-08', '2026-05-15'].map((d, i) => night(`r${i}`, d)))
     );
     const user = userEvent.setup();

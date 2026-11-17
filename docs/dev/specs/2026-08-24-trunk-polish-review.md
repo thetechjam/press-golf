@@ -1,4 +1,4 @@
-# Press — Polish Review
+# Trunk — Polish Review
 
 _2026-08-24. A design-engineering pass over the UI layer (`src/index.css`,
 `src/components/*`, `src/screens/*`) looking for the unseen details: motion,
@@ -6,7 +6,7 @@ state feedback, and transition moments. Scoring engines are out of scope._
 
 ## The through-line
 
-Press already does the hard, unglamorous parts of polish better than most apps
+Trunk already does the hard, unglamorous parts of polish better than most apps
 this size. The contrast work is real and documented at the token level
 (`--under-ink`, `--gold-ink`, `--over-strong` each carry the measured ratio in a
 comment). `prefers-reduced-motion` is honored on **every** animation without

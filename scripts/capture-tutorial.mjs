@@ -761,8 +761,8 @@ const scenes = [
 
 const seedScript = (seed) => `
   try {
-    localStorage.setItem('press.rounds.v1', ${JSON.stringify(JSON.stringify(seed.rounds ?? []))});
-    localStorage.setItem('press.courses.v1', ${JSON.stringify(JSON.stringify(seed.courses ?? []))});
+    localStorage.setItem('trunk.rounds.v1', ${JSON.stringify(JSON.stringify(seed.rounds ?? []))});
+    localStorage.setItem('trunk.courses.v1', ${JSON.stringify(JSON.stringify(seed.courses ?? []))});
   } catch {}
 `;
 

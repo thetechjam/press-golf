@@ -40,7 +40,7 @@ function night(id: string, date: string, usScore: number, themScore: number): Ro
   return { ...r, id, date, course: 'Rolling Hills' };
 }
 
-const store = (rounds: Round[]) => localStorage.setItem('press.rounds.v1', JSON.stringify(rounds));
+const store = (rounds: Round[]) => localStorage.setItem('trunk.rounds.v1', JSON.stringify(rounds));
 
 beforeEach(() => localStorage.clear());
 afterEach(cleanup);

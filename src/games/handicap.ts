@@ -145,7 +145,7 @@ export function matchAllowanceFor(round: Round, game: GameType, fourBall: boolea
  * handicap is simply the low man: they play off scratch and everyone else's
  * difference is measured from them.
  *
- * Press used to hand each side its full handicap on its own stroke-index holes,
+ * Trunk used to hand each side its full handicap on its own stroke-index holes,
  * which gave a 10 against a 6 shots on indexes 1–10 and the 6 shots on 1–6 —
  * six halved holes that should have been played level, and four shots for the
  * 10 on the wrong holes. The allocation itself (`strokesReceivedOnHole`) is

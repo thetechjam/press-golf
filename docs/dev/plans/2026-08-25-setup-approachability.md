@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vite + React 19 + TypeScript, vitest (node environment), oxlint. Plain CSS in `src/index.css`.
 
-**Spec:** `docs/dev/specs/2026-08-25-press-setup-approachability-design.md`
+**Spec:** `docs/dev/specs/2026-08-25-trunk-setup-approachability-design.md`
 
 ## Global Constraints
 
@@ -258,7 +258,7 @@ Expected: all pass; only the two pre-existing `TeamPicker` fast-refresh warnings
 git add src/roster.ts src/roster.test.ts
 git commit -m "Derive a player roster from saved rounds
 
-Press stores every past round with its players' names and handicaps but
+Trunk stores every past round with its players' names and handicaps but
 has never offered them back, so Setup opens with two blank name fields
 even when you played with the same four people last week. This adds the
 derivation; the UI follows.
@@ -709,7 +709,7 @@ Expected: PASS. No test touches `Setup.tsx`, so the suite should be unchanged at
 
 - [ ] **Step 4: Verify in the browser**
 
-Start the preview (`preview_start` with the `press-golf-dev` config, never `npm run dev` in a shell) at 375×812 and check:
+Start the preview (`preview_start` with the `trunk-golf-dev` config, never `npm run dev` in a shell) at 375×812 and check:
 
 1. With saved rounds present: Players open; four collapsed rows reading `Not set`, `Skins`, `18 holes · par 72`, `No stakes`; Start Round enabled.
 2. `document.documentElement.scrollHeight` is well under the 1912px baseline.
@@ -717,7 +717,7 @@ Start the preview (`preview_start` with the `press-golf-dev` config, never `npm 
 4. Changing the hole count to 9 updates the Holes summary to `9 holes · par 36` while collapsed.
 5. Selecting Wolf updates the Games summary and reveals the Wolf options inside that row.
 6. Selecting Nassau with 4 named players reveals the Nassau `TeamPicker` inside the Games row.
-7. `localStorage.removeItem('press.rounds.v1')` then reload: Games is expanded.
+7. `localStorage.removeItem('trunk.rounds.v1')` then reload: Games is expanded.
 8. Repeat 1 and 3 in light and glare, and in landscape.
 
 - [ ] **Step 5: Commit**
@@ -950,7 +950,7 @@ With at least two saved rounds containing named players:
 1. The crew chip shows the last round's names; tapping it fills the player list with those names and handicaps.
 2. After tapping it, the chip disappears (the list now matches the crew).
 3. Recent chips exclude anyone already in the form, and adding one appends them with their handicap.
-4. `localStorage.removeItem('press.rounds.v1')` then reload: no crew chip, no recent row, no empty-state text.
+4. `localStorage.removeItem('trunk.rounds.v1')` then reload: no crew chip, no recent row, no empty-state text.
 5. A round whose players are all blank contributes no chips.
 6. Start Round is still enabled at every point above.
 7. Check the chips in light, dark and glare.
@@ -963,7 +963,7 @@ git commit -m "Recall players from past rounds on New Round
 
 The expensive part of setup on a first tee was never the dropdowns you
 can scroll past — it was typing four names on a phone while the group
-waits, names press.rounds.v1 was already holding.
+waits, names trunk.rounds.v1 was already holding.
 
 A crew chip repeats the last round's players; recent chips offer anyone
 else you have played with, minus those already in the form. The crew chip

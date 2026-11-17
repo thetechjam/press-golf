@@ -8,11 +8,11 @@ import { applyAliases, withAlias, mergeInRounds, pairKey, type Aliases, type Peo
  * key that silently stopped persisting on iOS. `native.ts` composes the list;
  * `native.test.ts` checks it against what this file actually writes.
  */
-export const ROUNDS_KEY = 'press.rounds.v1';
-export const COURSES_KEY = 'press.courses.v1';
-export const SETTINGS_KEY = 'press.settings.v1';
-export const ALIASES_KEY = 'press.aliases.v1';
-export const DISTINCT_KEY = 'press.distinct.v1';
+export const ROUNDS_KEY = 'trunk.rounds.v1';
+export const COURSES_KEY = 'trunk.courses.v1';
+export const SETTINGS_KEY = 'trunk.settings.v1';
+export const ALIASES_KEY = 'trunk.aliases.v1';
+export const DISTINCT_KEY = 'trunk.distinct.v1';
 
 export type Theme = 'system' | 'light' | 'dark';
 

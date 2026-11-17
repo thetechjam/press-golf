@@ -1,7 +1,7 @@
 # Email to the league director
 
-Draft for introducing Press to the league before the season. Attach
-`press-league-flyer.pdf`. Names are left as placeholders because this repo is
+Draft for introducing Trunk to the league before the season. Attach
+`trunk-league-flyer.pdf`. Names are left as placeholders because this repo is
 public.
 
 ---
@@ -10,7 +10,7 @@ public.
 
 Hi [League director],
 
-I've been building a free golf scoring app called Press, and I've set up a
+I've been building a free golf scoring app called Trunk, and I've set up a
 league mode that follows our [2025] rule sheet. I wanted to run it by you
 before sharing it with anyone.
 

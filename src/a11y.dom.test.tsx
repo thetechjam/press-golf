@@ -96,8 +96,8 @@ function openEveryRow() {
 }
 
 beforeEach(() => {
-  localStorage.setItem('press.rounds.v1', JSON.stringify([round]));
-  localStorage.setItem('press.courses.v1', JSON.stringify([course]));
+  localStorage.setItem('trunk.rounds.v1', JSON.stringify([round]));
+  localStorage.setItem('trunk.courses.v1', JSON.stringify([course]));
 });
 afterEach(() => {
   cleanup();

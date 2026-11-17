@@ -237,7 +237,7 @@ describe('reading a payload that cannot be trusted', () => {
     ...over,
   });
 
-  it('refuses one written by a newer Press', () => {
+  it('refuses one written by a newer Trunk', () => {
     const result = unpackRound(payload({ v: SHARE_FORMAT + 1 }));
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain('newer version');
@@ -257,7 +257,7 @@ describe('reading a payload that cannot be trusted', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('refuses a payload that is not a Press round at all', () => {
+  it('refuses a payload that is not a Trunk round at all', () => {
     expect(unpackRound(null).ok).toBe(false);
     expect(unpackRound('hello').ok).toBe(false);
     expect(unpackRound({}).ok).toBe(false);

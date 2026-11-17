@@ -7,7 +7,7 @@ import { nameKey } from './people';
 /**
  * Cross-round history, derived from the rounds already on the device.
  *
- * Nothing new is stored. Every number here is computed from `press.rounds.v1`
+ * Nothing new is stored. Every number here is computed from `trunk.rounds.v1`
  * on demand, which is what keeps this feature on the free side of the backend
  * question the roadmap describes: local history needs no account and no sync,
  * because the rounds are already local.

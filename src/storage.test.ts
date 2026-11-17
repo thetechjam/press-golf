@@ -31,12 +31,12 @@ describe('settings', () => {
   });
 
   it('merges stored partials over defaults (forward-compatible)', () => {
-    store.set('press.settings.v1', '{}');
+    store.set('trunk.settings.v1', '{}');
     expect(getSettings().keepAwake).toBe(true);
   });
 
   it('falls back to defaults on corrupt JSON', () => {
-    store.set('press.settings.v1', 'not-json{');
+    store.set('trunk.settings.v1', 'not-json{');
     expect(getSettings()).toEqual(DEFAULT_SETTINGS);
   });
 
@@ -46,14 +46,14 @@ describe('settings', () => {
   });
 
   it('carries a v1 sunlight:true across to glare', () => {
-    store.set('press.settings.v1', JSON.stringify({ keepAwake: true, sunlight: true }));
+    store.set('trunk.settings.v1', JSON.stringify({ keepAwake: true, sunlight: true }));
     expect(getSettings().glare).toBe(true);
   });
 
   it('drops the legacy sunlight key on the next write', () => {
-    store.set('press.settings.v1', JSON.stringify({ keepAwake: true, sunlight: true }));
+    store.set('trunk.settings.v1', JSON.stringify({ keepAwake: true, sunlight: true }));
     saveSettings({ keepAwake: false });
-    expect(JSON.parse(store.get('press.settings.v1')!)).toEqual({
+    expect(JSON.parse(store.get('trunk.settings.v1')!)).toEqual({
       keepAwake: false,
       theme: 'system',
       glare: true,
@@ -62,7 +62,7 @@ describe('settings', () => {
   });
 
   it('falls back to system when a stored theme is unrecognized', () => {
-    store.set('press.settings.v1', JSON.stringify({ theme: 'sepia' }));
+    store.set('trunk.settings.v1', JSON.stringify({ theme: 'sepia' }));
     expect(getSettings().theme).toBe('system');
   });
 
@@ -95,13 +95,13 @@ describe('a damaged list', () => {
   // Home, and a course with a non-string name threw inside the sort.
   it('keeps the rounds around a null entry', () => {
     const good = makeRound({ players: [player('p1', 'Al')] });
-    localStorage.setItem('press.rounds.v1', JSON.stringify([null, good, 5]));
+    localStorage.setItem('trunk.rounds.v1', JSON.stringify([null, good, 5]));
     expect(listRounds().map((r) => r.id)).toEqual([good.id]);
   });
 
   it('keeps the courses around one with no name', () => {
     localStorage.setItem(
-      'press.courses.v1',
+      'trunk.courses.v1',
       JSON.stringify([
         { id: 'a', name: 'Zed', holes: [] },
         { id: 'b', holes: [] },

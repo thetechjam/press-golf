@@ -43,7 +43,7 @@ const sent: Round = {
   status: 'finished',
 };
 
-const stored = (): Round[] => JSON.parse(localStorage.getItem('press.rounds.v1') ?? '[]');
+const stored = (): Round[] => JSON.parse(localStorage.getItem('trunk.rounds.v1') ?? '[]');
 
 /** The round as it would be after `n` holes had been scored on this phone. */
 function scoredTo(round: Round, n: number, ids = round.players.map((p) => p.id)): Round {
@@ -57,7 +57,7 @@ function scoredTo(round: Round, n: number, ids = round.players.map((p) => p.id))
 
 /** Puts a round on this device, the way having scored it would. */
 const seed = (round: Round) =>
-  localStorage.setItem('press.rounds.v1', JSON.stringify([round]));
+  localStorage.setItem('trunk.rounds.v1', JSON.stringify([round]));
 
 /** Opens the app with `hash` in the address bar, as following a link does. */
 async function arriveWith(hash: string) {
@@ -121,7 +121,7 @@ describe('a round that arrives by link', () => {
     // Seeded before the link is followed, so the whole thing happens inside
     // one App — a fresh render would reset the flag whatever `load` does.
     localStorage.setItem(
-      'press.rounds.v1',
+      'trunk.rounds.v1',
       JSON.stringify([{ ...sent, id: 'mine1234', course: 'My Club' }])
     );
     await arriveWith(`#r=${await encodeRound(sent)}`);
@@ -156,13 +156,13 @@ describe('a round that arrives by link', () => {
     expect(screen.getByText(/damaged or incomplete/)).toBeTruthy();
     expect(stored()).toEqual([]);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Go to Press' }));
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Go to Trunk' }));
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
   });
 
   it('ignores a fragment that is not a shared round', async () => {
     await arriveWith('#play');
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
   });
 });
 
@@ -232,11 +232,11 @@ describe('a round this device already has', () => {
 
   it('leaves a stale copy alone when asked to, writing nothing', async () => {
     seed(asDecoded(live, 4));
-    const before = localStorage.getItem('press.rounds.v1');
+    const before = localStorage.getItem('trunk.rounds.v1');
     await arriveWith(`#r=${await encodeRound(asDecoded(live, 9))}`);
     await userEvent.click(screen.getByRole('button', { name: 'Leave mine as it is' }));
 
-    expect(localStorage.getItem('press.rounds.v1')).toBe(before);
+    expect(localStorage.getItem('trunk.rounds.v1')).toBe(before);
   });
 
   it('will not quietly pick a winner when both phones have scored', async () => {
@@ -280,13 +280,13 @@ describe('a round this device already has', () => {
   });
 });
 
-describe('a link tapped while Press is already open', () => {
+describe('a link tapped while Trunk is already open', () => {
   it('opens the round instead of doing nothing', async () => {
-    // Following a link with Press closed loads the page. Following one with
-    // Press already open on the same origin changes only the fragment — a
+    // Following a link with Trunk closed loads the page. Following one with
+    // Trunk already open on the same origin changes only the fragment — a
     // same-document navigation, with no reload and no remount.
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
 
     window.location.hash = `#r=${await encodeRound(sent)}`;
     window.dispatchEvent(new HashChangeEvent('hashchange'));

@@ -1,20 +1,22 @@
-# Press — Brand One-Pager
+# Trunk — Brand One-Pager
 
 The identity leans into what the app referees: buddies-trip money games where
 nobody plays for free. Golf sets the scene; the bet is the point.
 
 ## Name
 
-**Press.** A press is doubling the bet — the core move in golf side games.
-Public title: "Press — Golf Side Games". Home-screen / short name: "Press".
+**Trunk.** Public title: "Trunk — Golf Side Games". Home-screen / short name: "Trunk".
 
-## The mark: "P Flag"
+The product used to be called Press, after the press — doubling the bet, the
+core move in these games. The bet is still called a press. The product name
+is Trunk.
 
-The pin flag forms the letter **P** (pole = stem, gold pennant = bowl), and a
-**poker-chip golf ball** — chip edge spots outside, dimples inside — sits in
-the flag. Reading order is the brand order: P for Press first, pin flag
-second, chip third. The pennant keeps its point; it's only rounded enough to
-suggest the P.
+## The mark
+
+A pin flag (pole and gold pennant) with a **poker-chip golf ball** in it —
+chip edge spots outside, dimples inside. The pennant was drawn to suggest a
+letter **P** when the product was called Press. It is a logo now, and sits
+beside the word Trunk. It does not stand in for a letter.
 
 ### Files
 
@@ -24,16 +26,17 @@ suggest the P.
 | `public/favicon.svg` | Simplified cut (no dimples/shadows, bolder forms) for 16–32px. |
 | `public/icon-192.png`, `public/icon-512.png` | PWA manifest icons (`any maskable`), rendered full-square. |
 | `public/apple-touch-icon.png` | 180px full-square PNG (iOS ignores SVG touch icons). |
-| `src/icons.tsx` → `PressMark` | In-app mark, no background tile. Flag stays gold; pole + chip ring follow `currentColor` so it tracks dark/glare modes. |
+| `src/icons.tsx` → `TrunkMark` | In-app mark, no background tile. Flag stays gold; pole + chip ring follow `currentColor` so it tracks dark/glare modes. |
 | `index.html` splash | Inline copy of the mark (splash background is already the felt). |
 
 ### Wordmark lockup
 
-In the wordmark, **the mark replaces the P**: `[P Flag]RESS`. The mark's
-bottom edge sits on the text baseline (`align-items: baseline`) with a tight
-gap (3–5px) so the flag tip runs against the R. Keep "Press" available to
-screen readers (`role="img" aria-label="Press"` on the lockup, `aria-hidden`
-on the visible "ress"). Used on the Home header and the splash.
+`[mark] TRUNK`. The mark's bottom edge sits on the text baseline
+(`align-items: baseline`) with about a 10px gap, so the flag reads as a logo
+and not as the first letter of the word. The visible word is "Trunk"
+(uppercased in CSS). On Home that word is the `<h1>` text. On the splash the
+lockup is `role="img" aria-label="Trunk"`, with the visible word
+`aria-hidden`. Share cards draw the word `TRUNK` in gold.
 
 Regenerate the PNGs from the SVG art at exact pixel sizes if the mark changes
 (the full-square render source lives in the SVG minus the `rx` on the
@@ -70,6 +73,6 @@ Parked candidates (degenerate-buddies-trip energy — see ROADMAP):
 ## Usage notes
 
 - The mark never appears on a non-felt background without its squircle tile;
-  in-app, use `PressMark` (transparent) on brand surfaces only.
-- Share cards sign off with `SCORED WITH PRESS` in gold — keep that.
-- Don't add The Tech JAM branding; Press is its own thing.
+  in-app, use `TrunkMark` (transparent) on brand surfaces only.
+- Share cards sign off with `SCORED WITH TRUNK` in gold — keep that.
+- Don't add The Tech JAM branding; Trunk is its own thing.

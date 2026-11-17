@@ -5,9 +5,9 @@
  *   npm run og:image
  *
  * The card is drawn here as SVG from the brand constants (BRAND.md): the felt
- * gradient, the P Flag mark lifted from index.html's splash, the wordmark
- * lockup where the mark stands in for the P, and the tagline. Crawlers do not
- * render SVG, so the PNG is what ships — committed, because generating it at
+ * gradient, the flag mark lifted from index.html's splash, the word Trunk
+ * beside it, and the tagline. Crawlers do not render SVG, so the PNG is what
+ * ships — committed, because generating it at
  * deploy time would need a browser in the Netlify build.
  *
  * Rasterised by a headless Chromium rather than an SVG library, for one
@@ -36,9 +36,10 @@ const CREAM = '#f4f7f2';
 const GOLD = '#e7b53c';
 const GOLD_DEEP = '#c69a2b';
 
-// The P Flag mark, exactly as the splash draws it (viewBox 100 64 336 384 in
-// index.html), placed and scaled by the group transform below. 0.68 puts its
-// pole at 261px tall, which the wordmark's cap height is sized to match.
+// The flag mark, exactly as the splash draws it (viewBox 100 64 336 384 in
+// index.html), placed and scaled by the group transform below. It sits beside
+// the word; it is not a letter of it. The host line stays the live Netlify
+// subdomain until that site is renamed.
 const MARK = `
   <g transform="translate(112 132) scale(0.68) translate(-100 -64)">
     <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z" fill="${GOLD}" />
@@ -70,9 +71,9 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   </defs>
   <rect width="${W}" height="${H}" fill="url(#felt)" />
   ${MARK}
-  <!-- The wordmark: the mark is the P, so only RESS is set, baseline on the
-       pole's foot (y = 132 + 344·0.68 ≈ 393) and tight against the flag. -->
-  <text x="350" y="393" font-size="330" font-weight="600" fill="${CREAM}" letter-spacing="-4">RESS</text>
+  <!-- Baseline on the pole's foot (y = 132 + 344·0.68 ≈ 393). The gap after
+       the flag (it ends near x=320) keeps the word from reading as part of it. -->
+  <text x="400" y="393" font-size="220" font-weight="600" fill="${CREAM}" letter-spacing="-2">TRUNK</text>
   <text x="124" y="500" font-size="78" font-weight="500" fill="${GOLD}">Settle it on 18.</text>
   <text x="124" y="564" font-size="30" font-weight="500" fill="${CREAM}" opacity="0.78" letter-spacing="1">
     GOLF SIDE GAMES · NO ACCOUNT · WORKS OFFLINE · PRESSGOLF.NETLIFY.APP

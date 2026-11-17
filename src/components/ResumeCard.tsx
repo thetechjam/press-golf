@@ -7,7 +7,7 @@ import { roundTitle, standingLine } from '../roundSummary';
  *
  * In the list below, a round part-way through looked like every finished one
  * — "thru 18" and "18 holes" are a squint apart — and the phone gets locked
- * between every hole. This is the one thing a scorekeeper opening Press
+ * between every hole. This is the one thing a scorekeeper opening Trunk
  * mid-round is looking for, so it sits above Start New Round and says where
  * the card will open.
  */

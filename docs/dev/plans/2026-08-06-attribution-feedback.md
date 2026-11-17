@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Spec of record: `docs/dev/specs/2026-08-06-press-attribution-feedback-design.md`.
+- Spec of record: `docs/dev/specs/2026-08-06-trunk-attribution-feedback-design.md`.
 - **Tests are pure-logic only.** `vite.config.ts` sets `environment: 'node'` and `include: ['src/**/*.test.ts']` — `.tsx` is never collected and there is no jsdom or Testing Library. Do not write component tests; they would silently never run. Verify UI manually.
 - **Stub browser globals with `vi.stubGlobal`**, following `src/storage.test.ts:5-11`.
 - `npm run typecheck` is `tsc -b --noEmit`. **Do not change it to `tsc --noEmit`** — the root tsconfig is solution-style (`"files": []` with `references`), so without `-b` it compiles zero files and exits 0 regardless of what is broken.
@@ -105,7 +105,7 @@ In `src/components/SettingsSheet.tsx`, insert immediately before the closing `</
 ```tsx
       <div className="about">
         <div className="about-title">
-          Press <span className="about-ver">v{__APP_VERSION__}</span>
+          Trunk <span className="about-ver">v{__APP_VERSION__}</span>
         </div>
         <div className="about-line">Created by Jesse Morrison</div>
         <div className="about-line">PolyForm Noncommercial License 1.0.0</div>
@@ -148,7 +148,7 @@ Expected: all clean, 166 tests.
 
 - [ ] **Step 9: Manual check**
 
-Run `npm run dev`, open the gear on Home, scroll to the bottom of the sheet. Confirm it reads `Press v0.1.0` / `Created by Jesse Morrison` / `PolyForm Noncommercial License 1.0.0`, and that it is legible in Light, Dark, and Glare.
+Run `npm run dev`, open the gear on Home, scroll to the bottom of the sheet. Confirm it reads `Trunk v0.1.0` / `Created by Jesse Morrison` / `PolyForm Noncommercial License 1.0.0`, and that it is legible in Light, Dark, and Glare.
 
 - [ ] **Step 10: Commit**
 
@@ -411,7 +411,7 @@ import { uid } from './storage';
  * composed on a course with no signal is never lost.
  */
 
-const QUEUE_KEY = 'press.feedback.queue.v1';
+const QUEUE_KEY = 'trunk.feedback.queue.v1';
 /** Bounded so a permanently offline install cannot grow localStorage forever. */
 const MAX_QUEUE = 20;
 
@@ -560,7 +560,7 @@ Create `public/__forms.html`:
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Press form definitions</title>
+    <title>Trunk form definitions</title>
   </head>
   <body>
     <!--
@@ -575,8 +575,8 @@ Create `public/__forms.html`:
          200 with HTML, so the app would report success while nothing reached
          the inbox. Netlify serves a real file before applying redirects.
     -->
-    <form name="press-feedback" netlify netlify-honeypot="bot-field" hidden>
-      <input type="hidden" name="form-name" value="press-feedback" />
+    <form name="trunk-feedback" netlify netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="trunk-feedback" />
       <input name="bot-field" />
       <input type="text" name="kind" />
       <input type="text" name="reporter" />
@@ -603,7 +603,7 @@ Append to `src/feedback.ts`:
 
 ```ts
 const FORM_ENDPOINT = '/__forms.html';
-const FORM_NAME = 'press-feedback';
+const FORM_NAME = 'trunk-feedback';
 
 /**
  * Production poster. Deliberately omits `bot-field`: Netlify discards any
@@ -640,7 +640,7 @@ in this repo, and **without the first every submission is lost**:
 
 1. **Site configuration → Forms → enable Form detection.**
 2. **Forms → Form notifications → add an email notification** for the
-   `press-feedback` form.
+   `trunk-feedback` form.
 3. **Redeploy.** Detection runs at deploy time; enabling it does not
    retroactively scan the previous build.
 
@@ -957,14 +957,14 @@ Expected: all clean, 181 tests.
 
 - [ ] **Step 7: Manual check**
 
-Run `npm run dev` at 375px. The `computer` click action is unreliable in this environment (`document.hasFocus()` is false) — dispatch DOM events via JS instead, which goes through React's handlers. Seed rounds via `localStorage` key `press.rounds.v1`.
+Run `npm run dev` at 375px. The `computer` click action is unreliable in this environment (`document.hasFocus()` is false) — dispatch DOM events via JS instead, which goes through React's handlers. Seed rounds via `localStorage` key `trunk.rounds.v1`.
 
 - Open the gear from **Home** → "Send feedback" → confirm **no** round checkbox.
 - Open the gear from **Play** → "Send feedback" → confirm the checkbox **is** there.
-- Type a name and a message, Send. In DevTools' Network tab confirm a POST to `/__forms.html` with `form-name=press-feedback`, and confirm the body contains **no** `bot-field`.
+- Type a name and a message, Send. In DevTools' Network tab confirm a POST to `/__forms.html` with `form-name=trunk-feedback`, and confirm the body contains **no** `bot-field`.
 - With the round checkbox off, confirm the request body contains no player names.
 - Reopen the form and confirm the name is prefilled.
-- Go offline (DevTools → Network → Offline), send another, and confirm the status reads "Saved — it'll send when you're back online" and that `localStorage['press.feedback.queue.v1']` holds it.
+- Go offline (DevTools → Network → Offline), send another, and confirm the status reads "Saved — it'll send when you're back online" and that `localStorage['trunk.feedback.queue.v1']` holds it.
 - Back online, reload, and confirm the queue drains.
 
 Locally the POST will 404 (Netlify only processes forms on the deployed site) — that is expected and exercises the queued path. Real delivery is verified in Task 6.
@@ -993,7 +993,7 @@ Expected: all clean.
 
 - [ ] **Step 2: Walk the spec's acceptance criteria**
 
-Check each numbered item at the end of `docs/dev/specs/2026-08-06-press-attribution-feedback-design.md` and record a verdict with evidence.
+Check each numbered item at the end of `docs/dev/specs/2026-08-06-trunk-attribution-feedback-design.md` and record a verdict with evidence.
 
 For criterion 1, prove the version is not hard-coded:
 
@@ -1020,7 +1020,7 @@ git commit -m "Document attribution and feedback"
 **This cannot be completed from the repo.** Report to the user that after merge and deploy they must:
 
 1. Enable **Form detection** in Netlify (Site configuration → Forms), then redeploy.
-2. Add an email notification for `press-feedback`.
+2. Add an email notification for `trunk-feedback`.
 3. Send one real report from the deployed site and confirm it appears in the Netlify Forms dashboard.
 
 Step 3 is not optional and cannot be replaced by a local check: the failure mode this design guards against — the SPA catch-all rewrite swallowing the POST — returns **HTTP 200 with the app shell**, which is indistinguishable from success to the app. Only seeing the submission in the dashboard proves delivery.

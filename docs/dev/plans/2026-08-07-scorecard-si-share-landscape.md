@@ -15,7 +15,7 @@
 - **Stroke index is always visible.** Not gated on `usesHandicaps(round)` or on whether real course indexes were provided.
 - **League parity is a requirement, not a nice-to-have.** Every change ships working for both `options.league` rounds and regular rounds.
 - **Brand constants are fixed** and must be identical across both share cards: `BG #0b3d2e`, `CREAM #f4f7f2`, `MUTED rgba(244, 247, 242, 0.62)`, `GOLD #e7b53c`, `BRIGHT #57d9a3`, `RED #ff8a7e`. Display face is Oswald; numerics are `ui-monospace, Menlo, monospace`.
-- **Verify layout at 874×390 (phone landscape) and 402×554 (the viewport real Safari reports).** Not the 375×812 emulator default, which is 258px taller than the device actually reports. See `docs/dev/specs/2026-08-06-press-attribution-feedback-design.md:342`.
+- **Verify layout at 874×390 (phone landscape) and 402×554 (the viewport real Safari reports).** Not the 375×812 emulator default, which is 258px taller than the device actually reports. See `docs/dev/specs/2026-08-06-trunk-attribution-feedback-design.md:342`.
 - **Commands:** `npm test` (vitest run), `npm run typecheck`, `npm run lint` (oxlint), `npm run build`.
 - Every task ends with `npm test && npm run typecheck && npm run lint` passing before its commit.
 
@@ -717,7 +717,7 @@ The results card has no automated test — the only way to prove this refactor i
 npm run dev
 ```
 
-In the browser: open a saved round → Results → **Share results**. Save the produced PNG as `/tmp/press-results-before.png`. If no saved round exists, create a 4-player round with stakes set and a few holes scored so the card includes standings *and* a settlement block. Also capture a **league** round's card as `/tmp/press-league-before.png` — `shareCard.ts` has a separate league branch and both must be checked.
+In the browser: open a saved round → Results → **Share results**. Save the produced PNG as `/tmp/trunk-results-before.png`. If no saved round exists, create a 4-player round with stakes set and a few holes scored so the card includes standings *and* a settlement block. Also capture a **league** round's card as `/tmp/press-league-before.png` — `shareCard.ts` has a separate league branch and both must be checked.
 
 - [ ] **Step 2: Create the shared module**
 
@@ -792,7 +792,7 @@ export function drawHeader({ ctx, width, pad, title, meta, y }: HeaderOpts): num
   ctx.font = disp(600, 34);
   setLS(ctx, 9);
   ctx.textAlign = 'center';
-  ctx.fillText('PRESS', width / 2, y);
+  ctx.fillText('TRUNK', width / 2, y);
   setLS(ctx, 0);
   y += 78;
 
@@ -924,7 +924,7 @@ export async function renderShareCard(round: Round): Promise<Blob> {
 npm test && npm run typecheck && npm run lint
 ```
 
-Then `npm run dev`, share the **same** round again, and compare against `/tmp/press-results-before.png`. Repeat for the league round against `/tmp/press-league-before.png`.
+Then `npm run dev`, share the **same** round again, and compare against `/tmp/trunk-results-before.png`. Repeat for the league round against `/tmp/press-league-before.png`.
 
 Expected: visually identical. Any difference means the refactor changed something it shouldn't have — fix it before committing rather than accepting the new output.
 
@@ -1132,7 +1132,7 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
   ctx.fillStyle = GOLD;
   setLS(ctx, 7);
   ctx.textAlign = 'center';
-  ctx.fillText('SCORED WITH PRESS', W / 2, y);
+  ctx.fillText('SCORED WITH TRUNK', W / 2, y);
   setLS(ctx, 0);
   ctx.textAlign = 'left';
   y += PAD - 20;
@@ -1231,9 +1231,9 @@ import { renderScorecardCard } from '../scorecardCard';
   };
 
   const shareResults = () =>
-    shareImage(() => renderShareCard(round), 'press-results.png', setRendering);
+    shareImage(() => renderShareCard(round), 'trunk-results.png', setRendering);
   const shareScorecard = () =>
-    shareImage(() => renderScorecardCard(round), 'press-scorecard.png', setRenderingCard);
+    shareImage(() => renderScorecardCard(round), 'trunk-scorecard.png', setRenderingCard);
 ```
 
 3. Add the second busy state next to the existing one (line 117):

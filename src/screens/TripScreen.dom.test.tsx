@@ -39,7 +39,7 @@ function round(id: string, cards: Record<string, number>, over: Partial<Round> =
   return { ...r, id, date: today, updatedAt: Date.now(), course: `Course ${id}`, trip: TRIP, ...over };
 }
 
-const store = (rounds: Round[]) => localStorage.setItem('press.rounds.v1', JSON.stringify(rounds));
+const store = (rounds: Round[]) => localStorage.setItem('trunk.rounds.v1', JSON.stringify(rounds));
 const show = (onOpenRound: (r: Round) => void = () => {}) =>
   render(<TripScreen tripId="t1" onBack={() => {}} onOpenRound={onOpenRound} />);
 

@@ -38,7 +38,7 @@ const text = (v: unknown) => JSON.stringify(v);
 describe('buildBackup', () => {
   it('stamps the file so a reader can identify it', () => {
     const b = buildBackup([], [], '1.2.3', new Date('2026-09-11T12:00:00Z'));
-    expect(b.app).toBe('press');
+    expect(b.app).toBe('trunk');
     expect(b.format).toBe(BACKUP_FORMAT);
     expect(b.appVersion).toBe('1.2.3');
     expect(b.exportedAt).toBe('2026-09-11T12:00:00.000Z');
@@ -63,11 +63,11 @@ describe('buildBackup', () => {
 describe('backupFilename', () => {
   it('is dated so downloads sort chronologically', () => {
     // Constructed in local time, because that is what the name reads from.
-    expect(backupFilename(new Date(2026, 8, 11))).toBe('press-backup-2026-09-11.json');
+    expect(backupFilename(new Date(2026, 8, 11))).toBe('trunk-backup-2026-09-11.json');
   });
 
   it('zero-pads single-digit months and days', () => {
-    expect(backupFilename(new Date(2026, 0, 5))).toBe('press-backup-2026-01-05.json');
+    expect(backupFilename(new Date(2026, 0, 5))).toBe('trunk-backup-2026-01-05.json');
   });
 });
 
@@ -78,16 +78,24 @@ describe('parseBackup', () => {
     if (!r.ok) expect(r.error).toMatch(/valid JSON/);
   });
 
-  it('rejects JSON that is not a Press backup', () => {
+  it('rejects JSON that is not a Trunk backup', () => {
     const r = parseBackup(text({ some: 'other file' }));
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.error).toMatch(/Press backup/);
+    if (!r.ok) expect(r.error).toMatch(/Trunk backup/);
   });
 
   it('rejects a format from a newer version rather than guessing', () => {
     const r = parseBackup(text({ app: 'press', format: BACKUP_FORMAT + 1, rounds: [] }));
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/newer version/);
+  });
+
+  it('still reads a backup exported when the app was called Press', () => {
+    const r = parseBackup(text({ app: 'press', format: 1, rounds: [round('a', 1)], courses: [] }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.app).toBe('trunk');
+    expect(r.file.rounds).toHaveLength(1);
   });
 
   it('accepts a file with no rounds or courses key at all', () => {
@@ -235,7 +243,7 @@ describe('restoreBackup', () => {
   beforeEach(() => store.clear());
 
   it('writes merged rounds and courses into storage', () => {
-    store.set('press.rounds.v1', text([round('a', 1)]));
+    store.set('trunk.rounds.v1', text([round('a', 1)]));
     const file = buildBackup([round('b', 1)], [course('c1', 'Pebble')], '1.0.0');
 
     const r = restoreBackup(text(file));
@@ -244,21 +252,21 @@ describe('restoreBackup', () => {
     expect(r.rounds).toEqual({ added: 1, updated: 0, kept: 0 });
     expect(r.courses.added).toBe(1);
 
-    const saved = JSON.parse(store.get('press.rounds.v1') as string) as Round[];
+    const saved = JSON.parse(store.get('trunk.rounds.v1') as string) as Round[];
     expect(saved.map((x) => x.id).sort()).toEqual(['a', 'b']);
-    expect(JSON.parse(store.get('press.courses.v1') as string)).toHaveLength(1);
+    expect(JSON.parse(store.get('trunk.courses.v1') as string)).toHaveLength(1);
   });
 
   it('reports the parse failure and writes nothing', () => {
-    store.set('press.rounds.v1', text([round('a', 1)]));
+    store.set('trunk.rounds.v1', text([round('a', 1)]));
     const r = restoreBackup('nope');
     expect(r.ok).toBe(false);
-    expect(JSON.parse(store.get('press.rounds.v1') as string)).toHaveLength(1);
+    expect(JSON.parse(store.get('trunk.rounds.v1') as string)).toHaveLength(1);
   });
 
   it('leaves storage untouched when the write does not fit', () => {
     const before = text([round('a', 1)]);
-    store.set('press.rounds.v1', before);
+    store.set('trunk.rounds.v1', before);
     const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
       throw new DOMException('quota', 'QuotaExceededError');
     });
@@ -268,7 +276,7 @@ describe('restoreBackup', () => {
 
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/room/);
-    expect(store.get('press.rounds.v1')).toBe(before);
+    expect(store.get('trunk.rounds.v1')).toBe(before);
   });
 
   it('counts entries dropped as damaged so the user is told', () => {
@@ -283,7 +291,7 @@ describe('who is who travels with the backup', () => {
 
   const people = { aliases: { al: 'Alex' }, distinct: ['jordan|jordy'] };
   const names = () =>
-    (JSON.parse(store.get('press.rounds.v1') as string) as Round[]).map((r) => r.players[0].name);
+    (JSON.parse(store.get('trunk.rounds.v1') as string) as Round[]).map((r) => r.players[0].name);
 
   it('is written when there is some, and left out when there is none', () => {
     expect(buildBackup([], [], '1', new Date(), people).people).toEqual(people);
@@ -306,63 +314,63 @@ describe('who is who travels with the backup', () => {
   });
 
   it('restores merged names, and renames the rounds on this phone to match', () => {
-    store.set('press.rounds.v1', text([round('a', 1)])); // Al and Bo, typed here
+    store.set('trunk.rounds.v1', text([round('a', 1)])); // Al and Bo, typed here
     const r = restoreBackup(text(buildBackup([], [], '1', new Date(), people)));
     expect(r.ok && r.people).toBe(1);
     expect(names()).toEqual(['Alex']);
-    expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ al: 'Alex' });
-    expect(JSON.parse(store.get('press.distinct.v1') as string)).toEqual(['jordan|jordy']);
+    expect(JSON.parse(store.get('trunk.aliases.v1') as string)).toEqual({ al: 'Alex' });
+    expect(JSON.parse(store.get('trunk.distinct.v1') as string)).toEqual(['jordan|jordy']);
   });
 
   it('keeps this phone’s own answer when the two disagree', () => {
-    store.set('press.aliases.v1', text({ al: 'Albert' }));
+    store.set('trunk.aliases.v1', text({ al: 'Albert' }));
     const r = restoreBackup(text(buildBackup([round('a', 1)], [], '1', new Date(), people)));
     expect(r.ok && r.people).toBe(0);
     expect(names()).toEqual(['Albert']);
   });
 
   it('will not restore a merge that loops against one made here', () => {
-    store.set('press.aliases.v1', text({ alex: 'Al' }));
+    store.set('trunk.aliases.v1', text({ alex: 'Al' }));
     restoreBackup(text(buildBackup([], [], '1', new Date(), people)));
-    expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ alex: 'Al' });
+    expect(JSON.parse(store.get('trunk.aliases.v1') as string)).toEqual({ alex: 'Al' });
   });
 
   it('drops a "two people" answer for a pair since merged', () => {
-    store.set('press.distinct.v1', text(['al|alex']));
+    store.set('trunk.distinct.v1', text(['al|alex']));
     restoreBackup(text(buildBackup([], [], '1', new Date(), people)));
-    expect(JSON.parse(store.get('press.distinct.v1') as string)).toEqual(['jordan|jordy']);
+    expect(JSON.parse(store.get('trunk.distinct.v1') as string)).toEqual(['jordan|jordy']);
   });
 
   it('restores an older file with no people data exactly as before', () => {
-    store.set('press.aliases.v1', text({ al: 'Alex' }));
+    store.set('trunk.aliases.v1', text({ al: 'Alex' }));
     const r = restoreBackup(text({ app: 'press', format: 1, rounds: [round('b', 1)], courses: [] }));
     expect(r.ok && r.people).toBe(0);
-    expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ al: 'Alex' });
+    expect(JSON.parse(store.get('trunk.aliases.v1') as string)).toEqual({ al: 'Alex' });
   });
 
   it('puts the names back when the rounds write fails after they were written', () => {
-    store.set('press.aliases.v1', text({ bo: 'Bob' }));
+    store.set('trunk.aliases.v1', text({ bo: 'Bob' }));
     const real = localStorage.setItem;
     const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation((k, v) => {
-      if (k === 'press.rounds.v1') throw new DOMException('quota', 'QuotaExceededError');
+      if (k === 'trunk.rounds.v1') throw new DOMException('quota', 'QuotaExceededError');
       real(k, v);
     });
     const r = restoreBackup(text(buildBackup([round('b', 1)], [], '1', new Date(), people)));
     setItem.mockRestore();
     expect(r.ok).toBe(false);
-    expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ bo: 'Bob' });
-    expect(store.has('press.distinct.v1')).toBe(false);
+    expect(JSON.parse(store.get('trunk.aliases.v1') as string)).toEqual({ bo: 'Bob' });
+    expect(store.has('trunk.distinct.v1')).toBe(false);
   });
 
   it('leaves the names untouched too when the write does not fit', () => {
-    store.set('press.aliases.v1', text({ bo: 'Bob' }));
+    store.set('trunk.aliases.v1', text({ bo: 'Bob' }));
     const setItem = vi.spyOn(localStorage, 'setItem').mockImplementation(() => {
       throw new DOMException('quota', 'QuotaExceededError');
     });
     const r = restoreBackup(text(buildBackup([round('b', 1)], [], '1', new Date(), people)));
     setItem.mockRestore();
     expect(r.ok).toBe(false);
-    expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ bo: 'Bob' });
-    expect(store.has('press.distinct.v1')).toBe(false);
+    expect(JSON.parse(store.get('trunk.aliases.v1') as string)).toEqual({ bo: 'Bob' });
+    expect(store.has('trunk.distinct.v1')).toBe(false);
   });
 });

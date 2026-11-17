@@ -1,4 +1,4 @@
-# Press — "How to use it" · YouTube tutorial script
+# Trunk — "How to use it" · YouTube tutorial script
 
 The shooting script for the channel walkthrough. Every scene id here matches a
 scene in `scripts/capture-tutorial.mjs`, and every screen described is the real
@@ -16,7 +16,7 @@ Timings are targets for the voice generation — the footage is cut to the
 narration, not the other way round.
 
 The scene ranges above each block, the chapter marks in the description and the
-runtime are all read back out of `press-tutorial.srt` rather than kept by hand.
+runtime are all read back out of `trunk-tutorial.srt` rather than kept by hand.
 They had drifted badly doing it the other way: this file claimed a 4:30 runtime
 against captions that already ran to 5:17. Re-derive them after any re-voice
 instead of editing them.
@@ -25,10 +25,10 @@ instead of editing them.
 
 ## 01 · Cold open — Home, first run (0:00–0:19)
 
-*On screen: Press opens on an empty Home. The wordmark, "Track golf side games
+*On screen: Trunk opens on an empty Home. The wordmark, "Track golf side games
 — the fun way", Start New Round, Golf League, and "No rounds yet".*
 
-> This is Press. One phone keeps score for the whole group — skins, Nassau,
+> This is Trunk. One phone keeps score for the whole group — skins, Nassau,
 > Wolf, the lot — and it does the math while you play. No account, no app
 > store, nothing to install. Here's a full round in four minutes.
 
@@ -43,7 +43,7 @@ fix it first. "Here's a full round in under six minutes" scans the same.
 *Start New Round. Four names typed in, a handicap beside each.*
 
 > Start New Round, and type everyone in. Handicap goes in the box beside the
-> name — that's what every net score in the round comes off. Press remembers
+> name — that's what every net score in the round comes off. Trunk remembers
 > your regular crew, so next week this is one tap.
 
 ## 03 · Course, and checking the card (0:36–1:03)
@@ -52,7 +52,7 @@ fix it first. "Here's a full round in under six minutes" scans the same.
 opens itself on the load. The check note at the top of it, then the grid: every
 par and every stroke index, editable, eighteen across.*
 
-> Open Course. Search for it and Press pulls in the pars and the stroke
+> Open Course. Search for it and Trunk pulls in the pars and the stroke
 > indexes, or load one you saved earlier. Either way the card opens right here
 > — and search data gets read before you see it, so anything that looks off is
 > flagged. Check it against the real card once, then save it. Everything
@@ -134,7 +134,7 @@ controls on a hole.*
 
 *Finish Round. The Results screen: winner hero with confetti, then the awards.*
 
-> Finish the round and Press settles it. Winner up top, then the superlatives —
+> Finish the round and Trunk settles it. Winner up top, then the superlatives —
 > Shot of the Day, The Snowman, The ATM, Sandbagger — and each one cites the
 > number it's based on, so the argument is short.
 
@@ -142,7 +142,7 @@ controls on a hole.*
 
 *The Settlement block: the fewest payments that clear the group.*
 
-> Then the bit that normally takes ten minutes in the car park. Press resolves
+> Then the bit that normally takes ten minutes in the car park. Trunk resolves
 > the whole group into the fewest payments that settle it. Three people pay,
 > not twelve.
 
@@ -159,11 +159,11 @@ controls on a hole.*
 as "Sent to you" with a Keep it button.*
 
 > And underneath, the round itself. The whole thing is packed into the link —
-> point another phone's camera at the code and it opens in their copy of Press.
+> point another phone's camera at the code and it opens in their copy of Trunk.
 > Nothing is uploaded. No server ever sees it. On their phone it arrives held —
 > sent to you, not saved — until they tap Keep it. Mid-round, the same link
 > hands the card over and they carry on scoring from where you stopped. And if
-> you both end up keeping score, Press puts the two cards side by side and asks
+> you both end up keeping score, Trunk puts the two cards side by side and asks
 > which one is real, instead of picking one on a timestamp.
 
 ## 16 · Offline (4:59–5:24)
@@ -189,13 +189,13 @@ driven again.*
 
 ## Thumbnail
 
-Felt-green ground (`#0b3d2e`), the Press flag mark, a phone showing the Board
+Felt-green ground (`#0b3d2e`), the Trunk flag mark, a phone showing the Board
 tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 "NOBODY PLAYS FREE" or "SETTLE IT ON 18". No face, no arrows, no red circles.
 
 ## Description (draft)
 
-> Press is a free web app for tracking golf side games — skins, Nassau, Wolf,
+> Trunk is a free web app for tracking golf side games — skins, Nassau, Wolf,
 > Vegas, Stableford, Quota, match play and a league format — from one phone.
 > It does the math while you play and settles the whole group into the fewest
 > payments at the end. No account, no app store, works with no signal, and
@@ -203,7 +203,7 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 >
 > ▶️ pressgolf.netlify.app
 >
-> 0:00 What Press is
+> 0:00 What Trunk is
 > 0:19 Adding players and handicaps
 > 0:36 Loading a course, and checking the card
 > 1:03 Picking your games
@@ -219,7 +219,7 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 > 4:11 Sharing the result
 > 4:20 Handing the round to another phone
 > 4:59 Playing offline
-> 5:24 Adding Press to your home screen
+> 5:24 Adding Trunk to your home screen
 
 ---
 
@@ -228,10 +228,10 @@ tab with money on it, and three or four words of gold (`#e7b53c`) Oswald —
 **Published: https://youtu.be/YDgTmnR_1eo** — 2026-09-22.
 
 The master, if it is ever needed again:
-[press-tutorial.mp4](https://d2ol7oe51mr4n9.cloudfront.net/user_3F6bhk8rFTvZgCk36sr2niTWDCv/eae6f4fc-8e77-4938-aba7-28bd72a1afd7.mp4)
+[trunk-tutorial.mp4](https://d2ol7oe51mr4n9.cloudfront.net/user_3F6bhk8rFTvZgCk36sr2niTWDCv/eae6f4fc-8e77-4938-aba7-28bd72a1afd7.mp4)
 — 1920×1080, 5:39, 24MB, H.264/AAC, scene titles in Oswald, captions burned
 in. Assembled from the eighteen takes, the seventeen gated narration clips and
-`press-tutorial.srt`.
+`trunk-tutorial.srt`.
 
 YouTube is the durable copy now; the CDN link is a working file and may not
 outlive the account it sits in. Earlier cuts were assembled in a sandbox
@@ -279,7 +279,7 @@ the start passes on a video that is badly out by the end.
 
 And then **write the corrected file back to the repo.** The first time this was
 fixed it was fixed in the sandbox, burned into the video, and left there: the
-video was right and `press-tutorial.srt` in git was the uncorrected one, up to
+video was right and `trunk-tutorial.srt` in git was the uncorrected one, up to
 ten seconds adrift from the audio it describes. A caption track is a separate
 deliverable from the burned-in one — it is what gets uploaded alongside the
 video — so it is not done until it is committed.
@@ -426,7 +426,7 @@ round stops being a code and starts arriving on the other phone, and
 ### Files
 
 - `docs/video/tutorial-script.md` — this file; the narration is the source of truth
-- `docs/video/press-tutorial.srt` — captions for the YouTube upload. Derived:
+- `docs/video/trunk-tutorial.srt` — captions for the YouTube upload. Derived:
   the words come from this file, the times from the narration's own word
   positions. Scenes 03, 04 and 14 are timed off clips that exist and were
   checked; everything after them is shifted by what those scenes measured.

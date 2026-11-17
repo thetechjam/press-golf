@@ -177,7 +177,7 @@ export { holes, ids, players, rounds, courses };
  * screenshot, or report — and supplies `width` only so labels can say which
  * viewport a finding came from.
  *
- * `settings` seeds `press.settings.v1` before the first navigation. Glare is
+ * `settings` seeds `trunk.settings.v1` before the first navigation. Glare is
  * the reason it exists: it is a stored preference rather than an OS one, so a
  * browser-level colorScheme cannot reach it and a walk that only sets
  * colorScheme can never see that theme at all.
@@ -188,9 +188,9 @@ export async function walkScreens({ page, BASE, step, width, settings }) {
   await page.goto(BASE);
   await page.evaluate(
     ([rounds, saved, prefs]) => {
-      localStorage.setItem('press.rounds.v1', JSON.stringify(rounds));
-      localStorage.setItem('press.courses.v1', JSON.stringify(saved));
-      if (prefs) localStorage.setItem('press.settings.v1', JSON.stringify(prefs));
+      localStorage.setItem('trunk.rounds.v1', JSON.stringify(rounds));
+      localStorage.setItem('trunk.courses.v1', JSON.stringify(saved));
+      if (prefs) localStorage.setItem('trunk.settings.v1', JSON.stringify(prefs));
     },
     [rounds, courses, settings ?? null]
   );

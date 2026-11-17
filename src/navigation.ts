@@ -1,7 +1,7 @@
 /**
  * Screen navigation over the browser history stack.
  *
- * Press is one page with no router, but it is installed as a PWA, so the
+ * Trunk is one page with no router, but it is installed as a PWA, so the
  * hardware back gesture has to mean "previous screen" and not "quit the app
  * mid-round". That takes a real history entry per screen, and a count of how
  * many entries the app has pushed so going Home can collapse exactly those and

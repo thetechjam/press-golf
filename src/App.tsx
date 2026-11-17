@@ -145,8 +145,8 @@ export default function App() {
    * A round arriving in the address bar.
    *
    * Handled on mount and again on `hashchange`, because those are two
-   * genuinely different arrivals. Following a link with Press closed loads the
-   * page; following one with Press already open on the same origin changes
+   * genuinely different arrivals. Following a link with Trunk closed loads the
+   * page; following one with Trunk already open on the same origin changes
    * only the fragment, which is a same-document navigation — no reload, no
    * remount, and without the listener, tapping a mate's link while looking at
    * the app does nothing at all.
@@ -336,7 +336,7 @@ export default function App() {
             <>
               <p className="arriving-note">{incoming.message}</p>
               <button className="btn-primary big" onClick={() => setIncoming(null)}>
-                Go to Press
+                Go to Trunk
               </button>
             </>
           )}
@@ -354,7 +354,7 @@ export default function App() {
       {unsaved && (
         <div className="unsaved" role="alert">
           <strong>Not saved.</strong> This phone’s storage is full, so scores entered now will be
-          lost if Press is closed. Back up from Settings, then delete old rounds from Rounds to
+          lost if Trunk is closed. Back up from Settings, then delete old rounds from Rounds to
           make room.
         </div>
       )}

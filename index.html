@@ -13,28 +13,28 @@
     <link rel="preload" href="/fonts/oswald-latin.woff2" as="font" type="font/woff2" crossorigin />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Press" />
+    <meta name="apple-mobile-web-app-title" content="Trunk" />
     <meta
       name="description"
       content="Track golf side games: match play, skins, Stableford, Wolf and more."
     />
-    <title>Press — Golf Side Games</title>
+    <title>Trunk — Golf Side Games</title>
     <link rel="canonical" href="https://pressgolf.netlify.app/" />
-    <!-- Link unfurls. A shared round link is how Press mostly spreads, and
+    <!-- Link unfurls. A shared round link is how Trunk mostly spreads, and
          without these it lands in a group chat as a bare URL. The card is
          public/og.png, drawn by scripts/og-image.mjs (npm run og:image). -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Press" />
+    <meta property="og:site_name" content="Trunk" />
     <meta property="og:url" content="https://pressgolf.netlify.app/" />
-    <meta property="og:title" content="Press — Golf Side Games" />
-    <meta property="og:description" content="Press is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Press does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
+    <meta property="og:title" content="Trunk — Golf Side Games" />
+    <meta property="og:description" content="Trunk is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Trunk does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
     <meta property="og:image" content="https://pressgolf.netlify.app/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Press — golf side games. Settle it on 18." />
+    <meta property="og:image:alt" content="Trunk — golf side games. Settle it on 18." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Press — Golf Side Games" />
-    <meta name="twitter:description" content="Press is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Press does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
+    <meta name="twitter:title" content="Trunk — Golf Side Games" />
+    <meta name="twitter:description" content="Trunk is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Trunk does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
     <meta name="twitter:image" content="https://pressgolf.netlify.app/og.png" />
     <style>
       /* Splash shown until React mounts (avoids a white flash on load).
@@ -61,9 +61,10 @@
         font-weight: 800;
         letter-spacing: -0.02em;
         display: flex;
-        /* Mark bottom sits on the text baseline so it reads as the P. */
+        /* Mark sits on the text baseline, beside the word rather than as a letter. */
         align-items: baseline;
-        gap: 5px;
+        gap: 12px;
+        text-transform: uppercase;
       }
       #splash .mark svg {
         width: 39px;
@@ -95,19 +96,19 @@
   <body>
     <div id="root"></div>
     <div id="splash">
-      <div class="mark" role="img" aria-label="Press">
-        <!-- P Flag mark stands in for the P (splash already is the felt). -->
+      <div class="mark" role="img" aria-label="Trunk">
+        <!-- Flag mark beside the word. The splash background is already the felt. -->
         <svg viewBox="100 64 336 384" aria-hidden="true">
           <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z" fill="#e7b53c" />
           <rect x="118" y="84" width="36" height="344" rx="18" fill="#f4f7f2" />
           <circle cx="268" cy="178" r="58" fill="#f4f7f2" />
           <circle cx="268" cy="178" r="49" fill="none" stroke="#14694e" stroke-width="16" stroke-dasharray="18 20.5" stroke-dashoffset="9" transform="rotate(-90 268 178)" />
         </svg>
-        <span aria-hidden="true">ress</span>
+        <span aria-hidden="true">Trunk</span>
       </div>
       <div class="sub">Golf side games</div>
       <noscript>
-        Press needs JavaScript: it runs entirely in your browser, with no account and no
+        Trunk needs JavaScript: it runs entirely in your browser, with no account and no
         server. Turn JavaScript on to score a round.
       </noscript>
     </div>

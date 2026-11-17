@@ -49,11 +49,11 @@ const ROUNDS: Round[] = [
   round({ id: 'c', course: 'Muirfield', date: '2026-08-20', updatedAt: 3 }),
 ];
 
-const stored = (): Round[] => JSON.parse(localStorage.getItem('press.rounds.v1') ?? '[]');
+const stored = (): Round[] => JSON.parse(localStorage.getItem('trunk.rounds.v1') ?? '[]');
 const titles = () => [...document.querySelectorAll('.round-title')].map((t) => t.textContent);
 
 const show = (rounds: Round[] = ROUNDS) => {
-  localStorage.setItem('press.rounds.v1', JSON.stringify(rounds));
+  localStorage.setItem('trunk.rounds.v1', JSON.stringify(rounds));
   return render(<History onBack={() => {}} onResume={() => {}} onViewResults={() => {}} />);
 };
 
@@ -204,7 +204,7 @@ describe('opening one', () => {
   it('resumes a round still being played and reviews a finished one', async () => {
     const user = userEvent.setup();
     const opened: string[] = [];
-    localStorage.setItem('press.rounds.v1', JSON.stringify(ROUNDS));
+    localStorage.setItem('trunk.rounds.v1', JSON.stringify(ROUNDS));
     render(
       <History
         onBack={() => {}}

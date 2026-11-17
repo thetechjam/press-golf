@@ -138,7 +138,7 @@ describe('a scorecard the user saved themselves', () => {
   };
 
   it('is shown, but not second-guessed', async () => {
-    localStorage.setItem('press.courses.v1', JSON.stringify([saved]));
+    localStorage.setItem('trunk.courses.v1', JSON.stringify([saved]));
     const user = userEvent.setup();
     render(<Setup onCancel={() => {}} onStart={() => {}} />);
 
@@ -305,7 +305,7 @@ describe('keeping a course you have checked', () => {
     await pickFromSearch(user);
     await user.click(saveButton());
 
-    const saved = JSON.parse(localStorage.getItem('press.courses.v1') ?? '[]');
+    const saved = JSON.parse(localStorage.getItem('trunk.courses.v1') ?? '[]');
     expect(saved).toHaveLength(1);
     expect(saved[0].name).toBe('Bramble Ridge GC');
     expect(saved[0].holes).toHaveLength(18);
@@ -418,7 +418,7 @@ describe('keeping a course you have checked', () => {
 describe('starting from last time', () => {
   const weekly = () =>
     localStorage.setItem(
-      'press.rounds.v1',
+      'trunk.rounds.v1',
       JSON.stringify([
         {
           ...JSON.parse(JSON.stringify({ id: 'r1', course: 'Muni', date: '2026-09-01', createdAt: 1, updatedAt: 1 })),
@@ -471,7 +471,7 @@ describe('starting from last time', () => {
 describe('nine holes off a loaded eighteen', () => {
   const saved: SavedCourse = { id: 's18', name: 'Bramble Ridge GC', holes: realCard18() };
   const load = async (user: ReturnType<typeof userEvent.setup>) => {
-    localStorage.setItem('press.courses.v1', JSON.stringify([saved]));
+    localStorage.setItem('trunk.courses.v1', JSON.stringify([saved]));
     render(<Setup onCancel={() => {}} onStart={() => {}} />);
     await openRow(user, 'Course');
     await user.click(await screen.findByText('Bramble Ridge GC'));
@@ -518,7 +518,7 @@ describe('nine holes off a loaded eighteen', () => {
 describe('a remembered stroke count on a rated course', () => {
   it('is shown as what the player plays off, and can be cleared', async () => {
     localStorage.setItem(
-      'press.rounds.v1',
+      'trunk.rounds.v1',
       JSON.stringify([
         {
           id: 'r0',
@@ -760,7 +760,7 @@ describe('telling you what just happened, where it happened', () => {
     // It used to render once at the foot of the screen, which on a phone put
     // it over a thousand pixels below the fold — a confirmation nobody can see
     // is not a confirmation.
-    localStorage.setItem('press.courses.v1', JSON.stringify([saved]));
+    localStorage.setItem('trunk.courses.v1', JSON.stringify([saved]));
     const user = userEvent.setup();
     render(<Setup onCancel={() => {}} onStart={() => {}} />);
     await openRow(user, 'Course');
@@ -788,7 +788,7 @@ describe('telling you what just happened, where it happened', () => {
   });
 
   it('announces the confirmation rather than only drawing it', async () => {
-    localStorage.setItem('press.courses.v1', JSON.stringify([saved]));
+    localStorage.setItem('trunk.courses.v1', JSON.stringify([saved]));
     const user = userEvent.setup();
     render(<Setup onCancel={() => {}} onStart={() => {}} />);
     await openRow(user, 'Course');
@@ -880,7 +880,7 @@ describe('the pinned Start bar', () => {
 describe('the players card shortcuts', () => {
   const withRound = () => {
     localStorage.setItem(
-      'press.rounds.v1',
+      'trunk.rounds.v1',
       JSON.stringify([
         {
           id: 'r0',
@@ -943,7 +943,7 @@ describe('a course with more than eighteen holes', () => {
       slope: 120,
       rating: 100,
     };
-    localStorage.setItem('press.courses.v1', JSON.stringify([saved]));
+    localStorage.setItem('trunk.courses.v1', JSON.stringify([saved]));
     const user = userEvent.setup();
     render(<Setup onCancel={() => {}} onStart={() => {}} />);
     await openRow(user, 'Course');

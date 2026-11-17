@@ -4,14 +4,14 @@ _Design spec — 2026-08-06_
 
 ## Problem
 
-**1. Press carries no attribution anywhere a user can see it.** `LICENSE` says
+**1. Trunk carries no attribution anywhere a user can see it.** `LICENSE` says
 `Copyright (c) 2026 Jesse Morrison` and `README.md` refers to "the sole copyright
 holder", but neither is reachable from the app. `package.json` has no `author`
-field. Someone who installs Press from a shared link has no way to learn who made
+field. Someone who installs Trunk from a shared link has no way to learn who made
 it.
 
 **2. There is no route from a user noticing a bug to Jesse hearing about it.**
-Press is shared with a golf group, used on a course, and stores everything
+Trunk is shared with a golf group, used on a course, and stores everything
 locally. When someone's skins total looks wrong, the report arrives — if at all —
 as a text message hours later, with no version, no screen, and no scores.
 
@@ -21,12 +21,12 @@ as a text message hours later, with no version, no screen, and no scores.
 
 A block at the bottom of the existing `SettingsSheet`:
 
-> **Press** v0.1.0
+> **Trunk** v0.1.0
 > Created by Jesse Morrison
 > PolyForm Noncommercial License 1.0.0
 
 Name matches `LICENSE` exactly. **No GitHub link** — the About block is for the
-people who play with Press, not for developers, and a repo link would make the
+people who play with Trunk, not for developers, and a repo link would make the
 app read as a side project rather than a product.
 
 **The version must come from `package.json`, not a hand-typed string**, or it
@@ -53,7 +53,7 @@ Vitest reads the same Vite config, so `__APP_VERSION__` is defined in tests too.
 
 ### B. Feedback transport, and the redirect that would silently eat it
 
-**Netlify Forms**, because Press already deploys to Netlify: no backend, no new
+**Netlify Forms**, because Trunk already deploys to Netlify: no backend, no new
 account, no third-party dependency, and submissions land in the Netlify dashboard
 with email notification. Free tier is 100 submissions/month, which is far beyond
 a golf group.
@@ -79,14 +79,14 @@ that Netlify's build-time detector scans for, and is also the POST target:
 ```html
 <!doctype html>
 <html>
-  <head><meta charset="utf-8" /><title>Press form definitions</title></head>
+  <head><meta charset="utf-8" /><title>Trunk form definitions</title></head>
   <body>
     <!-- Not a user-facing page. Netlify detects forms by scanning deployed
          HTML at build time; a React-rendered form is invisible to that scan.
          This file is also the POST target — posting to "/" would hit the SPA
          catch-all rewrite in netlify.toml and silently return the app shell. -->
-    <form name="press-feedback" netlify netlify-honeypot="bot-field" hidden>
-      <input type="hidden" name="form-name" value="press-feedback" />
+    <form name="trunk-feedback" netlify netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="trunk-feedback" />
       <input name="bot-field" />
       <input type="text" name="kind" />
       <input type="text" name="reporter" />
@@ -104,7 +104,7 @@ Submission is a urlencoded POST:
 await fetch('/__forms.html', {
   method: 'POST',
   headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-  body: new URLSearchParams({ 'form-name': 'press-feedback', ...fields }).toString(),
+  body: new URLSearchParams({ 'form-name': 'trunk-feedback', ...fields }).toString(),
 });
 ```
 
@@ -123,7 +123,7 @@ app asset.
 
 ### C. Offline queue
 
-Press is used on golf courses. Feedback is written to `localStorage` first and
+Trunk is used on golf courses. Feedback is written to `localStorage` first and
 sent second, so a report composed with no signal is never lost.
 
 `src/feedback.ts` owns this:
@@ -233,7 +233,7 @@ name is **optional** (a blank submission still sends) and **remembered**, so the
 cost is paid once.
 
 `Settings` gains `reporterName: string`, defaulting to `''`, persisted in the
-existing `press.settings.v1` blob and prefilled into the form. A non-empty name
+existing `trunk.settings.v1` blob and prefilled into the form. A non-empty name
 is written back on submit.
 
 ⚠️ **`storage.ts` builds both `getSettings` and `saveSettings` field-by-field**
@@ -273,7 +273,7 @@ return 404 and every report is lost**:
 
 1. Netlify → Site configuration → **Forms** → enable **Form detection**.
 2. Netlify → Forms → **Form notifications** → add an email notification for
-   `press-feedback`.
+   `trunk-feedback`.
 3. Redeploy after enabling detection, so `__forms.html` is scanned. Detection
    runs at deploy time — enabling it does not retroactively scan the last build.
 
@@ -325,7 +325,7 @@ A real report from the deployed app arrived in the Netlify Forms dashboard,
 closing every open item on this spec.
 
 **The sentinel guard produces no false negatives.** `postFeedback` rejects when
-the response body contains the stub's `Press form definitions` title, because a
+the response body contains the stub's `Trunk form definitions` title, because a
 static host with no form handler attached answers POST with 200 and the stub
 itself — which would otherwise be counted as delivery and the report deleted.
 It was unknown whether Netlify's *success* response also echoes the stub. It

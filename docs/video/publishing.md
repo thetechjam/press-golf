@@ -9,7 +9,7 @@ Everything needed to upload, and the fields to paste into each box. Written to
 be followed top to bottom with YouTube Studio open in the other window.
 
 The numbers here come from the cut that exists — chapter marks are derived from
-`press-tutorial.srt`, not typed by hand. If the video is re-cut, re-derive them
+`trunk-tutorial.srt`, not typed by hand. If the video is re-cut, re-derive them
 before publishing rather than reusing what is below.
 
 ---
@@ -19,10 +19,10 @@ before publishing rather than reusing what is below.
 | Asset | Where | Notes |
 |---|---|---|
 | **Published video** | https://youtu.be/YDgTmnR_1eo | live since 2026-09-22 |
-| **Master** | [press-tutorial.mp4](https://d2ol7oe51mr4n9.cloudfront.net/user_3F6bhk8rFTvZgCk36sr2niTWDCv/eae6f4fc-8e77-4938-aba7-28bd72a1afd7.mp4) | 1920×1080, 5:39, 24MB, H.264/AAC |
+| **Master** | [trunk-tutorial.mp4](https://d2ol7oe51mr4n9.cloudfront.net/user_3F6bhk8rFTvZgCk36sr2niTWDCv/eae6f4fc-8e77-4938-aba7-28bd72a1afd7.mp4) | 1920×1080, 5:39, 24MB, H.264/AAC |
 | **Thumbnail** | `docs/video/thumbnail-settle-it-on-18.png` | 1280×720, 352KB — see §2 |
 | **Alt thumbnail** | `docs/video/thumbnail-nobody-plays-free.png` | same spec, brand-voice headline |
-| **Captions** | `docs/video/press-tutorial.srt` | 119 cues, English |
+| **Captions** | `docs/video/trunk-tutorial.srt` | 119 cues, English |
 | **Script** | `docs/video/tutorial-script.md` | narration, for reference |
 
 Download the video first — the link is a CDN copy, not a permanent home, and
@@ -60,7 +60,7 @@ load-bearing. Nothing needs moving.
 Paste this:
 
 ```
-Golf skins, Nassau and Wolf — all tracked from one phone | Press
+Golf skins, Nassau and Wolf — all tracked from one phone | Trunk
 ```
 
 62 characters, so it survives mobile truncation. The searchable words
@@ -68,9 +68,9 @@ Golf skins, Nassau and Wolf — all tracked from one phone | Press
 
 Alternatives, if you want a different angle:
 
-- `Track every golf side game from one phone — Press (free, no account)`
-- `How to track skins, Nassau and Wolf on the course — Press walkthrough`
-- `The free app that settles your golf bets on 18 — Press, full tour`
+- `Track every golf side game from one phone — Trunk (free, no account)`
+- `How to track skins, Nassau and Wolf on the course — Trunk walkthrough`
+- `The free app that settles your golf bets on 18 — Trunk, full tour`
 
 ---
 
@@ -80,7 +80,7 @@ Paste the whole block. The timestamps become chapters automatically **as long
 as the first one is `0:00` and there are at least three** — both true here.
 
 ```
-Press is a free web app for tracking golf side games — skins, Nassau, Wolf,
+Trunk is a free web app for tracking golf side games — skins, Nassau, Wolf,
 Vegas, Stableford, Quota, match play and a league format — from one phone. It
 does the math while you play and settles the whole group into the fewest
 payments at the end. No account, no app store, works with no signal, and
@@ -88,7 +88,7 @@ everything stays on your device.
 
 ▶️ pressgolf.netlify.app
 
-0:00 What Press is
+0:00 What Trunk is
 0:19 Adding players and handicaps
 0:36 Loading a course, and checking the card
 1:03 Picking your games
@@ -104,7 +104,7 @@ everything stays on your device.
 4:11 Sharing the result
 4:20 Handing the round to another phone
 4:59 Playing offline
-5:24 Adding Press to your home screen
+5:24 Adding Trunk to your home screen
 
 WHAT IT PLAYS
 Stroke play · Match play (singles or two-man best ball) · Skins · Stableford ·
@@ -118,7 +118,7 @@ resolves everyone into the fewest payments that settle the group, and you can
 hand the whole round to another phone with a QR code — nothing is uploaded and
 no server ever sees it.
 
-Press is free and has no ads. If it saves you an argument in the car park:
+Trunk is free and has no ads. If it saves you an argument in the car park:
 buymeacoffee.com/thetechjam
 ```
 
@@ -143,14 +143,14 @@ long here.
 ## 6. Upload, step by step
 
 1. **studio.youtube.com** → **Create** → **Upload videos**, and drop in the
-   downloaded `press-tutorial.mp4`.
+   downloaded `trunk-tutorial.mp4`.
 
 2. **Details**
    - **Title** — paste from §3.
    - **Description** — paste from §4.
    - **Thumbnail** — upload from §2. It only appears once processing is far
      enough along; if the button is greyed out, wait and come back.
-   - **Playlist** — make one ("Press — how to") even for one video. It is the
+   - **Playlist** — make one ("Trunk — how to") even for one video. It is the
      unit you add to later.
    - **Audience** — **"No, it's not made for kids."** This is a legal
      declaration under COPPA, not a preference, and getting it wrong is the one
@@ -212,7 +212,7 @@ player, so the cost is close to zero and it removes the question entirely.
 The video has **captions burned into the picture** — a deliberate choice, so it
 reads in a silent autoplay feed.
 
-Upload `press-tutorial.srt` as well, under **Subtitles → Add language →
+Upload `trunk-tutorial.srt` as well, under **Subtitles → Add language →
 English → Upload file → With timing**. Two reasons: YouTube indexes caption
 text for search, and an accurate track is better than the auto-generated one it
 will otherwise produce.
@@ -253,6 +253,6 @@ Where the video is linked from:
 ## If the video is re-cut
 
 Do not reuse the numbers above. Chapter marks and the runtime are derived from
-`press-tutorial.srt`, and that file is re-timed against the assembled cut's own
+`trunk-tutorial.srt`, and that file is re-timed against the assembled cut's own
 segment durations. Re-derive both, then update §4 here and the description
 block in `tutorial-script.md` together — they have drifted apart before.

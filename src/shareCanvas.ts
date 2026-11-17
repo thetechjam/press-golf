@@ -76,7 +76,7 @@ export function drawHeader({ ctx, width, pad, title, meta, y }: HeaderOpts): num
   ctx.font = disp(600, 34);
   setLS(ctx, 9);
   ctx.textAlign = 'center';
-  ctx.fillText('PRESS', width / 2, y);
+  ctx.fillText('TRUNK', width / 2, y);
   setLS(ctx, 0);
   y += 78;
 

@@ -2,13 +2,13 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the `−`/`+` stepper on Press's Hole tab with a row of score chips centred on par, so any common score is one tap.
+**Goal:** Replace the `−`/`+` stepper on Trunk's Hole tab with a row of score chips centred on par, so any common score is one tap.
 
 **Architecture:** All logic goes into a new pure module `src/scoreChips.ts`, tested with vitest. A new presentational `ScoreChips` component renders the row. `HoleStepper` loses its `−`/`+` controls, keeps its `commit()` (haptics + celebrate), and is renamed `PlayerScoreRow`. Nothing in `src/games/`, `types.ts`, or `storage.ts` changes — the `Round` shape and the whole scoring engine are untouched.
 
 **Tech Stack:** Vite 8, React 19, TypeScript 6, vitest 4, oxlint. Plain CSS in a single `src/index.css`.
 
-**Spec:** `docs/dev/specs/2026-08-08-press-quick-pick-score-entry-design.md`
+**Spec:** `docs/dev/specs/2026-08-08-trunk-quick-pick-score-entry-design.md`
 
 ## Global Constraints
 
@@ -844,7 +844,7 @@ gh pr create --title "One-tap score entry on the Hole tab" --body "$(cat <<'EOF'
 Replaces the Hole tab's `−`/`+` stepper with a row of score chips centred on
 par, so any common score is one tap.
 
-Spec: `docs/dev/specs/2026-08-08-press-quick-pick-score-entry-design.md`
+Spec: `docs/dev/specs/2026-08-08-trunk-quick-pick-score-entry-design.md`
 Plan: `docs/dev/plans/2026-08-08-quick-pick-score-entry.md`
 
 - A typical hole drops from eight taps to four

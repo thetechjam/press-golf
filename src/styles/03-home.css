@@ -14,11 +14,11 @@
   letter-spacing: 0.06em;
   color: var(--green-ink);
   display: flex;
-  /* The P Flag mark stands in for the P: its bottom edge sits on the text
-     baseline, and the flag tip runs tight against the R. */
+  /* The flag mark sits beside the word. Its bottom edge is on the text
+     baseline; the gap keeps it a logo rather than a letter of "Trunk". */
   align-items: baseline;
   justify-content: center;
-  gap: 3px;
+  gap: 10px;
 }
 .tagline {
   color: var(--muted);

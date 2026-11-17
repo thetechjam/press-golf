@@ -184,9 +184,9 @@ try {
     reducedMotion: 'reduce',
   });
   await context.addInitScript(`
-    localStorage.setItem('press.rounds.v1', ${JSON.stringify(JSON.stringify(seed.rounds))});
-    localStorage.setItem('press.courses.v1', ${JSON.stringify(JSON.stringify(seed.courses))});
-    localStorage.setItem('press.settings.v1', JSON.stringify({ keepAwake: true, theme: 'light', glare: false, reporterName: '' }));
+    localStorage.setItem('trunk.rounds.v1', ${JSON.stringify(JSON.stringify(seed.rounds))});
+    localStorage.setItem('trunk.courses.v1', ${JSON.stringify(JSON.stringify(seed.courses))});
+    localStorage.setItem('trunk.settings.v1', JSON.stringify({ keepAwake: true, theme: 'light', glare: false, reporterName: '' }));
     // The share sheet hands its PNG to URL.createObjectURL on the way to the
     // OS share sheet or a download; keeping the last blob here is how the
     // real image gets out of a headless browser.

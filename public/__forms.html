@@ -4,13 +4,13 @@
     <meta charset="utf-8" />
     <!--
       The exact text of this <title> is load-bearing: src/feedback.ts's
-      postFeedback() checks the POST response body for "Press form
+      postFeedback() checks the POST response body for "Trunk form
       definitions" to detect a host with no form handler attached (which
       answers with this file's own markup instead of Netlify's real
       response). Changing this title without updating that guard string
       breaks the detection silently.
     -->
-    <title>Press form definitions</title>
+    <title>Trunk form definitions</title>
   </head>
   <body>
     <!--
@@ -25,8 +25,8 @@
          200 with HTML, so the app would report success while nothing reached
          the inbox. Netlify serves a real file before applying redirects.
     -->
-    <form name="press-feedback" netlify netlify-honeypot="bot-field" hidden>
-      <input type="hidden" name="form-name" value="press-feedback" />
+    <form name="trunk-feedback" netlify netlify-honeypot="bot-field" hidden>
+      <input type="hidden" name="form-name" value="trunk-feedback" />
       <input name="bot-field" />
       <input type="text" name="kind" />
       <input type="text" name="reporter" />

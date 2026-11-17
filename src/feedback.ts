@@ -8,7 +8,7 @@ import { kv } from './kv';
  */
 
 /** Exported for the same reason as storage.ts's keys — see there. */
-export const QUEUE_KEY = 'press.feedback.queue.v1';
+export const QUEUE_KEY = 'trunk.feedback.queue.v1';
 /** Bounded so a permanently offline install cannot grow localStorage forever. */
 const MAX_QUEUE = 20;
 
@@ -143,7 +143,7 @@ export function watchConnectivity(post: Poster): void {
 }
 
 const FORM_ENDPOINT = '/__forms.html';
-const FORM_NAME = 'press-feedback';
+const FORM_NAME = 'trunk-feedback';
 
 /**
  * Production poster. Deliberately omits `bot-field`: Netlify discards any
@@ -182,7 +182,7 @@ export const postFeedback: Poster = async (entry) => {
   // this guard produces false negatives — reports stay queued forever instead
   // of being marked sent, which is still the safe direction (nothing is lost)
   // but needs confirming against one real deployed submission.
-  if ((await res.text()).includes('Press form definitions')) {
+  if ((await res.text()).includes('Trunk form definitions')) {
     throw new Error('Netlify form handler not attached — keeping report queued');
   }
 };

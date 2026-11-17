@@ -1,4 +1,4 @@
-# Press Live Money + Play-Screen Fixes Implementation Plan
+# Trunk Live Money + Play-Screen Fixes Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -8,17 +8,17 @@
 
 **Tech Stack:** Vite 8 + React 19 + TypeScript 6, Vitest 4 (node environment), oxlint, plain CSS with custom properties. No new dependencies.
 
-**Spec:** `docs/dev/specs/2026-08-04-press-live-money-design.md`
+**Spec:** `docs/dev/specs/2026-08-04-trunk-live-money-design.md`
 
 ## Global Constraints
 
 - **No new dependencies.** `package.json` gains nothing. If a task seems to need a library, it is the wrong task.
 - **No DOM test environment.** `vite.config.ts` sets `environment: 'node'` and `include: ['src/**/*.test.ts']`. Only `.ts` files are collected, and there is no jsdom or testing-library. Do **not** add one. Pure logic gets Vitest; UI, layout, and contrast get browser measurement steps, which this plan supplies verbatim.
 - **No scoring engine is modified.** `strokePlay.ts`, `matchPlay.ts`, `skins.ts`, `stableford.ts`, `wolf.ts`, `nassau.ts`, `settlement.ts`, `handicap.ts`, `util.ts` are read-only for this plan. `src/games/money.ts` is new and layers on top of `computeSettlement`.
-- **No backend, accounts, or network calls.** Press stays local-only and offline-first.
+- **No backend, accounts, or network calls.** Trunk stays local-only and offline-first.
 - **League rounds have no money.** `Results.tsx:117` already routes league rounds past `Settlement`. `MoneyBoard`, `MoneyTicker`, and the swing line must all be suppressed when `round.options.league` is set.
 - **Brand tokens only.** Colors come from the custom properties in `src/index.css` (`--gold`, `--under`, `--over-strong`, `--muted`, `--ink`, `--card`, `--line`, `--bg`). No hardcoded hex in components. Display type is `var(--font-display)` (Oswald).
-- **No The Tech JAM branding.** `BRAND.md` is explicit: Press is its own thing.
+- **No The Tech JAM branding.** `BRAND.md` is explicit: Trunk is its own thing.
 - **Every task ends green.** `npm run typecheck && npm run lint && npm run test && npm run build` all pass before the commit step.
 - **Branch:** all work lands on `live-money-and-play-fixes`, which already exists and holds the spec commit.
 
@@ -29,7 +29,7 @@ Several tasks verify in a real browser. Use this exact procedure — it is how t
 Start the dev server:
 
 ```bash
-cd ~/projects/press-golf && npm run dev
+cd ~/projects/trunk-golf && npm run dev
 ```
 
 Open `http://localhost:5173/`, set the viewport to **375×812**, and seed a realistic round by pasting this into the browser console:
@@ -44,7 +44,7 @@ const scores={};
 for(let h=1;h<=11;h++){scores[h]={};ids.forEach((id,i)=>{scores[h][id]=holes[h-1].par+[0,1,-1,2,0,1][(h+i)%6];});}
 const wolf={};
 holes.forEach(h=>{wolf[h.number]={wolfPlayerId:ids[(h.number-1)%4],choice:h.number<=11?(h.number%4===0?{type:'lone'}:{type:'partner',partnerId:ids[(h.number)%4]}):null};});
-localStorage.setItem('press.rounds.v1',JSON.stringify([{
+localStorage.setItem('trunk.rounds.v1',JSON.stringify([{
   id:'seed1',course:'Pine Hollow',date:'2026-08-04',createdAt:Date.now(),updatedAt:Date.now(),
   players:ids.map(id=>({id,name:names[id],handicap:hcp[id]})),holes,
   games:['skins','nassau','wolf','strokePlay'],
@@ -153,7 +153,7 @@ describe('holeSwing', () => {
 
 - [ ] **Step 2: Run the tests to verify they fail**
 
-Run: `cd ~/projects/press-golf && npx vitest run src/games/money.test.ts`
+Run: `cd ~/projects/trunk-golf && npx vitest run src/games/money.test.ts`
 Expected: FAIL — `Failed to resolve import "./money"`.
 
 - [ ] **Step 3: Write the implementation**
@@ -203,18 +203,18 @@ export function holeSwing(round: Round, holeNumber: number): Record<string, numb
 
 - [ ] **Step 4: Run the tests to verify they pass**
 
-Run: `cd ~/projects/press-golf && npx vitest run src/games/money.test.ts`
+Run: `cd ~/projects/trunk-golf && npx vitest run src/games/money.test.ts`
 Expected: PASS, 7 tests.
 
 - [ ] **Step 5: Run the full gate**
 
-Run: `cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test`
+Run: `cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test`
 Expected: all pass, no new warnings.
 
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/projects/press-golf
+cd ~/projects/trunk-golf
 git add src/games/money.ts src/games/money.test.ts
 git commit -m "Add pure per-hole money swing helpers
 
@@ -327,7 +327,7 @@ In `src/screens/Setup.tsx`, add `import { StakesEditor } from '../components/Sta
 
 - [ ] **Step 4: Run the gate**
 
-Run: `cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test && npm run build`
+Run: `cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test && npm run build`
 Expected: all pass. The existing `settlement.test.ts` suite still passes — this task changed no math.
 
 - [ ] **Step 5: Verify in the browser**
@@ -342,7 +342,7 @@ Then open a finished round's Results and confirm **Edit stakes** renders the sam
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/projects/press-golf
+cd ~/projects/trunk-golf
 git add src/components/StakesEditor.tsx src/components/Settlement.tsx src/screens/Setup.tsx
 git commit -m "Set stakes at setup via a shared StakesEditor
 
@@ -559,7 +559,7 @@ In `src/index.css`, add after the `.seg.view-toggle` rule at line 613:
 
 - [ ] **Step 4: Run the gate**
 
-Run: `cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test && npm run build`
+Run: `cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test && npm run build`
 Expected: all pass. oxlint must report no unused imports in `Play.tsx`.
 
 - [ ] **Step 5: Verify the toggle row does not overflow**
@@ -582,7 +582,7 @@ Also confirm by eye: tapping **Board** shows the four leaderboards, tapping **Ca
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/projects/press-golf
+cd ~/projects/trunk-golf
 git add src/screens/HoleView.tsx src/screens/Play.tsx src/index.css
 git commit -m "Split Play into Hole / Board / Card tabs
 
@@ -781,7 +781,7 @@ Append to `src/index.css`:
 
 - [ ] **Step 4: Run the gate**
 
-Run: `cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test && npm run build`
+Run: `cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test && npm run build`
 Expected: all pass.
 
 - [ ] **Step 5: Verify in the browser**
@@ -796,7 +796,7 @@ Seed the round per the harness, tap **Board**, and confirm:
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/projects/press-golf
+cd ~/projects/trunk-golf
 git add src/components/MoneyBoard.tsx src/screens/Play.tsx src/index.css
 git commit -m "Render live money and the per-game breakdown on the Board tab
 
@@ -917,7 +917,7 @@ Append to `src/index.css`:
 
 - [ ] **Step 4: Run the gate**
 
-Run: `cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test && npm run build`
+Run: `cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test && npm run build`
 Expected: all pass.
 
 - [ ] **Step 5: Verify in the browser**
@@ -940,7 +940,7 @@ Expected: `height` ≤ 40. `scrollable` may be either — with four short names 
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/projects/press-golf
+cd ~/projects/trunk-golf
 git add src/components/MoneyTicker.tsx src/screens/Play.tsx src/index.css
 git commit -m "Show a live money ticker while scoring
 
@@ -1043,7 +1043,7 @@ Append to `src/index.css`:
 
 - [ ] **Step 4: Run the gate**
 
-Run: `cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test && npm run build`
+Run: `cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test && npm run build`
 Expected: all pass.
 
 - [ ] **Step 5: Verify the gating in the browser**
@@ -1059,7 +1059,7 @@ Seed the round per the harness. The seed scores holes 1–11, so hole 11 is the 
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/projects/press-golf
+cd ~/projects/trunk-golf
 git add src/screens/HoleView.tsx src/index.css
 git commit -m "Show what the current hole was worth
 
@@ -1259,7 +1259,7 @@ Leave `.btn-primary.sticky` at `:157` alone — Setup depends on it and it works
 
 - [ ] **Step 6: Run the gate**
 
-Run: `cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test && npm run build`
+Run: `cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test && npm run build`
 Expected: all pass.
 
 - [ ] **Step 7: Measure the acceptance criterion**
@@ -1290,7 +1290,7 @@ Also confirm the footer background hides content scrolling underneath it rather 
 - [ ] **Step 8: Commit**
 
 ```bash
-cd ~/projects/press-golf
+cd ~/projects/trunk-golf
 git add src/components/WolfControls.tsx src/components/NassauControls.tsx src/index.css
 git commit -m "Fit the Hole tab in one screen
 
@@ -1351,7 +1351,7 @@ Leave every `color-mix(in srgb, var(--gold) …)` background and border untouche
 
 - [ ] **Step 3: Run the gate**
 
-Run: `cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test && npm run build`
+Run: `cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test && npm run build`
 Expected: all pass.
 
 - [ ] **Step 4: Measure the contrast**
@@ -1385,7 +1385,7 @@ Finally toggle sunlight **off** and confirm the dark theme is visually unchanged
 - [ ] **Step 5: Commit**
 
 ```bash
-cd ~/projects/press-golf
+cd ~/projects/trunk-golf
 git add src/index.css
 git commit -m "Fix invisible handicap dots in sunlight mode
 
@@ -1464,7 +1464,7 @@ Known limitation, accepted: the history stack is not a perfect mirror of the vie
 
 - [ ] **Step 2: Run the gate**
 
-Run: `cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test && npm run build`
+Run: `cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test && npm run build`
 Expected: all pass.
 
 - [ ] **Step 3: Verify in the browser**
@@ -1479,7 +1479,7 @@ Seed the round per the harness, then:
 - [ ] **Step 4: Commit**
 
 ```bash
-cd ~/projects/press-golf
+cd ~/projects/trunk-golf
 git add src/App.tsx
 git commit -m "Keep the back gesture inside the app
 
@@ -1579,7 +1579,7 @@ Under `### Fixed`, prepend:
 
 - [ ] **Step 4: Run the gate**
 
-Run: `cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test && npm run build`
+Run: `cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test && npm run build`
 Expected: all pass.
 
 - [ ] **Step 5: Verify keyboard access**
@@ -1589,7 +1589,7 @@ Seed the round, open the **Card** tab, press `Tab` until a score cell is focused
 - [ ] **Step 6: Commit**
 
 ```bash
-cd ~/projects/press-golf
+cd ~/projects/trunk-golf
 git add src/components/Scorecard.tsx README.md CHANGELOG.md
 git commit -m "Keyboard access for scorecard jump cells; correct handicap docs
 
@@ -1607,7 +1607,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 After Task 10, run the full gate once more and re-measure the two headline claims on a freshly seeded round:
 
 ```bash
-cd ~/projects/press-golf && npm run typecheck && npm run lint && npm run test && npm run build
+cd ~/projects/trunk-golf && npm run typecheck && npm run lint && npm run test && npm run build
 ```
 
 | Claim | Baseline | Target | How |

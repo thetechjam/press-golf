@@ -15,13 +15,13 @@ default to 18 par-4s. A first-time user could tap Start immediately and get a
 working round. Nothing communicates this, so all 30 controls read as decisions
 that must be made.
 
-Most of them are not decisions that must be made *now*. Press already lets you
+Most of them are not decisions that must be made *now*. Trunk already lets you
 fix pars and stroke indexes from the Card tab, handicaps from "Edit handicaps"
 on Play and Results, and stakes from "Edit stakes" on the Board. The Money
 section even says so in its own hint. Setup asks up front for things the app
 already lets you defer.
 
-Separately, **Press has no memory of people.** `press.rounds.v1` stores every
+Separately, **Trunk has no memory of people.** `trunk.rounds.v1` stores every
 past round with its players' names and handicaps, but `Setup` opens with two
 blank name fields every time. The expensive part of setup on a first tee is not
 the dropdowns you can scroll past — it is typing four names on a phone while

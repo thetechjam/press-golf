@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
-  <!-- Press "P Flag" mark: the pin flag forms the P of Press; the poker-chip
-       golf ball (edge spots + dimples) sits in the flag. -->
+  <!-- Trunk mark: pin flag and poker-chip golf ball. The flag was drawn as a
+       P when the product was called Press; it is a logo beside the word now. -->
   <defs>
     <linearGradient id="felt" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#176e51"/>

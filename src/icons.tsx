@@ -23,11 +23,12 @@ const base = (size: number) => ({
 });
 
 /**
- * The Press brand mark ("P Flag"): the pin flag forms the P, with the
- * poker-chip golf ball in the flag. Flag stays brand gold; pole and chip
- * ring follow currentColor so the mark tracks theme and glare modes.
+ * The Trunk brand mark: a pin flag with the poker-chip golf ball in it.
+ * The flag was drawn as a P when the product was called Press. It now sits
+ * beside the word, not in place of a letter. Flag stays brand gold; pole
+ * and chip ring follow currentColor so the mark tracks theme and glare modes.
  */
-export const PressMark = ({ size = 18, className }: IconProps) => (
+export const TrunkMark = ({ size = 18, className }: IconProps) => (
   <svg
     width={size * 0.875}
     height={size}

@@ -1,9 +1,9 @@
-[![CI](https://github.com/thetechjam/press-golf/actions/workflows/ci.yml/badge.svg)](https://github.com/thetechjam/press-golf/actions/workflows/ci.yml)
+[![CI](https://github.com/thetechjam/trunk-golf/actions/workflows/ci.yml/badge.svg)](https://github.com/thetechjam/trunk-golf/actions/workflows/ci.yml)
 
-# Press ⛳️
+# Trunk ⛳️
 
-**Press** is a mobile-first web app for tracking golf side-games. One scorekeeper
-enters scores for the whole group on a single phone, and Press does the math —
+**Trunk** is a mobile-first web app for tracking golf side-games. One scorekeeper
+enters scores for the whole group on a single phone, and Trunk does the math —
 live leaderboards and running money totals while you play, then a settle-up
 summary at the end.
 
@@ -47,7 +47,7 @@ live from course search (course data ©
 
 ## Settling up
 
-Set a stake per game and Press tracks everyone's net result live during the
+Set a stake per game and Trunk tracks everyone's net result live during the
 round — a money ticker and per-game breakdown on the Hole and Board tabs —
 then resolves the final total into the fewest payments needed to settle the
 whole group (exactly, for up to twelve people with money to move; past that,
@@ -65,7 +65,7 @@ the shared scoreboard image, and each one cites the number behind it.
 Results can go out as a scoreboard image, a scorecard image, or plain text —
 and the round itself can be handed to another phone by link or QR code. The
 whole round is packed into the link's fragment, so it is decoded by the other
-person's copy of Press and never touches a server: no account, no backend, and
+person's copy of Trunk and never touches a server: no account, no backend, and
 it opens with no signal. A round that arrives is held behind a "Keep it"
 button rather than being saved onto someone's device unasked.
 
@@ -75,7 +75,7 @@ is told if it differs from one they already have.
 
 Mid-round, the same link hands the card over: the other phone carries on
 scoring from where you left off. If both phones end up scoring the same round,
-Press compares the two and asks which card is the real one — or keeps both —
+Trunk compares the two and asks which card is the real one — or keeps both —
 rather than picking one on a timestamp.
 
 ## Getting started
@@ -156,7 +156,7 @@ repo, and **without the first every submission is lost**:
 1. **Site configuration → Forms → enable Form detection.** Off is the
    default — this is the step that's easy to skip.
 2. **Forms → Form notifications → add an email notification** for the
-   `press-feedback` form.
+   `trunk-feedback` form.
 3. **Redeploy.** Detection runs at deploy time; enabling it does not
    retroactively scan the previous build.
 
@@ -177,11 +177,11 @@ that, the oldest is discarded to make room for the newest.
 
 ## License
 
-Press is released under the [PolyForm Noncommercial License 1.0.0](./LICENSE) —
+Trunk is released under the [PolyForm Noncommercial License 1.0.0](./LICENSE) —
 free to use, modify, and share for any **noncommercial** purpose (play all the
 golf games you want). Commercial rights are reserved.
 
-**Why this license?** It matches how Press is meant to be used today — shared
+**Why this license?** It matches how Trunk is meant to be used today — shared
 freely with friends for their rounds — while keeping the door open to a paid
 product later. As the sole copyright holder I can always loosen this to a fully
 open license (e.g. MIT), but a permissive release can't be taken back, so

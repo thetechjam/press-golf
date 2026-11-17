@@ -1,5 +1,9 @@
-# Netlify build configuration for Press.
-# Netlify reads this automatically on import — no manual settings needed.
+# Netlify build configuration for Trunk.
+# Netlify reads this automatically on import — no manual build settings needed.
+# The site name, the *.netlify.app subdomain, any custom domain, env vars and
+# the form-notification address are set in the Netlify UI, not in this file.
+# There is no _redirects or _headers file; the rewrite and headers below are
+# the whole of the edge config.
 
 [build]
   command = "npm run build"
