@@ -10,6 +10,7 @@ import {
   groupByMonth,
   describeEmpty,
   isLeagueRound,
+  isScrambleRound,
 } from '../history';
 import type { KindFilter, StatusFilter } from '../history';
 import { XIcon } from '../icons';
@@ -39,8 +40,12 @@ const FILTERS: { id: StatusFilter; label: string }[] = [
 const KINDS: { id: KindFilter; label: string }[] = [
   { id: 'all', label: 'Both' },
   { id: 'league', label: 'League' },
+  { id: 'scramble', label: 'Scramble' },
   { id: 'regular', label: 'Regular' },
 ];
+
+const kindOf = (r: Round): KindFilter =>
+  isLeagueRound(r) ? 'league' : isScrambleRound(r) ? 'scramble' : 'regular';
 
 /**
  * Every round on the device, with a way to find one and a way to clear some
@@ -84,10 +89,14 @@ export function History({ onBack, onResume, onViewResults }: Props) {
   // never played a league night does not need a League filter, and somebody
   // who only plays them does not need a Regular one. Kept up while a filter
   // is set, so deleting the last of one kind cannot strand it.
-  const mixed = useMemo(() => {
-    const league = rounds.filter(isLeagueRound).length;
-    return league > 0 && league < rounds.length;
-  }, [rounds]);
+  // The same goes for each kind: only the ones on this phone are offered, so
+  // somebody who has never played a scramble is not handed a fourth segment.
+  const present = useMemo(() => new Set(rounds.map(kindOf)), [rounds]);
+  const mixed = present.size > 1;
+  const kinds = KINDS.filter((k) => k.id === 'all' || k.id === kind || present.has(k.id)).map(
+    // "Both" is only true of two; with three kinds it is every one of them.
+    (k, _, shown) => (k.id === 'all' && shown.length > 3 ? { ...k, label: 'Any' } : k)
+  );
   const groups = useMemo(() => groupByMonth(shown), [shown]);
 
   const open = (round: Round) =>
@@ -182,7 +191,7 @@ export function History({ onBack, onResume, onViewResults }: Props) {
 
           {(mixed || kind !== 'all') && (
             <div className="seg history-filter" role="group" aria-label="Kind of round">
-              {KINDS.map((k) => (
+              {kinds.map((k) => (
                 <button
                   key={k.id}
                   className={`seg-btn${kind === k.id ? ' active' : ''}`}

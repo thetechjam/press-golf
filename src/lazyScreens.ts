@@ -5,7 +5,7 @@ import { lazy } from 'react';
  *
  * Home → Setup → Play → Results is the path every visit takes and stays in the
  * main bundle. Everything here is visited occasionally — Stats, the league,
- * trips, history, the arrival screens behind a shared link, and the share and
+ * trips, scramble setup, history, the arrival screens behind a shared link, and the share and
  * hand-over sheets with their QR encoder and canvas renderers — and was being
  * parsed on every launch to draw a Home screen that uses none of it.
  *
@@ -19,6 +19,7 @@ const loaders = {
   History: () => import('./screens/History'),
   LeagueSetup: () => import('./screens/LeagueSetup'),
   LeagueStandings: () => import('./screens/LeagueStandings'),
+  ScrambleSetup: () => import('./screens/ScrambleSetup'),
   TripScreen: () => import('./screens/TripScreen'),
   Arrival: () => import('./screens/Arrival'),
   ArrivingCourse: () => import('./screens/ArrivingCourse'),
@@ -33,6 +34,9 @@ export const LeagueSetup = lazy(() =>
 );
 export const LeagueStandings = lazy(() =>
   loaders.LeagueStandings().then((m) => ({ default: m.LeagueStandings }))
+);
+export const ScrambleSetup = lazy(() =>
+  loaders.ScrambleSetup().then((m) => ({ default: m.ScrambleSetup }))
 );
 export const TripScreen = lazy(() => loaders.TripScreen().then((m) => ({ default: m.TripScreen })));
 export const Arrival = lazy(() => loaders.Arrival().then((m) => ({ default: m.Arrival })));

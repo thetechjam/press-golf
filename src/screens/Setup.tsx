@@ -1,23 +1,12 @@
-import { useMemo, useReducer, useRef, useState, Suspense } from 'react';
+import { useMemo, useRef, useState, Suspense } from 'react';
 import { todayIso } from '../roundDate';
-import type { Round, Player, GameType, SavedCourse, TeamSetup, RoundTrip } from '../types';
+import type { Round, Player, GameType, TeamSetup, RoundTrip } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 import { GAMES } from '../games';
 import { canScoreNet, usesHandicap } from '../games/scoring';
 import { wolfForHole } from '../games/wolf';
 import { effectiveSide, assignmentOf, type Assign } from '../components/TeamPicker';
-import {
-  uid,
-  listCourses,
-  saveCourse,
-  deleteCourse,
-  listRounds,
-  getAliases,
-  mergePeople,
-  ALIASES_KEY,
-  COURSES_KEY,
-  ROUNDS_KEY,
-} from '../storage';
+import { uid, listRounds, getAliases, mergePeople, ALIASES_KEY, ROUNDS_KEY } from '../storage';
 import { notSavedReason } from '../notSaved';
 import { SetupRow } from '../components/SetupRow';
 import { TripPicker } from '../components/TripPicker';
@@ -25,13 +14,12 @@ import { activeTrip, listTrips } from '../trips';
 import { courseSummary, holesSummary, gamesSummary, stakesSummary } from '../setupSummary';
 import { buildRoster, lastCrew, isFirstEverRound, type RosterEntry, placePlayer } from '../roster';
 import { SendRound } from '../lazyScreens';
-import type { FetchedCourse } from '../courses/openGolfApi';
 import { GearIcon } from '../icons';
 import { StakesEditor } from '../components/StakesEditor';
 import { SettingsSheet } from '../components/SettingsSheet';
-import { nameKey, nearMatches, resolveName } from '../people';
+import { nameKey, nearMatches, resolveName, peopleOn } from '../people';
 import { lastSetup } from '../lastSetup';
-import { courseReducer, deriveCourse, initialCourseState } from './setup/courseState';
+import { useCourse } from './setup/useCourse';
 import { PlayersSection } from './setup/PlayersSection';
 import { CourseSection, HolesSection } from './setup/CourseSection';
 import { GamesSection, type SidePick } from './setup/GamesSection';
@@ -55,9 +43,6 @@ export function Setup({ onCancel, onStart }: Props) {
   // start where they were left, the way the players already did. Read once,
   // on mount, like the saved rounds below.
   const [remembered] = useState(() => lastSetup(listRounds()));
-  const [cs, dispatch] = useReducer(courseReducer, initialCourseState);
-  const derived = deriveCourse(cs);
-  const { rated } = derived;
   const [players, setPlayers] = useState<Player[]>([
     { id: uid(), name: '' },
     { id: uid(), name: '' },
@@ -69,9 +54,6 @@ export function Setup({ onCancel, onStart }: Props) {
   const [games, setGames] = useState<GameType[]>(() => remembered?.games ?? ['skins']);
   const [options, setOptions] = useState({ ...DEFAULT_OPTIONS, ...(remembered?.options ?? {}) });
   const [error, setError] = useState('');
-  const [courses, setCourses] = useState<SavedCourse[]>(listCourses());
-  // The saved course being handed out, if any — see the QR button on each row.
-  const [sendingCourse, setSendingCourse] = useState<SavedCourse | null>(null);
   const [nassau, setNassau] = useState<SidePick>(() => ({
     mode: remembered?.nassauMode ?? '1v1',
     sideA: '',
@@ -134,62 +116,22 @@ export function Setup({ onCancel, onStart }: Props) {
     setError(message);
   };
 
-  /**
-   * Both course loaders open the Holes & pars row. Either one rewrites up to
-   * eighteen pars and stroke indexes at a stroke, and doing that behind a
-   * collapsed section is how a wrong number reaches the first tee unseen. What
-   * differs between them is the warning, not whether the numbers are shown:
-   * only search data is second-guessed — see the reducer.
-   */
-  const loadCourse = (c: SavedCourse) => {
-    dispatch({ type: 'loadSaved', course: c });
-    openRow('holes');
-  };
-
-  const loadFromApi = (c: FetchedCourse) => {
-    dispatch({ type: 'loadSearch', course: c });
-    openRow('holes');
-    setError('');
-  };
-
-  /**
-   * `from` is which button asked, because that is where the answer has to
-   * appear. The two are a screen apart: the check note sits at the top of
-   * Holes & pars and the ghost button below the whole par grid, so a single
-   * note slot at the foot means saving from the top makes the caveat vanish
-   * and puts the confirmation a thousand pixels down, out of sight. Same
-   * failure the note was moved out of the page footer to avoid.
-   */
-  const saveFavorite = (from: 'check' | 'foot' = 'foot') => {
-    const name = cs.course.trim();
-    if (!name) {
-      openRow('course');
-      setError('Add a course name (in the Course row) before saving.');
-      return;
-    }
-    const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
-    const saved = saveCourse({
-      id: existing?.id ?? uid(),
-      name,
-      holes: cs.holes.map((h) => ({ number: h.number, par: h.par, strokeIndex: h.strokeIndex })),
-      slope: cs.slope,
-      rating: cs.rating,
-    });
-    if (!saved) {
-      setError(`Not saved. This course wasn’t kept. ${notSavedReason(COURSES_KEY)}`);
-      return;
-    }
-    setCourses(listCourses());
-    setError('');
-    dispatch({ type: 'saved', name, from });
-  };
-
-  const removeCourse = (id: string) => {
-    if (!deleteCourse(id)) {
-      setError(`Not saved. That course wasn’t deleted. ${notSavedReason(COURSES_KEY, true)}`);
-    }
-    setCourses(listCourses());
-  };
+  // The course and the holes, and loading, saving and deleting a course —
+  // shared with Scramble's setup, see setup/useCourse.ts.
+  const {
+    cs,
+    dispatch,
+    derived,
+    courses,
+    reloadCourses,
+    sendingCourse,
+    setSendingCourse,
+    loadCourse,
+    loadFromApi,
+    saveFavorite,
+    removeCourse,
+  } = useCourse({ openRow, setError });
+  const { rated } = derived;
 
   const updatePlayer = (id: string, patch: Partial<Player>) =>
     setPlayers((ps) => ps.map((p) => (p.id === id ? { ...p, ...patch } : p)));
@@ -207,7 +149,9 @@ export function Setup({ onCancel, onStart }: Props) {
   const knownNames = useMemo(() => {
     const seen = new Map<string, string>();
     for (const r of savedRounds)
-      for (const p of r.players) {
+      // peopleOn, not r.players: a scramble's players are its teams, and a
+      // team name offered as somebody to add is a person who does not exist.
+      for (const p of peopleOn(r)) {
         const k = nameKey(p.name);
         if (k && !seen.has(k)) seen.set(k, p.name.trim());
       }
@@ -599,7 +543,7 @@ export function Setup({ onCancel, onStart }: Props) {
           // A restore from here brings courses and past players; the saved
           // course list and the recall chips read them again.
           onDataChanged={() => {
-            setCourses(listCourses());
+            reloadCourses();
             setSavedRounds(listRounds());
           }}
         />

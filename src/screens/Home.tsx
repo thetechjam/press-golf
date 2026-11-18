@@ -8,7 +8,7 @@ import { ResumeCard } from '../components/ResumeCard';
 import { TripCard } from '../components/TripCard';
 import { activeTrip } from '../trips';
 import { liveRound } from '../roundSummary';
-import { FlagIcon, PressMark, TrophyIcon, GearIcon, ChartIcon } from '../icons';
+import { FlagIcon, PressMark, TrophyIcon, GearIcon, ChartIcon, ScrambleIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { KeepRoundsPrompt } from '../components/KeepRoundsPrompt';
 import { countsForStats } from '../stats';
@@ -27,6 +27,8 @@ const ON_HOME = 5;
 interface Props {
   onNew: () => void;
   onNewLeague: () => void;
+  /** Absent where there is nowhere to go, e.g. in tests that do not need it. */
+  onNewScramble?: () => void;
   onResume: (round: Round) => void;
   onViewResults: (round: Round) => void;
   onStats: () => void;
@@ -37,6 +39,7 @@ interface Props {
 export function Home({
   onNew,
   onNewLeague,
+  onNewScramble,
   onResume,
   onViewResults,
   onStats,
@@ -93,8 +96,10 @@ export function Home({
       {/* Mid-round, the Resume card is the thing to press; a second filled
           button under it would be two primaries arguing. League night is the
           weekly special case, so it rides alongside rather than taking a
-          second full-width slab of equal weight. */}
-      <div className="home-actions">
+          second full-width slab of equal weight. Scramble is the same kind of
+          occasion — an event format, not the everyday round — so it takes the
+          same tile. */}
+      <div className={`home-actions${onNewScramble ? ' three' : ''}`}>
         <button className={live ? 'btn-secondary big' : 'btn-primary big'} onClick={onNew}>
           Start New Round
         </button>
@@ -103,6 +108,12 @@ export function Home({
           <TrophyIcon size={20} />
           League
         </button>
+        {onNewScramble && (
+          <button className="btn-secondary big home-league" onClick={onNewScramble}>
+            <ScrambleIcon size={20} />
+            Scramble
+          </button>
+        )}
       </div>
 
       <InstallPrompt />

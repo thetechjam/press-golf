@@ -922,3 +922,55 @@
 .nine-pick {
   margin-top: 8px;
 }
+
+/* ---- Scramble setup: one card per team ------------------------------------ */
+/* The heading and the remove button on one line. The heading keeps its quiet
+   card-label look; the row only has to stop the 44px button from pushing it
+   down. */
+.scramble-team-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 24px;
+  margin-bottom: 8px;
+}
+.scramble-team-head h2 {
+  margin: 0;
+}
+.scramble-team-head .player-del {
+  /* The tap target stays 44px; the negative margin keeps it from making the
+     head taller than the label and moves the X onto the card's padding edge. */
+  margin: -10px -12px -10px 0;
+}
+.scramble-team-name {
+  margin-top: 10px;
+}
+/* Four people, two by two: a team reads as a group, and four full-width rows
+   per team made a two-team screen as long as New Round's whole Players card. */
+.scramble-members {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.scramble-members .player-name {
+  width: 100%;
+}
+.error.scramble-team-error {
+  margin-top: 8px;
+  text-align: left;
+  font-size: var(--fs-sm);
+}
+.scramble-members .player-name[aria-invalid='true']:placeholder-shown {
+  border-color: var(--over-strong);
+}
+/* None and 1–6 on one line. Seven equal cells of the starting-hole grid's
+   48px minimum do not fit at 360px, and wrapped five and two the 6 sat alone
+   on a second row as if it were a different kind of choice. "None" gets the
+   room its word needs and the digits share the rest. */
+.start-hole-grid.scramble-min {
+  grid-template-columns: minmax(56px, 1.6fr) repeat(6, minmax(0, 1fr));
+}
+.start-hole-grid.scramble-min .seg-btn {
+  padding-left: 0;
+  padding-right: 0;
+}

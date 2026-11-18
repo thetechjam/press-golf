@@ -2,7 +2,8 @@ import type { Round } from '../types';
 import { completedHoleCount } from '../games/util';
 import { GAMES } from '../games';
 import { DeleteButton } from './DeleteButton';
-import { TrophyIcon, XIcon } from '../icons';
+import { ScrambleIcon, TrophyIcon, XIcon } from '../icons';
+import { isScramble } from '../games/scramble';
 import { formatRoundDate } from '../roundDate';
 import { count } from '../plural';
 import { roundTitle, standingLine } from '../roundSummary';
@@ -36,6 +37,7 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect, h
   const thru = completedHoleCount(round);
   const result = standingLine(round);
   const league = !!round.options.league;
+  const scramble = isScramble(round);
 
   return (
     <div
@@ -59,6 +61,12 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect, h
               <TrophyIcon size={13} /> League night
             </span>
           )}
+          {/* Its games say only "Stroke Play", which is not what was played. */}
+          {scramble && (
+            <span className="round-kind">
+              <ScrambleIcon size={13} /> Scramble
+            </span>
+          )}
           <span className="round-title">{roundTitle(round)}</span>
           {/* Each part held together with no-break spaces, so on a narrow
               phone the line wraps between "·" parts and never inside one —
@@ -66,7 +74,7 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect, h
           <span className="round-sub">
             {[
               formatRoundDate(round.date),
-              count(round.players.length, 'player'),
+              count(round.players.length, scramble ? 'team' : 'player'),
               count(round.holes.length, 'hole'),
               round.status === 'finished' ? null : thru === 0 ? 'not started' : `thru ${thru}`,
             ]
@@ -95,7 +103,7 @@ export function RoundCard({ round, onOpen, onDelete, selected, onToggleSelect, h
                 pills wrapped to a second row on most cards and drowned out
                 the two tags above that actually say something about the
                 round. */}
-            {round.games.length > 0 && (
+            {round.games.length > 0 && !scramble && (
               <span className="round-gamelist">
                 {round.games.map((g) => GAMES.find((m) => m.id === g)?.label ?? g).join(' · ')}
               </span>

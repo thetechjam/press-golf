@@ -1,0 +1,257 @@
+/* ---------- Scramble: whose shot it was ---------- */
+/* Under each team's score on the Hole tab. It lives inside the team's
+   .stepper, so it shares the tone bar and the keep-scoring flash, and it is
+   built to cost one 44px row per team: two teams of four on a 390×844 phone
+   must still show both scores and both tee-shot rows above the foot. */
+.scr-shots {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+  padding-top: 6px;
+  /* Dashed, not the solid hairline between teams: this is still the same
+     team's row, and a solid rule read as the start of another one. */
+  border-top: 1px dashed var(--line);
+}
+/* One grid per row with the same tracks, so the open rows' names sit under the
+   tee shot's and a column reads as one person down the hole. The label column
+   is narrow on purpose — every pixel it takes comes off four names. */
+.scr-row {
+  display: grid;
+  grid-template-columns: 2.1rem repeat(var(--scr-cols, 4), minmax(0, 1fr)) 2.5rem;
+  align-items: center;
+  gap: 4px 3px;
+}
+.scr-label {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-3xs);
+  line-height: 1.15;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+/* Pills rather than the score chips' squared tiles, and on the card rather
+   than the page colour: they sit right under the chips, and a name must never
+   be mistaken for a number to tap. */
+.scr-btn {
+  min-width: 0;
+  min-height: 44px;
+  /* Tight sides: with four on a team each pill is ~52px on a 360px phone, and
+     "MORGAN" has to fit without an ellipsis. */
+  padding: 2px 1px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.1;
+  transition: transform var(--press) var(--ease-out);
+}
+.scr-btn:active {
+  transform: scale(0.96);
+}
+.scr-name {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+/* Four on a team leaves each pill about 47px of text on a 360px phone —
+   short of "MORGAN" at the size above. One step down keeps the name whole,
+   which matters more than a pixel of type. */
+.scr-shots[data-cols='4'] .scr-name {
+  font-size: var(--fs-xs);
+}
+/* The running count against the minimum: quiet until it is met. */
+.scr-count {
+  font-family: var(--font-display);
+  font-size: var(--fs-2xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.scr-btn.met .scr-count {
+  color: var(--under-ink);
+}
+.scr-btn.on {
+  background: var(--green-600);
+  border-color: var(--green-ink);
+  color: #fff;
+}
+.scr-btn.on .scr-count {
+  color: color-mix(in srgb, #fff 85%, transparent);
+}
+.scr-more {
+  min-width: 0;
+  min-height: 44px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--green-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-3xs);
+  line-height: 1.1;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+}
+.scr-chev {
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--swap) var(--ease-out);
+}
+.scr-chev.up {
+  transform: translateY(2px) rotate(225deg);
+}
+/* Shots credited behind the closed panel, so closed still says "something
+   is in here". */
+.scr-more-count {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--green-500) 18%, transparent);
+  font-size: var(--fs-2xs);
+  line-height: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Tee shots board ---------- */
+.scr-team {
+  color: var(--muted);
+  font-size: var(--fs-md);
+  letter-spacing: 0.03em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scr-team::before {
+  content: '·';
+  margin-right: 6px;
+}
+.scr-board .board-title {
+  min-width: 0;
+  max-width: 100%;
+}
+.scr-members {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.scr-member {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-areas:
+    'name pips drives'
+    'sub sub sub';
+  align-items: center;
+  column-gap: 10px;
+  padding: 7px 2px;
+}
+.scr-member + .scr-member {
+  border-top: 1px solid var(--line);
+}
+.scr-member-name {
+  grid-area: name;
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: var(--fs-lg);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scr-pips {
+  grid-area: pips;
+  display: inline-flex;
+  gap: 3px;
+}
+.scr-pip {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--muted) 70%, transparent);
+}
+.scr-pip.used {
+  background: var(--green-ink);
+  border-color: var(--green-ink);
+}
+.scr-drives {
+  grid-area: drives;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--fs-2xl);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  /* Wide enough for "3 of 4" so the pips line up down the card. */
+  min-width: 3.4em;
+}
+.scr-of {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  color: var(--muted);
+}
+.scr-drives.met {
+  color: var(--under-ink);
+}
+.scr-member-sub {
+  grid-area: sub;
+  font-size: var(--fs-xs);
+  color: var(--muted);
+}
+.scr-note {
+  margin: 6px 0 0;
+  text-wrap: pretty;
+  font-size: var(--fs-sm);
+  line-height: 1.35;
+  color: var(--muted);
+}
+.scr-note.scr-met {
+  color: var(--under-ink);
+}
+/* No spare drive left, or not enough: the same gold the app uses for every
+   "look at this before you go on". */
+.scr-note.warn {
+  padding: 10px 12px;
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--gold) 18%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--gold) 45%, var(--line));
+  color: var(--ink);
+}
+
+/* The same tint every other tappable gets under a cursor (16-hover.css), kept
+   here with its targets; behind the query so it never sticks on a phone. */
+@media (hover: hover) {
+  .scr-btn:hover:not(.on) {
+    background: color-mix(in srgb, var(--fairway) 7%, var(--card));
+  }
+}
+/* Drop the movement, keep the colour swap — the stance 18-reduced-motion.css
+   takes on every other press. */
+@media (prefers-reduced-motion: reduce) {
+  .scr-btn,
+  .scr-chev {
+    transition: none;
+  }
+  .scr-btn:active {
+    transform: none;
+  }
+}

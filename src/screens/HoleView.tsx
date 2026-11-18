@@ -5,6 +5,8 @@ import { WolfControls } from '../components/WolfControls';
 import { NassauControls } from '../components/NassauControls';
 import { JunkControls } from '../components/JunkControls';
 import { VegasStrip } from '../components/VegasStrip';
+import { ScrambleShots } from '../components/ScrambleShots';
+import { isScramble } from '../games/scramble';
 import { strokeIndexMap, strokesReceivedOnHole, usesHandicaps, courseHandicapFor } from '../games/handicap';
 import { strokeIndexesUsable } from '../games/strokeIndex';
 import { dotHandicapFor } from '../games/strokeDisplay';
@@ -31,6 +33,8 @@ interface Props {
   onJunk: (junk: JunkClaims) => void;
   /** Rewrites this hole's par on the round. Absent when the card is read-only. */
   onPar?: (holeNumber: number, par: number) => void;
+  /** Scramble only: credits one shot on this hole to a member of a team. */
+  onShot?: (teamId: string, shot: number, member: number) => void;
 }
 
 /** The pars a hole can be corrected to: golf is 3 to 6 in practice. */
@@ -38,7 +42,7 @@ const PARS = [3, 4, 5, 6];
 
 export function HoleView({
   round, hole, idx, dir, highlightId, holeComplete, holePartial, onGo, onScore, onPickup, onWolf,
-  onPresses, onJunk, onPar,
+  onPresses, onJunk, onPar, onShot,
 }: Props) {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   // Whether the par picker is open. Local to this hole: a swipe remounts the
@@ -100,6 +104,7 @@ export function HoleView({
   // only on the Board. Worth a line under the scores once it is more than the
   // one skin every hole carries.
   const riding = round.games.includes('skins') ? skinsOnHole(round, hole.number) : 1;
+  const scramble = isScramble(round) && !!onShot;
 
   return (
     <div className="hole-view" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
@@ -216,7 +221,16 @@ export function HoleView({
               max={round.options.league ? LEAGUE_MAX_SCORE : undefined}
               pickedUp={!!round.options.league && pickedUp(round, hole.number, p.id)}
               onPickup={round.options.league ? () => onPickup(p.id) : undefined}
-            />
+            >
+              {scramble && (
+                <ScrambleShots
+                  round={round}
+                  hole={hole}
+                  teamId={p.id}
+                  onCredit={(shot, member) => onShot!(p.id, shot, member)}
+                />
+              )}
+            </PlayerScoreRow>
           ))}
         </section>
         {riding > 1 && (

@@ -1,6 +1,8 @@
 import type { Round } from '../types';
 import { completedHoleCount, resumeHole } from '../games/util';
 import { roundTitle, standingLine } from '../roundSummary';
+import { isScramble } from '../games/scramble';
+import { ScrambleIcon } from '../icons';
 
 /**
  * Home's way back into the round being played.
@@ -20,7 +22,17 @@ export function ResumeCard({ round, onResume }: { round: Round; onResume: () => 
     <button className="resume-card" onClick={onResume}>
       <span className="resume-eyebrow">
         <span className="resume-dot" aria-hidden="true" />
-        {round.options.league ? 'League night' : 'In progress'} · {thru === 0 ? 'not started' : `thru ${thru} of ${round.holes.length}`}
+        {round.options.league ? (
+          'League night'
+        ) : isScramble(round) ? (
+          // The dot already says it is live; the kind is the news here.
+          <>
+            <ScrambleIcon size={13} /> Scramble
+          </>
+        ) : (
+          'In progress'
+        )}{' '}
+        · {thru === 0 ? 'not started' : `thru ${thru} of ${round.holes.length}`}
       </span>
       <span className="resume-title">{roundTitle(round)}</span>
       {standing && <span className="resume-standing">{standing.text}</span>}

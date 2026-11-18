@@ -46,10 +46,25 @@ interface HolesProps {
   onSave: (from: 'check' | 'foot') => void;
   /** A player has a Handicap Index and these holes have no usable slope and rating. */
   indexWaiting: boolean;
+  /**
+   * Whether to ask for slope and rating. Off for a format that is played
+   * gross (a scramble), where the figures convert nothing and the line about
+   * a Handicap Index would be advice for a round that cannot use it. Off
+   * hides the fields only: a loaded course keeps its figures, so saving it
+   * from there does not wipe them.
+   */
+  withRating?: boolean;
 }
 
 /** The body of New Round's Holes & pars row. */
-export function HolesSection({ state, derived, dispatch, onSave, indexWaiting }: HolesProps) {
+export function HolesSection({
+  state,
+  derived,
+  dispatch,
+  onSave,
+  indexWaiting,
+  withRating = true,
+}: HolesProps) {
   const { holeCount, holes, source, nine, holesSource, savedNote, slope, rating, advancedHoles } =
     state;
   const { rated, importIssues, siProblem } = derived;
@@ -127,43 +142,47 @@ export function HolesSection({ state, derived, dispatch, onSave, indexWaiting }:
           <StarIcon size={15} /> {savedNote.text} — it loads from here next time.
         </p>
       ) : null}
-      <div className="rating-row">
-        <label className="field small">
-          <span>Slope</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={55}
-            max={155}
-            value={slope ?? ''}
-            onChange={(e) =>
-              dispatch({ type: 'slope', value: e.target.value === '' ? undefined : Number(e.target.value) })
-            }
-            placeholder="113"
-          />
-        </label>
-        <label className="field small">
-          <span>Rating</span>
-          <input
-            type="number"
-            inputMode="decimal"
-            step="0.1"
-            value={rating ?? ''}
-            onChange={(e) =>
-              dispatch({ type: 'rating', value: e.target.value === '' ? undefined : Number(e.target.value) })
-            }
-            placeholder={`${holes.length * 4}.0`}
-          />
-        </label>
-      </div>
-      {indexWaiting ? (
-        <IndexWarning />
-      ) : (
-        <p className="hint-inline">
-          {rated
-            ? `Handicap Index converts to strokes for these ${holes.length} holes.`
-            : `Optional — off the card, for these ${holes.length} holes. With both, players can enter a Handicap Index instead of working out their own strokes.`}
-        </p>
+      {withRating && (
+        <>
+          <div className="rating-row">
+            <label className="field small">
+              <span>Slope</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={55}
+                max={155}
+                value={slope ?? ''}
+                onChange={(e) =>
+                  dispatch({ type: 'slope', value: e.target.value === '' ? undefined : Number(e.target.value) })
+                }
+                placeholder="113"
+              />
+            </label>
+            <label className="field small">
+              <span>Rating</span>
+              <input
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                value={rating ?? ''}
+                onChange={(e) =>
+                  dispatch({ type: 'rating', value: e.target.value === '' ? undefined : Number(e.target.value) })
+                }
+                placeholder={`${holes.length * 4}.0`}
+              />
+            </label>
+          </div>
+          {indexWaiting ? (
+            <IndexWarning />
+          ) : (
+            <p className="hint-inline">
+              {rated
+                ? `Handicap Index converts to strokes for these ${holes.length} holes.`
+                : `Optional — off the card, for these ${holes.length} holes. With both, players can enter a Handicap Index instead of working out their own strokes.`}
+            </p>
+          )}
+        </>
       )}
       <div className="preset-row">
         <span>Quick set:</span>

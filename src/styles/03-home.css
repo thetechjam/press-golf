@@ -340,3 +340,20 @@
   padding: 8px 18px;
   font-size: var(--fs-md);
 }
+
+/* With Scramble as well, three across left Start New Round 116px at 360px,
+   stacked three words high and narrower than either secondary — the primary
+   reading as the least of the three. So it takes the whole first row, and the
+   two event formats share the row under it as equals, icon beside the word
+   so the pair stays a short strip rather than two more slabs. */
+.home-actions.three {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.home-actions.three > :first-child {
+  grid-column: 1 / -1;
+}
+.home-actions.three .btn-secondary.big.home-league {
+  flex-direction: row;
+  gap: 8px;
+  padding: 10px 12px;
+}
