@@ -25,6 +25,9 @@ import { PlayersSection } from './setup/PlayersSection';
 import { CourseSection, HolesSection } from './setup/CourseSection';
 import { GamesSection, type SidePick } from './setup/GamesSection';
 
+/** A side pick whose mode has not been chosen yet, and so follows the players. */
+type PendingPick = Omit<SidePick, 'mode'> & { mode?: SidePick['mode'] };
+
 interface Props {
   onCancel: () => void;
   onStart: (round: Round) => void;
@@ -62,14 +65,18 @@ export function Setup({ onCancel, onStart }: Props) {
     return o;
   });
   const [error, setError] = useState('');
-  const [nassau, setNassau] = useState<SidePick>(() => ({
-    mode: remembered?.nassauMode ?? '1v1',
+  // A mode is kept only once it means something: one the user picked, or
+  // one remembered from a last round that actually played the game (lastSetup
+  // answers '1v1' for a game it never saw). Left unset, it follows the players
+  // — see `sideDefault` below.
+  const [nassau, setNassau] = useState<PendingPick>(() => ({
+    mode: remembered?.games.includes('nassau') ? remembered.nassauMode : undefined,
     sideA: '',
     sideB: '',
     assign: {},
   }));
-  const [match, setMatch] = useState<SidePick>(() => ({
-    mode: remembered?.matchMode ?? '1v1',
+  const [match, setMatch] = useState<PendingPick>(() => ({
+    mode: remembered?.games.includes('matchPlay') ? remembered.matchMode : undefined,
     sideA: '',
     sideB: '',
     assign: {},
@@ -231,6 +238,12 @@ export function Setup({ onCancel, onStart }: Props) {
   const allowanceGames = games.filter(usesHandicap);
   const showScoring = anyHandicap && allowanceGames.length > 0;
   const canTeams = namedPlayers.length >= 4;
+  // Four players is a four-ball: a 1v1 default there picked "Al vs Bo" and
+  // left the other two playing for nothing. With fewer there is no 2v2, and
+  // with more, which four play it would be a guess, so those stay singles.
+  const sideDefault: SidePick['mode'] = namedPlayers.length === 4 ? '2v2' : '1v1';
+  const nassauPick: SidePick = { ...nassau, mode: nassau.mode ?? sideDefault };
+  const matchPick: SidePick = { ...match, mode: match.mode ?? sideDefault };
 
   const start = (answer?: { id: string; name: string }) => {
     if (namedPlayers.length < 1) return setError('Give at least one player a name.');
@@ -319,14 +332,14 @@ export function Setup({ onCancel, onStart }: Props) {
 
     let nassauTeams: TeamSetup | undefined;
     if (games.includes('nassau')) {
-      const r = buildTeams(nassau);
+      const r = buildTeams(nassauPick);
       if (typeof r === 'string') return gamesError(`Nassau: ${r}`);
       nassauTeams = r;
     }
 
     let matchPlay: TeamSetup | undefined;
     if (games.includes('matchPlay')) {
-      const r = buildTeams(match);
+      const r = buildTeams(matchPick);
       if (typeof r === 'string') return gamesError(`Match Play: ${r}`);
       matchPlay = r;
     }
@@ -438,9 +451,9 @@ export function Setup({ onCancel, onStart }: Props) {
             onNetByGame={(g, v) => setNetByGame((m) => ({ ...m, [g]: v }))}
             allowanceByGame={allowanceByGame}
             onAllowance={(g, pct) => setAllowanceByGame((m) => ({ ...m, [g]: pct }))}
-            match={match}
+            match={matchPick}
             onMatch={(patch) => setMatch((m) => ({ ...m, ...patch }))}
-            nassau={nassau}
+            nassau={nassauPick}
             onNassau={(patch) => setNassau((n) => ({ ...n, ...patch }))}
             vegasAssign={vegasAssign}
             onVegasAssign={(id, v) => setVegasAssign((a) => ({ ...a, [id]: v }))}
