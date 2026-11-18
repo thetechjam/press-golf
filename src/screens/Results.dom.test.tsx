@@ -145,3 +145,33 @@ describe('editing the numbers that decide the money', () => {
     expect(await screen.findByRole('button', { name: 'Save handicaps' })).toBeTruthy();
   });
 });
+
+describe('the order of the screen', () => {
+  // Bo's 8 is a Snowman, so there is an award to place.
+  const withAward = (): Partial<Round> => ({
+    scores: { ...round().scores, 1: { p1: 4, p2: 8 } },
+  });
+  const follows = (a: Element, b: Element) =>
+    !!(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+  it('puts who pays whom straight under the hero, then the awards, then the boards', () => {
+    const { container } = show(withAward());
+    const hero = container.querySelector('.winner-hero');
+    const settlement = container.querySelector('.settlement');
+    const awards = container.querySelector('.awards');
+    const boards = container.querySelector('.boards');
+    expect(hero && settlement && awards && boards).toBeTruthy();
+    // Nothing between the hero and the money.
+    expect(hero!.nextElementSibling).toBe(settlement);
+    expect(follows(settlement!, awards!)).toBe(true);
+    expect(follows(awards!, boards!)).toBe(true);
+  });
+
+  it('keeps the settlement first, with its stakes to fill in, when nothing is at stake', () => {
+    const { container } = show({ ...withAward(), options: { ...round().options, stakes: {} } });
+    const settlement = container.querySelector('.settlement');
+    const awards = container.querySelector('.awards');
+    expect(settlement?.textContent).toContain('Set a stake');
+    expect(follows(settlement!, awards!)).toBe(true);
+  });
+});

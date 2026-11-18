@@ -238,19 +238,23 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep,
         </div>
       )}
 
-      <Awards round={round} />
-
       {round.options.league ? (
-        <section className="boards">
-          <LeagueBoard
-            round={round}
-            onEditHandicaps={() => setShowHcp(true)}
-            onSetHandicap={(id, n) => onChange(setFirstNightHandicap(round, id, n))}
-          />
-        </section>
+        <>
+          {/* No money in a league round: the awards follow the hero's place. */}
+          <Awards round={round} />
+          <section className="boards">
+            <LeagueBoard
+              round={round}
+              onEditHandicaps={() => setShowHcp(true)}
+              onSetHandicap={(id, n) => onChange(setFirstNightHandicap(round, id, n))}
+            />
+          </section>
+        </>
       ) : (
         <>
-          {/* One scramble team has no one to settle with. */}
+          {/* Who pays whom is the part people act on, so it comes straight
+              under the hero, above the fold on a phone; the awards follow.
+              One scramble team has no one to settle with. */}
           {!(scramble && round.players.length < 2) && (
             <Settlement
               round={round}
@@ -268,6 +272,7 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep,
               <span aria-hidden="true">›</span>
             </button>
           )}
+          <Awards round={round} />
           <section className="boards">
             {results.map((r) => (
               <Leaderboard
