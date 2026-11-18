@@ -53,6 +53,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   nvm already did.
 
 ### Changed
+- **Results leads with the money.** Who pays whom now sits straight under the
+  winner, above the awards, so the settle-up is on screen without scrolling.
+  The results image does the same — the winner and the settlement under the
+  course header, then the game boards and awards — so a chat preview shows
+  the money first.
+- **Winnings carry a "+"** on the money line and the Board's money card, so a
+  win is not told from a loss by colour alone. "Pays" lines, stakes and share
+  text are unchanged.
+- **The money line flips when a hole is finished**, or when you move to
+  another hole — not on every point a Stableford or Skins tap scores.
+- **Four-ball strokes are cut, then compared.** As Appendix C lays out, each
+  player's handicap is cut to 90% and rounded before the difference from the
+  low player is taken, so 5, 10, 12 and 20 get 0, 4, 6 and 13 shots, not 0, 5,
+  6 and 14. Halves round up, so a plus 4.5 plays off plus 4. Singles is
+  unchanged.
+- **A blank hole on a finished round is halved** in Match Play and Nassau, and
+  **a short card is out of the stroke-play money.** See Fixed.
+- **Nassau and Match Play default to 2v2 with exactly four players**, where
+  they used to open on 1v1 and leave two players out. A format you chose or
+  played last time is kept.
+- **A big scramble team is "Morgan, Sam & 2 more"**, not "Morgan, Sam +2",
+  which read as two over par beside a score. Its avatar shows the first two
+  members' initials. Saved rounds keep their names.
+- **Glare mode draws the score chips.** Their border went from 1.74:1 to
+  3.4:1 on white, and finished-hole dots now meet 3:1 in light and Glare.
+- **How to Play's paragraphs are in ink**, with green kept for the terms they
+  explain, so the prose no longer reads as links.
+- **Rounds → Select says what it deletes**: "Delete 3 rounds", then "Delete 3
+  rounds for good".
 - **Share links are stricter about what a scorecard is.** A round or course
   link whose par on any hole is outside 2–7 is refused as damaged, where the
   reader used to accept any number — a 0 or a 72 reached every net score,
@@ -61,6 +90,56 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounds by the year and month in it.
 
 ### Fixed
+- **A finished match with a blank hole paid nobody.** After "Finish anyway",
+  a blank hole was skipped but still counted as to play, so a match read "1 UP
+  · 1 to play" and every Match Play and Nassau bet on it paid $0. On a
+  finished round a blank hole now counts as halved and the match settles.
+- **A card with a blank hole could win stroke play**, because fewer holes is
+  fewer strokes. On a finished round a short card shows as "N holes missing",
+  ranks last and cannot win; with no complete card nobody is paid.
+- **Holes scored on a round that arrived by link were never saved** if you
+  went back to the scorecard without tapping "Take it on". The first change
+  on the card now keeps the round. Corrections on Results are still held back
+  until you decide.
+- **A round coming back to a phone that has it** now notices a renamed
+  player, a changed par or stroke index, the course, league setup, finished
+  status or trip, instead of calling it "exactly as it is here" or replacing
+  the local copy whole.
+- **"Keep both" counted the round's money twice in its trip.** The kept copy
+  starts off the trip.
+- **Renaming a trip, or taking a round off it, then pressing Back** was
+  undone by the next edit on that round.
+- **Back after Press reloads** no longer lands on an empty screen, and after
+  "Take it on" and Finish one Back press goes Home.
+- **Saving a course while playing nine of it replaced the saved 18.** The
+  whole card is kept, with your par and stroke-index changes and its rating;
+  saving a shorter card under a longer saved course's name is refused.
+- **Rounds → Select could delete rounds hidden by the filter.** Changing the
+  search or filter lets go of hidden ticks.
+- **Net Vegas broke when a big handicap took a net score to 0 or below.**
+  Each score counts as at least 1, so the number and the money stay sensible.
+- **Stroke dots ignored the game's allowance.** With Stableford at 85%, a 20
+  showed 20 dots while the game scored off 17; the dots and the Card's net
+  total now use the strokes the game is scored off.
+- **Wolf multipliers, stakes and stroke handicaps are checked as typed.**
+  Multipliers are whole numbers from 1 to 10 (a cleared field used to store
+  0), stakes cannot go negative, and a decimal stroke handicap rounds the way
+  a course handicap does. A Handicap Index keeps its decimal.
+- **Golf League would start a night with two players under one name**, and
+  season standings merged them.
+- **Scramble said "the minimum can't be met"** while scored holes still had
+  no tee shot picked. Those holes count as drives still to give.
+- **One birdie could win both Shot of the Day and Bounce Back.**
+- **How to Play gave the wrong Stableford scale** (par 1, birdie 2). It now
+  matches the scoring: bogey 1, par 2, birdie 3, eagle 4.
+- **Accessibility.** Hole / Board / Card say which one is open, the hole
+  strip is a named group, and the par button, the OpenStreetMap credit and
+  the Scramble tee-shot count now pass `audit:a11y` and `audit:contrast`. At
+  200% text the score chips grow to fit and the hole heading wraps instead of
+  running under the arrows. The Rounds filters wrap at 320px instead of
+  scrolling sideways. Two quick taps on a chip no longer zoom the page.
+  Sheets size by the dynamic viewport, so mobile Safari's toolbar cannot
+  cover their foot.
 - **A shotgun start mid-nine no longer labels two half-nines OUT.** Off the
   7th, the Card and the scorecard image showed 7–9 as "OUT", 10–18 as "IN"
   and 1–6 as a second "OUT", each summing only part of a nine. A card whose

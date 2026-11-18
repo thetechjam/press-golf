@@ -129,6 +129,12 @@
 .results > *:nth-child(5) {
   animation-delay: 0.16s;
 }
+/* Everything after the fifth holds the last step. Without this the sixth
+   child onward has no delay at all and lands before the cards above it, so
+   the awards rose ahead of the settle-up they now sit under. */
+.results > *:nth-child(n + 6) {
+  animation-delay: 0.2s;
+}
 @media (prefers-reduced-motion: reduce) {
   .results > * {
     animation: none;
