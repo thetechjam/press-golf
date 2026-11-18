@@ -194,6 +194,20 @@ describe('a round that is still being played', () => {
     await waitFor(() => expect(stored()[0].scores[4].p0).toBe(4));
   });
 
+  it('takes the card in place of Results, so one Back after Finish goes Home', async () => {
+    await arriveWith(`#r=${await encodeRound(scoredTo(live, 9))}`);
+    await userEvent.click(screen.getByRole('button', { name: 'Take it on' }));
+    await screen.findByRole('button', { name: 'Finish' });
+    expect(window.history.state).toMatchObject({ view: 'play', depth: 1 });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
+    await screen.findByRole('heading', { name: 'Results' });
+    expect(window.history.state).toMatchObject({ view: 'results', depth: 1 });
+
+    window.history.back();
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy());
+  });
+
   it('keeps it the moment a hole is scored on the card, without "Take it on"', async () => {
     // "‹ Back to the scorecard" reaches the card with the link already gone
     // from the address bar and no "Sent to you" banner in sight. A hole

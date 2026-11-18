@@ -322,7 +322,10 @@ export default function App() {
     if (!round) return;
     if (!persistRound(round)) return;
     setUnkept(false);
-    if (round.status !== 'finished') goTo('play');
+    // In place of Results, as "Back to the scorecard" and Finish both are.
+    // Pushed on top, Finish then replaced the card with a second Results and
+    // one Back press went from Results to the same Results.
+    if (round.status !== 'finished') nav.replace('play');
   };
 
   /**
