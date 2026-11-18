@@ -141,7 +141,9 @@
   .resume-card,
   .board-jump-chip,
   .standings-link,
-  .trip-card {
+  .trip-card,
+  .scr-btn,
+  .scr-chev {
     transition: none;
   }
   .seg-btn,
@@ -165,7 +167,8 @@
   .par-tile:active,
   .resume-card:active,
   .standings-link:active,
-  .trip-card:active {
+  .trip-card:active,
+  .scr-btn:active {
     transform: none;
   }
   /* Higher specificity than the .bar .btn-ghost:active rule it overrides;
