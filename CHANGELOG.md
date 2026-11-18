@@ -51,6 +51,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and stakes inside.
 - `.mise.toml` and `.tool-versions`, so mise and asdf pick up Node 24 the way
   nvm already did.
+- **Tees from course search.** When the course record lists its tees, New
+  Round's Holes & pars shows them above slope and rating — "White · 69.4 /
+  118" with the yardage, and Men or Women only when two share a colour.
+  Nothing is chosen for you; picking one fills in both figures, which stay
+  editable, and typing over either stops showing the tee as chosen. The
+  rating is the whole card's, so a nine played off an eighteen is rated the
+  way a saved eighteen loaded for nine already was. Tees whose slope or
+  rating could not be real are left out. Only the slope and rating are kept
+  with a saved course, a round or a link, as before; the tees themselves are
+  not. Scramble and League are unchanged.
 
 ### Changed
 - **Share links are stricter about what a scorecard is.** A round or course
@@ -61,6 +71,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounds by the year and month in it.
 
 ### Fixed
+- **A searched card that cannot be right now says so.** The import checks
+  passed a record whose holes added up to 87 while the same record said par
+  72 — fifteen par 5s in a row, a placeholder over the real card. The check
+  note now names both: "The hole pars add up to 87, but the course lists par
+  72 — check them against the card." and "Holes 1 to 15 all came back as par
+  5 — that looks like a placeholder, not a scorecard." The total is compared
+  on the whole card, so a nine is never held to an eighteen's par, and it
+  clears once the pars are fixed. A run is three or more par 5s (or 6s), or
+  nine or more par 4s, in a row; par 3s are left alone, and a card that is
+  one par all the way down keeps its single existing line. Advisory, like
+  the rest: nothing is rejected or changed.
 - **A shotgun start mid-nine no longer labels two half-nines OUT.** Off the
   7th, the Card and the scorecard image showed 7–9 as "OUT", 10–18 as "IN"
   and 1–6 as a second "OUT", each summing only part of a nine. A card whose

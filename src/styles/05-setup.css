@@ -929,7 +929,7 @@
    screens get as many columns as fit. Not uppercased like the other .seg
    buttons — a tee name and two figures are a reading, not a mode. */
 .tee-pick {
-  margin-bottom: 12px;
+  margin: 6px 0 10px;
 }
 .tee-options {
   display: grid;

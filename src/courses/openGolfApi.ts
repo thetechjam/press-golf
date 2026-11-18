@@ -135,9 +135,11 @@ export interface CourseTee {
 
 /**
  * More tees than this is a record listing every combination of every colour,
- * and a picker that long stops being a picker. Real cards print four to six.
+ * and a picker that long stops being a picker. A real card rated for both men
+ * and women runs to nine or ten (Pebble Beach's record lists nine), so the
+ * cap sits above that rather than cutting one off.
  */
-export const MAX_TEES = 8;
+export const MAX_TEES = 12;
 
 const PLAUSIBLE_TOTAL_PAR = { min: 27, max: 90 };
 
