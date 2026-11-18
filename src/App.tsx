@@ -159,6 +159,24 @@ export default function App() {
   }, [nav]);
 
   /**
+   * A screen whose round or trip is not in memory goes Home.
+   *
+   * History entries outlive the page. After a reload — "Reload Press" from
+   * the error screen, or the phone discarding the tab — start() reseeds only
+   * the current entry, and the ones beneath it still say Results, Play or
+   * Trip while the round and trip they showed are gone. Back then landed on
+   * an empty app with nothing to press. Replacing with Home collapses the
+   * stale entry rather than stacking over it, so the next Back goes on down
+   * instead of returning to the blank. Every in-app route sets the round or
+   * trip in the same batch as the view, so this only ever meets a stale one.
+   */
+  const missing =
+    (view === 'trip' && !tripId) || ((view === 'play' || view === 'results') && !round);
+  useEffect(() => {
+    if (missing) nav.replace('home');
+  }, [missing, nav]);
+
+  /**
    * A round arriving in the address bar.
    *
    * Handled on mount and again on `hashchange`, because those are two

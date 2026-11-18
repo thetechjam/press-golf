@@ -232,6 +232,47 @@ describe('App navigation', () => {
   });
 });
 
+describe('back after a reload', () => {
+  /**
+   * The entries a previous page load left behind. A reload — "Reload Press"
+   * from the error screen, or the phone discarding the tab — keeps them, and
+   * start() reseeds only the one on top.
+   */
+  const leftBehind = (...views: string[]) => {
+    history.replaceState({ view: 'home', depth: 0 }, '');
+    views.forEach((view, i) => history.pushState({ view, depth: i + 1 }, ''));
+  };
+
+  it('goes Home from a Results entry whose round is gone, not to a blank app', async () => {
+    seed([round({ status: 'finished' })]);
+    leftBehind('results', 'play');
+    render(<App />);
+    expect(onHome()).toBe(true);
+
+    await goBack();
+    await waitFor(() => expect(onHome()).toBe(true));
+    // Collapsed onto the real bottom entry, so the stale one is behind us.
+    expect(history.state).toMatchObject({ view: 'home', depth: 0 });
+  });
+
+  it('goes Home from a Trip entry whose trip is gone', async () => {
+    leftBehind('trip', 'stats');
+    render(<App />);
+
+    await goBack();
+    await waitFor(() => expect(onHome()).toBe(true));
+    expect(history.state).toMatchObject({ view: 'home', depth: 0 });
+  });
+
+  it('still opens a screen that needs nothing loaded', async () => {
+    leftBehind('stats', 'history');
+    render(<App />);
+
+    await goBack();
+    expect(await screen.findByRole('heading', { name: 'Stats' })).toBeTruthy();
+  });
+});
+
 describe('App — Scramble route', () => {
   it('reaches Scramble setup from Home, and Back returns Home', async () => {
     const user = userEvent.setup();
