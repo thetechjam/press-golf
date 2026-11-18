@@ -140,6 +140,42 @@ export interface LeagueSetup {
   firstNight?: string[];
 }
 
+/**
+ * A scramble team: one ball, one score.
+ *
+ * The team itself is a `Player` in `round.players` — named after the team,
+ * holding the team's score — so the card, stroke play, the money, share links
+ * and backups all read a scramble without knowing it is one. What a `Player`
+ * cannot say is who is on the team, and that is all this carries.
+ */
+export interface ScrambleTeam {
+  /** The id of the `Player` in `round.players` that stands for this team. */
+  id: string;
+  /** The people on the team, in the order they were entered. Two to four. */
+  members: string[];
+}
+
+/** Scramble format: present on `options.scramble` when the round is one. */
+export interface ScrambleSetup {
+  teams: ScrambleTeam[];
+  /**
+   * Each member's tee shot must be used at least this often. Absent = no
+   * minimum, which is also what a round without the rule means.
+   */
+  minDrives?: number;
+}
+
+/**
+ * Whose ball was played: hole number -> team id -> one entry per shot.
+ *
+ * Each entry is a position in that team's `members`, or -1 for "not said".
+ * Index 0 is the tee shot. Shaped like `scores` and `junk` — the same lookup
+ * by the same two keys — so a share link and a hand-over can remap it the
+ * way they already remap those. Positions rather than names, so correcting
+ * the spelling of a member's name does not orphan their shots.
+ */
+export type ScrambleShots = Record<number, Record<string, number[]>>;
+
 export interface GameOptions {
   /**
    * The round's default for net scoring, still derived at setup: true when any
@@ -189,6 +225,13 @@ export interface GameOptions {
   allowanceByGame?: Partial<Record<GameType, number>>;
   /** Present when this is a league-night round. */
   league?: LeagueSetup;
+  /**
+   * Present when this is a scramble round. Like `league`, the format lives
+   * here rather than in `games`: the score is plain stroke play between the
+   * teams, and an older build that does not know this field opens the round
+   * as exactly that.
+   */
+  scramble?: ScrambleSetup;
 }
 
 /**
@@ -230,6 +273,12 @@ export interface Round {
    * engine reads this and treats the player as having forfeited the hole.
    */
   pickups?: Record<number, string[]>;
+  /**
+   * Scramble only: whose shot was played, hole by hole. Beside the score
+   * rather than in it for the same reason as `pickups` — everything that
+   * reads only the card sees the team's number and nothing else.
+   */
+  shots?: ScrambleShots;
   /**
    * Slope and rating of the course, copied at setup so a round stays scoreable
    * on its own terms — editing the saved course afterwards must not
