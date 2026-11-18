@@ -112,6 +112,9 @@
 }
 .tick-net {
   font-weight: 700;
+  /* A figure that moves mid-hole keeps its node (see MoneyTicker), so crossing
+     zero eases between green and red instead of snapping. */
+  transition: color var(--swap) ease;
 }
 .tick.up .tick-net {
   color: var(--under-ink);

@@ -1,9 +1,17 @@
-import { useEffect, useRef } from 'react';
+import { useRef, useState } from 'react';
 import type { Round, Hole } from '../types';
 import { computeSettlement, formatMoney } from '../games/settlement';
+import { completedHoleCount } from '../games/util';
 import { colorMap } from '../player';
 import { PlayerAvatar } from './PlayerAvatar';
 import { useEdgeFade } from '../useEdgeFade';
+
+/** The money line as last seen on screen, and which figures are flipping. */
+interface Line {
+  seen: { key: string; totals: Record<string, number>; done: number; hole?: number } | null;
+  gens: Record<string, number>;
+  flipping: Record<string, boolean>;
+}
 
 /**
  * Glanceable money line for the Hole tab. Player order is fixed, never sorted,
@@ -16,20 +24,59 @@ import { useEdgeFade } from '../useEdgeFade';
  * badges the steppers below lead with, so they map without reading, and the
  * full name is still there for a screen reader.
  */
-export function MoneyTicker({ round, visible = true }: { round: Round; visible?: boolean }) {
+export function MoneyTicker({
+  round,
+  hole,
+  visible = true,
+}: {
+  round: Round;
+  /** The hole on screen. A figure that moved since the last hole seen flips. */
+  hole?: Hole;
+  visible?: boolean;
+}) {
   const { ref, edge } = useEdgeFade<HTMLDivElement>();
   const settlement = computeSettlement(round);
   const colors = colorMap(round);
-  // The totals as last seen, so a figure that has moved since can flip like a
-  // score does. "Seen" matters: money only moves when a hole completes, which
-  // is exactly when HoleTicker swaps this face out for the hole's swing — so
-  // the flip is held until this face is back on screen. Nothing flips on the
-  // first render: resuming a round is not news.
-  const prev = useRef<Record<string, number> | null>(null);
-  const before = visible ? prev.current : null;
-  useEffect(() => {
-    if (visible) prev.current = settlement.totals;
-  });
+  const done = completedHoleCount(round);
+  // The line as last seen, so a figure that has moved since can flip like a
+  // score does — but only when that is news: a hole has just been finished, or
+  // the user has moved to another hole and the total is different there.
+  // Money does not only move when a hole completes. Stableford and the other
+  // points games settle every point as it is scored, so each chip tap moved a
+  // figure, and flipping on every change played the 320ms 3D flip a few
+  // hundred times a round, right above the row the scorekeeper was tapping.
+  // A change mid-hole now just takes its new value (and eases its colour).
+  // "Seen" matters too: a hole completing is exactly when HoleTicker swaps
+  // this face out for the hole's swing, so the flip is held until this face
+  // is back on screen. Nothing flips on the first render: resuming a round is
+  // not news.
+  //
+  // Kept in state and adjusted during render (React's "storing information
+  // from previous renders" pattern) rather than in a ref an effect writes,
+  // because the flip is decided in the same render that shows the new figure.
+  const snap = {
+    key: `${done}|${hole?.number}|${round.players.map((p) => settlement.totals[p.id] ?? 0)}`,
+    totals: settlement.totals,
+    done,
+    hole: hole?.number,
+  };
+  const [line, setLine] = useState<Line>(() => ({ seen: visible ? snap : null, gens: {}, flipping: {} }));
+  if (visible && line.seen?.key !== snap.key) {
+    const before = line.seen;
+    const news = !!before && (done > before.done || hole?.number !== before.hole);
+    const gens = { ...line.gens };
+    const flipping: Record<string, boolean> = {};
+    for (const p of round.players) {
+      if (news && (before.totals[p.id] ?? 0) !== (settlement.totals[p.id] ?? 0)) {
+        flipping[p.id] = true;
+        // Bumped per flip and used as the figure's key: a remount is what
+        // replays the flip, and keeping the key otherwise is what lets a
+        // mid-hole change ease its colour instead of snapping in a new node.
+        gens[p.id] = (gens[p.id] ?? 0) + 1;
+      }
+    }
+    setLine({ seen: snap, gens, flipping });
+  }
   if (!settlement.active) return null;
 
   return (
@@ -42,14 +89,14 @@ export function MoneyTicker({ round, visible = true }: { round: Round; visible?:
     >
       {round.players.map((p) => {
         const net = settlement.totals[p.id] ?? 0;
+        const flip = !!line.flipping[p.id];
         return (
           <span key={p.id} className={`tick${net > 0 ? ' up' : net < 0 ? ' down' : ''}`}>
             <PlayerAvatar name={p.name} color={colors[p.id]} size={22} />
             <span className="sr-only">{p.name}</span>
-            {/* Keyed by value so a change remounts it and the flip replays. */}
             <span
-              key={`${net}${visible ? '' : '-hidden'}`}
-              className={`tick-net${before && (before[p.id] ?? 0) !== net ? ' flap' : ''}`}
+              key={line.gens[p.id] ?? 0}
+              className={`tick-net${flip ? ' flap' : ''}`}
             >
               {net === 0 ? '—' : formatMoney(net)}
             </span>
@@ -140,7 +187,7 @@ export function HoleTicker({
   return (
     <div className="ticker-stack">
       <div className={`ticker-face${swing ? ' out' : ''}`} aria-hidden={!!swing}>
-        <MoneyTicker round={round} visible={!swing} />
+        <MoneyTicker round={round} hole={hole} visible={!swing} />
       </div>
       {shown && (
         <div className={`ticker-face${swing ? '' : ' out'}`} aria-hidden={!swing}>

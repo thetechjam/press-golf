@@ -212,7 +212,9 @@
 .score-num.flap {
   animation: flap 0.26s cubic-bezier(0.3, 0.9, 0.4, 1);
 }
-/* The Hole tab's money line flips a figure the same way when it moves. */
+/* The Hole tab's money line flips a figure the same way — when a hole is
+   finished or the user moves to a hole where it reads differently, not on
+   every point scored. MoneyTicker decides which; this only draws it. */
 .tick {
   perspective: 200px;
 }
