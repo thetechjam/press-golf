@@ -974,3 +974,7 @@
   padding-left: 0;
   padding-right: 0;
 }
+/* Under the hint it qualifies, with the same gap the hint keeps from the grid. */
+.check-note.scramble-min-note {
+  margin-top: 8px;
+}

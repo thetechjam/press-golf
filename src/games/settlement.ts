@@ -1,5 +1,6 @@
 import type { Round, GameType } from '../types';
-import { GAMES, gameMeta } from './index';
+import { GAMES, gameLabel, gameMeta } from './index';
+import { isScramble } from './scramble';
 import { nassauSegments } from './nassau';
 import { zeroNet } from './moneyModels';
 
@@ -42,6 +43,9 @@ export const STAKE_UNIT: Record<GameType, string> = Object.fromEntries(
  * automatic. Anywhere a round is in hand the real count can be shown.
  */
 export function unitFor(round: Round, game: GameType): string {
+  // A scramble's stroke play is between teams, and its stake is per team —
+  // "per low round" describes one golfer's card, which nobody here has.
+  if (game === 'strokePlay' && isScramble(round)) return 'team';
   if (game !== 'nassau') return gameMeta(game).unit;
   const bets = nassauSegments(round).length;
   return `bet (×${bets})`;
@@ -304,7 +308,7 @@ export function computeSettlement(round: Round): Settlement {
     const cents = toCents(ids, gameNet(round, gt, stake));
     perGame.push({
       gameType: gt,
-      label: gameMeta(gt).label,
+      label: gameLabel(round, gt),
       unit: unitFor(round, gt),
       stake,
       net: fromCents(ids, cents),

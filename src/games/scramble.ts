@@ -18,6 +18,14 @@ export const MAX_MEMBERS = 4;
 
 export const isScramble = (round: Round): boolean => !!round.options.scramble;
 
+/**
+ * What one entry on the card is, for "2 teams · 9 holes": a scramble's
+ * players are teams, and counting them as players reads as a field of two
+ * when eight people played.
+ */
+export const entrantWord = (round: Round): 'team' | 'player' =>
+  isScramble(round) ? 'team' : 'player';
+
 /** The team behind a team `Player`, or undefined when the round has no such team. */
 export function teamOf(round: Round, teamId: string): ScrambleTeam | undefined {
   const teams = round.options.scramble?.teams;

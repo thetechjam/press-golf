@@ -35,6 +35,7 @@ const named = (t: TeamDraft) => t.members.map((m) => m.trim()).filter(Boolean);
 
 const WORDS = ['no', 'one', 'two', 'three', 'four'];
 const inWords = (n: number) => WORDS[n] ?? String(n);
+const capitalise = (w: string) => w.charAt(0).toUpperCase() + w.slice(1);
 
 /** "Jesse & Sam" twice becomes "Jesse & Sam" and "Jesse & Sam (2)". */
 function distinct(names: string[]): string[] {
@@ -154,6 +155,17 @@ export function ScrambleSetup({ onCancel, onStart }: Props) {
         ? `Every team needs at least ${inWords(MIN_MEMBERS)} players.`
         : '';
   const footError = shortError || error;
+
+  // A minimum the round cannot hold: each hole has one tee shot to give, so
+  // the biggest team needs minimum × members holes. Said, not refused — the
+  // group may be about to add holes, or may mean "as near as we can".
+  const biggest = Math.max(0, ...teams.map((t) => named(t).length));
+  const needed = (minDrives ?? 0) * biggest;
+  const minNote =
+    biggest > 0 && needed > cs.holes.length
+      ? `${capitalise(inWords(biggest))} ${biggest === 1 ? 'player' : 'players'} at ${minDrives} each ` +
+        `needs ${needed} holes — this round has ${cs.holes.length}.`
+      : '';
 
   const teeOff = () => {
     if (shortTeams.length) return setTried(true);
@@ -357,6 +369,11 @@ export function ScrambleSetup({ onCancel, onStart }: Props) {
             <p className="hint-inline">
               If every player’s drive has to be used a set number of times. Par 3s count.
             </p>
+            {minNote && (
+              <p className="check-note scramble-min-note" role="status">
+                {minNote}
+              </p>
+            )}
           </section>
         </SetupRow>
 

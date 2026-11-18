@@ -10,6 +10,7 @@ import {
   disp, mono, setLS, up, fit, dashedRule,
   loadDisplayFonts, drawHeader, finishCard,
 } from './shareCanvas';
+import { entrantWord } from './games/scramble';
 
 /**
  * Renders round results as a clubhouse-scoreboard PNG for sharing.
@@ -38,7 +39,7 @@ export async function renderShareCard(round: Round): Promise<Blob> {
     width: W,
     pad: PAD,
     title: round.course || 'Golf round',
-    meta: `${formatRoundDateAbsolute(round.date)} · ${count(round.players.length, 'player')} · ${count(round.holes.length, 'hole')}`,
+    meta: `${formatRoundDateAbsolute(round.date)} · ${count(round.players.length, entrantWord(round))} · ${count(round.holes.length, 'hole')}`,
     y: PAD + 36,
   });
 

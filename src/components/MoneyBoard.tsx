@@ -36,6 +36,7 @@ export function MoneyBoard({ round, onChange }: Props) {
 
       {editing && (
         <StakesEditor
+          round={round}
           games={round.games}
           stakes={round.options.stakes ?? {}}
           onChange={(stakes) => onChange({ ...round, options: { ...round.options, stakes } })}

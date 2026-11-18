@@ -44,7 +44,9 @@ function haystack(round: Round): string {
     [
       round.course ?? '',
       ...round.players.map((p) => p.name),
-      ...round.games,
+      // A scramble's `games` is the engine it is scored by, not what was
+      // played: "stroke" should not find it, and "scramble" does below.
+      ...(isScrambleRound(round) ? [] : round.games),
       // A league night's `games` is empty, so without this "league" found
       // nothing — on the one kind of round people most often go looking for.
       isLeagueRound(round) ? 'league' : '',

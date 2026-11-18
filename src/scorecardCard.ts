@@ -7,6 +7,7 @@ import {
   disp, mono, setLS, up, fit,
   loadDisplayFonts, drawHeader, finishCard,
 } from './shareCanvas';
+import { entrantWord } from './games/scramble';
 
 /**
  * Renders the hole-by-hole grid as a landscape PNG in the same clubhouse livery
@@ -108,7 +109,7 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
     width: W,
     pad: PAD,
     title: round.course || 'Golf round',
-    meta: `${formatRoundDateAbsolute(round.date)} · ${count(round.players.length, 'player')} · ${count(model.holes.length, 'hole')}`,
+    meta: `${formatRoundDateAbsolute(round.date)} · ${count(round.players.length, entrantWord(round))} · ${count(model.holes.length, 'hole')}`,
     y: PAD + 36,
   });
 

@@ -49,6 +49,7 @@ export function Settlement({ round, onChange, onEditHandicaps }: Props) {
 
       {editing && onChange && (
         <StakesEditor
+          round={round}
           games={round.games}
           stakes={round.options.stakes ?? {}}
           onChange={(stakes) => onChange({ ...round, options: { ...round.options, stakes } })}

@@ -121,12 +121,25 @@ export function gameMeta(id: GameType): GameMeta {
   return GAMES.find((g) => g.id === id) as GameMeta;
 }
 
+/**
+ * A game's name as it reads for this round.
+ *
+ * A scramble is stroke play between teams, scored by that engine unchanged —
+ * but "Stroke Play" is not what the group is playing, so everywhere a round
+ * is in hand (board, money, share text, images) it is called "Scramble".
+ * Read through here rather than `gameMeta(g).label` so they cannot disagree.
+ */
+export function gameLabel(round: Round, id: GameType): string {
+  return id === 'strokePlay' && isScramble(round) ? 'Scramble' : gameMeta(id).label;
+}
+
 export function activeResults(round: Round): GameResult[] {
-  // A scramble is stroke play between teams, and is scored by that engine
-  // unchanged; only the name on the board says what the group is playing.
+  // Only a scramble's title is replaced: every other game's result carries a
+  // title of its own ("Stroke Play (Net)", "Nassau (2v2)") that the bare
+  // label would lose.
   const scramble = isScramble(round);
   return round.games.map((g) => {
     const result = gameMeta(g).compute(round);
-    return scramble && g === 'strokePlay' ? { ...result, title: 'Scramble' } : result;
+    return scramble && g === 'strokePlay' ? { ...result, title: gameLabel(round, g) } : result;
   });
 }
