@@ -650,6 +650,84 @@ describe('two players under one name', () => {
   });
 });
 
+describe('numbers typed into setup', () => {
+  const twoNamed = async (user: ReturnType<typeof userEvent.setup>) => {
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(inputs[0], 'Al');
+    await user.type(inputs[1], 'Bo');
+  };
+
+  it('keep a Wolf multiplier a whole number from 1, and let the box be cleared mid-edit', async () => {
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    for (const [i, n] of ['Al', 'Bo', 'Cy'].entries()) {
+      if (i >= inputs.length) await user.click(screen.getByRole('button', { name: '+ Add player' }));
+      await user.type(document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]')[i], n);
+    }
+    await openRow(user, 'Games');
+    await user.click(screen.getByRole('button', { name: 'Skins' }));
+    await user.click(screen.getByRole('button', { name: 'Wolf' }));
+    const lone = screen.getByLabelText<HTMLInputElement>('Lone Wolf ×');
+    const blind = screen.getByLabelText<HTMLInputElement>('Blind Wolf ×');
+    await user.clear(lone);
+    expect(lone.value).toBe('');
+    await user.type(lone, '0');
+    await user.clear(blind);
+    await user.type(blind, '2.6');
+    await user.tab();
+    expect(lone.value).toBe('1');
+    expect(blind.value).toBe('3');
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started[0].options.loneWolfMultiplier).toBe(1);
+    expect(started[0].options.blindWolfMultiplier).toBe(3);
+  });
+
+  it('does not carry a broken multiplier forward from last time', async () => {
+    localStorage.setItem(
+      'press.rounds.v1',
+      JSON.stringify([
+        {
+          id: 'r0',
+          date: '2026-09-01',
+          createdAt: 1,
+          updatedAt: 1,
+          players: [{ id: 'p1', name: 'Al' }, { id: 'p2', name: 'Bo' }, { id: 'p3', name: 'Cy' }],
+          holes: realCard18(),
+          games: ['wolf'],
+          options: { useNet: false, stablefordMode: 'standard', loneWolfMultiplier: 0, blindWolfMultiplier: -2.5, stakes: {} },
+          scores: {},
+          wolf: {},
+          status: 'finished',
+        },
+      ])
+    );
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    await user.click(screen.getByRole('button', { name: /Same crew/ }));
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started[0].options.loneWolfMultiplier).toBe(2);
+    expect(started[0].options.blindWolfMultiplier).toBe(3);
+  });
+
+  it('round a decimal stroke handicap to whole strokes, either side of scratch', async () => {
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    await twoNamed(user);
+    const [al, bo] = screen.getAllByPlaceholderText<HTMLInputElement>('HCP');
+    await user.type(al, '12.7');
+    await user.tab();
+    expect(al.value).toBe('13');
+    // Typed and straight to Start.
+    await user.type(bo, '-2.5');
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started[0].players.map((p) => p.handicap)).toEqual([13, -2]);
+  });
+});
+
 describe('a course with a slope and rating', () => {
   const rate = async (
     user: ReturnType<typeof userEvent.setup>,

@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import type { GameType, Round, Stakes } from '../types';
+import { stakeAmount, MAX_STAKE } from '../numberInput';
 import { STAKE_UNIT, unitFor } from '../games/settlement';
 import { gameLabel, gameMeta } from '../games';
 import { isScramble } from '../games/scramble';
@@ -20,6 +22,10 @@ interface Props {
  * Setup (which has no Round yet) and Results can share one implementation.
  */
 export function StakesEditor({ games, stakes, onChange, round }: Props) {
+  // The text of the field being typed in, shown as typed; only a stake that
+  // can be settled is stored (see stakeAmount). Clearing the box used to
+  // write 0 back into it mid-edit, and a "-" or "1e9" went into the money.
+  const [draft, setDraft] = useState<Partial<Record<GameType, string>>>({});
   return (
     <div className="stakes-editor">
       {games.map((gt) => (
@@ -30,11 +36,22 @@ export function StakesEditor({ games, stakes, onChange, round }: Props) {
             <input
               type="number"
               min={0}
+              max={MAX_STAKE}
               inputMode="decimal"
-              value={stakes?.[gt] ?? ''}
+              value={draft[gt] ?? stakes?.[gt] ?? ''}
               placeholder="0"
-              onChange={(e) =>
-                onChange({ ...stakes, [gt]: e.target.value === '' ? 0 : Number(e.target.value) })
+              onChange={(e) => {
+                const raw = e.target.value;
+                setDraft((d) => ({ ...d, [gt]: raw }));
+                const v = stakeAmount(raw);
+                if (v != null) onChange({ ...stakes, [gt]: v });
+              }}
+              onBlur={() =>
+                setDraft((d) => {
+                  const next = { ...d };
+                  delete next[gt];
+                  return next;
+                })
               }
             />
             <span className="per">per {round && isScramble(round) ? unitFor(round, gt) : STAKE_UNIT[gt]}</span>

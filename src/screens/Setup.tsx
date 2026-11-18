@@ -19,6 +19,7 @@ import { StakesEditor } from '../components/StakesEditor';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { nameKey, nearMatches, resolveName, peopleOn } from '../people';
 import { lastSetup } from '../lastSetup';
+import { isWolfMultiplier, wholeStrokes, MAX_WOLF_MULTIPLIER } from '../numberInput';
 import { useCourse } from './setup/useCourse';
 import { PlayersSection } from './setup/PlayersSection';
 import { CourseSection, HolesSection } from './setup/CourseSection';
@@ -52,7 +53,14 @@ export function Setup({ onCancel, onStart }: Props) {
     () => remembered?.allowanceByGame ?? {}
   );
   const [games, setGames] = useState<GameType[]>(() => remembered?.games ?? ['skins']);
-  const [options, setOptions] = useState({ ...DEFAULT_OPTIONS, ...(remembered?.options ?? {}) });
+  const [options, setOptions] = useState(() => {
+    const o = { ...DEFAULT_OPTIONS, ...(remembered?.options ?? {}) };
+    // A round saved before the multiplier fields were checked can carry a 0,
+    // a negative or a fraction; last time is remembered, not its typos.
+    if (!isWolfMultiplier(o.loneWolfMultiplier)) o.loneWolfMultiplier = DEFAULT_OPTIONS.loneWolfMultiplier;
+    if (!isWolfMultiplier(o.blindWolfMultiplier)) o.blindWolfMultiplier = DEFAULT_OPTIONS.blindWolfMultiplier;
+    return o;
+  });
   const [error, setError] = useState('');
   const [nassau, setNassau] = useState<SidePick>(() => ({
     mode: remembered?.nassauMode ?? '1v1',
@@ -269,10 +277,22 @@ export function Setup({ onCancel, onStart }: Props) {
       }
     }
 
+    // The fields keep only what the keyboard can type, so the rules are
+    // checked again here, where a value that slipped past them would start
+    // being scored.
+    if (
+      games.includes('wolf') &&
+      !(isWolfMultiplier(options.loneWolfMultiplier) && isWolfMultiplier(options.blindWolfMultiplier))
+    ) {
+      return gamesError(`Wolf: the multipliers are whole numbers from 1 to ${MAX_WOLF_MULTIPLIER}.`);
+    }
+
     const cleanPlayers = namedPlayers.map((p) => ({
       ...p,
       name: nameFor(p).trim(),
-      handicap: showNet ? p.handicap : undefined,
+      // Whole strokes, as the field rounds them on blur — this catches one
+      // still focused when Start was pressed.
+      handicap: showNet ? wholeStrokes(p.handicap) : undefined,
       index: showNet ? p.index : undefined,
     }));
 

@@ -3,6 +3,7 @@ import type { Round } from '../types';
 import { applyHandicaps, editsIndex, validateHandicaps, type HandicapEdits } from '../games/roundEdits';
 import { courseHandicapFor, formatHandicap } from '../games/handicap';
 import { Sheet } from './Sheet';
+import { wholeStrokes } from '../numberInput';
 
 interface Props {
   round: Round;
@@ -61,6 +62,15 @@ export function EditHandicaps({ round, onChange, onClose }: Props) {
                 ...edits,
                 [p.id]: e.target.value === '' ? undefined : Number(e.target.value),
               });
+            }}
+            // A stroke count is whole; Save rounds it the same way, so this
+            // only puts on screen what is about to be kept. An Index keeps
+            // its decimal.
+            onBlur={() => {
+              if (index || !(p.id in edits)) return;
+              const v = edits[p.id];
+              const whole = wholeStrokes(v);
+              if (whole !== v) setEdits((e) => ({ ...e, [p.id]: whole }));
             }}
           />
           {playsOff(p.id) != null && (
