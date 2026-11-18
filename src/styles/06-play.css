@@ -51,9 +51,14 @@
   color: var(--ink);
   padding: 0 14px;
 }
+/* Floors rather than fixed sizes for the same 200%-text reason as
+   .score-chip; min-width also stops a long heading squeezing the arrow under
+   a thumb's width (it reached 39px). */
 .nav-arrow {
   width: 52px;
-  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  flex-shrink: 1;
   font-size: var(--fs-4xl);
   color: var(--green-ink);
   background: var(--card);
@@ -68,9 +73,14 @@
    one line it also reads the way it is said. */
 .hole-head {
   display: flex;
+  /* When "Hole 18 · Par 4 · SI 14" is wider than the room between the
+     arrows — enlarged text, or a 320px phone — the par drops under the hole
+     number instead of running under the arrows. Where it fits (every phone
+     from 360px at normal text) this never wraps, so nothing moves. */
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: center;
-  gap: 8px;
+  column-gap: 8px;
   min-width: 0;
 }
 .hole-num {
@@ -82,10 +92,15 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+/* No nowrap: once it has a line of its own (see .hole-head) and is still
+   wider than the room between the arrows, as at 200% text on a 320px phone,
+   it breaks rather than running under the next-hole arrow. A flex line is
+   chosen from its unbroken width, so it moves down a line before it ever
+   wraps beside the hole number. */
 .hole-par {
   font-size: var(--fs-md);
   color: var(--muted);
-  white-space: nowrap;
+  max-width: 100%;
 }
 .progress {
   text-align: center;
@@ -319,8 +334,11 @@
   /* 44px, and the floor of this screen's layout. The Hole tab is a vertical
      budget with four players in it, so the next person who needs it to fit
      will start here — and this is the one number that must not move. Take it
-     out of the spacing instead; see .stepper and .hole-view. */
-  height: 44px;
+     out of the spacing instead; see .stepper and .hole-view.
+     A floor, not a fixed height: at normal text the chip renders exactly
+     44px either way, but at 200% text (WCAG 1.4.4) a fixed 44px cut the
+     numerals in half. */
+  min-height: 44px;
   border-radius: var(--r-md);
   border: 1.5px solid var(--line);
   background: var(--bg);
