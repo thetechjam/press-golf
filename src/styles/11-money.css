@@ -104,6 +104,16 @@
 .money-ticker::-webkit-scrollbar {
   display: none;
 }
+/* Winnings carry a "+" so they are not told from losses by colour alone, and
+   on a 320px phone four three-figure balances ("+$420 +$260 +$60 −$740") ran
+   10px past the edge at a 10px gap. space-between spreads the ticks the same
+   either way when they fit, so the smaller floor only shows where it is
+   needed. */
+@media (max-width: 359px) {
+  .money-ticker {
+    gap: 6px;
+  }
+}
 .tick {
   display: inline-flex;
   align-items: center;

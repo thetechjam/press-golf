@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import type { Round, Hole } from '../types';
-import { computeSettlement, formatMoney } from '../games/settlement';
+import { computeSettlement, formatSignedMoney } from '../games/settlement';
 import { completedHoleCount } from '../games/util';
 import { colorMap } from '../player';
 import { PlayerAvatar } from './PlayerAvatar';
@@ -98,7 +98,7 @@ export function MoneyTicker({
               key={line.gens[p.id] ?? 0}
               className={`tick-net${flip ? ' flap' : ''}`}
             >
-              {net === 0 ? '—' : formatMoney(net)}
+              {net === 0 ? '—' : formatSignedMoney(net)}
             </span>
           </span>
         );
@@ -142,7 +142,7 @@ export function SwingTicker({
           <span key={p.id} className={`tick${n > 0 ? ' up' : n < 0 ? ' down' : ''}`}>
             <PlayerAvatar name={p.name} color={colors[p.id]} size={22} />
             <span className="sr-only">{p.name}</span>
-            <span className="tick-net">{n === 0 ? '—' : formatMoney(n)}</span>
+            <span className="tick-net">{n === 0 ? '—' : formatSignedMoney(n)}</span>
           </span>
         );
       })}

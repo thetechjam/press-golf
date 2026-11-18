@@ -18,6 +18,16 @@ const round = (p1: number[], p2: number[]) =>
 
 const flipped = () => document.querySelectorAll('.tick-net.flap').length;
 
+describe('the money line amounts', () => {
+  it('signs winnings, and shows a dash for even', () => {
+    render(<MoneyTicker round={round([3, 4], [4, 4])} />);
+    const nets = [...document.querySelectorAll('.tick-net')].map((e) => e.textContent);
+    expect(nets).toEqual(['+$5', '−$5']);
+    render(<MoneyTicker round={round([4], [4])} />);
+    expect(document.querySelectorAll('.tick-net')[2].textContent).toBe('—');
+  });
+});
+
 describe('the money line flip', () => {
   it('does not flip anything when it first appears', () => {
     render(<MoneyTicker round={round([3], [4])} />);
