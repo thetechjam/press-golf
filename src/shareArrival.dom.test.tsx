@@ -193,6 +193,38 @@ describe('a round that is still being played', () => {
     await userEvent.click(screen.getAllByRole('radio', { name: /^4, / })[0]);
     await waitFor(() => expect(stored()[0].scores[4].p0).toBe(4));
   });
+
+  it('keeps it the moment a hole is scored on the card, without "Take it on"', async () => {
+    // "‹ Back to the scorecard" reaches the card with the link already gone
+    // from the address bar and no "Sent to you" banner in sight. A hole
+    // scored there used to live only in memory and vanish on close.
+    await arriveWith(`#r=${await encodeRound(scoredTo(live, 3))}`);
+    await userEvent.click(screen.getByRole('button', { name: 'Back to the scorecard' }));
+    await screen.findByRole('button', { name: 'Finish' });
+    // Looking at the card is not keeping score.
+    expect(stored()).toEqual([]);
+
+    await userEvent.click(screen.getAllByRole('radio', { name: /^5, / })[0]);
+    await waitFor(() => expect(stored()).toHaveLength(1));
+    expect(stored()[0].id).toBe('sent1234');
+    // And it is kept for good: the next change saves too, and Results no
+    // longer offers to take it on.
+    expect(Object.values(stored()[0].scores).some((h) => Object.values(h).includes(5))).toBe(true);
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Finish anyway' }));
+    await screen.findByRole('heading', { name: 'Results' });
+    expect(screen.queryByText('Sent to you')).toBeNull();
+    await waitFor(() => expect(stored()[0].status).toBe('finished'));
+  });
+
+  it('still holds a correction made on Results back, while it is being played', async () => {
+    await arriveWith(`#r=${await encodeRound(scoredTo(live, 3))}`);
+    await userEvent.click(screen.getByRole('button', { name: /Edit handicaps/ }));
+    await userEvent.type(screen.getAllByPlaceholderText('HCP')[0], '9');
+    await userEvent.click(screen.getByRole('button', { name: 'Save handicaps' }));
+    await waitFor(() => expect(screen.queryByText('Save handicaps')).toBeNull());
+    expect(stored()).toEqual([]);
+  });
 });
 
 describe('a round this device already has', () => {

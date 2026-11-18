@@ -251,9 +251,10 @@ export default function App() {
 
   const update = (next: Round) => {
     setRound(next);
-    // An unkept round is edited on screen but not written down — correcting a
+    // An unkept round is edited on Results but not written down — correcting a
     // score before deciding whether to keep it is reasonable; being given a
-    // round in the history because you fixed somebody's typo is not.
+    // round in the history because you fixed somebody's typo is not. The card
+    // is different; see updateFromCard.
     if (!unkept) setUnsaved(!saveRound(next));
   };
 
@@ -286,13 +287,34 @@ export default function App() {
     if (round.status !== 'finished') goTo('play');
   };
 
+  /**
+   * A change made on the card, where entering a score is keeping score.
+   *
+   * Results can hold a sent round back unsaved because Results says so: the
+   * "Sent to you" banner is on screen beside every correction. The card has
+   * no such banner, and "‹ Back to the scorecard" reaches it with the link
+   * already gone from the address bar, so a hole scored there on an unkept
+   * round was lost without a word. The first change on the card therefore
+   * takes the round on exactly as "Take it on" does — keep()'s own reasoning,
+   * that taking a round on is agreeing to keep score. Merely opening the card
+   * writes nothing: looking at it is not scoring it, and it is a change made
+   * there that would otherwise be lost. A refused write leaves the round
+   * unkept, with the banner up, and the next change tries again.
+   */
+  const updateFromCard = (next: Round) => {
+    if (!unkept) return update(next);
+    setRound(next);
+    if (persistRound(next)) setUnkept(false);
+  };
+
   // Results stands in for the round that just finished rather than stacking
   // on top of it, and "back to the card" undoes that: each Finish/Back cycle
   // used to add two history entries, all of which the Android back gesture
   // then had to walk through to reach Home.
   const finish = () => {
     if (!round) return;
-    update({ ...round, status: 'finished' });
+    // Finish is only offered on the card, so it keeps a sent round too.
+    updateFromCard({ ...round, status: 'finished' });
     nav.replace('results');
   };
 
@@ -515,7 +537,7 @@ export default function App() {
       )}
 
       {view === 'play' && round && (
-        <Play round={round} onChange={update} onFinish={finish} onExit={() => goTo('home')} />
+        <Play round={round} onChange={updateFromCard} onFinish={finish} onExit={() => goTo('home')} />
       )}
 
       {view === 'results' && round && (
