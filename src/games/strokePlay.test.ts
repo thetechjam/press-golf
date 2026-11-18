@@ -215,24 +215,32 @@ describe('computeStrokePlay — ties, nines, gross and net, skipped holes', () =
     expect(r.title).toBe('Stroke Play (Net)');
   });
 
-  it('totals only the holes each player scored, so a skipped hole counts for nobody', () => {
-    // The rule as it stands: a card with a hole missing is a shorter card,
-    // not a penalty. Whether a short card should be able to win is an open
-    // question (see the review); this pins what the engine does today.
+  it('totals only the holes each player scored, and a finished short card cannot lead', () => {
+    // This used to pin a short card leading as an open question. The owner
+    // has ruled: while the round is in progress a blank is a hole not played
+    // yet, so the card leads on the holes it has; once the round is finished
+    // a card with a blank is short, disqualified, and ranked below the
+    // complete cards however low its total.
     const hs = holes(9);
-    const r = computeStrokePlay(
-      makeRound({
-        holes: hs,
-        games: ['strokePlay'],
-        scores: scoresFrom(hs, {
-          p1: [4, 4, undefined, 4, 4, 4, 4, 4, 4],
-          p2: Array(9).fill(4),
-        }),
-      })
-    );
+    const round = makeRound({
+      holes: hs,
+      games: ['strokePlay'],
+      scores: scoresFrom(hs, {
+        p1: [4, 4, undefined, 4, 4, 4, 4, 4, 4],
+        p2: Array(9).fill(4),
+      }),
+    });
+    const r = computeStrokePlay(round);
     expect(r.standings.find((s) => s.playerId === 'p1')?.value).toBe(32);
     expect(r.standings.find((s) => s.playerId === 'p2')?.value).toBe(36);
     expect(r.status).toBe('Al leads · 32');
+
+    const done = computeStrokePlay({ ...round, status: 'finished' });
+    expect(done.status).toBe('Bo leads · 36');
+    expect(done.standings.map((s) => [s.label, s.rank, s.isLeader, s.detail])).toEqual([
+      ['Bo', 1, true, '36'],
+      ['Al', 2, false, '32 · 1 hole missing'],
+    ]);
   });
 
   it('takes strokes only on the scored holes when some are skipped', () => {
@@ -300,6 +308,81 @@ describe('strokePlayMoney', () => {
     expect(strokePlayMoney({ ...round, options: { ...round.options, useNet: false } }, 5)).toEqual({
       p1: 0,
       p2: 0,
+    });
+  });
+
+  describe('a short card on a finished round', () => {
+    // The owner's rule: once the round is finished, only a complete card can
+    // win or share the pot. A short card still pays as a card that lost.
+    const finished = (byPlayer: Record<string, (number | undefined)[]>, options = {}) => ({
+      ...roundOf(byPlayer, options),
+      status: 'finished' as const,
+    });
+    const sum = (net: Record<string, number>) => Object.values(net).reduce((a, b) => a + b, 0);
+
+    it('cannot win gross, and pays the low complete card', () => {
+      // Al skipped a hole: 32 over eight beats Bo's 36 over nine on paper.
+      const byPlayer = {
+        p1: [4, 4, undefined, 4, 4, 4, 4, 4, 4],
+        p2: Array(9).fill(4),
+        p3: Array(9).fill(5),
+      };
+      expect(strokePlayMoney(roundOf(byPlayer), 5)).toEqual({ p1: 10, p2: -5, p3: -5 });
+      const net = strokePlayMoney(finished(byPlayer), 5);
+      expect(net).toEqual({ p1: -5, p2: 10, p3: -5 });
+      expect(sum(net)).toBe(0);
+      const r = computeStrokePlay(finished(byPlayer));
+      expect(r.standings.map((s) => s.label)).toEqual(['Bo', 'Cy', 'Al']);
+      expect(r.standings[2].detail).toBe('32 · 1 hole missing');
+      expect(r.standings[2].isLeader).toBe(false);
+    });
+
+    it('cannot win net either', () => {
+      const hs = holes(9);
+      const round = makeRound({
+        players: [player('p1', 'Al', 9), player('p2', 'Bo', 0)],
+        holes: hs,
+        games: ['strokePlay'],
+        options: { useNet: true, stakes: { strokePlay: 5 } },
+        scores: scoresFrom(hs, {
+          p1: [5, 5, 5, 5, 5, 5, 5, undefined, undefined],
+          p2: Array(9).fill(4),
+        }),
+        status: 'finished',
+      });
+      // Al is 35 − 7 = 28 net over seven holes against Bo's 36.
+      expect(strokePlayMoney(round, 5)).toEqual({ p1: -5, p2: 5 });
+      const r = computeStrokePlay(round);
+      expect(r.status).toBe('Bo leads · 36 net (36)');
+      expect(r.standings[1].detail).toBe('28 net (35) · 2 holes missing');
+    });
+
+    it('splits the pot between tied complete cards, the short card paying', () => {
+      const net = strokePlayMoney(
+        finished({ p1: Array(9).fill(4), p2: Array(9).fill(4), p3: Array(8).fill(3) }),
+        5
+      );
+      expect(net).toEqual({ p1: 2.5, p2: 2.5, p3: -5 });
+      expect(sum(net)).toBe(0);
+    });
+
+    it('pays nobody when every card is short', () => {
+      const byPlayer = {
+        p1: [4, 4, undefined, 4, 4, 4, 4, 4, 4],
+        p2: [5, 5, 5, 5, 5, 5, 5, 5, undefined],
+      };
+      expect(strokePlayMoney(finished(byPlayer), 5)).toEqual({ p1: 0, p2: 0, p3: 0 });
+      const r = computeStrokePlay(finished(byPlayer));
+      expect(r.status).toBe('No complete card');
+      expect(r.standings.every((s) => !s.isLeader)).toBe(true);
+      expect(computeSettlement(finished(byPlayer)).transactions).toEqual([]);
+    });
+
+    it('leaves the money with the complete card through settlement', () => {
+      const s = computeSettlement(
+        finished({ p1: Array(8).fill(3), p2: Array(9).fill(4), p3: Array(9).fill(5) })
+      );
+      expect(s.totals).toEqual({ p1: -5, p2: 10, p3: -5 });
     });
   });
 
