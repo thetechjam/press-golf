@@ -215,12 +215,15 @@ export interface GameOptions {
    */
   autoPress?: boolean;
   /**
-   * Handicap allowance per game, as a percentage. An absent entry is 100%.
+   * Handicap allowance per game, as a percentage. An absent entry is 100%,
+   * except in Match Play and Nassau, which fall back to the handbook's match
+   * figure for their format (`matchAllowanceFor()`).
    *
    * Per game rather than per round because the handbook's percentages are a
-   * property of the format — 90% for a singles match, 85% for a four-ball,
-   * 95% for Stableford — and a round playing several at once needs several.
-   * Resolved through `allowanceFor()`, never read directly.
+   * property of the format — 100% for a singles match, 90% for a four-ball
+   * match, 95% for individual stroke play or Stableford — and a round playing
+   * several at once needs several. Resolved through `allowanceFor()` or
+   * `matchAllowanceFor()`, never read directly.
    */
   allowanceByGame?: Partial<Record<GameType, number>>;
   /** Present when this is a league-night round. */

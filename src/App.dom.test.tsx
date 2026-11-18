@@ -232,6 +232,84 @@ describe('App navigation', () => {
   });
 });
 
+describe('back after a reload', () => {
+  /**
+   * The entries a previous page load left behind. A reload — "Reload Press"
+   * from the error screen, or the phone discarding the tab — keeps them, and
+   * start() reseeds only the one on top.
+   */
+  const leftBehind = (...views: string[]) => {
+    history.replaceState({ view: 'home', depth: 0 }, '');
+    views.forEach((view, i) => history.pushState({ view, depth: i + 1 }, ''));
+  };
+
+  it('goes Home from a Results entry whose round is gone, not to a blank app', async () => {
+    seed([round({ status: 'finished' })]);
+    leftBehind('results', 'play');
+    render(<App />);
+    expect(onHome()).toBe(true);
+
+    await goBack();
+    await waitFor(() => expect(onHome()).toBe(true));
+    // Collapsed onto the real bottom entry, so the stale one is behind us.
+    expect(history.state).toMatchObject({ view: 'home', depth: 0 });
+  });
+
+  it('goes Home from a Trip entry whose trip is gone', async () => {
+    leftBehind('trip', 'stats');
+    render(<App />);
+
+    await goBack();
+    await waitFor(() => expect(onHome()).toBe(true));
+    expect(history.state).toMatchObject({ view: 'home', depth: 0 });
+  });
+
+  it('still opens a screen that needs nothing loaded', async () => {
+    leftBehind('stats', 'history');
+    render(<App />);
+
+    await goBack();
+    expect(await screen.findByRole('heading', { name: 'Stats' })).toBeTruthy();
+  });
+});
+
+describe('back from the Trip screen', () => {
+  it('does not write the old trip name back over a rename', async () => {
+    // The Trip screen writes rounds itself. App used to go on holding the
+    // round as Results had it, and the next edit saved that copy whole.
+    seed([
+      round({
+        status: 'finished',
+        trip: { id: 't1', name: 'Old Trip' },
+        options: { ...round().options, stakes: { skins: 5 } },
+      }),
+    ]);
+    const user = userEvent.setup();
+    render(<App />);
+
+    await user.click(screen.getByText('Test Links'));
+    await user.click(await screen.findByRole('button', { name: /Part of Old Trip/ }));
+    await screen.findByRole('heading', { name: 'Old Trip' });
+    await user.click(screen.getByRole('button', { name: 'Rename' }));
+    const input = screen.getByLabelText('Trip name');
+    await user.clear(input);
+    await user.type(input, 'New Trip');
+    await user.click(screen.getByRole('button', { name: 'Save name' }));
+
+    await goBack();
+    expect(await screen.findByRole('heading', { name: 'Results' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Part of New Trip/ })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: /Edit handicaps/ }));
+    await user.type(screen.getAllByPlaceholderText('HCP')[0], '9');
+    await user.click(screen.getByRole('button', { name: 'Save handicaps' }));
+
+    const [saved] = JSON.parse(localStorage.getItem('press.rounds.v1') ?? '[]') as Round[];
+    expect(saved.players[0].handicap).toBe(9);
+    expect(saved.trip?.name).toBe('New Trip');
+  });
+});
+
 describe('App — Scramble route', () => {
   it('reaches Scramble setup from Home, and Back returns Home', async () => {
     const user = userEvent.setup();

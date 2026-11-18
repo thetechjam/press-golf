@@ -516,6 +516,73 @@ describe('nine holes off a loaded eighteen', () => {
   });
 });
 
+describe('saving a course while playing nine of it', () => {
+  const rated: SavedCourse = {
+    id: 's18',
+    name: 'Bramble Ridge GC',
+    holes: realCard18(),
+    slope: 128,
+    rating: 72.4,
+  };
+  const stored = (): SavedCourse[] => JSON.parse(localStorage.getItem('press.courses.v1')!);
+  const saveButton = () => screen.getByRole('button', { name: /Save this course for next time/ });
+
+  it('keeps the saved eighteen, its rating, and a par corrected on the nine', async () => {
+    localStorage.setItem('press.courses.v1', JSON.stringify([rated]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.click(await screen.findByText('Bramble Ridge GC'));
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    await user.click(screen.getByRole('button', { name: 'Back 9' }));
+    await user.click(parTile(12)); // 3 → 4
+    await user.click(saveButton());
+
+    const [kept] = stored();
+    expect(kept.id).toBe('s18');
+    expect(kept.holes.map((h) => h.number)).toEqual(realCard18().map((h) => h.number));
+    expect(kept.holes.map((h) => h.strokeIndex)).toEqual(realCard18().map((h) => h.strokeIndex));
+    expect(kept.holes.map((h) => h.par)).toEqual(
+      realCard18().map((h) => (h.number === 12 ? 4 : h.par))
+    );
+    expect(kept.rating).toBe(72.4);
+    expect(kept.slope).toBe(128);
+    expect(screen.getByText('Saved "Bramble Ridge GC" — all 18 holes')).toBeTruthy();
+  });
+
+  it('will not put a nine typed in by hand over a saved eighteen of that name', async () => {
+    localStorage.setItem('press.courses.v1', JSON.stringify([rated]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.type(document.querySelector('.course-search input')!, 'bramble ridge gc');
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    await user.click(saveButton());
+
+    expect(screen.getByRole('alert').textContent).toMatch(
+      /already saved with 18 holes.*different name/
+    );
+    expect(stored()).toEqual([rated]);
+  });
+
+  it('still saves a nine under a name of its own', async () => {
+    localStorage.setItem('press.courses.v1', JSON.stringify([rated]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.type(document.querySelector('.course-search input')!, 'Pitch and Putt');
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    await user.click(saveButton());
+
+    expect(stored().map((c) => [c.name, c.holes.length])).toEqual([
+      ['Bramble Ridge GC', 18],
+      ['Pitch and Putt', 9],
+    ]);
+  });
+});
+
 describe('a remembered stroke count on a rated course', () => {
   it('is shown as what the player plays off, and can be cleared', async () => {
     localStorage.setItem(
@@ -580,6 +647,174 @@ describe('two players under one name', () => {
     await user.click(screen.getByRole('button', { name: /Start Round/i }));
     expect(started).toEqual([]);
     expect(screen.getByRole('alert').textContent).toMatch(/Two players are called Mike/);
+  });
+});
+
+describe('Nassau and Match Play with four players', () => {
+  const fourNamed = async (user: ReturnType<typeof userEvent.setup>) => {
+    for (const [i, n] of ['Al', 'Bo', 'Cy', 'Di'].entries()) {
+      if (i >= 2) await user.click(screen.getByRole('button', { name: '+ Add player' }));
+      await user.type(document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]')[i], n);
+    }
+  };
+  const playedLastTime = (nassau?: { mode: '1v1' | '2v2' }) =>
+    localStorage.setItem(
+      'press.rounds.v1',
+      JSON.stringify([
+        {
+          id: 'r0',
+          date: '2026-09-01',
+          createdAt: 1,
+          updatedAt: 1,
+          players: [{ id: 'p1', name: 'Al' }, { id: 'p2', name: 'Bo' }],
+          holes: realCard18(),
+          games: nassau ? ['nassau'] : ['skins'],
+          options: {
+            useNet: false,
+            stablefordMode: 'standard',
+            loneWolfMultiplier: 2,
+            blindWolfMultiplier: 3,
+            stakes: {},
+            ...(nassau ? { nassau: { ...nassau, teamA: ['p1'], teamB: ['p2'] } } : {}),
+          },
+          scores: {},
+          wolf: {},
+          status: 'finished',
+        },
+      ])
+    );
+
+  it('default to two against two rather than leaving two players out', async () => {
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    await fourNamed(user);
+    await openRow(user, 'Games');
+    await user.click(screen.getByRole('button', { name: 'Nassau' }));
+    await user.click(screen.getByRole('button', { name: 'Match Play' }));
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+
+    const names = (ids: string[]) => ids.map((id) => started[0].players.find((p) => p.id === id)!.name);
+    for (const teams of [started[0].options.nassau!, started[0].options.matchPlay!]) {
+      expect(teams.mode).toBe('2v2');
+      expect(names(teams.teamA)).toEqual(['Al', 'Bo']);
+      expect(names(teams.teamB)).toEqual(['Cy', 'Di']);
+    }
+  });
+
+  it('stay one against one when the user picks it', async () => {
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    await fourNamed(user);
+    await openRow(user, 'Games');
+    await user.click(screen.getByRole('button', { name: 'Nassau' }));
+    // Nassau is the only side game picked, so its switch is the only one.
+    await user.click(screen.getByRole('button', { name: '1 v 1' }));
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started[0].options.nassau!.mode).toBe('1v1');
+  });
+
+  it('keep the format remembered from last time', async () => {
+    playedLastTime({ mode: '1v1' });
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    await fourNamed(user);
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started[0].options.nassau!.mode).toBe('1v1');
+  });
+
+  it('are still singles with two players', async () => {
+    playedLastTime();
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(inputs[0], 'Al');
+    await user.type(inputs[1], 'Bo');
+    await openRow(user, 'Games');
+    await user.click(screen.getByRole('button', { name: 'Nassau' }));
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started[0].options.nassau!.mode).toBe('1v1');
+  });
+});
+
+describe('numbers typed into setup', () => {
+  const twoNamed = async (user: ReturnType<typeof userEvent.setup>) => {
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    await user.type(inputs[0], 'Al');
+    await user.type(inputs[1], 'Bo');
+  };
+
+  it('keep a Wolf multiplier a whole number from 1, and let the box be cleared mid-edit', async () => {
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    const inputs = document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]');
+    for (const [i, n] of ['Al', 'Bo', 'Cy'].entries()) {
+      if (i >= inputs.length) await user.click(screen.getByRole('button', { name: '+ Add player' }));
+      await user.type(document.querySelectorAll<HTMLInputElement>('input[placeholder^="Player"]')[i], n);
+    }
+    await openRow(user, 'Games');
+    await user.click(screen.getByRole('button', { name: 'Skins' }));
+    await user.click(screen.getByRole('button', { name: 'Wolf' }));
+    const lone = screen.getByLabelText<HTMLInputElement>('Lone Wolf ×');
+    const blind = screen.getByLabelText<HTMLInputElement>('Blind Wolf ×');
+    await user.clear(lone);
+    expect(lone.value).toBe('');
+    await user.type(lone, '0');
+    await user.clear(blind);
+    await user.type(blind, '2.6');
+    await user.tab();
+    expect(lone.value).toBe('1');
+    expect(blind.value).toBe('3');
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started[0].options.loneWolfMultiplier).toBe(1);
+    expect(started[0].options.blindWolfMultiplier).toBe(3);
+  });
+
+  it('does not carry a broken multiplier forward from last time', async () => {
+    localStorage.setItem(
+      'press.rounds.v1',
+      JSON.stringify([
+        {
+          id: 'r0',
+          date: '2026-09-01',
+          createdAt: 1,
+          updatedAt: 1,
+          players: [{ id: 'p1', name: 'Al' }, { id: 'p2', name: 'Bo' }, { id: 'p3', name: 'Cy' }],
+          holes: realCard18(),
+          games: ['wolf'],
+          options: { useNet: false, stablefordMode: 'standard', loneWolfMultiplier: 0, blindWolfMultiplier: -2.5, stakes: {} },
+          scores: {},
+          wolf: {},
+          status: 'finished',
+        },
+      ])
+    );
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    await user.click(screen.getByRole('button', { name: /Same crew/ }));
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started[0].options.loneWolfMultiplier).toBe(2);
+    expect(started[0].options.blindWolfMultiplier).toBe(3);
+  });
+
+  it('round a decimal stroke handicap to whole strokes, either side of scratch', async () => {
+    const user = userEvent.setup();
+    const started: Round[] = [];
+    render(<Setup onCancel={() => {}} onStart={(r) => started.push(r)} />);
+    await twoNamed(user);
+    const [al, bo] = screen.getAllByPlaceholderText<HTMLInputElement>('HCP');
+    await user.type(al, '12.7');
+    await user.tab();
+    expect(al.value).toBe('13');
+    // Typed and straight to Start.
+    await user.type(bo, '-2.5');
+    await user.click(screen.getByRole('button', { name: /Start Round/i }));
+    expect(started[0].players.map((p) => p.handicap)).toEqual([13, -2]);
   });
 });
 
@@ -695,17 +930,18 @@ describe('handicap allowances', () => {
     await openRow(user, 'Games');
     await user.click(screen.getByRole('button', { name: 'Match Play' }));
 
-    // Singles: the handbook's 100%, as the engine plays it.
+    // Four players open on a four-ball: 90%, the figure matchAllowanceFor
+    // falls back to.
     const select = await screen.findByLabelText<HTMLSelectElement>(
       /Handicap allowance for Match Play/i
     );
-    expect(select.value).toBe('100');
+    expect(select.value).toBe('90');
 
-    // A four-ball: 90%, the figure matchAllowanceFor falls back to.
-    await user.click(screen.getByRole('button', { name: '2 v 2' }));
-    await waitFor(() => expect(select.value).toBe('90'));
+    // Singles: the handbook's 100%, as the engine plays it.
     await user.click(screen.getByRole('button', { name: '1 v 1' }));
     await waitFor(() => expect(select.value).toBe('100'));
+    await user.click(screen.getByRole('button', { name: '2 v 2' }));
+    await waitFor(() => expect(select.value).toBe('90'));
   });
 });
 

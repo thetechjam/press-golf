@@ -41,6 +41,11 @@
   /* The tools column's gap spaces the rows; the .seg margin on top of it
      put the League / Regular row a full button's breath below the first. */
   margin-bottom: 0;
+  /* Four kinds (Any, League, Scramble, Regular) do not fit 288px at 320, nor
+     three at 200% text: the last pill was cut off and the page scrolled
+     sideways. They wrap instead; each pill keeps flex: 1, so a wrapped row
+     still fills the width. */
+  flex-wrap: wrap;
 }
 
 .history-count {
@@ -141,7 +146,9 @@
   .resume-card,
   .board-jump-chip,
   .standings-link,
-  .trip-card {
+  .trip-card,
+  .scr-btn,
+  .scr-chev {
     transition: none;
   }
   .seg-btn,
@@ -165,7 +172,8 @@
   .par-tile:active,
   .resume-card:active,
   .standings-link:active,
-  .trip-card:active {
+  .trip-card:active,
+  .scr-btn:active {
     transform: none;
   }
   /* Higher specificity than the .bar .btn-ghost:active rule it overrides;

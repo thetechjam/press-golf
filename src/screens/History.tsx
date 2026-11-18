@@ -14,6 +14,7 @@ import {
 } from '../history';
 import type { KindFilter, StatusFilter } from '../history';
 import { XIcon } from '../icons';
+import { count } from '../plural';
 
 interface Props {
   onBack: () => void;
@@ -43,6 +44,10 @@ const KINDS: { id: KindFilter; label: string }[] = [
   { id: 'scramble', label: 'Scramble' },
   { id: 'regular', label: 'Regular' },
 ];
+
+/** The rounds a search and the two filters leave on screen. */
+const showing = (rounds: Round[], q: string, st: StatusFilter, k: KindFilter) =>
+  filterByKind(filterByStatus(searchRounds(rounds, q), st), k);
 
 const kindOf = (r: Round): KindFilter =>
   isLeagueRound(r) ? 'league' : isScrambleRound(r) ? 'scramble' : 'regular';
@@ -74,17 +79,14 @@ export function History({ onBack, onResume, onViewResults }: Props) {
   // but it used to throw out of the button, and on native, for a key Press
   // could not read at startup, it always does.
   const [saveFailed, setSaveFailed] = useState<string | null>(null);
-  const deleted = (ok: boolean, count = 1) =>
+  const deleted = (ok: boolean, howMany = 1) =>
     setSaveFailed(
       ok
         ? null
-        : `${count > 1 ? 'Those rounds were' : 'That round was'} not deleted. ${notSavedReason(ROUNDS_KEY, true)}`
+        : `${howMany > 1 ? 'Those rounds were' : 'That round was'} not deleted. ${notSavedReason(ROUNDS_KEY, true)}`
     );
 
-  const shown = useMemo(
-    () => filterByKind(filterByStatus(searchRounds(rounds, query), status), kind),
-    [rounds, query, status, kind]
-  );
+  const shown = useMemo(() => showing(rounds, query, status, kind), [rounds, query, status, kind]);
   // Only offered when there is something to tell apart: somebody who has
   // never played a league night does not need a League filter, and somebody
   // who only plays them does not need a Regular one. Kept up while a filter
@@ -98,6 +100,31 @@ export function History({ onBack, onResume, onViewResults }: Props) {
     (k, _, shown) => (k.id === 'all' && shown.length > 3 ? { ...k, label: 'Any' } : k)
   );
   const groups = useMemo(() => groupByMonth(shown), [shown]);
+
+  /**
+   * The ticked rounds that are on screen — the only ones a delete may touch.
+   *
+   * A tick used to outlive the search or filter that showed it, so ticking
+   * twelve, searching for one course and pressing Delete took eleven rounds
+   * nobody could see. `narrow` drops ticks as rounds leave the list, so
+   * widening it again does not bring them back armed; deleting only from
+   * this intersection as well keeps the button's count and the delete the
+   * same number whatever path the list took to get here.
+   */
+  const chosen = useMemo(() => shown.filter((r) => picked.has(r.id)), [shown, picked]);
+
+  /** Applies a new search or filter, letting go of ticks it hides. */
+  const narrow = (q: string, st: StatusFilter, k: KindFilter) => {
+    setQuery(q);
+    setStatus(st);
+    setKind(k);
+    const visible = new Set(showing(rounds, q, st, k).map((r) => r.id));
+    if ([...picked].every((id) => visible.has(id))) return;
+    setPicked(new Set([...picked].filter((id) => visible.has(id))));
+    // The number on the second tap is the one that was read; if it changed
+    // under the user, they read it again.
+    setConfirming(false);
+  };
 
   const open = (round: Round) =>
     round.status === 'finished' ? onViewResults(round) : onResume(round);
@@ -124,7 +151,8 @@ export function History({ onBack, onResume, onViewResults }: Props) {
 
   const deletePicked = () => {
     // One write for all of them, so a refusal leaves every picked round, not some.
-    deleted(deleteRounds(picked), picked.size);
+    const ids = new Set(chosen.map((r) => r.id));
+    deleted(deleteRounds(ids), ids.size);
     setRounds(listRounds());
     stopSelecting();
   };
@@ -161,14 +189,14 @@ export function History({ onBack, onResume, onViewResults }: Props) {
             <input
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => narrow(e.target.value, status, kind)}
               placeholder="Search course, player or game"
               aria-label="Search rounds"
             />
             {query && (
               <button
                 className="history-clear"
-                onClick={() => setQuery('')}
+                onClick={() => narrow('', status, kind)}
                 aria-label="Clear search"
               >
                 <XIcon size={14} />
@@ -182,7 +210,7 @@ export function History({ onBack, onResume, onViewResults }: Props) {
                 key={f.id}
                 className={`seg-btn${status === f.id ? ' active' : ''}`}
                 aria-pressed={status === f.id}
-                onClick={() => setStatus(f.id)}
+                onClick={() => narrow(query, f.id, kind)}
               >
                 {f.label}
               </button>
@@ -196,7 +224,7 @@ export function History({ onBack, onResume, onViewResults }: Props) {
                   key={k.id}
                   className={`seg-btn${kind === k.id ? ' active' : ''}`}
                   aria-pressed={kind === k.id}
-                  onClick={() => setKind(k.id)}
+                  onClick={() => narrow(query, status, k.id)}
                 >
                   {k.label}
                 </button>
@@ -250,16 +278,16 @@ export function History({ onBack, onResume, onViewResults }: Props) {
                 Cancel
               </button>
               <button className="btn-danger" onClick={deletePicked}>
-                Delete {picked.size} for good
+                Delete {count(chosen.length, 'round')} for good
               </button>
             </>
           ) : (
             <button
               className="btn-danger"
-              disabled={picked.size === 0}
+              disabled={chosen.length === 0}
               onClick={() => setConfirming(true)}
             >
-              Delete {picked.size > 0 ? picked.size : ''}
+              {chosen.length > 0 ? `Delete ${count(chosen.length, 'round')}` : 'Delete'}
             </button>
           )}
         </div>

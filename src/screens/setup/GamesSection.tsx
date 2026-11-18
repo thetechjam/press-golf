@@ -5,6 +5,7 @@ import { GAME_RULES } from '../../games/rules';
 import { canScoreNet } from '../../games/scoring';
 import { MATCH_ALLOWANCE } from '../../games/handicap';
 import { TeamPicker, type Assign } from '../../components/TeamPicker';
+import { wolfMultiplier, MAX_WOLF_MULTIPLIER } from '../../numberInput';
 
 /** How one side-based game's teams are being picked: 1v1 sides or 2v2 assignments. */
 export interface SidePick {
@@ -283,32 +284,58 @@ export function GamesSection({
           )}
           {showWolf && (
             <div className="wolf-opts">
-              <label className="field small">
-                <span>Lone Wolf ×</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={options.loneWolfMultiplier}
-                  onChange={(e) =>
-                    onOptions({ ...options, loneWolfMultiplier: Number(e.target.value) })
-                  }
-                />
-              </label>
-              <label className="field small">
-                <span>Blind Wolf ×</span>
-                <input
-                  type="number"
-                  min={1}
-                  value={options.blindWolfMultiplier}
-                  onChange={(e) =>
-                    onOptions({ ...options, blindWolfMultiplier: Number(e.target.value) })
-                  }
-                />
-              </label>
+              <MultiplierField
+                label="Lone Wolf ×"
+                value={options.loneWolfMultiplier}
+                onCommit={(n) => onOptions({ ...options, loneWolfMultiplier: n })}
+              />
+              <MultiplierField
+                label="Blind Wolf ×"
+                value={options.blindWolfMultiplier}
+                onCommit={(n) => onOptions({ ...options, blindWolfMultiplier: n })}
+              />
             </div>
           )}
         </section>
       )}
     </>
+  );
+}
+
+/**
+ * A Wolf multiplier field. What is typed is shown as typed while the field
+ * has focus, and only a whole number from 1 up is stored: a cleared box used
+ * to store 0 (a lone wolf worth nothing) and a "-" or "1.5" went straight
+ * into the round and on into next week's. Leaving the field shows what was
+ * kept.
+ */
+function MultiplierField({
+  label,
+  value,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  onCommit: (n: number) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <label className="field small">
+      <span>{label}</span>
+      <input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={MAX_WOLF_MULTIPLIER}
+        step={1}
+        value={draft ?? value}
+        onChange={(e) => {
+          setDraft(e.target.value);
+          const n = wolfMultiplier(e.target.value);
+          if (n != null) onCommit(n);
+        }}
+        onBlur={() => setDraft(null)}
+      />
+    </label>
   );
 }

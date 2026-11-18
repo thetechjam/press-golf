@@ -101,8 +101,11 @@ export interface Comparison {
 
 /**
  * Everything about a round that is not a cell of the card and that changes
- * the result: players' handicaps and Indexes, the stakes and per-game options,
- * the teams, the presses and the Wolf calls. Two copies with identical scores
+ * the result: players' names, handicaps and Indexes, each hole's par and
+ * stroke index, the stakes and per-game options, the teams, the league setup,
+ * the presses and the Wolf calls — and the course, status and trip, which
+ * say what the round is. Never the timestamps: two copies saved a second
+ * apart are not different rounds. Two copies with identical scores
  * and a corrected handicap used to read as "exactly the same round", with no
  * way to take the correction.
  *
@@ -113,7 +116,24 @@ function settings(round: Round): Map<string, string> {
   const pos = (id: string) => String(at.get(id) ?? '?');
   const out = new Map<string, string>();
   const o = round.options;
-  round.players.forEach((p, i) => out.set(`hcp:${i}`, `${p.handicap ?? ''}/${p.index ?? ''}`));
+  // Who each row is, as well as what they get: a row renamed on one phone
+  // is a different person's money, and taking the other copy whole would
+  // quietly change it back.
+  round.players.forEach((p, i) => {
+    out.set(`hcp:${i}`, `${p.handicap ?? ''}/${p.index ?? ''}`);
+    out.set(`name:${i}`, (p.name ?? '').trim());
+  });
+  // Par and stroke index decide every net score, every Stableford point and
+  // where each handicap stroke falls. A par fixed on one phone used to leave
+  // the two copies reading as "exactly the same", and bringing the other
+  // copy in undid the fix without a word.
+  for (const h of round.holes) out.set(`hole:${h.number}`, `${h.par}/${h.strokeIndex ?? ''}`);
+  // Not money, but what the round is: a renamed course, a round finished on
+  // one phone and not the other, and the trip it settles with (a round on a
+  // trip pays out across the trip, not on its own).
+  out.set('course', (round.course ?? '').trim());
+  out.set('status', round.status);
+  out.set('trip', round.trip ? `${round.trip.id}:${round.trip.name}` : '');
   out.set('games', [...round.games].sort().join(','));
   out.set('useNet', String(o.useNet));
   out.set('stableford', o.stablefordMode);
@@ -136,6 +156,21 @@ function settings(round: Round): Map<string, string> {
       out.set(`scramble:${i}`, `${pos(t?.id)}:${(t?.members ?? []).join('|')}`)
     );
     out.set('scramble:min', String(scramble.minDrives ?? ''));
+  }
+  // A league night's teams, points, an absent player, a night called for
+  // darkness and the first-night players all change who wins what.
+  const league = o.league;
+  if (league) {
+    const seat = (id: string | undefined) => (id ? pos(id) : '');
+    (league.teams ?? []).forEach((t, i) =>
+      out.set(
+        `league:${i}`,
+        `${seat(t?.aId)}+${seat(t?.bId)}:${t?.absent ?? ''}:${(t?.name ?? '').trim()}:${(t?.absentName ?? '').trim()}`
+      )
+    );
+    out.set('league:points', String(league.pointsPerMatch ?? ''));
+    out.set('league:ended', String(league.ended ?? false));
+    out.set('league:first', (league.firstNight ?? []).map(pos).sort().join(','));
   }
   for (const [hole, w] of Object.entries(round.wolf ?? {})) {
     if (!w?.choice) continue;
@@ -213,8 +248,14 @@ export function compareRounds(incoming: Round, mine: Round | undefined): Arrival
  * place on the same day are otherwise indistinguishable in a list.
  */
 export function forkRound(incoming: Round, now: number = Date.now()): Round {
+  // Off the trip. A trip is simply the rounds that name it, so a fork that
+  // kept `trip` put the same round's money into the trip's settle-up twice,
+  // beside the copy it was forked from. It can be put on the trip from the
+  // Trip screen if it turns out to be the real card. League setup stays: it
+  // is how the round scores, not a ledger it is counted in.
+  const { trip: _trip, ...rest } = incoming;
   return {
-    ...incoming,
+    ...rest,
     id: uid(),
     updatedAt: now,
     course: incoming.course ? `${incoming.course} (from a link)` : 'From a link',
@@ -226,11 +267,13 @@ export function describeArrival(arrival: Arrival): string {
   // "Entry", not "score": a claimed greenie is one of these too, and calling
   // it a score would be wrong in exactly the round that needed the warning.
   const holes = (n: number) => `${n} ${n === 1 ? 'entry' : 'entries'}`;
-  // Named so the user knows what kind of thing changed: a stake, a handicap,
-  // a press or a Wolf call is not a score, and would be looked for in the
-  // wrong place.
+  // Named so the user knows what kind of thing changed: a name, a par, a
+  // stake, a handicap, a press or a Wolf call is not a score, and would be
+  // looked for in the wrong place.
   const settingsNote = (n: number) =>
-    n ? `${n} ${n === 1 ? 'setting' : 'settings'} — stakes, handicaps, presses or Wolf calls —` : '';
+    n
+      ? `${n} ${n === 1 ? 'setting' : 'settings'} — names, pars, stakes, handicaps, presses or Wolf calls —`
+      : '';
   switch (arrival.kind) {
     case 'new':
       return '';

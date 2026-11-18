@@ -3,7 +3,7 @@ import type { SavedCourse } from '../../types';
 import type { FetchedCourse } from '../../courses/openGolfApi';
 import { uid, listCourses, saveCourse, deleteCourse, COURSES_KEY } from '../../storage';
 import { notSavedReason } from '../../notSaved';
-import { courseReducer, deriveCourse, initialCourseState } from './courseState';
+import { courseReducer, courseToSave, deriveCourse, initialCourseState } from './courseState';
 
 interface Options {
   /** Opens one of the screen's collapsible rows (see SetupRow). */
@@ -62,20 +62,24 @@ export function useCourse({ openRow, setError }: Options) {
       return;
     }
     const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
-    const saved = saveCourse({
-      id: existing?.id ?? uid(),
-      name,
-      holes: cs.holes.map((h) => ({ number: h.number, par: h.par, strokeIndex: h.strokeIndex })),
-      slope: cs.slope,
-      rating: cs.rating,
-    });
+    const out = courseToSave({ ...cs, name, existing });
+    if ('refused' in out) {
+      setError(out.refused);
+      return;
+    }
+    const saved = saveCourse({ id: existing?.id ?? uid(), name, ...out });
     if (!saved) {
       setError(`Not saved. This course wasn’t kept. ${notSavedReason(COURSES_KEY)}`);
       return;
     }
     setCourses(listCourses());
     setError('');
-    dispatch({ type: 'saved', name, from });
+    dispatch({
+      type: 'saved',
+      name,
+      from,
+      wholeCard: out.holes.length > cs.holes.length ? out.holes.length : undefined,
+    });
   };
 
   const removeCourse = (id: string) => {

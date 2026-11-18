@@ -62,8 +62,15 @@ describe('names', () => {
   });
 
   it('names a bigger team after the first two and a count', () => {
-    expect(defaultTeamName(['Jesse', 'Sam', 'Al'], 0)).toBe('Jesse, Sam +1');
-    expect(defaultTeamName(['Jesse', 'Sam', 'Al', 'Cy'], 0)).toBe('Jesse, Sam +2');
+    expect(defaultTeamName(['Jesse', 'Sam', 'Al'], 0)).toBe('Jesse, Sam & 1 more');
+    expect(defaultTeamName(['Jesse', 'Sam', 'Al', 'Cy'], 0)).toBe('Jesse, Sam & 2 more');
+  });
+
+  it('never puts a +number in a name, where it would read as strokes over par', () => {
+    for (const n of [3, 4]) {
+      const members = ['Morgan', 'Sam', 'Al', 'Cy'].slice(0, n);
+      expect(defaultTeamName(members, 0)).not.toMatch(/[+−-]\s*\d/);
+    }
   });
 
   it('uses first names and skips blanks', () => {
@@ -291,6 +298,7 @@ describe('the tee-shot minimum', () => {
       owed: [],
       owedTotal: 0,
       open: 7,
+      uncredited: 0,
       note: '',
     });
   });
@@ -315,7 +323,10 @@ describe('the tee-shot minimum', () => {
     ]);
     expect(s.owedTotal).toBe(3);
     expect(s.open).toBe(7);
-    expect(s.note).toBe('Still owed: Sam 2, Al 1. 7 holes left.');
+    expect(s.uncredited).toBe(5);
+    expect(s.note).toBe(
+      'Still owed: Sam 2, Al 1. 7 holes left. 5 scored holes have no tee shot picked yet.'
+    );
   });
 
   it('is tight when every drive left is spoken for', () => {
@@ -327,8 +338,11 @@ describe('the tee-shot minimum', () => {
   });
 
   it('is short when more is owed than there are holes', () => {
-    const s = driveStatus(card(9, 3, [0, 0, 0, 1, 2, 2, -1]), 't1');
+    // Every scored hole has its drive picked — the seventh went to Jesse,
+    // who did not need it — so only the two open holes are left for three.
+    const s = driveStatus(card(9, 3, [0, 0, 0, 1, 2, 2, 0]), 't1');
     expect(s.state).toBe('short');
+    expect(s.uncredited).toBe(0);
     expect(s.owedTotal).toBe(3);
     expect(s.open).toBe(2);
     expect(s.note).toBe(
@@ -337,7 +351,7 @@ describe('the tee-shot minimum', () => {
   });
 
   it('says "1 hole left" for one', () => {
-    const s = driveStatus(card(9, 2, [0, 0, 0, 0, 0, 0, 0, -1], ['Jesse', 'Sam']), 't1');
+    const s = driveStatus(card(9, 2, [0, 0, 0, 0, 0, 0, 0, 0], ['Jesse', 'Sam']), 't1');
     expect(s.state).toBe('short');
     expect(s.note).toBe(
       '2 tee shots still owed (Sam 2) with 1 hole left. The minimum can’t be met.'
@@ -356,6 +370,47 @@ describe('the tee-shot minimum', () => {
     const s = driveStatus(card(9, 1, [], ['Jesse', 'Sam', 'Al']), 't1');
     expect(s.owed.map((o) => o.name)).toEqual(['Jesse', 'Sam', 'Al']);
     expect(s.note).toBe('Still owed: Jesse 1, Sam 1, Al 1. 9 holes left.');
+  });
+
+  it('counts a scored hole with no drive picked as room, since it can still be credited', () => {
+    // Two open holes and one scored without saying: three drives still to
+    // give for the three owed, so the minimum can be met — not short.
+    const r = card(9, 3, [0, 0, 0, 1, 2, 2, -1]);
+    const s = driveStatus(r, 't1');
+    expect(s.open).toBe(2);
+    expect(s.uncredited).toBe(1);
+    expect(s.state).toBe('tight');
+    expect(s.note).toBe(
+      'Every tee shot left is spoken for: Sam 2, Al 1. 1 scored hole has no tee shot picked yet.'
+    );
+    // And giving that hole's drive to Sam does what the note promised.
+    expect(driveStatus(creditShot(r, 7, 't1', 0, 1), 't1')).toMatchObject({
+      state: 'tight',
+      owedTotal: 2,
+      open: 2,
+      uncredited: 0,
+    });
+  });
+
+  it('still owes room for the unpicked holes while the rest of the round is to play', () => {
+    const s = driveStatus(card(9, 3, [0, 0, 0, 1, -1, -1]), 't1');
+    // Sam 2, Al 3 = 5 owed; three open holes and two scored without a drive.
+    expect(s.state).toBe('tight');
+    const roomy = driveStatus(card(9, 2, [0, 0, 1, -1, -1]), 't1');
+    expect(roomy.state).toBe('owed');
+    expect(roomy.note).toBe(
+      'Still owed: Al 2, Sam 1. 4 holes left. 2 scored holes have no tee shot picked yet.'
+    );
+  });
+
+  it('is short with unpicked holes only when they too are not enough', () => {
+    const s = driveStatus(card(9, 3, [0, 0, 0, 0, 0, 0, 1, -1]), 't1');
+    // Sam 2, Al 3 = 5 owed; one open hole and one scored without a drive.
+    expect(s.state).toBe('short');
+    expect(s.note).toBe(
+      '5 tee shots still owed (Al 3, Sam 2) with 1 hole left. 1 scored hole has no tee shot picked yet. ' +
+        'The minimum can’t be met.'
+    );
   });
 
   it('ignores a minimum that is not a whole number above zero', () => {

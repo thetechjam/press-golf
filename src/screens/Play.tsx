@@ -190,7 +190,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       ? setWarn('finish')
       : onFinish();
 
-  // A scramble team's default name has a comma in it ("Jesse, Sam +2"), so a
+  // A scramble team's default name has a comma in it ("Jesse, Sam & 2 more"), so a
   // comma-separated list of teams cannot be read back into teams. "and"
   // keeps each one whole; every other round's list is as it always was.
   const nameList = (names: string[]) => names.join(scramble ? ' and ' : ', ');
@@ -333,6 +333,10 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
             <button
               key={m}
               className={`seg-btn${mode === m ? ' active' : ''}`}
+              // The fill was the only sign of which view is open; a screen
+              // reader heard three identical buttons. Pressed, as the Card's
+              // Front 9 / Back 9 / All 18 already are.
+              aria-pressed={mode === m}
               onClick={() => setMode(m)}
             >
               {m === 'hole' ? 'Hole' : m === 'board' ? 'Board' : 'Card'}

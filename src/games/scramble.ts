@@ -39,7 +39,11 @@ const firstWord = (name: string): string => name.trim().split(/\s+/)[0] ?? '';
 
 /**
  * The name a team gets when nobody gives it one: "Jesse & Sam" for two,
- * "Jesse, Sam +2" for four, "Team 2" when nobody is named.
+ * "Jesse, Sam & 2 more" for four, "Team 2" when nobody is named.
+ *
+ * The rest are counted in words, not as "+2": beside a score that reads as
+ * two over par — "JESSE, SAM +2 WINS $5" on a results card. Rounds saved with
+ * the old form keep it; a name is whatever the round was created with.
  *
  * Built from first names because it is shown on the card's row and in the
  * leaderboard, where "Jesse Smith & Sam Ortega" does not fit and the surnames
@@ -50,7 +54,7 @@ export function defaultTeamName(members: string[], position: number): string {
   const named = members.map(firstWord).filter(Boolean);
   if (named.length === 0) return `Team ${position + 1}`;
   if (named.length <= 2) return named.join(' & ');
-  return `${named[0]}, ${named[1]} +${named.length - 2}`;
+  return `${named[0]}, ${named[1]} & ${named.length - 2} more`;
 }
 
 /** First word of the member's name, or "P3" for a blank. For buttons. */
@@ -203,6 +207,12 @@ export interface DriveStatus {
   owed: { member: number; name: string; count: number }[];
   owedTotal: number;
   open: number;
+  /**
+   * Holes already scored with no tee shot credited. They still have a drive
+   * to give — `creditShot` takes one on a scored hole as readily as on an
+   * open one — so they count as room alongside `open`.
+   */
+  uncredited: number;
   /** One sentence for the board; '' when state is 'none'. */
   note: string;
 }
@@ -216,13 +226,20 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
  * question the group is actually asking on the tee: not "who is short" but
  * "can we still afford to take the best drive here". `tight` is the moment
  * the answer becomes no — every remaining drive is already somebody's.
+ *
+ * The room is the open holes plus the scored ones still waiting for a tee
+ * shot to be picked: those can be credited after the fact, so a hole walked
+ * off without deciding does not make the minimum impossible — it is a drive
+ * the group can still give to whoever needs it.
  */
 export function driveStatus(round: Round, teamId: string): DriveStatus {
   const stats = teamShotStats(round, teamId);
   const rawMin = round.options.scramble?.minDrives;
   const min = Number.isInteger(rawMin) && (rawMin as number) > 0 ? (rawMin as number) : 0;
   const { open } = stats;
-  if (!min) return { state: 'none', min: 0, owed: [], owedTotal: 0, open, note: '' };
+  const uncredited = uncreditedDrives(round, teamId).length;
+  if (!min) return { state: 'none', min: 0, owed: [], owedTotal: 0, open, uncredited, note: '' };
+  const room = open + uncredited;
 
   const owed = stats.members
     .map((m, member) => ({ member, name: m.name, count: Math.max(0, min - m.drives) }))
@@ -232,25 +249,31 @@ export function driveStatus(round: Round, teamId: string): DriveStatus {
   const owedTotal = owed.reduce((n, o) => n + o.count, 0);
   const list = owed.map((o) => `${o.name} ${o.count}`).join(', ');
 
+  // Named whenever there are any, because "7 holes left" alone would not
+  // add up to the state when two more drives are waiting on scored holes.
+  const unpicked = uncredited
+    ? ` ${plural(uncredited, 'scored hole has', 'scored holes have')} no tee shot picked yet.`
+    : '';
+
   let state: DriveState;
   let note: string;
   if (owedTotal === 0) {
     state = 'met';
     note = `Everyone has their ${min}.`;
-  } else if (owedTotal < open) {
+  } else if (owedTotal < room) {
     state = 'owed';
-    note = `Still owed: ${list}. ${plural(open, 'hole', 'holes')} left.`;
-  } else if (owedTotal === open) {
+    note = `Still owed: ${list}. ${plural(open, 'hole', 'holes')} left.${unpicked}`;
+  } else if (owedTotal === room) {
     state = 'tight';
-    note = `Every tee shot left is spoken for: ${list}.`;
+    note = `Every tee shot left is spoken for: ${list}.${unpicked}`;
   } else {
     state = 'short';
     const left = open === 0 ? 'no holes' : plural(open, 'hole', 'holes');
     note =
-      `${plural(owedTotal, 'tee shot', 'tee shots')} still owed (${list}) with ${left} left. ` +
+      `${plural(owedTotal, 'tee shot', 'tee shots')} still owed (${list}) with ${left} left.${unpicked} ` +
       'The minimum can’t be met.';
   }
-  return { state, min, owed, owedTotal, open, note };
+  return { state, min, owed, owedTotal, open, uncredited, note };
 }
 
 /**

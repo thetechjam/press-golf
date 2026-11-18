@@ -93,7 +93,13 @@ export type CourseAction =
   | { type: 'slope'; value: number | undefined }
   | { type: 'rating'; value: number | undefined }
   /** The course on screen was just saved as a favourite, from one of two buttons. */
-  | { type: 'saved'; name: string; from: 'check' | 'foot' }
+  | {
+      type: 'saved';
+      name: string;
+      from: 'check' | 'foot';
+      /** Set when the whole card behind a nine was saved, its hole count. */
+      wholeCard?: number;
+    }
   | { type: 'clearNote' };
 
 export function makeHoles(count: number): Hole[] {
@@ -271,7 +277,14 @@ export function courseReducer(state: CourseState, action: CourseAction): CourseS
     case 'saved':
       return {
         ...state,
-        savedNote: { text: `Saved "${action.name}"`, row: action.from === 'check' ? 'check' : 'holes' },
+        savedNote: {
+          // Said, because the press was made looking at nine holes: without
+          // it, finding eighteen on the next load reads as the save gone wrong.
+          text: action.wholeCard
+            ? `Saved "${action.name}" — all ${action.wholeCard} holes`
+            : `Saved "${action.name}"`,
+          row: action.from === 'check' ? 'check' : 'holes',
+        },
         // Keeping a course is the user vouching for it, so the "check this against
         // the card" caveat has served its purpose and goes. From here their copy
         // is the one that loads, and search is only ever saving them the typing.
@@ -282,6 +295,92 @@ export function courseReducer(state: CourseState, action: CourseAction): CourseS
     case 'clearNote':
       return { ...state, savedNote: null };
   }
+}
+
+/**
+ * A nine played off a longer card, written back into that card.
+ *
+ * Pars go across as they are. Stroke indexes do not: on the nine they are
+ * re-ranked 1–9 (see `sliceCourseHoles`), so copying them would put a second
+ * set of 1–9 into an eighteen's 1–18. What is carried is their order — the
+ * nine's own card indexes are handed back out in the order the nine now ranks
+ * them, which is the card unchanged when nothing was re-ranked. When either
+ * side has no full ranking to work from, the card keeps its own.
+ *
+ * Matched by position, not hole number: a back nine is the card's last nine,
+ * which on a 27-hole card is not holes 10–18.
+ */
+export function mergeNineIntoCard(card: Hole[], nineHoles: Hole[], nine: Nine): Hole[] {
+  const offset = nine === 'back' ? card.length - nineHoles.length : 0;
+  const out = card.map((h) => ({ ...h }));
+  nineHoles.forEach((h, i) => {
+    if (out[offset + i]) out[offset + i].par = h.par;
+  });
+  const cardSIs = nineHoles.map((_, i) => out[offset + i]?.strokeIndex);
+  const ranks = nineHoles.map((h) => h.strokeIndex);
+  const isRanking = [...ranks].sort((a, b) => (a ?? 0) - (b ?? 0)).every((r, i) => r === i + 1);
+  if (isRanking && cardSIs.every((si): si is number => typeof si === 'number')) {
+    const sorted = [...cardSIs].sort((a, b) => a - b);
+    nineHoles.forEach((_, i) => {
+      out[offset + i].strokeIndex = sorted[(ranks[i] as number) - 1];
+    });
+  }
+  return out;
+}
+
+export interface CourseToSave {
+  holes: Hole[];
+  slope: number | undefined;
+  rating: number | undefined;
+}
+
+/**
+ * What "Save this course" writes, or why it will not.
+ *
+ * Saving used to write the holes on screen under the course's name, so
+ * playing nine off a saved eighteen and saving replaced the eighteen with
+ * that nine — renumbered, re-ranked, and still carrying the eighteen's
+ * rating. The course is the card; a nine is only a way of playing it, and
+ * loading the card offers either nine again. So when the holes on screen are
+ * cut from a loaded card, it is the card that is saved, with what was edited
+ * on screen written into it.
+ *
+ * A shorter card is never written over a longer one of the same name: that
+ * is a different course typed under a name already taken (or a 27-hole card
+ * loaded as its first eighteen), and replacing it would lose holes nobody
+ * can see from here. The user is asked to name it apart instead — saving it
+ * alongside would leave two courses the list cannot tell apart.
+ */
+export function courseToSave(s: {
+  name: string;
+  holes: Hole[];
+  source: Hole[] | null;
+  nine: Nine;
+  slope: number | undefined;
+  rating: number | undefined;
+  ratingHoles: number | undefined;
+  existing: SavedCourse | undefined;
+}): CourseToSave | { refused: string } {
+  const holes =
+    s.source && s.source.length > s.holes.length
+      ? mergeNineIntoCard(s.source, s.holes, s.nine)
+      : s.holes.map((h) => ({ number: h.number, par: h.par, strokeIndex: h.strokeIndex }));
+  const kept = s.existing?.holes.length ?? 0;
+  if (kept > holes.length) {
+    return {
+      refused: `“${s.existing!.name}” is already saved with ${kept} holes, and saving these ${holes.length} would replace it. Give this course a different name to keep both.`,
+    };
+  }
+  // A rating is only true of the holes it was taken for. One on screen for a
+  // different count (typed while playing the nine) is not saved onto the
+  // card; the card's own, when it has one, stays.
+  const rating =
+    (s.ratingHoles ?? s.holes.length) === holes.length
+      ? s.rating
+      : kept === holes.length
+        ? s.existing?.rating
+        : undefined;
+  return { holes, slope: s.slope, rating };
 }
 
 /** What the screen reads off the state, recomputed every render. */

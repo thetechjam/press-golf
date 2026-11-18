@@ -159,6 +159,44 @@ export default function App() {
   }, [nav]);
 
   /**
+   * A screen whose round or trip is not in memory goes Home.
+   *
+   * History entries outlive the page. After a reload — "Reload Press" from
+   * the error screen, or the phone discarding the tab — start() reseeds only
+   * the current entry, and the ones beneath it still say Results, Play or
+   * Trip while the round and trip they showed are gone. Back then landed on
+   * an empty app with nothing to press. Replacing with Home collapses the
+   * stale entry rather than stacking over it, so the next Back goes on down
+   * instead of returning to the blank. Every in-app route sets the round or
+   * trip in the same batch as the view, so this only ever meets a stale one.
+   */
+  const missing =
+    (view === 'trip' && !tripId) || ((view === 'play' || view === 'results') && !round);
+  useEffect(() => {
+    if (missing) nav.replace('home');
+  }, [missing, nav]);
+
+  /**
+   * The round on screen, read again from storage on leaving the Trip screen.
+   *
+   * The Trip screen writes rounds directly — a rename reaches every round on
+   * the trip, and taking one off clears its `trip` — while App still holds
+   * the round as it was when Results opened the trip. Back, by gesture or
+   * button, returned to that stale copy, and the next edit of anything saved
+   * it whole: the old trip name, or the trip it had just been taken off,
+   * written back over the change. Reading it again here is cheaper than
+   * routing every Trip write through App. A round storage no longer has is
+   * left as it is rather than dropped from under the user.
+   */
+  const shownView = useRef(view);
+  useEffect(() => {
+    const from = shownView.current;
+    shownView.current = view;
+    if (from !== 'trip' || view === 'trip') return;
+    setRound((r) => (r ? (getRound(r.id) ?? r) : r));
+  }, [view]);
+
+  /**
    * A round arriving in the address bar.
    *
    * Handled on mount and again on `hashchange`, because those are two
@@ -251,9 +289,10 @@ export default function App() {
 
   const update = (next: Round) => {
     setRound(next);
-    // An unkept round is edited on screen but not written down — correcting a
+    // An unkept round is edited on Results but not written down — correcting a
     // score before deciding whether to keep it is reasonable; being given a
-    // round in the history because you fixed somebody's typo is not.
+    // round in the history because you fixed somebody's typo is not. The card
+    // is different; see updateFromCard.
     if (!unkept) setUnsaved(!saveRound(next));
   };
 
@@ -283,7 +322,30 @@ export default function App() {
     if (!round) return;
     if (!persistRound(round)) return;
     setUnkept(false);
-    if (round.status !== 'finished') goTo('play');
+    // In place of Results, as "Back to the scorecard" and Finish both are.
+    // Pushed on top, Finish then replaced the card with a second Results and
+    // one Back press went from Results to the same Results.
+    if (round.status !== 'finished') nav.replace('play');
+  };
+
+  /**
+   * A change made on the card, where entering a score is keeping score.
+   *
+   * Results can hold a sent round back unsaved because Results says so: the
+   * "Sent to you" banner is on screen beside every correction. The card has
+   * no such banner, and "‹ Back to the scorecard" reaches it with the link
+   * already gone from the address bar, so a hole scored there on an unkept
+   * round was lost without a word. The first change on the card therefore
+   * takes the round on exactly as "Take it on" does — keep()'s own reasoning,
+   * that taking a round on is agreeing to keep score. Merely opening the card
+   * writes nothing: looking at it is not scoring it, and it is a change made
+   * there that would otherwise be lost. A refused write leaves the round
+   * unkept, with the banner up, and the next change tries again.
+   */
+  const updateFromCard = (next: Round) => {
+    if (!unkept) return update(next);
+    setRound(next);
+    if (persistRound(next)) setUnkept(false);
   };
 
   // Results stands in for the round that just finished rather than stacking
@@ -292,7 +354,8 @@ export default function App() {
   // then had to walk through to reach Home.
   const finish = () => {
     if (!round) return;
-    update({ ...round, status: 'finished' });
+    // Finish is only offered on the card, so it keeps a sent round too.
+    updateFromCard({ ...round, status: 'finished' });
     nav.replace('results');
   };
 
@@ -515,7 +578,7 @@ export default function App() {
       )}
 
       {view === 'play' && round && (
-        <Play round={round} onChange={update} onFinish={finish} onExit={() => goTo('home')} />
+        <Play round={round} onChange={updateFromCard} onFinish={finish} onExit={() => goTo('home')} />
       )}
 
       {view === 'results' && round && (

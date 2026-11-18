@@ -129,6 +129,12 @@
 .results > *:nth-child(5) {
   animation-delay: 0.16s;
 }
+/* Everything after the fifth holds the last step. Without this the sixth
+   child onward has no delay at all and lands before the cards above it, so
+   the awards rose ahead of the settle-up they now sit under. */
+.results > *:nth-child(n + 6) {
+  animation-delay: 0.2s;
+}
 @media (prefers-reduced-motion: reduce) {
   .results > * {
     animation: none;
@@ -212,7 +218,9 @@
 .score-num.flap {
   animation: flap 0.26s cubic-bezier(0.3, 0.9, 0.4, 1);
 }
-/* The Hole tab's money line flips a figure the same way when it moves. */
+/* The Hole tab's money line flips a figure the same way — when a hole is
+   finished or the user moves to a hole where it reads differently, not on
+   every point scored. MoneyTicker decides which; this only draws it. */
 .tick {
   perspective: 200px;
 }

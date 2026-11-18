@@ -73,7 +73,11 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  /* vh is the viewport with mobile Safari's toolbar hidden, so a sheet
+     sized by it could put its last row under the toolbar; dvh tracks the
+     toolbar. vh stays first as the fallback for browsers without dvh. */
   max-height: 85vh;
+  max-height: 85dvh;
   overflow-y: auto;
   /* translateY(100%) rather than a pixel offset: it is height-agnostic, so the
      tall Settings sheet and the short Help sheet both travel exactly their own
@@ -576,11 +580,25 @@
   font-size: var(--fs-xl);
   margin: 0;
 }
+/* Body text in ink. Whole paragraphs in green read as link text, and a
+   reader skims them for something to tap; green is kept for the terms a
+   paragraph is about, so they still stand out of it. */
 .help-section p {
   margin: 0;
-  color: var(--under-ink);
+  color: var(--ink);
   font-size: var(--fs-md);
   line-height: 1.45;
+}
+.help-section p strong {
+  color: var(--under-ink);
+}
+/* The OpenStreetMap credit, the one link in the prose: 17px tall as plain
+   text. Padded to a full tap target and the padding handed back in margin,
+   so the paragraph's lines keep their spacing (see .cs-attribution a). */
+.help-section p a {
+  display: inline-block;
+  padding-block: 5px;
+  margin-block: -5px;
 }
 .help-game {
   border-top: 1px solid var(--line);

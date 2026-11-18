@@ -5,6 +5,7 @@ import {
   matchSegmentSides,
   resolveSides,
   computeMatchPlay,
+  matchPlayMoney,
 } from './matchPlay';
 import { makeRound, player, holes, scoresFrom } from './testFixtures';
 import type { Hole } from '../types';
@@ -158,5 +159,113 @@ describe('computeMatchPlay', () => {
       })
     );
     expect(r.title).toBe('Match Play (2v2)');
+  });
+});
+
+describe('a blank hole on a finished round', () => {
+  // The owner's rule: once the round is finished, a hole somebody left blank
+  // ("Finish anyway") is halved. It used to stay "to play", so the match read
+  // "Al 1 UP · 1 to play" for good and paid nobody.
+  const hs = holes(9);
+  const twoBall = (status: 'in_progress' | 'finished') =>
+    makeRound({
+      holes: hs,
+      games: ['matchPlay'],
+      options: { stakes: { matchPlay: 10 } },
+      scores: scoresFrom(hs, {
+        p1: [3, 4, 4, 4, 4, 4, 4, 4, undefined],
+        p2: [4, 4, 4, 4, 4, 4, 4, 4, undefined],
+      }),
+      status,
+    });
+
+  it('reads as still to play while the round is in progress', () => {
+    expect(computeMatchPlay(twoBall('in_progress')).status).toBe('Al 1 UP · 1 to play');
+    expect(matchPlayMoney(twoBall('in_progress'), 10)).toEqual({ p1: 0, p2: 0 });
+  });
+
+  it('is halved once the round is finished, and the match pays its winner', () => {
+    const round = twoBall('finished');
+    const seg = matchSegment(round, hs, round.players[0], round.players[1]);
+    expect(seg.status).toBe('Al won 1 UP');
+    expect(seg.winner).toBe('A');
+    expect(seg.holesPlayed).toBe(9);
+    expect(computeMatchPlay(round).status).toBe('Al won 1 UP');
+    expect(matchPlayMoney(round, 10)).toEqual({ p1: 10, p2: -10 });
+  });
+
+  it('halves a blank in the middle of the card, not only at the end', () => {
+    // Bo blank on the 5th only; Al wins the 1st and the 9th. Counted as still
+    // to play, the 5th made that "won 2&1" with every hole done.
+    const round = makeRound({
+      holes: hs,
+      scores: scoresFrom(hs, {
+        p1: [3, 4, 4, 4, 4, 4, 4, 4, 3],
+        p2: [4, 4, 4, 4, undefined, 4, 4, 4, 4],
+      }),
+      status: 'finished',
+    });
+    expect(computeMatchPlay(round).status).toBe('Al won 2 UP');
+  });
+
+  it('halves an all-square match with a blank rather than leaving it open', () => {
+    const round = makeRound({
+      holes: hs,
+      scores: scoresFrom(hs, { p1: Array(8).fill(4), p2: Array(8).fill(4) }),
+      status: 'finished',
+    });
+    expect(computeMatchPlay(round).status).toBe('Halved');
+    expect(matchPlayMoney(round, 10)).toEqual({ p1: 0, p2: 0 });
+  });
+
+  it('still reads "Not started" when nobody scored a hole', () => {
+    const round = makeRound({ holes: hs, status: 'finished' });
+    const seg = matchSegment(round, hs, round.players[0], round.players[1]);
+    expect(seg.status).toBe('Not started');
+    expect(seg.holesPlayed).toBe(0);
+    expect(seg.winner).toBeNull();
+  });
+
+  it('halves a hole neither partner of a 2v2 side scored, and pays the team', () => {
+    const four = [player('p1', 'Al'), player('p2', 'Bo'), player('p3', 'Cy'), player('p4', 'Di')];
+    const round = makeRound({
+      players: four,
+      holes: hs,
+      games: ['matchPlay'],
+      options: {
+        matchPlay: { mode: '2v2', teamA: ['p1', 'p2'], teamB: ['p3', 'p4'] },
+        stakes: { matchPlay: 5 },
+      },
+      scores: scoresFrom(hs, {
+        // Team A wins the 1st; the 9th is blank for both of team B.
+        p1: [3, 4, 4, 4, 4, 4, 4, 4, 4],
+        p2: [5, 5, 5, 5, 5, 5, 5, 5, 5],
+        p3: [4, 4, 4, 4, 4, 4, 4, 4, undefined],
+        p4: [4, 4, 4, 4, 4, 4, 4, 4, undefined],
+      }),
+      status: 'in_progress',
+    });
+    expect(computeMatchPlay(round).status).toBe('Al & Bo 1 UP · 1 to play');
+    expect(matchPlayMoney(round, 5)).toEqual({ p1: 0, p2: 0, p3: 0, p4: 0 });
+
+    const done = { ...round, status: 'finished' as const };
+    expect(computeMatchPlay(done).status).toBe('Al & Bo won 1 UP');
+    const money = matchPlayMoney(done, 5);
+    expect(money).toEqual({ p1: 5, p2: 5, p3: -5, p4: -5 });
+    expect(Object.values(money).reduce((x, y) => x + y, 0)).toBe(0);
+  });
+});
+
+describe('runMatch — finished flag', () => {
+  it('leaves an in-progress blank behind later holes still to play', () => {
+    // The 2nd skipped, the 1st and 3rd played: the 2nd is the one left.
+    const hs = [H(1), H(2), H(3)];
+    const a = [3, null, 4];
+    const b = [4, null, 4];
+    const live = runMatch(hs, (h) => a[h.number - 1], (h) => b[h.number - 1], 'A', 'B');
+    expect(live.status).toBe('A 1 UP · 1 to play');
+    const done = runMatch(hs, (h) => a[h.number - 1], (h) => b[h.number - 1], 'A', 'B', true);
+    expect(done.status).toBe('A won 1 UP');
+    expect(done.winner).toBe('A');
   });
 });

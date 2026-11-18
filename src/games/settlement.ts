@@ -65,6 +65,15 @@ export function formatMoney(n: number): string {
 }
 
 /**
+ * `+$18`, `−$9`, `$0`: a running net, where winnings beside a `−$59` must not
+ * be told apart by colour alone. Only for figures that are a balance — a
+ * stake, or "Al pays Bo $10", is an amount and stays unsigned.
+ */
+export function formatSignedMoney(n: number): string {
+  return n > 0 ? `+${formatMoney(n)}` : formatMoney(n);
+}
+
+/**
  * One game's net in dollars, every player present, zero when nothing is at
  * stake. The rule itself is the game's own (`GameMeta.money`): this used to
  * be a table of which games settle on a count, a second list of which of

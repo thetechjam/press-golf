@@ -70,6 +70,14 @@
   color: var(--muted);
   margin: 2px 0 0;
 }
+/* The link at this size is 82x14, under the 24px tap target WCAG 2.5.8 asks
+   for. Padding takes the box to 24 tall and the same negative margin hands
+   the space back, so the text and the line it sits on do not move. */
+.cs-attribution a {
+  display: inline-block;
+  padding-block: 5px;
+  margin-block: -5px;
+}
 
 /* Inside League's course card the saved courses sit unframed, as they do
    inside New Round's Course row, rather than as a card within a card. */

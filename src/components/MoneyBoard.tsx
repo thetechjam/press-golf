@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Round } from '../types';
-import { computeSettlement, formatMoney } from '../games/settlement';
+import { computeSettlement, formatMoney, formatSignedMoney } from '../games/settlement';
 import { colorMap } from '../player';
 import { PlayerAvatar } from './PlayerAvatar';
 import { StakesEditor } from './StakesEditor';
@@ -53,7 +53,7 @@ export function MoneyBoard({ round, onChange }: Props) {
                 <PlayerAvatar name={p.name} color={colors[p.id]} size={22} />
                 <span className="net-name">{p.name}</span>
                 <span className={`net-amount${tone(p.net)}`}>
-                  {p.net === 0 ? '—' : formatMoney(p.net)}
+                  {p.net === 0 ? '—' : formatSignedMoney(p.net)}
                 </span>
               </li>
             ))}
@@ -74,7 +74,7 @@ export function MoneyBoard({ round, onChange }: Props) {
                     return (
                       <span key={p.id} className={`pg-net${tone(n)}`}>
                         <span className="pg-name">{p.name}</span>
-                        {n === 0 ? '—' : formatMoney(n)}
+                        {n === 0 ? '—' : formatSignedMoney(n)}
                       </span>
                     );
                   })}

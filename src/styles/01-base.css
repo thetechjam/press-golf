@@ -191,7 +191,11 @@
   --ink: #04110b;
   --muted: #3d4d45;
   --card: #ffffff;
-  --line: #b9c8bd;
+  /* 3.40:1 on white (WCAG 1.4.11's 3:1 for a control's boundary). In glare
+     the score chip's face is white on a white card, so this border is the
+     only thing drawing the chip at all — #b9c8bd measured 1.74:1 and the
+     row read as loose numerals in direct sun. */
+  --line: #7f8f86;
   --bg: #ffffff;
 }
 

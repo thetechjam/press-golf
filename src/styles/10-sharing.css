@@ -156,7 +156,10 @@
   align-items: center;
   justify-content: center;
   gap: 14px;
+  /* dvh after the vh fallback, so the centring follows mobile Safari's
+     toolbar instead of the taller toolbar-hidden viewport. */
   min-height: 70vh;
+  min-height: 70dvh;
   text-align: center;
 }
 .arriving-note {

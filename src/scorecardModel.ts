@@ -205,9 +205,10 @@ export function buildScorecard(round: Round): ScorecardModel {
 
   const rows: ScorecardRow[] = round.players.map((p) => {
     // The course handicap for the HCP badge, so an Index-only player's reads
-    // what the engines derive. The dots come from `dotHandicapFor`: the same
-    // number in a card game, the match's relative strokes when a match is all
-    // the round scores net.
+    // what the engines derive. The dots come from `dotHandicapFor`: the strokes
+    // the card game is scored off (the same number unless the game plays on an
+    // allowance), or the match's relative strokes when a match is all the
+    // round scores net.
     const handicap = courseHandicapFor(round, p);
     const dotHandicap = isLeague ? 0 : dotHandicapFor(round, p.id);
     let gross = 0;

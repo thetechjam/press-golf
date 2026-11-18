@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { todayIso } from '../roundDate';
 import type { Round, Player, Hole, SavedCourse, LeagueTeam } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
-import { uid, listCourses, saveCourse, deleteCourse, listRounds, COURSES_KEY } from '../storage';
+import { uid, listCourses, saveCourse, deleteCourse, listRounds, getAliases, COURSES_KEY } from '../storage';
+import { nameKey, resolveName } from '../people';
 import { notSavedReason } from '../notSaved';
 import { CourseSearch } from '../components/CourseSearch';
 import { SavedCourseList } from '../components/SavedCourseList';
@@ -10,6 +11,7 @@ import { ParGrid } from '../components/ParGrid';
 import { StrokeIndexNote } from '../components/StrokeIndexNote';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 import { strokeIndexProblem } from '../games/strokeIndex';
+import { courseToSave } from './setup/courseState';
 import { StarIcon, GearIcon, TrophyIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { SetupRow } from '../components/SetupRow';
@@ -131,14 +133,16 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     const name = course.trim();
     if (!name) return setError('Add a course name before saving.');
     const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
-    const saved = saveCourse({
-      id: existing?.id ?? uid(),
-      name,
-      holes: holes.map((h) => ({ ...h })),
-      // The nine on screen is what is being saved, so its rating covers nine.
-      slope,
-      rating: ratingHoles === holes.length ? rating : undefined,
-    });
+    // The nine on screen is how tonight is played, not the course: one cut
+    // from a loaded card saves as that card, so the back nine next week is
+    // still there to pick. See courseToSave.
+    const out = courseToSave({ name, holes, source, nine, slope, rating, ratingHoles, existing });
+    if ('refused' in out) {
+      setSavedNote('');
+      setError(out.refused);
+      return;
+    }
+    const saved = saveCourse({ id: existing?.id ?? uid(), name, ...out });
     if (!saved) {
       setSavedNote('');
       setError(`Not saved. This course wasn’t kept. ${notSavedReason(COURSES_KEY)}`);
@@ -146,7 +150,9 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     }
     setCourses(listCourses());
     setError('');
-    setSavedNote(`Saved "${name}"`);
+    setSavedNote(
+      out.holes.length > holes.length ? `Saved "${name}" — all ${out.holes.length} holes` : `Saved "${name}"`
+    );
   };
   const removeCourse = (id: string) => {
     if (!deleteCourse(id)) {
@@ -166,6 +172,11 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     }
     setCourse(c.name);
     setSource(c.holes);
+    // Search carries no slope or rating. The last saved course's, left in
+    // place, would be saved onto this one along with its holes.
+    setSlope(undefined);
+    setRating(undefined);
+    setRatingHoles(undefined);
     const applied = sliceCourseHoles(c.holes, 9, { nine });
     setHoles(applied);
     setError('');
@@ -184,6 +195,24 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     );
     if (allPlayers.some((p) => !p.name.trim()))
       return setError('Name every player who is playing (A and B on each team).');
+
+    // Season standings find a player by name, so two players under one name
+    // are one record there: both nights' points land on a single "Mike".
+    // New Round's check, names merged before included; an absent slot that
+    // was named counts too, since its forfeit is recorded under that name.
+    const aliases = getAliases();
+    const seen = new Map<string, string>();
+    for (const t of teams) {
+      for (const r of ['a', 'b'] as const) {
+        const typed = resolveName(t[r].name, aliases).trim();
+        const k = nameKey(typed);
+        if (!k) continue;
+        const other = seen.get(k);
+        if (other !== undefined)
+          return setError(`Two players are called ${other} — add an initial to one of them.`);
+        seen.set(k, typed);
+      }
+    }
     // A number to score off is mandatory for a league: every match (A, B,
     // Team) is net, so a blank must not silently become scratch.
     const needsNumber = (p: Player) => !firstNight.includes(p.id);

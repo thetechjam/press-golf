@@ -6,6 +6,7 @@ import { CrewChip, RecentChips } from '../../components/RosterChips';
 import { PlayerAvatar } from '../../components/PlayerAvatar';
 import { playerColor } from '../../player';
 import { XIcon } from '../../icons';
+import { wholeStrokes } from '../../numberInput';
 
 interface Props {
   players: Player[];
@@ -126,12 +127,20 @@ export function PlayersSection({
               <input
                 className="player-hcp"
                 type="number"
+                step={1}
                 value={p.handicap ?? ''}
                 onChange={(e) =>
                   onUpdate(p.id, {
                     handicap: e.target.value === '' ? undefined : Number(e.target.value),
                   })
                 }
+                // Strokes are whole. Rounded on leaving the field rather than
+                // per keystroke, which would turn "12." into 12 before the 7
+                // arrived; Start rounds again for a field never left.
+                onBlur={() => {
+                  const whole = wholeStrokes(p.handicap);
+                  if (whole !== p.handicap) onUpdate(p.id, { handicap: whole });
+                }}
                 placeholder="HCP"
                 aria-label={`Handicap for ${p.name || `player ${i + 1}`}`}
               />

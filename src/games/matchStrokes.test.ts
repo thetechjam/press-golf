@@ -17,8 +17,10 @@ import type { GameOptions, Round } from '../types';
  * Rules of Handicapping, Appendix C: in match play "the player with the lowest
  * Playing Handicap plays off zero strokes relative to the other player(s). The
  * other player(s) receive(s) the difference" — Individual 100%, Four-Ball 90%,
- * the four-ball's 90% applied to the difference in Course Handicap from the
- * low player. The worked examples below are the Appendix's own.
+ * the allowance applied to each player's Course Handicap first, rounded, and
+ * the difference taken from those Playing Handicaps. The worked examples below
+ * are the Appendix's own; the cases after them are the ones where cutting the
+ * difference instead would give a different number.
  */
 
 const pars = (n: number) => Array.from({ length: n }, () => 4);
@@ -192,14 +194,14 @@ describe('four-ball', () => {
     expect(isFourBall({ ids: ['a', 'b'], label: '' }, { ids: ['c', 'd'], label: '' })).toBe(true);
   });
 
-  it('applies 90% to the difference from the low player — Appendix C, example 3', () => {
-    // 10, 18, 27 and 39: A plays off zero, B gets 7 (90% of 8), C 15 (90% of
-    // 17), D 26 (90% of 29).
+  it('applies 90% to each player, then takes the difference — Appendix C, example 3', () => {
+    // 10, 18, 27 and 39 play off 9, 16, 24 and 35 (90%, rounded): A plays
+    // off zero, B gets 7, C 15, D 26.
     expect(strokesOf(fourBall([10, 18, 27, 39]))).toEqual({ p1: 0, p2: 7, p3: 15, p4: 26 });
   });
 
   it('measures from a plus-handicap low man — Appendix C/3', () => {
-    // +4, 16, 7 and 26: B gets 18 (90% of 20), C 10 (90% of 11), D 27 (90% of 30).
+    // +4, 16, 7 and 26 play off +4, 14, 6 and 23: B gets 18, C 10, D 27.
     expect(strokesOf(fourBall([-4, 16, 7, 26]))).toEqual({ p1: 0, p2: 18, p3: 10, p4: 27 });
   });
 
@@ -218,10 +220,55 @@ describe('four-ball', () => {
     expect(strokesOf(fourBall([10, 18, 27, 39], { allowanceByGame: { matchPlay: 100 } }))).toEqual({
       p1: 0, p2: 8, p3: 17, p4: 29,
     });
-    // And a singles match cut to 90% is 90% of its difference.
+    // And a singles match cut to 90%: 10 and 18 play off 9 and 16.
     expect(strokesOf(duel(10, 18, 18, undefined, { allowanceByGame: { matchPlay: 90 } }))).toEqual({
       p1: 0, p2: 7,
     });
+  });
+
+  it('rounds each handicap before the difference, not the difference itself', () => {
+    // 5, 10, 12 and 20 play off 5 (4.5 rounds up), 9, 11 and 18: 0, 4, 6, 13.
+    // Cutting the difference gave 0, 5 (90% of 5 = 4.5), 6 and 14 (90% of 15
+    // = 13.5) — a stroke too many for B and for D.
+    expect(strokesOf(fourBall([5, 10, 12, 20]))).toEqual({ p1: 0, p2: 4, p3: 6, p4: 13 });
+  });
+
+  it('rounds a plus handicap\'s half toward +∞, as WHS does', () => {
+    // +5 is 90% → +4.5, which rounds to +4; scratch, 10 and 20 play off 0, 9
+    // and 18. So B gets 4, C 13, D 22 — the difference-first route gave 5,
+    // 14 and 23.
+    expect(strokesOf(fourBall([-5, 0, 10, 20]))).toEqual({ p1: 0, p2: 4, p3: 13, p4: 22 });
+  });
+
+  it('works the same past a full lap of a nine', () => {
+    // Nine holes: 6, 25, 33 and 40 play off 5, 23 (22.5 rounds up), 30 and
+    // 36 — 0, 18, 25 and 31, where the difference route gave 0, 17, 24, 31.
+    const r = makeRound({
+      holes: holes(9),
+      players: [
+        player('p1', 'A', 6),
+        player('p2', 'B', 25),
+        player('p3', 'C', 33),
+        player('p4', 'D', 40),
+      ],
+      games: ['matchPlay'],
+      options: {
+        useNet: true,
+        matchPlay: { mode: '2v2', teamA: ['p1', 'p4'], teamB: ['p2', 'p3'] },
+      },
+    });
+    expect(strokesOf(r)).toEqual({ p1: 0, p2: 18, p3: 25, p4: 31 });
+    // 18 on nine holes is exactly two a hole; 25 is two and a third on 1–7.
+    expect(shotsByHole(r, 'p2')).toEqual(Array(9).fill(2));
+    expect(shotsByHole(r, 'p3')).toEqual([3, 3, 3, 3, 3, 3, 3, 2, 2]);
+  });
+
+  it('leaves singles at the full difference, however the handicaps round', () => {
+    // 5 against 10 at the singles default of 100%: 5 shots, where a four-ball
+    // would give 4.
+    expect(strokesOf(duel(5, 10))).toEqual({ p1: 0, p2: 5 });
+    expect(strokesOf(duel(-5, 0))).toEqual({ p1: 0, p2: 5 });
+    expect(matchHandicaps(duel(5, 10), ['p1', 'p2'], 'matchPlay', true)).toEqual({ p1: 0, p2: 4 });
   });
 
   it('decides a best-ball hole on those strokes', () => {

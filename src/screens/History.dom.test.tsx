@@ -122,11 +122,11 @@ describe('clearing rounds out', () => {
     await user.click(screen.getAllByRole('button', { name: /Muirfield/ })[0]);
 
     // First tap arms, and names what is about to go.
-    await user.click(screen.getByRole('button', { name: 'Delete 2' }));
+    await user.click(screen.getByRole('button', { name: 'Delete 2 rounds' }));
     expect(stored()).toHaveLength(3);
-    expect(screen.getByRole('button', { name: 'Delete 2 for good' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete 2 rounds for good' })).toBeTruthy();
 
-    await user.click(screen.getByRole('button', { name: 'Delete 2 for good' }));
+    await user.click(screen.getByRole('button', { name: 'Delete 2 rounds for good' }));
     await waitFor(() => expect(stored()).toHaveLength(1));
     expect(stored()[0].id).toBe('b');
   });
@@ -136,11 +136,11 @@ describe('clearing rounds out', () => {
     show();
     await user.click(screen.getByRole('button', { name: 'Select' }));
     await user.click(screen.getAllByRole('button', { name: /Pebble Beach/ })[0]);
-    await user.click(screen.getByRole('button', { name: 'Delete 1' }));
+    await user.click(screen.getByRole('button', { name: 'Delete 1 round' }));
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(stored()).toHaveLength(3);
-    expect(screen.getByRole('button', { name: 'Delete 1' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete 1 round' })).toBeTruthy();
   });
 
   it('will not delete nothing', async () => {
@@ -158,7 +158,45 @@ describe('clearing rounds out', () => {
     await user.type(screen.getByLabelText('Search rounds'), 'torrey');
     await user.click(screen.getByRole('button', { name: 'Select' }));
     await user.click(screen.getByRole('button', { name: 'Select all' }));
-    expect(screen.getByRole('button', { name: 'Delete 1' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Delete 1 round' })).toBeTruthy();
+  });
+
+  it('lets go of ticks a search hides, so Delete takes only what is shown', async () => {
+    // Ticked three, searched down to one: the other two must not go with it.
+    const user = userEvent.setup();
+    show();
+    await user.click(screen.getByRole('button', { name: 'Select' }));
+    await user.click(screen.getByRole('button', { name: 'Select all' }));
+    expect(screen.getByRole('button', { name: 'Delete 3 rounds' })).toBeTruthy();
+
+    await user.type(screen.getByLabelText('Search rounds'), 'muirfield');
+    expect(screen.getByRole('button', { name: 'Delete 1 round' })).toBeTruthy();
+    // And clearing the search does not bring the hidden ones back armed.
+    await user.click(screen.getByLabelText('Clear search'));
+    expect(screen.getByRole('button', { name: 'Delete 1 round' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Delete 1 round' }));
+    await user.click(screen.getByRole('button', { name: 'Delete 1 round for good' }));
+    await waitFor(() => expect(stored()).toHaveLength(2));
+    expect(stored().map((r) => r.id)).toEqual(['a', 'b']);
+  });
+
+  it('lets go of ticks a filter hides, and asks again if it was armed', async () => {
+    const user = userEvent.setup();
+    show();
+    await user.click(screen.getByRole('button', { name: 'Select' }));
+    await user.click(screen.getByRole('button', { name: 'Select all' }));
+    await user.click(screen.getByRole('button', { name: 'Delete 3 rounds' }));
+    expect(screen.getByRole('button', { name: 'Delete 3 rounds for good' })).toBeTruthy();
+
+    await user.click(screen.getByRole('button', { name: 'Finished' }));
+    // The number read on the second tap changed, so the second tap is gone.
+    expect(screen.queryByRole('button', { name: /for good/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Delete 2 rounds' })).toBeTruthy();
+    await user.click(screen.getByRole('button', { name: 'Delete 2 rounds' }));
+    await user.click(screen.getByRole('button', { name: 'Delete 2 rounds for good' }));
+    await waitFor(() => expect(stored()).toHaveLength(1));
+    expect(stored()[0].id).toBe('b');
   });
 
   it('stands the per-card delete down while selecting', async () => {
@@ -280,8 +318,8 @@ describe('a delete the phone refuses', () => {
       await user.click(screen.getByRole('button', { name: 'Select' }));
       await user.click(screen.getAllByRole('button', { name: /Torrey Pines South/ })[0]);
       await user.click(screen.getAllByRole('button', { name: /Muirfield/ })[0]);
-      await user.click(screen.getByRole('button', { name: 'Delete 2' }));
-      await user.click(screen.getByRole('button', { name: 'Delete 2 for good' }));
+      await user.click(screen.getByRole('button', { name: 'Delete 2 rounds' }));
+      await user.click(screen.getByRole('button', { name: 'Delete 2 rounds for good' }));
       expect(screen.getByRole('alert').textContent).toMatch(/Not saved.*Those rounds were not deleted/);
     } finally {
       restore();
@@ -298,8 +336,8 @@ describe('a delete the phone refuses', () => {
     try {
       await user.click(screen.getByRole('button', { name: 'Select' }));
       await user.click(screen.getAllByRole('button', { name: /Muirfield/ })[0]);
-      await user.click(screen.getByRole('button', { name: 'Delete 1' }));
-      await user.click(screen.getByRole('button', { name: 'Delete 1 for good' }));
+      await user.click(screen.getByRole('button', { name: 'Delete 1 round' }));
+      await user.click(screen.getByRole('button', { name: 'Delete 1 round for good' }));
       expect(screen.getByRole('alert').textContent).toMatch(/Not saved.*That round was not deleted/);
     } finally {
       restore();

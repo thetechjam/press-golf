@@ -51,9 +51,14 @@
   color: var(--ink);
   padding: 0 14px;
 }
+/* Floors rather than fixed sizes for the same 200%-text reason as
+   .score-chip; min-width also stops a long heading squeezing the arrow under
+   a thumb's width (it reached 39px). */
 .nav-arrow {
   width: 52px;
-  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  flex-shrink: 1;
   font-size: var(--fs-4xl);
   color: var(--green-ink);
   background: var(--card);
@@ -68,9 +73,14 @@
    one line it also reads the way it is said. */
 .hole-head {
   display: flex;
+  /* When "Hole 18 · Par 4 · SI 14" is wider than the room between the
+     arrows — enlarged text, or a 320px phone — the par drops under the hole
+     number instead of running under the arrows. Where it fits (every phone
+     from 360px at normal text) this never wraps, so nothing moves. */
+  flex-wrap: wrap;
   align-items: baseline;
   justify-content: center;
-  gap: 8px;
+  column-gap: 8px;
   min-width: 0;
 }
 .hole-num {
@@ -82,10 +92,15 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
+/* No nowrap: once it has a line of its own (see .hole-head) and is still
+   wider than the room between the arrows, as at 200% text on a 320px phone,
+   it breaks rather than running under the next-hole arrow. A flex line is
+   chosen from its unbroken width, so it moves down a line before it ever
+   wraps beside the hole number. */
 .hole-par {
   font-size: var(--fs-md);
   color: var(--muted);
-  white-space: nowrap;
+  max-width: 100%;
 }
 .progress {
   text-align: center;
@@ -132,9 +147,13 @@
   border: 1.5px solid var(--line);
   transition: transform var(--press) var(--ease-out);
 }
+/* --green-ink, not --fairway: a finished hole is the strip's whole message, and
+   --fairway measured 2.10:1 on light --bg and 2.35:1 in glare, under the 3:1 a
+   graphic that carries meaning needs. --green-ink is 5.91 / 6.64 there, and is
+   --fairway again in dark mode (7.90 on --bg), where that had the headroom. */
 .hole-dot.done::before {
-  background: var(--fairway);
-  border-color: var(--fairway);
+  background: var(--green-ink);
+  border-color: var(--green-ink);
 }
 .hole-dot.current::before {
   border-color: var(--green-ink);
@@ -315,8 +334,11 @@
   /* 44px, and the floor of this screen's layout. The Hole tab is a vertical
      budget with four players in it, so the next person who needs it to fit
      will start here — and this is the one number that must not move. Take it
-     out of the spacing instead; see .stepper and .hole-view. */
-  height: 44px;
+     out of the spacing instead; see .stepper and .hole-view.
+     A floor, not a fixed height: at normal text the chip renders exactly
+     44px either way, but at 200% text (WCAG 1.4.4) a fixed 44px cut the
+     numerals in half. */
+  min-height: 44px;
   border-radius: var(--r-md);
   border: 1.5px solid var(--line);
   background: var(--bg);
@@ -451,6 +473,27 @@
 }
 :root.dark .tone-over .score-overflow .score-chip.sel {
   color: var(--bg);
+}
+
+/* The Hole tab's high-frequency targets. Two quick taps on a chip, an arrow
+   or a dot are two answers, but a browser that still honours double-tap zoom
+   (iOS Safari does on anything without this) read them as one zoom gesture.
+   `manipulation` drops only that: panning, so the hole swipe in HoleView and
+   the dot strip's scroll, and pinch-zoom of the page, are all untouched — the
+   viewport's zoom stays the user's (see the Android pinch-zoom fix). */
+.score-chip,
+.nav-arrow,
+.hole-dot,
+.hole-par-btn,
+.view-tabs .seg-btn,
+.par-pick .seg-btn,
+.wolf-chip,
+.junk-chip,
+.junk-kind,
+.junk-done,
+.press-btn,
+.press-chip button {
+  touch-action: manipulation;
 }
 
 /* ---------- Wolf ---------- */
@@ -721,6 +764,12 @@
   line-height: 1;
   cursor: pointer;
 }
+/* Glare's --line is dark enough to draw a border in sunlight, which makes it
+   too dark to sit under the × as a fill: ink on it would drop from 11:1 to
+   5.7:1. Half of it over the card keeps the old pale disc (~11.5:1). */
+:root.glare .press-chip button {
+  background: color-mix(in srgb, var(--line) 50%, var(--card));
+}
 
 @media (max-width: 359px) {
   .hole-num {
@@ -732,8 +781,8 @@
    with "Skip anyway" can be found from the strip. A hole not reached yet
    stays hollow and a finished one solid. */
 .hole-dot.partial::before {
-  background: linear-gradient(90deg, var(--fairway) 50%, var(--bg) 50%);
-  border-color: var(--fairway);
+  background: linear-gradient(90deg, var(--green-ink) 50%, var(--bg) 50%);
+  border-color: var(--green-ink);
 }
 /* The remove button is 22px drawn; its tap target is not. Reaches the 44px
    a thumb needs without changing what the chip looks like. */
@@ -754,7 +803,13 @@
 .hole-par-btn {
   background: none;
   border: none;
-  padding: 0;
+  /* Drawn 20px tall, which failed WCAG 2.5.8's 24px floor (the a11y audit's
+     one hard finding on this screen). The padding grows the button itself
+     to 32px, which is what a finger and the audit both measure, and the
+     equal negative margin hands that space straight back, so the line it
+     sits on, and the Hole tab's height, do not move by a pixel. */
+  padding: 6px 4px;
+  margin: -6px -4px;
   min-height: 0;
   font: inherit;
   color: var(--muted);

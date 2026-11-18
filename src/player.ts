@@ -27,9 +27,21 @@ export function playerColor(index: number): string {
   return PALETTE[index % PALETTE.length];
 }
 
-/** 1–2 letter monogram from a name: "Jesse" → "JE", "Jesse Morrison" → "JM". */
+/**
+ * 1–2 letter monogram from a name: "Jesse" → "JE", "Jesse Morrison" → "JM".
+ *
+ * A scramble team is a player too, named "Morgan, Sam & 2 more" (or, in rounds
+ * saved before that, "Morgan, Sam +2"). The count on the end is not a name,
+ * and taking the last word gave "MM" or "M+"; it is dropped, along with
+ * words that are only punctuation ("&"), so the team reads "MS" after its
+ * first two members, as "Jesse & Sam" reads "JS".
+ */
 export function initials(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const parts = name
+    .replace(/\s+(?:\+\d+|&\s*\d+\s+more)\s*$/i, '')
+    .trim()
+    .split(/\s+/)
+    .filter((p) => /[\p{L}\p{N}]/u.test(p));
   if (parts.length === 0) return '?';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();

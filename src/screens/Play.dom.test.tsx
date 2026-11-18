@@ -99,7 +99,7 @@ describe('the warning banner', () => {
     const user = userEvent.setup();
     const round = scrambleRound({
       teams: [
-        { name: 'Jesse, Sam +2', members: ['Jesse', 'Sam', 'Al', 'Bo'] },
+        { name: 'Jesse, Sam & 2 more', members: ['Jesse', 'Sam', 'Al', 'Bo'] },
         { name: 'Cy & Di', members: ['Cy', 'Di'] },
       ],
       holes: nine,
@@ -109,7 +109,7 @@ describe('the warning banner', () => {
     show(round);
     await user.click(screen.getByRole('button', { name: /^Hole 1\b/ }));
     await user.click(screen.getByRole('button', { name: 'Next Hole →' }));
-    expect(banner().textContent).toContain('No tee shot picked for Jesse, Sam +2 and Cy & Di.');
+    expect(banner().textContent).toContain('No tee shot picked for Jesse, Sam & 2 more and Cy & Di.');
   });
 
   it('does not ask about tee shots when there is no minimum', async () => {
@@ -161,6 +161,26 @@ describe('the warning banner', () => {
     expect(banner().textContent).toContain(
       '9 holes are missing scores. Hackers: tee-shot minimum not met (Jesse 1, Sam 1). Finish the round anyway?'
     );
+  });
+});
+
+describe('the view tabs and the hole strip, to a screen reader', () => {
+  it('says which of Hole, Board and Card is open', async () => {
+    const user = userEvent.setup();
+    show(scrambleRound({ teams, holes: nine }));
+    const pressed = () =>
+      ['Hole', 'Board', 'Card'].map((name) =>
+        screen.getByRole('button', { name }).getAttribute('aria-pressed')
+      );
+    expect(pressed()).toEqual(['true', 'false', 'false']);
+    await user.click(screen.getByRole('button', { name: 'Board' }));
+    expect(pressed()).toEqual(['false', 'true', 'false']);
+  });
+
+  it('names the hole dots as a group', () => {
+    show(scrambleRound({ teams, holes: nine }));
+    const strip = screen.getByRole('group', { name: 'Hole progress' });
+    expect(within(strip).getAllByRole('button')).toHaveLength(9);
   });
 });
 

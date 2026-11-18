@@ -6,6 +6,8 @@ import {
   pressHoles,
   nassauSegments,
   computeNassau,
+  nassauMoney,
+  autoPressStarts,
 } from './nassau';
 import { makeRound, player, holes, holes18, scoresFrom } from './testFixtures';
 
@@ -87,5 +89,110 @@ describe('a round played on the back nine alone', () => {
     const segs = nassauSegments(round);
     expect(segs.map((s) => s.label)).toEqual(['Total']);
     expect(segs[0].holes.map((h) => h.number)).toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18]);
+  });
+});
+
+describe('a blank hole on a finished round', () => {
+  // The owner's rule: once the round is finished a blank hole is halved, in
+  // every Nassau bet as in Match Play. Left "to play", the bets with a blank
+  // in them never closed and paid nobody.
+  const hs = holes18();
+  const roundAs = (status: 'in_progress' | 'finished') =>
+    makeRound({
+      holes: hs,
+      games: ['nassau'],
+      options: { stakes: { nassau: 10 } },
+      scores: scoresFrom(hs, {
+        // Front: Al wins the 1st, Bo blank on the 9th.
+        // Back: Al wins the 10th and 11th, Bo the 12th, the 18th blank for both.
+        p1: [3, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 5, 4, 4, 4, 4, 4, undefined],
+        p2: [4, 4, 4, 4, 4, 4, 4, 4, undefined, 4, 4, 4, 4, 4, 4, 4, 4, undefined],
+      }),
+      status,
+    });
+
+  it('leaves every bet open while the round is in progress', () => {
+    const r = computeNassau(roundAs('in_progress'));
+    expect(r.standings.map((s) => s.detail)).toEqual([
+      'Al 1 UP · 1 to play',
+      'Al 1 UP · 1 to play',
+      'Al 2 UP · 2 to play',
+    ]);
+    expect(nassauMoney(roundAs('in_progress'), 10)).toEqual({ p1: 0, p2: 0 });
+  });
+
+  it('settles front, back and total once the round is finished', () => {
+    const round = roundAs('finished');
+    const r = computeNassau(round);
+    // The total: the 9th halved, Al is two up with only the 18th left.
+    expect(r.standings.map((s) => s.detail)).toEqual([
+      'Al won 1 UP',
+      'Al won 1 UP',
+      'Al won 2&1',
+    ]);
+    expect(r.status).toBe('Al leads 3–0');
+    const money = nassauMoney(round, 10);
+    expect(money).toEqual({ p1: 30, p2: -30 });
+    expect(money.p1 + money.p2).toBe(0);
+  });
+
+  it('reads won N UP, not N&1, when every hole of the nine was played but one is blank', () => {
+    // Bo blank on the 5th; Al wins the 1st and the 9th. With the 5th left
+    // "to play" the front read "Al won 2&1" though the nine was done.
+    const round = makeRound({
+      holes: hs,
+      scores: scoresFrom(hs, {
+        p1: [3, 4, 4, 4, 4, 4, 4, 4, 3],
+        p2: [4, 4, 4, 4, undefined, 4, 4, 4, 4],
+      }),
+      status: 'finished',
+    });
+    expect(computeNassau(round).standings[0].detail).toBe('Al won 2 UP');
+    expect(computeNassau({ ...round, status: 'in_progress' }).standings[0].detail).toBe(
+      'Al won 2&1'
+    );
+  });
+
+  it('settles a 2v2 Nassau with a blank, zero-sum', () => {
+    const four = [player('p1', 'Al'), player('p2', 'Bo'), player('p3', 'Cy'), player('p4', 'Di')];
+    const round = makeRound({
+      players: four,
+      holes: hs,
+      games: ['nassau'],
+      options: { nassau: { mode: '2v2', teamA: ['p1', 'p2'], teamB: ['p3', 'p4'] } },
+      scores: scoresFrom(hs, {
+        // Team A wins the 1st; team B has nothing on the 9th; the back is level.
+        p1: [3, ...Array(17).fill(4)],
+        p2: Array(18).fill(5),
+        p3: [...Array(8).fill(4), undefined, ...Array(9).fill(4)],
+        p4: [...Array(8).fill(4), undefined, ...Array(9).fill(4)],
+      }),
+      status: 'finished',
+    });
+    expect(computeNassau(round).standings.map((s) => s.detail)).toEqual([
+      'Al & Bo won 1 UP',
+      'Halved',
+      'Al & Bo won 1 UP',
+    ]);
+    const money = nassauMoney(round, 5);
+    expect(money).toEqual({ p1: 10, p2: 10, p3: -10, p4: -10 });
+    expect(Object.values(money).reduce((x, y) => x + y, 0)).toBe(0);
+  });
+
+  it('lets the two-down rule look past a blank once it is a halved hole', () => {
+    // Al wins the 1st and 3rd; the 2nd is blank for Bo. In progress the rule
+    // waits on the 2nd; finished, the 2nd is halved and Bo is two down after
+    // the 3rd, so a press starts on the 4th.
+    const round = makeRound({
+      holes: hs,
+      options: { autoPress: true },
+      scores: scoresFrom(hs, {
+        p1: [3, 4, 3, ...Array(15).fill(4)],
+        p2: [4, undefined, 4, ...Array(15).fill(4)],
+      }),
+      status: 'in_progress',
+    });
+    expect(autoPressStarts(round)).toEqual([]);
+    expect(autoPressStarts({ ...round, status: 'finished' })).toEqual([4]);
   });
 });

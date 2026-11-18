@@ -82,9 +82,10 @@ describe('Bounce Back', () => {
       players: [player('p1', 'Al'), player('p2', 'Bo')],
       holes: hs,
       scores: scoresFrom(hs, {
-        // Al doubles hole 9, then birdies hole 10.
+        // Al doubles hole 9, then birdies hole 10. Bo's eagle on the 2nd is
+        // the Shot of the Day, so Al's birdie is told only as the bounce.
         p1: [4, 4, 4, 4, 4, 4, 4, 4, 6, 3, 4, 4, 4, 4, 4, 4, 4, 4],
-        p2: Array(18).fill(4),
+        p2: [4, 2, ...Array(16).fill(4)],
       }),
     });
 
@@ -115,7 +116,8 @@ describe('Bounce Back', () => {
       holes: hs,
       scores: scoresFrom(hs, {
         p1: [4, 4, 4, 4, 4, 4, 4, 4, 6, 2, 4, 4, 4, 4, 4, 4, 4, 4],
-        p2: Array(18).fill(4),
+        // Bo's albatross takes Shot of the Day, leaving Al's eagle to the bounce.
+        p2: [4, 1, ...Array(16).fill(4)],
       }),
     });
 
@@ -651,6 +653,43 @@ describe('awards that report the same hole', () => {
     // The Wrecking Ball survives: it carries the score and what it cost.
     expect(aboutDanasHole[0].id).toBe('wrecking-ball');
     expect(awards.find((a) => a.id === 'snowman')).toBeUndefined();
+  });
+
+  test('tell one birdie once, not as both Shot of the Day and Bounce Back', () => {
+    // Al doubles the 3rd and birdies the 4th — the round's only birdie, so
+    // it is the Shot of the Day and the Bounce Back. One birdie, one award:
+    // Shot of the Day ranks higher and keeps it.
+    const hs = holes18();
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo')],
+      holes: hs,
+      scores: scoresFrom(hs, {
+        p1: [4, 4, 6, 3, ...Array(14).fill(4)],
+        p2: Array(18).fill(4),
+      }),
+    });
+
+    const awards = computeAwards(round);
+    const aboutAlsBirdie = awards.filter((a) => a.playerIds.includes('p1') && a.hole === 4);
+    expect(aboutAlsBirdie.map((a) => a.id)).toEqual(['shot-of-the-day']);
+    expect(awards.find((a) => a.id === 'bounce-back')).toBeUndefined();
+    expect(awards.find((a) => a.id === 'shot-of-the-day')?.line).toBe('Al birdied the 4th');
+  });
+
+  test('keep Bounce Back when the Shot of the Day is somebody else’s', () => {
+    const hs = holes18();
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo')],
+      holes: hs,
+      scores: scoresFrom(hs, {
+        p1: [4, 4, 6, 3, ...Array(14).fill(4)],
+        p2: [4, 4, 4, 4, 4, 2, ...Array(12).fill(4)],
+      }),
+    });
+
+    const ids = computeAwards(round).map((a) => a.id);
+    expect(ids).toContain('shot-of-the-day');
+    expect(ids).toContain('bounce-back');
   });
 
   test('leaves two awards about different holes alone', () => {
