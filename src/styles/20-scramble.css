@@ -87,8 +87,11 @@
   border-color: var(--green-ink);
   color: #fff;
 }
+/* The pill's own on-fill colour, not a softened one: at 11px an 85% mix of
+   white over --green-600 was 4.15:1, under the 4.5 small text needs, in all
+   three themes. The size and the font already make it the quieter line. */
 .scr-btn.on .scr-count {
-  color: color-mix(in srgb, #fff 85%, transparent);
+  color: inherit;
 }
 .scr-more {
   min-width: 0;

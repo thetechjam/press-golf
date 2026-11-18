@@ -592,6 +592,14 @@
 .help-section p strong {
   color: var(--under-ink);
 }
+/* The OpenStreetMap credit, the one link in the prose: 17px tall as plain
+   text. Padded to a full tap target and the padding handed back in margin,
+   so the paragraph's lines keep their spacing (see .cs-attribution a). */
+.help-section p a {
+  display: inline-block;
+  padding-block: 5px;
+  margin-block: -5px;
+}
 .help-game {
   border-top: 1px solid var(--line);
   padding-top: 8px;
