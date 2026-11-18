@@ -120,6 +120,9 @@ function shotOfTheDay(round: Round): Award | null {
     detail: `${best.strokes} on a par ${best.par}`,
     playerIds: [best.playerId],
     score: 40 + best.under * 22,
+    // The same birdie is often the round's Bounce Back too; naming the hole
+    // lets computeAwards announce it once rather than twice.
+    hole: best.hole,
   };
 }
 
@@ -188,6 +191,10 @@ function bounceBack(round: Round): Award | null {
     detail: `${best.bad} on ${best.badHole} · ${best.good} on ${best.goodHole}`,
     playerIds: [best.playerId],
     score: 45 + best.under * 10,
+    // The score this award is about is the one under par, so that is its hole
+    // — the one Shot of the Day names when it is the same birdie. The bad hole
+    // stays free for The Snowman, which is a different number on the card.
+    hole: best.goodHole,
   };
 }
 
