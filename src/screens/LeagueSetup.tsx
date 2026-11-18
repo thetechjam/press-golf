@@ -10,6 +10,7 @@ import { ParGrid } from '../components/ParGrid';
 import { StrokeIndexNote } from '../components/StrokeIndexNote';
 import { sliceCourseHoles, type FetchedCourse } from '../courses/openGolfApi';
 import { strokeIndexProblem } from '../games/strokeIndex';
+import { courseToSave } from './setup/courseState';
 import { StarIcon, GearIcon, TrophyIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { SetupRow } from '../components/SetupRow';
@@ -131,14 +132,16 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     const name = course.trim();
     if (!name) return setError('Add a course name before saving.');
     const existing = courses.find((c) => c.name.toLowerCase() === name.toLowerCase());
-    const saved = saveCourse({
-      id: existing?.id ?? uid(),
-      name,
-      holes: holes.map((h) => ({ ...h })),
-      // The nine on screen is what is being saved, so its rating covers nine.
-      slope,
-      rating: ratingHoles === holes.length ? rating : undefined,
-    });
+    // The nine on screen is how tonight is played, not the course: one cut
+    // from a loaded card saves as that card, so the back nine next week is
+    // still there to pick. See courseToSave.
+    const out = courseToSave({ name, holes, source, nine, slope, rating, ratingHoles, existing });
+    if ('refused' in out) {
+      setSavedNote('');
+      setError(out.refused);
+      return;
+    }
+    const saved = saveCourse({ id: existing?.id ?? uid(), name, ...out });
     if (!saved) {
       setSavedNote('');
       setError(`Not saved. This course wasn’t kept. ${notSavedReason(COURSES_KEY)}`);
@@ -146,7 +149,9 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     }
     setCourses(listCourses());
     setError('');
-    setSavedNote(`Saved "${name}"`);
+    setSavedNote(
+      out.holes.length > holes.length ? `Saved "${name}" — all ${out.holes.length} holes` : `Saved "${name}"`
+    );
   };
   const removeCourse = (id: string) => {
     if (!deleteCourse(id)) {
@@ -166,6 +171,11 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     }
     setCourse(c.name);
     setSource(c.holes);
+    // Search carries no slope or rating. The last saved course's, left in
+    // place, would be saved onto this one along with its holes.
+    setSlope(undefined);
+    setRating(undefined);
+    setRatingHoles(undefined);
     const applied = sliceCourseHoles(c.holes, 9, { nine });
     setHoles(applied);
     setError('');

@@ -281,3 +281,64 @@ describe('deleting a saved course the phone refuses', () => {
     expect(JSON.parse(localStorage.getItem('press.courses.v1')!)).toHaveLength(1);
   });
 });
+
+describe('saving a course loaded to play one nine', () => {
+  const storedCourses = (): SavedCourse[] => JSON.parse(localStorage.getItem('press.courses.v1')!);
+
+  it('keeps the whole eighteen and its rating, with the par corrected on screen', async () => {
+    const user = userEvent.setup();
+    show();
+    await loadCourse(user);
+    await user.click(screen.getByRole('button', { name: 'Back 9' }));
+    await user.click(screen.getByRole('button', { name: /Pars & Stroke Index/ }));
+    // Hole 12 is a par 3 on the card; one tap moves it on.
+    await user.click(screen.getByRole('button', { name: /^Par for hole 12: / }));
+    await user.click(screen.getByRole('button', { name: /Save this course for next time/ }));
+
+    const [kept] = storedCourses();
+    expect(kept.id).toBe('c1');
+    expect(kept.holes.map((h) => h.number)).toEqual(holes.map((h) => h.number));
+    // The eighteen's own stroke indexes, not the nine's 1–9.
+    expect(kept.holes.map((h) => h.strokeIndex)).toEqual(holes.map((h) => h.strokeIndex));
+    expect(kept.holes[11].par).not.toBe(holes[11].par);
+    expect(kept.holes.filter((_, i) => i !== 11).map((h) => h.par)).toEqual(
+      holes.filter((_, i) => i !== 11).map((h) => h.par)
+    );
+    expect(kept.rating).toBe(72);
+    expect(kept.slope).toBe(113);
+    expect(screen.getByText('Saved "Thursday Night Muni" — all 18 holes')).toBeTruthy();
+  });
+
+  it('carries a re-ranked stroke index into the eighteen’s numbers', async () => {
+    const user = userEvent.setup();
+    show();
+    await loadCourse(user);
+    await user.click(screen.getByRole('button', { name: /Pars & Stroke Index/ }));
+    // Front nine SIs 7,3,15,1,9,17,5,11,13 rank 4,2,8,1,5,9,3,6,7. Swap holes
+    // 1 and 2 (ranks 4 and 2).
+    const si = (n: number) => screen.getByLabelText(`Stroke index for hole ${n}`);
+    await user.clear(si(1));
+    await user.type(si(1), '2');
+    await user.clear(si(2));
+    await user.type(si(2), '4');
+    await user.click(screen.getByRole('button', { name: /Save this course for next time/ }));
+
+    const [kept] = storedCourses();
+    expect(kept.holes.map((h) => h.strokeIndex)).toEqual([
+      3, 7, ...holes.slice(2).map((h) => h.strokeIndex),
+    ]);
+  });
+
+  it('will not put a different nine over a saved eighteen of the same name', async () => {
+    const user = userEvent.setup();
+    show();
+    await user.type(document.querySelector('.course-search input')!, 'thursday night muni');
+    await user.click(screen.getByRole('button', { name: /Pars & Stroke Index/ }));
+    await user.click(screen.getByRole('button', { name: /Save this course for next time/ }));
+
+    expect(screen.getByRole('alert').textContent).toMatch(
+      /already saved with 18 holes.*different name/
+    );
+    expect(storedCourses()).toEqual([course]);
+  });
+});

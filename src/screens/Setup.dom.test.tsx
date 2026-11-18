@@ -516,6 +516,73 @@ describe('nine holes off a loaded eighteen', () => {
   });
 });
 
+describe('saving a course while playing nine of it', () => {
+  const rated: SavedCourse = {
+    id: 's18',
+    name: 'Bramble Ridge GC',
+    holes: realCard18(),
+    slope: 128,
+    rating: 72.4,
+  };
+  const stored = (): SavedCourse[] => JSON.parse(localStorage.getItem('press.courses.v1')!);
+  const saveButton = () => screen.getByRole('button', { name: /Save this course for next time/ });
+
+  it('keeps the saved eighteen, its rating, and a par corrected on the nine', async () => {
+    localStorage.setItem('press.courses.v1', JSON.stringify([rated]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.click(await screen.findByText('Bramble Ridge GC'));
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    await user.click(screen.getByRole('button', { name: 'Back 9' }));
+    await user.click(parTile(12)); // 3 → 4
+    await user.click(saveButton());
+
+    const [kept] = stored();
+    expect(kept.id).toBe('s18');
+    expect(kept.holes.map((h) => h.number)).toEqual(realCard18().map((h) => h.number));
+    expect(kept.holes.map((h) => h.strokeIndex)).toEqual(realCard18().map((h) => h.strokeIndex));
+    expect(kept.holes.map((h) => h.par)).toEqual(
+      realCard18().map((h) => (h.number === 12 ? 4 : h.par))
+    );
+    expect(kept.rating).toBe(72.4);
+    expect(kept.slope).toBe(128);
+    expect(screen.getByText('Saved "Bramble Ridge GC" — all 18 holes')).toBeTruthy();
+  });
+
+  it('will not put a nine typed in by hand over a saved eighteen of that name', async () => {
+    localStorage.setItem('press.courses.v1', JSON.stringify([rated]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.type(document.querySelector('.course-search input')!, 'bramble ridge gc');
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    await user.click(saveButton());
+
+    expect(screen.getByRole('alert').textContent).toMatch(
+      /already saved with 18 holes.*different name/
+    );
+    expect(stored()).toEqual([rated]);
+  });
+
+  it('still saves a nine under a name of its own', async () => {
+    localStorage.setItem('press.courses.v1', JSON.stringify([rated]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Course');
+    await user.type(document.querySelector('.course-search input')!, 'Pitch and Putt');
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    await user.click(saveButton());
+
+    expect(stored().map((c) => [c.name, c.holes.length])).toEqual([
+      ['Bramble Ridge GC', 18],
+      ['Pitch and Putt', 9],
+    ]);
+  });
+});
+
 describe('a remembered stroke count on a rated course', () => {
   it('is shown as what the player plays off, and can be cleared', async () => {
     localStorage.setItem(
