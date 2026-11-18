@@ -190,10 +190,14 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       ? setWarn('finish')
       : onFinish();
 
+  // A scramble team's default name has a comma in it ("Jesse, Sam +2"), so a
+  // comma-separated list of teams cannot be read back into teams. "and"
+  // keeps each one whole; every other round's list is as it always was.
+  const nameList = (names: string[]) => names.join(scramble ? ' and ' : ', ');
   const nextWarning = [
-    missing.length ? `No score yet for ${missing.join(', ')}.` : '',
+    missing.length ? `No score yet for ${nameList(missing)}.` : '',
     noCallHere ? 'No Wolf call on this hole.' : '',
-    noTeeHere.length ? `No tee shot picked for ${noTeeHere.map((p) => p.name).join(', ')}.` : '',
+    noTeeHere.length ? `No tee shot picked for ${nameList(noTeeHere.map((p) => p.name))}.` : '',
     'Move to the next hole anyway?',
   ]
     .filter(Boolean)

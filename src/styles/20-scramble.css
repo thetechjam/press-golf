@@ -15,10 +15,11 @@
 }
 /* One grid per row with the same tracks, so the open rows' names sit under the
    tee shot's and a column reads as one person down the hole. The label column
-   is narrow on purpose — every pixel it takes comes off four names. */
+   is narrow on purpose — every pixel it takes comes off four names. The last
+   column is the All shots button's, and 2.75rem is its 44px tap target. */
 .scr-row {
   display: grid;
-  grid-template-columns: 2.1rem repeat(var(--scr-cols, 4), minmax(0, 1fr)) 2.5rem;
+  grid-template-columns: 2.1rem repeat(var(--scr-cols, 4), minmax(0, 1fr)) 2.75rem;
   align-items: center;
   gap: 4px 3px;
 }

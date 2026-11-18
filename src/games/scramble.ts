@@ -77,13 +77,18 @@ export function shotsOnHole(round: Round, holeNumber: number, teamId: string): n
 }
 
 /**
- * How many shot rows to offer: the score when posted, else par.
+ * How many shot rows to offer: the score when posted, else par — or more,
+ * when shots past par have already been credited.
  *
  * Par before the score is in, because that is the likeliest number of shots
- * and the rows are what you tap while the hole is still being played.
+ * and the rows are what you tap while the hole is still being played. But
+ * until a score says otherwise every credit counts on the board, so a row
+ * holding one is never hidden: a par lowered from 5 to 3, or a 6 cleared
+ * from the card, would otherwise leave "shots played" counting shots nobody
+ * can see or take back. `credited` is the length of the hole's credit list.
  */
-export function shotRows(score: number | null, par: number): number {
-  return score != null && score > 0 ? score : par;
+export function shotRows(score: number | null, par: number, credited = 0): number {
+  return score != null && score > 0 ? score : Math.max(par, credited);
 }
 
 /**

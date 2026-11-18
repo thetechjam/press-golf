@@ -5,6 +5,7 @@ import {
   MIN_MEMBERS,
   MAX_MEMBERS,
   isScramble,
+  entrantWord,
   teamOf,
   defaultTeamName,
   memberShort,
@@ -35,6 +36,9 @@ describe('telling a scramble apart', () => {
   it('is the setup on options, not anything in games', () => {
     expect(isScramble(scrambleRound())).toBe(true);
     expect(isScramble(makeRound({ games: ['strokePlay'] }))).toBe(false);
+    // "2 teams · 9 holes" on Results, the share images and the arrival screen.
+    expect(entrantWord(scrambleRound())).toBe('team');
+    expect(entrantWord(makeRound({ games: ['strokePlay'] }))).toBe('player');
   });
 
   it('finds a team by its player id', () => {
@@ -86,6 +90,11 @@ describe('shot rows and labels', () => {
     expect(shotRows(null, 4)).toBe(4);
     expect(shotRows(6, 4)).toBe(6);
     expect(shotRows(3, 5)).toBe(3);
+    // No score yet: a credit past par keeps its row, so it can be seen and
+    // cleared; a posted score still decides.
+    expect(shotRows(null, 3, 5)).toBe(5);
+    expect(shotRows(null, 4, 2)).toBe(4);
+    expect(shotRows(4, 3, 6)).toBe(4);
   });
 
   it('labels the tee shot, the middle shots and the one that went in', () => {

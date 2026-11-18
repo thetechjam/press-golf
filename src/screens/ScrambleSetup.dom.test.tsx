@@ -213,6 +213,45 @@ describe('format', () => {
     expect('minDrives' in started[1].options.scramble!).toBe(false);
   });
 
+  it('says, without refusing, when the minimum needs more holes than the round has', async () => {
+    const user = userEvent.setup();
+    const started = show();
+    await fill(user, 1, ['Jesse', 'Sam', 'Al', 'Bo']);
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    await openRow(user, 'Format');
+    // 2 × 4 = 8 fits in nine holes: nothing to say.
+    await user.click(screen.getByRole('button', { name: 'At least 2 tee shots each' }));
+    expect(screen.queryByText(/needs \d+ holes/)).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'At least 3 tee shots each' }));
+    expect(
+      screen.getByText('Four players at 3 each needs 12 holes — this round has 9.')
+    ).toBeTruthy();
+
+    // Not a gate: the round still starts.
+    await teeOff(user);
+    expect(started[0].options.scramble!.minDrives).toBe(3);
+
+    await user.click(screen.getByRole('button', { name: 'No minimum' }));
+    expect(screen.queryByText(/needs \d+ holes/)).toBeNull();
+  });
+
+  it('counts the biggest team for the minimum, not the first', async () => {
+    const user = userEvent.setup();
+    show();
+    await fill(user, 1, ['Jesse', 'Sam']);
+    await user.click(screen.getByRole('button', { name: '+ Add a team' }));
+    await fill(user, 2, ['Al', 'Bo', 'Cy']);
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: '9 holes' }));
+    await openRow(user, 'Format');
+    await user.click(screen.getByRole('button', { name: 'At least 4 tee shots each' }));
+    expect(
+      screen.getByText('Three players at 4 each needs 12 holes — this round has 9.')
+    ).toBeTruthy();
+  });
+
   it('does not ask for a slope or rating', async () => {
     const user = userEvent.setup();
     show();

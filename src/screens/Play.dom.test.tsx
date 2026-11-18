@@ -95,6 +95,23 @@ describe('the warning banner', () => {
     expect(play.latest().shots?.[1]).toEqual({ t1: [0], t2: [0] });
   });
 
+  it('lists teams with "and", since a default team name has a comma in it', async () => {
+    const user = userEvent.setup();
+    const round = scrambleRound({
+      teams: [
+        { name: 'Jesse, Sam +2', members: ['Jesse', 'Sam', 'Al', 'Bo'] },
+        { name: 'Cy & Di', members: ['Cy', 'Di'] },
+      ],
+      holes: nine,
+      minDrives: 1,
+      scores: { 1: { t1: 4, t2: 4 } },
+    });
+    show(round);
+    await user.click(screen.getByRole('button', { name: /^Hole 1\b/ }));
+    await user.click(screen.getByRole('button', { name: 'Next Hole →' }));
+    expect(banner().textContent).toContain('No tee shot picked for Jesse, Sam +2 and Cy & Di.');
+  });
+
   it('does not ask about tee shots when there is no minimum', async () => {
     const user = userEvent.setup();
     show(scrambleRound({ teams, holes: nine, scores: { 1: { t1: 4, t2: 4 } } }));
@@ -154,6 +171,18 @@ describe('the Board tab', () => {
     await user.click(screen.getByRole('button', { name: 'Board' }));
     expect(screen.queryByText(/No money on this round/)).toBeNull();
     expect(screen.getByRole('region', { name: 'Tee shots' })).toBeTruthy();
+  });
+
+  it('calls the stake Scramble, per team, on the money card and in its editor', async () => {
+    const user = userEvent.setup();
+    show(scrambleRound({ teams, holes: nine, stake: 5, scores: everyHole(4) }));
+    await user.click(screen.getByRole('button', { name: 'Board' }));
+    const money = document.getElementById('board-money')!;
+    expect(within(money).getByText('$5 per team')).toBeTruthy();
+    expect(within(money).queryByText(/Stroke Play|low round/)).toBeNull();
+    await user.click(within(money).getByRole('button', { name: 'Edit stakes' }));
+    expect(within(money).getAllByText('Scramble').length).toBeGreaterThan(0);
+    expect(within(money).getByText('per team')).toBeTruthy();
   });
 
   it('jumps to the tee shots once there are three cards', async () => {

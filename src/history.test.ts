@@ -330,6 +330,10 @@ describe('scrambles', () => {
     expect(ids(searchRounds(mixed, 'ortega'))).toEqual(['S']);
   });
 
+  it('is not found as stroke play, which is only the engine it is scored by', () => {
+    expect(ids(searchRounds([scramble], 'strokeplay'))).toEqual([]);
+  });
+
   it('names the kind in an empty result', () => {
     expect(describeEmpty('', 'all', 'scramble')).toBe('No scramble rounds yet.');
   });

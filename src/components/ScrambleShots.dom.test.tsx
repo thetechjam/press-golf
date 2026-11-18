@@ -75,6 +75,15 @@ describe('the tee shot row', () => {
     show(scrambleRound({ teams: [team], shots, scores }));
     expect(screen.getByRole('button', { name: 'Tee shot, Jesse' }).textContent).toBe('Jesse');
   });
+
+  it('drops the target once a member is past it, rather than reading "3/2"', () => {
+    const shots = { 1: { t1: [0] }, 2: { t1: [0] }, 3: { t1: [0] } };
+    const scores = { 1: { t1: 4 }, 2: { t1: 4 }, 3: { t1: 4 } };
+    show(scrambleRound({ teams: [team], minDrives: 2, shots, scores }));
+    const jesse = screen.getByRole('button', { name: 'Tee shot, Jesse, 3, minimum met' });
+    expect(jesse.textContent).toBe('Jesse3');
+    expect(jesse.className).toContain('met');
+  });
 });
 
 describe('all shots', () => {

@@ -42,7 +42,7 @@ export function ScrambleShots({ round, hole, teamId, onCredit }: Props) {
 
   const score = round.scores[hole.number]?.[teamId] ?? null;
   const credits = shotsOnHole(round, hole.number, teamId);
-  const rows = shotRows(score, hole.par);
+  const rows = shotRows(score, hole.par, credits.length);
   const { min } = driveStatus(round, teamId);
   const drives = min ? teamShotStats(round, teamId).members.map((m) => m.drives) : [];
   // How many of the shots behind the disclosure already say whose they were,
@@ -74,14 +74,17 @@ export function ScrambleShots({ round, hole, teamId, onCredit }: Props) {
               type="button"
               className={`scr-btn${on ? ' on' : ''}${count != null && count >= min ? ' met' : ''}`}
               aria-pressed={on}
-              aria-label={`${label}, ${name}${count != null ? `, ${count} of ${min}` : ''}`}
+              aria-label={`${label}, ${name}${
+                count == null ? '' : count > min ? `, ${count}, minimum met` : `, ${count} of ${min}`
+              }`}
               onClick={() => tap(shot, m)}
             >
               <span className="scr-name">{name}</span>
+              {/* Against the target until it is reached; past it, the bare
+                  count — "9/2" read like a mistake, as "9 of 2" did on the
+                  Board, and the green already says the minimum is met. */}
               {count != null && (
-                <span className="scr-count">
-                  {count}/{min}
-                </span>
+                <span className="scr-count">{count > min ? count : `${count}/${min}`}</span>
               )}
             </button>
           );
