@@ -177,6 +177,26 @@ export default function App() {
   }, [missing, nav]);
 
   /**
+   * The round on screen, read again from storage on leaving the Trip screen.
+   *
+   * The Trip screen writes rounds directly — a rename reaches every round on
+   * the trip, and taking one off clears its `trip` — while App still holds
+   * the round as it was when Results opened the trip. Back, by gesture or
+   * button, returned to that stale copy, and the next edit of anything saved
+   * it whole: the old trip name, or the trip it had just been taken off,
+   * written back over the change. Reading it again here is cheaper than
+   * routing every Trip write through App. A round storage no longer has is
+   * left as it is rather than dropped from under the user.
+   */
+  const shownView = useRef(view);
+  useEffect(() => {
+    const from = shownView.current;
+    shownView.current = view;
+    if (from !== 'trip' || view === 'trip') return;
+    setRound((r) => (r ? (getRound(r.id) ?? r) : r));
+  }, [view]);
+
+  /**
    * A round arriving in the address bar.
    *
    * Handled on mount and again on `hashchange`, because those are two
