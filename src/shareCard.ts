@@ -11,6 +11,7 @@ import {
   loadDisplayFonts, drawHeader, finishCard,
 } from './shareCanvas';
 import { entrantWord } from './games/scramble';
+import { winnerHero } from './winnerHero';
 
 /**
  * Renders round results as a clubhouse-scoreboard PNG for sharing.
@@ -28,7 +29,9 @@ export async function renderShareCard(round: Round): Promise<Blob> {
 
   const work = document.createElement('canvas');
   work.width = W;
-  work.height = 3200;
+  // Tall enough for every board, the money and the awards of a big round;
+  // finishCard crops it to what was drawn.
+  work.height = 3600;
   const ctx = work.getContext('2d')!;
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, work.width, work.height);
@@ -97,46 +100,38 @@ export async function renderShareCard(round: Round): Promise<Blob> {
       y += 116;
     }
   } else {
-    const results = activeResults(round);
-    for (const r of results) {
-      const head = y + 42;
-      ctx.font = disp(500, 38);
+    // The money first: a chat preview crops a tall image from the top, and
+    // who won and who pays whom is what the group opens it for. The boards
+    // that explain it follow, then the awards.
+    const hero = winnerHero(round);
+    if (hero) {
+      const rowTop = y;
+      const rowH = 104;
+      ctx.fillStyle = 'rgba(231, 181, 60, 0.13)';
+      ctx.beginPath();
+      ctx.roundRect(PAD - 20, rowTop, MAXW + 40, rowH, 14);
+      ctx.fill();
       ctx.fillStyle = GOLD;
-      setLS(ctx, 3);
-      ctx.fillText(up(r.title), PAD, head);
-      setLS(ctx, 0);
+      ctx.fillRect(PAD - 20, rowTop + 14, 6, rowH - 28);
+      const base = rowTop + rowH / 2 + 18;
       ctx.font = disp(500, 27);
       ctx.fillStyle = MUTED;
       ctx.textAlign = 'right';
-      ctx.fillText(fit(ctx, up(r.status), MAXW * 0.5), W - PAD, head);
+      setLS(ctx, 3);
+      const sub = fit(ctx, up(hero.sub), MAXW * 0.4);
+      const subW = ctx.measureText(sub).width;
+      ctx.fillText(sub, W - PAD, base - 4);
       ctx.textAlign = 'left';
-      y += 66;
-
-      for (const s of r.standings) {
-        const base = y + 40;
-        ctx.font = disp(500, 30);
-        ctx.fillStyle = MUTED;
-        ctx.fillText(s.playerId ? `${s.rank}` : '·', PAD, base);
-        ctx.font = mono(34);
-        ctx.textAlign = 'right';
-        const detW = ctx.measureText(s.detail).width;
-        ctx.fillStyle = s.isLeader ? GOLD : CREAM;
-        ctx.fillText(s.detail, W - PAD, base);
-        ctx.textAlign = 'left';
-        ctx.font = disp(500, 42);
-        ctx.fillStyle = CREAM;
-        setLS(ctx, 2);
-        ctx.fillText(fit(ctx, up(s.label), MAXW - detW - 110), PAD + 56, base);
-        setLS(ctx, 0);
-        y += 66;
-      }
-      y += 26;
+      ctx.font = disp(600, 50);
+      ctx.fillStyle = GOLD;
+      setLS(ctx, 2);
+      ctx.fillText(fit(ctx, up(hero.line), MAXW - subW - 48), PAD + 8, base);
+      setLS(ctx, 0);
+      y += rowH + 18;
     }
 
     const settlement = computeSettlement(round);
     if (settlement.active) {
-      dashedRule(ctx, y, PAD, W - PAD);
-      y += 32;
       ctx.font = disp(500, 32);
       ctx.fillStyle = GOLD;
       setLS(ctx, 5);
@@ -174,6 +169,47 @@ export async function renderShareCard(round: Round): Promise<Blob> {
           y += 66;
         }
       }
+      y += 16;
+    }
+
+    const results = activeResults(round);
+    if ((hero || settlement.active) && results.length) {
+      dashedRule(ctx, y, PAD, W - PAD);
+      y += 16;
+    }
+    for (const r of results) {
+      const head = y + 42;
+      ctx.font = disp(500, 38);
+      ctx.fillStyle = GOLD;
+      setLS(ctx, 3);
+      ctx.fillText(up(r.title), PAD, head);
+      setLS(ctx, 0);
+      ctx.font = disp(500, 27);
+      ctx.fillStyle = MUTED;
+      ctx.textAlign = 'right';
+      ctx.fillText(fit(ctx, up(r.status), MAXW * 0.5), W - PAD, head);
+      ctx.textAlign = 'left';
+      y += 66;
+
+      for (const s of r.standings) {
+        const base = y + 40;
+        ctx.font = disp(500, 30);
+        ctx.fillStyle = MUTED;
+        ctx.fillText(s.playerId ? `${s.rank}` : '·', PAD, base);
+        ctx.font = mono(34);
+        ctx.textAlign = 'right';
+        const detW = ctx.measureText(s.detail).width;
+        ctx.fillStyle = s.isLeader ? GOLD : CREAM;
+        ctx.fillText(s.detail, W - PAD, base);
+        ctx.textAlign = 'left';
+        ctx.font = disp(500, 42);
+        ctx.fillStyle = CREAM;
+        setLS(ctx, 2);
+        ctx.fillText(fit(ctx, up(s.label), MAXW - detW - 110), PAD + 56, base);
+        setLS(ctx, 0);
+        y += 66;
+      }
+      y += 26;
     }
   }
 
