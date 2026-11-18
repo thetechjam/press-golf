@@ -457,6 +457,27 @@
   color: var(--bg);
 }
 
+/* The Hole tab's high-frequency targets. Two quick taps on a chip, an arrow
+   or a dot are two answers, but a browser that still honours double-tap zoom
+   (iOS Safari does on anything without this) read them as one zoom gesture.
+   `manipulation` drops only that: panning, so the hole swipe in HoleView and
+   the dot strip's scroll, and pinch-zoom of the page, are all untouched — the
+   viewport's zoom stays the user's (see the Android pinch-zoom fix). */
+.score-chip,
+.nav-arrow,
+.hole-dot,
+.hole-par-btn,
+.view-tabs .seg-btn,
+.par-pick .seg-btn,
+.wolf-chip,
+.junk-chip,
+.junk-kind,
+.junk-done,
+.press-btn,
+.press-chip button {
+  touch-action: manipulation;
+}
+
 /* ---------- Wolf ---------- */
 .wolf {
   background: color-mix(in srgb, var(--gold) 16%, var(--card));
