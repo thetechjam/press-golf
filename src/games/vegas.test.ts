@@ -225,6 +225,63 @@ describe('computeVegas', () => {
   });
 });
 
+describe('a net score below one', () => {
+  it('writes a zero or negative score as a 1, so the number stays a number', () => {
+    // Concatenated raw, these were NaN ("5-1"), -15 and 5 ("05").
+    expect(vegasNumber(-1, 5, true)).toBe(51);
+    expect(vegasNumber(-1, 5, false)).toBe(15);
+    expect(vegasNumber(0, 5, false)).toBe(15);
+    expect(vegasNumber(-2, 0, false)).toBe(11);
+    expect(vegasNumber(-2, 0, true)).toBe(11);
+  });
+
+  // One par 3 and a 2 handicap: two strokes on the only hole, so a gross 1
+  // is a net -1 and a gross 2 a net 0.
+  const par3 = (
+    cards: Record<string, number[]>,
+    hcp: Record<string, number>,
+    options: Partial<Round['options']> = {}
+  ): Round => {
+    const hs = holes(1, 3);
+    return makeRound({
+      holes: hs,
+      players: four.map((p) => player(p.id, p.name, hcp[p.id])),
+      games: ['vegas'],
+      options: { vegas: TEAMS, useNet: true, stakes: { vegas: 1 }, ...options },
+      scores: scoresFrom(hs, cards),
+    });
+  };
+
+  const settlesFinitelyAndEvenly = (r: Round) => {
+    const totals = Object.values(computeSettlement(r).totals);
+    expect(totals.every(Number.isFinite)).toBe(true);
+    expect(totals.reduce((a, b) => a + b, 0)).toBe(0);
+  };
+
+  it('values a negative net on the side that made it, with the flip', () => {
+    // Al aces for a net -1: A is 1 and 4 = 14, and the birdie flips B's 34 to 43.
+    const r = par3({ a1: [1], a2: [4], b1: [3], b2: [4] }, { a1: 2 });
+    expect(vegasHoles(r).holes[0]).toMatchObject({ a: 14, b: 43, swing: 29, bFlipped: true });
+    settlesFinitelyAndEvenly(r);
+  });
+
+  it('values a zero net on the side that is flipped', () => {
+    // A's own birdie puts a net 0 on their card and flips B; B's birdie flips A.
+    const r = par3({ a1: [2], a2: [4], b1: [2], b2: [3] }, { a1: 2 });
+    // A: 0 and 4, flipped by B's 2 → 41. B: 2 and 3, flipped by A → 32.
+    expect(vegasHoles(r).holes[0]).toMatchObject({ a: 41, b: 32, swing: -9 });
+    settlesFinitelyAndEvenly(r);
+  });
+
+  it('values a net below one with the flip off', () => {
+    const r = par3({ a1: [1], a2: [4], b1: [2], b2: [5] }, { a1: 2, b1: 2 }, { vegasFlip: false });
+    // A: -1 and 4 = 14. B: 0 and 5 = 15. Nothing turned around.
+    expect(vegasHoles(r).holes[0]).toMatchObject({ a: 14, b: 15, swing: 1 });
+    expect(Number.isFinite(vegasHoles(r).margin)).toBe(true);
+    settlesFinitelyAndEvenly(r);
+  });
+});
+
 describe('vegasHoleFor', () => {
   it('finds the hole asked for', () => {
     const r = v(2, { a1: [4, 5], a2: [5, 6], b1: [5, 4], b2: [6, 4] });

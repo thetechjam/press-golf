@@ -33,7 +33,14 @@ export function vegasTeams(round: Round): { a: Side; b: Side } {
  * made it 105 — a number that wins holes it should lose.
  */
 export function vegasNumber(lo: number, hi: number, flipped: boolean): number {
-  const [first, second] = flipped ? [hi, lo] : [lo, hi];
+  // A net score can fall to 0 or below — a big handicap on a par 3 birdie or
+  // ace — and a digit run cannot hold that: "5-1" is NaN, "-14" reads as a
+  // negative number that wins every hole, and "05" collapses to 5. Nobody
+  // writes less than a 1 on a card, so each score is floored there before it
+  // is written down; the order of the two is unchanged, since the floor never
+  // swaps which one is lower.
+  const card = (s: number) => Math.max(1, s);
+  const [first, second] = flipped ? [card(hi), card(lo)] : [card(lo), card(hi)];
   return Number(`${first}${second}`);
 }
 
