@@ -39,7 +39,11 @@ const firstWord = (name: string): string => name.trim().split(/\s+/)[0] ?? '';
 
 /**
  * The name a team gets when nobody gives it one: "Jesse & Sam" for two,
- * "Jesse, Sam +2" for four, "Team 2" when nobody is named.
+ * "Jesse, Sam & 2 more" for four, "Team 2" when nobody is named.
+ *
+ * The rest are counted in words, not as "+2": beside a score that reads as
+ * two over par — "JESSE, SAM +2 WINS $5" on a results card. Rounds saved with
+ * the old form keep it; a name is whatever the round was created with.
  *
  * Built from first names because it is shown on the card's row and in the
  * leaderboard, where "Jesse Smith & Sam Ortega" does not fit and the surnames
@@ -50,7 +54,7 @@ export function defaultTeamName(members: string[], position: number): string {
   const named = members.map(firstWord).filter(Boolean);
   if (named.length === 0) return `Team ${position + 1}`;
   if (named.length <= 2) return named.join(' & ');
-  return `${named[0]}, ${named[1]} +${named.length - 2}`;
+  return `${named[0]}, ${named[1]} & ${named.length - 2} more`;
 }
 
 /** First word of the member's name, or "P3" for a blank. For buttons. */

@@ -61,7 +61,7 @@ describe('the round a scramble starts', () => {
     expect(r.games).toEqual(['strokePlay']);
     expect(r.players).toHaveLength(1);
     // Named by default from first names, the way the engine names a team.
-    expect(r.players[0].name).toBe('Jesse, Sam +1');
+    expect(r.players[0].name).toBe('Jesse, Sam & 1 more');
     expect(r.options.scramble).toEqual({
       teams: [{ id: r.players[0].id, members: ['Jesse Smith', 'Sam', 'Al'] }],
     });
@@ -100,7 +100,7 @@ describe('the round a scramble starts', () => {
     await teeOff(user);
 
     const r = started[0];
-    expect(r.players.map((p) => p.name)).toEqual(['Sandbaggers', 'Al, Bo +2']);
+    expect(r.players.map((p) => p.name)).toEqual(['Sandbaggers', 'Al, Bo & 2 more']);
     expect(r.options.stakes).toEqual({ strokePlay: 10 });
     expect(r.options.scramble!.teams).toEqual([
       { id: r.players[0].id, members: ['Jesse', 'Sam'] },

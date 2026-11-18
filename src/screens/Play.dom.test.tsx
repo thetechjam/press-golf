@@ -99,7 +99,7 @@ describe('the warning banner', () => {
     const user = userEvent.setup();
     const round = scrambleRound({
       teams: [
-        { name: 'Jesse, Sam +2', members: ['Jesse', 'Sam', 'Al', 'Bo'] },
+        { name: 'Jesse, Sam & 2 more', members: ['Jesse', 'Sam', 'Al', 'Bo'] },
         { name: 'Cy & Di', members: ['Cy', 'Di'] },
       ],
       holes: nine,
@@ -109,7 +109,7 @@ describe('the warning banner', () => {
     show(round);
     await user.click(screen.getByRole('button', { name: /^Hole 1\b/ }));
     await user.click(screen.getByRole('button', { name: 'Next Hole →' }));
-    expect(banner().textContent).toContain('No tee shot picked for Jesse, Sam +2 and Cy & Di.');
+    expect(banner().textContent).toContain('No tee shot picked for Jesse, Sam & 2 more and Cy & Di.');
   });
 
   it('does not ask about tee shots when there is no minimum', async () => {

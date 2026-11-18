@@ -190,7 +190,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       ? setWarn('finish')
       : onFinish();
 
-  // A scramble team's default name has a comma in it ("Jesse, Sam +2"), so a
+  // A scramble team's default name has a comma in it ("Jesse, Sam & 2 more"), so a
   // comma-separated list of teams cannot be read back into teams. "and"
   // keeps each one whole; every other round's list is as it always was.
   const nameList = (names: string[]) => names.join(scramble ? ' and ' : ', ');

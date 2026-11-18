@@ -62,8 +62,15 @@ describe('names', () => {
   });
 
   it('names a bigger team after the first two and a count', () => {
-    expect(defaultTeamName(['Jesse', 'Sam', 'Al'], 0)).toBe('Jesse, Sam +1');
-    expect(defaultTeamName(['Jesse', 'Sam', 'Al', 'Cy'], 0)).toBe('Jesse, Sam +2');
+    expect(defaultTeamName(['Jesse', 'Sam', 'Al'], 0)).toBe('Jesse, Sam & 1 more');
+    expect(defaultTeamName(['Jesse', 'Sam', 'Al', 'Cy'], 0)).toBe('Jesse, Sam & 2 more');
+  });
+
+  it('never puts a +number in a name, where it would read as strokes over par', () => {
+    for (const n of [3, 4]) {
+      const members = ['Morgan', 'Sam', 'Al', 'Cy'].slice(0, n);
+      expect(defaultTeamName(members, 0)).not.toMatch(/[+−-]\s*\d/);
+    }
   });
 
   it('uses first names and skips blanks', () => {

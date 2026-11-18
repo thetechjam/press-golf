@@ -52,6 +52,15 @@ describe('initials', () => {
   it('falls back for an empty name', () => {
     expect(initials('   ')).toBe('?');
   });
+
+  it('names a scramble team after its first two members, not its count', () => {
+    expect(initials('Morgan, Sam & 2 more')).toBe('MS');
+    expect(initials('Morgan, Sam & 1 more')).toBe('MS');
+    // How the name was written in rounds saved before the change.
+    expect(initials('Morgan, Sam +2')).toBe('MS');
+    expect(initials('Jesse & Sam')).toBe('JS');
+    expect(initials('Team 2')).toBe('T2');
+  });
 });
 
 describe('seatColor', () => {

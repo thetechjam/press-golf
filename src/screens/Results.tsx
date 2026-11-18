@@ -124,7 +124,7 @@ function buildSummary(round: Round): string {
   }
 
   const results = activeResults(round).map((r) => asScrambleResult(round, r));
-  // A scramble team's default name has a comma in it ("Jesse, Sam +2"), so
+  // A scramble team's default name has a comma in it ("Jesse, Sam & 2 more"), so
   // its teams are set apart with a dot — commas would run two teams together.
   lines.push(`${round.players.map((p) => p.name).join(isScramble(round) ? ' · ' : ', ')}`);
   lines.push('');
