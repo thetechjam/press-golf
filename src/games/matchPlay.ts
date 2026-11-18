@@ -76,24 +76,41 @@ function sideBest(
 /**
  * Core match-play evaluator: walks the holes comparing two per-hole score
  * accessors (lower wins the hole) and produces status + winner with closeout.
+ *
+ * `finished` is whether the round is over. While it is in progress a blank
+ * hole is one not played yet, and still to play. Once it is finished —
+ * "Finish anyway" lets a round end with gaps — nobody is going back out to
+ * play it, so the owner's rule is that it counts as halved. Left "to play", a
+ * match one up with a blank on the card read "1 UP · 1 to play" for good and
+ * paid nobody. League calls this without the flag: its own `ended` rule
+ * decides when a league match is over.
  */
 export function runMatch(
   holes: Hole[],
   aScore: (h: Hole) => number | null,
   bScore: (h: Hole) => number | null,
   labelA: string,
-  labelB: string
+  labelB: string,
+  finished = false
 ): SegmentResult {
   let margin = 0; // + = side A up
   let played = 0;
+  // Holes both sides actually scored: a finished round with none of them
+  // scored was never started, not a match of halves.
+  let scored = 0;
 
   for (const h of holes) {
     const sa = aScore(h);
     const sb = bScore(h);
-    if (sa == null || sb == null) continue;
-    played += 1;
-    if (sa < sb) margin += 1;
-    else if (sb < sa) margin -= 1;
+    if (sa == null || sb == null) {
+      if (!finished) continue;
+      played += 1; // halved — played out, the margin unchanged
+    } else {
+      scored += 1;
+      played += 1;
+      if (sa < sb) margin += 1;
+      else if (sb < sa) margin -= 1;
+    }
 
     const remaining = holes.length - played;
     if (Math.abs(margin) > remaining) {
@@ -108,8 +125,9 @@ export function runMatch(
 
   let status: string;
   let winner: 'A' | 'B' | null = null;
-  if (played === 0) {
+  if (scored === 0) {
     status = 'Not started';
+    played = 0;
   } else if (margin === 0) {
     status = played === holes.length ? 'Halved' : 'All square';
   } else {
@@ -149,7 +167,8 @@ export function matchSegmentSides(
     (h) => sideBest(round, a.ids, h, strokes),
     (h) => sideBest(round, b.ids, h, strokes),
     a.label,
-    b.label
+    b.label,
+    round.status === 'finished'
   );
 }
 

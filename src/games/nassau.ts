@@ -65,14 +65,16 @@ const holeComplete = (round: Round, holeNumber: number): boolean =>
  * joins the set being watched. A given bet presses only once: the second press
  * comes from the press, not from the bet that spawned it.
  *
- * Evaluation stops at the first hole that isn't fully scored. "Two down after
- * the 4th" has no meaning if the 4th is blank, and guessing past the gap would
- * invent a bet nobody agreed to.
+ * While the round is in progress, evaluation stops at the first hole that
+ * isn't fully scored. "Two down after the 4th" has no meaning if the 4th is
+ * blank, and guessing past the gap would invent a bet nobody agreed to. On a
+ * finished round the blank is halved, so the 4th has a meaning again.
  */
 export function autoPressStarts(round: Round): number[] {
   if (!round.options.autoPress || round.players.length < 2) return [];
   const { a, b } = nassauTeams(round);
   const starts: number[] = [];
+  const finished = round.status === 'finished';
 
   const front = round.holes.filter((h) => h.number <= 9);
   const back = round.holes.filter((h) => h.number > 9);
@@ -89,7 +91,9 @@ export function autoPressStarts(round: Round): number[] {
 
     for (let i = 0; i < nine.length; i++) {
       const hole = nine[i];
-      if (!holeComplete(round, hole.number)) break;
+      // Once the round is finished a blank is a halved hole, not an unknown
+      // (see `runMatch`), so the bets carry on past it as they do in the money.
+      if (!finished && !holeComplete(round, hole.number)) break;
       const next = nine[i + 1]?.number;
       // A press has to run somewhere; the last hole of a nine has nothing left.
       if (next == null) break;
