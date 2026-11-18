@@ -138,18 +138,32 @@ export function matchAllowanceFor(round: Round, game: GameType, fourBall: boolea
  *
  * A match is scored between its players, not against the course, so each
  * player's own course handicap is not what they play off. Rules of
- * Handicapping, Appendix C: "the player with the lowest Playing Handicap plays
- * off zero strokes relative to the other player(s). The other player(s)
- * receive(s) the difference" — and in a four-ball the 90% allowance is applied
- * to that difference, so 10, 18, 27 and 39 play off 0, 7, 15 and 26. A plus
- * handicap is simply the low man: they play off scratch and everyone else's
- * difference is measured from them.
+ * Handicapping, Appendix C, in that order: first each player's Playing
+ * Handicap — their course handicap cut by the format's allowance (100% in
+ * singles, 90% in a four-ball) and rounded — and then "the player with the
+ * lowest Playing Handicap plays off zero strokes relative to the other
+ * player(s). The other player(s) receive(s) the difference". So 10, 18, 27
+ * and 39 in a four-ball play off 9, 16, 24 and 35, and then 0, 7, 15 and 26.
+ * A plus handicap is simply the low man: they play off scratch and everyone
+ * else's difference is measured from them.
  *
- * Press used to hand each side its full handicap on its own stroke-index holes,
- * which gave a 10 against a 6 shots on indexes 1–10 and the 6 shots on 1–6 —
- * six halved holes that should have been played level, and four shots for the
- * 10 on the wrong holes. The allocation itself (`strokesReceivedOnHole`) is
- * unchanged; only the number fed into it is.
+ * The order matters because of the rounding. Press used to cut the
+ * *difference* by the allowance, which agrees with the handbook's own
+ * examples but not in general: 5, 10, 12 and 20 play off 5, 9, 11 and 18,
+ * hence 0, 4, 6 and 13 — the difference-first route gave 0, 5, 6 and 14, a
+ * stroke too many twice over. In singles at 100% the two are the same.
+ *
+ * Rounding is `withAllowance`'s `Math.round`: a half rounds up, toward +∞,
+ * as WHS rounds — 4.5 plays off 5, and a plus 4.5 (−4.5 here) off plus 4.
+ *
+ * Press before that handed each side its full handicap on its own
+ * stroke-index holes, which gave a 10 against a 6 shots on indexes 1–10 and
+ * the 6 shots on 1–6 — six halved holes that should have been played level,
+ * and four shots for the 10 on the wrong holes. The allocation itself
+ * (`strokesReceivedOnHole`) is unchanged; only the number fed into it is.
+ *
+ * Every match engine (Match Play, Nassau and their presses) reaches this
+ * through `matchStrokesFor`. League nights keep their own rules.
  */
 export function matchHandicaps(
   round: Round,
@@ -159,14 +173,15 @@ export function matchHandicaps(
 ): Record<string, number> {
   const out: Record<string, number> = {};
   if (ids.length === 0) return out;
-  const course: Record<string, number> = {};
+  const pct = matchAllowanceFor(round, game, fourBall);
+  const playing: Record<string, number> = {};
   for (const id of ids) {
     const player = round.players.find((p) => p.id === id);
-    course[id] = player ? courseHandicapFor(round, player) : 0;
+    const course = player ? courseHandicapFor(round, player) : 0;
+    playing[id] = withAllowance(course, pct);
   }
-  const low = Math.min(...ids.map((id) => course[id]));
-  const pct = matchAllowanceFor(round, game, fourBall);
-  for (const id of ids) out[id] = withAllowance(course[id] - low, pct);
+  const low = Math.min(...ids.map((id) => playing[id]));
+  for (const id of ids) out[id] = playing[id] - low;
   return out;
 }
 
