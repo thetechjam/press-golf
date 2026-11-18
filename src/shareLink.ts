@@ -9,6 +9,9 @@ import type {
   Player,
   Round,
   Scores,
+  ScrambleSetup,
+  ScrambleShots,
+  ScrambleTeam,
   TeamSetup,
   WolfChoice,
   WolfHole,
@@ -16,6 +19,7 @@ import type {
 import { DEFAULT_OPTIONS } from './types';
 import { GAMES } from './games';
 import { isJunkKind } from './games/junk';
+import { MAX_MEMBERS, MAX_TEAMS, MIN_MEMBERS } from './games/scramble';
 import { parseRoundDate } from './roundDate';
 
 /**
@@ -139,6 +143,13 @@ interface PackedRound {
   j?: JunkClaims;
   /** League pick-ups ("X"), hole -> player indexes. */
   x?: Record<number, string[]>;
+  /**
+   * Scramble shot credits, hole -> team (its player index) -> one character
+   * per shot: the member's position, or `.` for "not said". A string rather
+   * than the array the round holds for the same reason scores are: eighteen
+   * holes of four-shot arrays is most of a QR code.
+   */
+  sh?: Record<number, Record<string, string>>;
   pr?: number[];
   sl?: number;
   ra?: number;
@@ -163,7 +174,8 @@ interface PackedRound {
 /**
  * Rewrites every player id in a round through `to`.
  *
- * Player ids appear in five places besides the player list, and a share link
+ * Player ids appear in several places besides the player list (a scramble
+ * team, and its shot credits, among them), and a share link
  * that misses one produces a round that looks right and scores wrong — a
  * Nassau whose teams are empty, or a Wolf hole with no wolf. So they are
  * listed here explicitly rather than found by a deep walk, and
@@ -171,11 +183,12 @@ interface PackedRound {
  * what would catch a sixth place being added later.
  */
 function mapPlayerIds<
-  T extends Pick<Round, 'options' | 'wolf' | 'scores' | 'junk' | 'pickups'>,
+  T extends Pick<Round, 'options' | 'wolf' | 'scores' | 'junk' | 'pickups' | 'shots'>,
 >(
   round: T,
   to: (id: string) => string
-): Required<Pick<Round, 'options' | 'wolf' | 'scores'>> & Pick<Round, 'junk' | 'pickups'> {
+): Required<Pick<Round, 'options' | 'wolf' | 'scores'>> &
+  Pick<Round, 'junk' | 'pickups' | 'shots'> {
   const team = (t: TeamSetup | undefined): TeamSetup | undefined =>
     t && { mode: t.mode, teamA: t.teamA.map(to), teamB: t.teamB.map(to) };
 
@@ -198,6 +211,16 @@ function mapPlayerIds<
     return out;
   };
 
+  // A scramble team is a player, and its id is that player's.
+  const scramble = (s: ScrambleSetup | undefined): ScrambleSetup | undefined => {
+    if (!s) return undefined;
+    const out: ScrambleSetup = {
+      teams: s.teams.map((t): ScrambleTeam => ({ id: to(t.id), members: [...t.members] })),
+    };
+    if (s.minDrives !== undefined) out.minDrives = s.minDrives;
+    return out;
+  };
+
   const choice = (c: WolfChoice): WolfChoice =>
     c && c.type === 'partner' ? { type: 'partner', partnerId: to(c.partnerId) } : c;
 
@@ -208,6 +231,7 @@ function mapPlayerIds<
   if (round.options.matchPlay) options.matchPlay = team(round.options.matchPlay);
   if (round.options.vegas) options.vegas = team(round.options.vegas);
   if (round.options.league) options.league = league(round.options.league);
+  if (round.options.scramble) options.scramble = scramble(round.options.scramble);
 
   const wolf: Record<number, WolfHole> = {};
   for (const [hole, w] of Object.entries(round.wolf ?? {})) {
@@ -243,7 +267,18 @@ function mapPlayerIds<
     }
   }
 
-  return { options, wolf, scores, junk, pickups };
+  // Shot credits are keyed by team, which is to say by player id.
+  let shots: ScrambleShots | undefined;
+  if (round.shots) {
+    shots = {};
+    for (const [hole, byTeam] of Object.entries(round.shots)) {
+      const mapped: Record<string, number[]> = {};
+      for (const [id, list] of Object.entries(byTeam)) mapped[to(id)] = list;
+      shots[Number(hole)] = mapped;
+    }
+  }
+
+  return { options, wolf, scores, junk, pickups, shots };
 }
 
 /* ------------------------------------------------------------------ *
@@ -263,7 +298,7 @@ export function packRound(round: Round): PackedRound | null {
   // already inconsistent; passing it through would silently drop a score.
   const to = (id: string): string => index.get(id) ?? id;
 
-  const { options, wolf, scores, junk, pickups } = mapPlayerIds(round, to);
+  const { options, wolf, scores, junk, pickups, shots } = mapPlayerIds(round, to);
 
   const strings: string[] = [];
   for (let i = 0; i < round.players.length; i += 1) {
@@ -297,6 +332,8 @@ export function packRound(round: Round): PackedRound | null {
   if (Object.keys(wolf).length) packed.w = wolf;
   if (junk && Object.keys(junk).length) packed.j = junk;
   if (pickups && Object.keys(pickups).length) packed.x = pickups;
+  const sh = packShots(shots, index);
+  if (sh) packed.sh = sh;
   if (round.presses?.length) packed.pr = round.presses;
   if (typeof round.slope === 'number') packed.sl = round.slope;
   if (typeof round.rating === 'number') packed.ra = round.rating;
@@ -305,6 +342,36 @@ export function packRound(round: Round): PackedRound | null {
   if (round.holes.some((h, i) => h.number !== i + 1)) packed.hn = round.holes.map((h) => h.number);
   if (round.trip) packed.t = [round.trip.id, round.trip.name];
   return packed;
+}
+
+/** A member position as one character, `.` for "not said". */
+const NO_CREDIT = '.';
+
+/**
+ * Shot credits as strings, keeping only teams that are players in the round
+ * (anything else would carry an original id out in the link) and dropping
+ * holes with nothing credited. Ids here are already player indexes.
+ */
+function packShots(
+  shots: ScrambleShots | undefined,
+  index: Map<string, string>
+): Record<number, Record<string, string>> | undefined {
+  if (!shots) return undefined;
+  const indexes = new Set(index.values());
+  const out: Record<number, Record<string, string>> = {};
+  for (const [hole, byTeam] of Object.entries(shots)) {
+    const onHole: Record<string, string> = {};
+    for (const [id, list] of Object.entries(byTeam ?? {})) {
+      if (!indexes.has(id) || !Array.isArray(list)) continue;
+      const text = list
+        .map((m) => (Number.isInteger(m) && m >= 0 && m < MAX_MEMBERS ? String(m) : NO_CREDIT))
+        .join('')
+        .replace(/\.+$/, '');
+      if (text) onHole[id] = text;
+    }
+    if (Object.keys(onHole).length) out[Number(hole)] = onHole;
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 export type UnpackResult = { ok: true; round: Round } | { ok: false; error: string };
@@ -376,10 +443,12 @@ function readOptions(raw: Record<string, unknown>, playerCount: number): GameOpt
   const matchPlay = readTeam(raw.matchPlay, known);
   const vegas = readTeam(raw.vegas, known);
   const league = readLeague(raw.league, known);
+  const scramble = readScramble(raw.scramble, known);
   if (nassau) options.nassau = nassau;
   if (matchPlay) options.matchPlay = matchPlay;
   if (vegas) options.vegas = vegas;
   if (league) options.league = league;
+  if (scramble) options.scramble = scramble;
 
   return options;
 }
@@ -438,6 +507,71 @@ function readLeague(v: unknown, known: (id: unknown) => id is string): LeagueSet
     if (ids.length) out.firstNight = ids;
   }
   return out;
+}
+
+/** The most tee shots a minimum can ask of anybody: one per hole of a full round. */
+const MAX_MIN_DRIVES = 18;
+
+/**
+ * A scramble setup, or null unless every part of it is sound: one to four
+ * teams, each a real player position named once, each with two to four
+ * members' names, and a minimum that is a whole number of holes.
+ *
+ * All or nothing, as with `readLeague`. A team with a phantom id would hold
+ * credits nobody can see; a member list of one is not a scramble team; and a
+ * minimum of "banana" would reach every drive note. Without the setup the
+ * round still opens — as the stroke play between teams it also is — and only
+ * the shot credits are lost.
+ */
+function readScramble(v: unknown, known: (id: unknown) => id is string): ScrambleSetup | null {
+  if (!isObject(v) || !Array.isArray(v.teams)) return null;
+  if (v.teams.length === 0 || v.teams.length > MAX_TEAMS) return null;
+  const teams: ScrambleTeam[] = [];
+  for (const t of v.teams) {
+    if (!isObject(t) || !known(t.id)) return null;
+    if (teams.some((seen) => seen.id === t.id)) return null;
+    const members = t.members;
+    if (!Array.isArray(members) || members.length < MIN_MEMBERS || members.length > MAX_MEMBERS)
+      return null;
+    if (!members.every((m) => typeof m === 'string')) return null;
+    teams.push({ id: t.id, members: [...(members as string[])] });
+  }
+  const out: ScrambleSetup = { teams };
+  if (v.minDrives !== undefined) {
+    const min = v.minDrives;
+    if (!Number.isInteger(min) || (min as number) < 1 || (min as number) > MAX_MIN_DRIVES) return null;
+    out.minDrives = min as number;
+  }
+  return out;
+}
+
+/**
+ * Shot credits out of a payload: hole -> team position -> one character per
+ * shot. Kept only against a team the setup has, and a character that is not a
+ * member that team has reads as "not said" — the one bad credit is dropped
+ * and the shots either side of it keep their places. No setup, no credits.
+ */
+function readShots(v: unknown, setup: ScrambleSetup | undefined): ScrambleShots | undefined {
+  if (!setup || !isObject(v)) return undefined;
+  const sizes = new Map(setup.teams.map((t) => [t.id, t.members.length]));
+  const out: ScrambleShots = {};
+  for (const [hole, entry] of Object.entries(v)) {
+    const n = Number(hole);
+    if (!Number.isInteger(n) || !isObject(entry)) continue;
+    const onHole: Record<string, number[]> = {};
+    for (const [id, text] of Object.entries(entry)) {
+      const size = sizes.get(id);
+      if (size === undefined || typeof text !== 'string') continue;
+      // No hole takes more shots than a score can say.
+      const list = [...text.slice(0, MAX_PACKED_SCORE)].map((ch) =>
+        /^[0-9]$/.test(ch) && Number(ch) < size ? Number(ch) : -1
+      );
+      while (list.length && list[list.length - 1] === -1) list.pop();
+      if (list.length) onHole[id] = list;
+    }
+    if (Object.keys(onHole).length) out[n] = onHole;
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 /** The Wolf assignments, keeping only holes whose entry is intact. */
@@ -605,13 +739,15 @@ export function unpackRound(raw: unknown): UnpackResult {
     const n = Number(id);
     return Number.isInteger(n) && n >= 0 && n < players.length ? playerId(n) : id;
   };
+  const options = readOptions(raw.o, players.length);
   const mapped = mapPlayerIds(
     {
-      options: readOptions(raw.o, players.length),
+      options,
       wolf: readWolf(raw.w, players.length),
       scores: {},
       junk: readJunk(raw.j, players.length),
       pickups: readPickups(raw.x, players.length),
+      shots: readShots(raw.sh, options.scramble),
     },
     fromIndex
   );
@@ -631,6 +767,7 @@ export function unpackRound(raw: unknown): UnpackResult {
   };
   if (mapped.junk) round.junk = mapped.junk;
   if (mapped.pickups) round.pickups = mapped.pickups;
+  if (mapped.shots) round.shots = mapped.shots;
   if (typeof raw.c === 'string' && raw.c) round.course = raw.c;
   if (Array.isArray(raw.pr)) round.presses = raw.pr.filter((n): n is number => typeof n === 'number');
   const slope = num(raw.sl);

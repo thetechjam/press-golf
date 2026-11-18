@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Round } from './types';
-import { liveRound, standingLine } from './roundSummary';
-import { makeRound, holes18, player, scoresFrom } from './games/testFixtures';
+import { liveRound, roundTitle, standingLine } from './roundSummary';
+import { makeRound, holes18, player, scoresFrom, scrambleRound } from './games/testFixtures';
 
 const NOW = Date.UTC(2026, 8, 22, 18);
 const HOUR = 60 * 60 * 1000;
@@ -74,5 +74,59 @@ describe('standingLine', () => {
     const line = standingLine(r);
     expect(line?.text.startsWith('Stroke Play')).toBe(true);
     expect(line?.up).toBeUndefined();
+  });
+});
+
+describe('a scramble', () => {
+  const hs = holes18();
+  /** One team: birdies on the first `birdies` holes, pars through `thru`. */
+  const solo = (thru: number, birdies: number, status: Round['status'] = 'in_progress') =>
+    scrambleRound({
+      holes: hs,
+      scores: scoresFrom(hs, { t1: Array.from({ length: thru }, (_, i) => (i < birdies ? 3 : 4)) }),
+      status,
+    });
+
+  it('is called a Scramble when the course has no name', () => {
+    expect(roundTitle(solo(0, 0))).toBe('Scramble');
+    expect(roundTitle({ ...solo(0, 0), course: 'Delcastle' })).toBe('Delcastle');
+  });
+
+  it('reads one team’s standing as its score to par, while playing', () => {
+    expect(standingLine(solo(9, 3))).toEqual({ text: '−3 thru 9' });
+    expect(standingLine(solo(4, 0))).toEqual({ text: 'E thru 4' });
+  });
+
+  it('reads one team’s finished card as the number handed in', () => {
+    expect(standingLine(solo(18, 4, 'finished'))).toEqual({ text: '68 (−4)' });
+  });
+
+  it('says nothing before a hole is scored', () => {
+    expect(standingLine(solo(0, 0))).toBeNull();
+  });
+
+  it('reads two teams as the stroke play between them, under its name', () => {
+    const r = scrambleRound({
+      holes: hs,
+      teams: [
+        { name: 'Jesse & Sam', members: ['Jesse', 'Sam'] },
+        { name: 'Cy & Di', members: ['Cy', 'Di'] },
+      ],
+      scores: scoresFrom(hs, { t1: [3, 4], t2: [4, 4] }),
+    });
+    expect(standingLine(r)).toEqual({ text: 'Scramble: Jesse & Sam leads · 7' });
+  });
+
+  it('reads two staked teams as the money, as any staked round does', () => {
+    const r = scrambleRound({
+      holes: hs,
+      teams: [
+        { name: 'Jesse & Sam', members: ['Jesse', 'Sam'] },
+        { name: 'Cy & Di', members: ['Cy', 'Di'] },
+      ],
+      scores: scoresFrom(hs, { t1: [3, 4], t2: [4, 4] }),
+      stake: 20,
+    });
+    expect(standingLine(r)?.text).toBe('Jesse & Sam up $20 · Cy & Di down $20');
   });
 });

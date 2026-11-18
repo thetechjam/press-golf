@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildRoster, lastCrew, isFirstEverRound, placePlayer, ROSTER_LIMIT } from './roster';
-import { makeRound, player, holes18 } from './games/testFixtures';
+import { makeRound, player, holes18, scrambleRound } from './games/testFixtures';
 import type { Round } from './types';
 
 /** Rounds newest-first, matching what listRounds() returns. */
@@ -172,5 +172,31 @@ describe('a Handicap Index on the roster', () => {
       ]),
     ]);
     expect(crew).toEqual([{ name: 'Al', index: 12.4 }, { name: 'Bo', handicap: 8 }]);
+  });
+});
+
+describe('a scramble round', () => {
+  const scramble = (): Round =>
+    scrambleRound({
+      teams: [
+        { name: 'Jesse & Sam', members: ['Jesse', 'Sam'] },
+        { name: 'The Bombers', members: ['Al', ' ', 'Cy'] },
+      ],
+    });
+
+  it('recalls the members, never the team names', () => {
+    const names = buildRoster([scramble()]).map((e) => e.name);
+    expect(names).toEqual(['Jesse', 'Sam', 'Al', 'Cy']);
+  });
+
+  it('recalls members by name only, keeping a handicap seen elsewhere', () => {
+    const older = makeRound({ players: [player('x', 'Sam', 12), player('y', 'Bo')] });
+    const roster = buildRoster([scramble(), older]);
+    expect(roster.find((e) => e.name === 'Sam')).toEqual({ name: 'Sam', handicap: 12 });
+    expect(roster.find((e) => e.name === 'Jesse')).toEqual({ name: 'Jesse' });
+  });
+
+  it('offers the members as the last crew', () => {
+    expect(lastCrew([scramble()]).map((e) => e.name)).toEqual(['Jesse', 'Sam', 'Al', 'Cy']);
   });
 });

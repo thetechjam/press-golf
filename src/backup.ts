@@ -201,6 +201,7 @@ function repairRound(v: Round): Round {
       : { presses: Array.isArray(r.presses) ? r.presses.filter((p) => typeof p === 'number') : [] }),
     ...(r.junk === undefined ? {} : { junk: obj(r.junk) as Round['junk'] }),
     ...(r.pickups === undefined ? {} : { pickups: obj(r.pickups) as Round['pickups'] }),
+    ...(r.shots === undefined ? {} : { shots: obj(r.shots) as Round['shots'] }),
   };
 }
 

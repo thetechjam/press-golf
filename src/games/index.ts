@@ -9,6 +9,7 @@ import { computeVegas, vegasMoney } from './vegas';
 import { computeQuota, quotaMoney } from './quota';
 import { computeJunk, junkMoney } from './junk';
 import type { MoneyFn } from './moneyModels';
+import { isScramble } from './scramble';
 
 /**
  * Everything the app needs to know about a game, in one place: how it is
@@ -121,5 +122,11 @@ export function gameMeta(id: GameType): GameMeta {
 }
 
 export function activeResults(round: Round): GameResult[] {
-  return round.games.map((g) => gameMeta(g).compute(round));
+  // A scramble is stroke play between teams, and is scored by that engine
+  // unchanged; only the name on the board says what the group is playing.
+  const scramble = isScramble(round);
+  return round.games.map((g) => {
+    const result = gameMeta(g).compute(round);
+    return scramble && g === 'strokePlay' ? { ...result, title: 'Scramble' } : result;
+  });
 }

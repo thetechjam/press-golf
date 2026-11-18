@@ -3,6 +3,7 @@ import { computeSettlement } from './games/settlement';
 import { computeSkins } from './games/skins';
 import { holeScore } from './games/handicap';
 import { nameKey } from './people';
+import { isScramble } from './games/scramble';
 
 /**
  * Cross-round history, derived from the rounds already on the device.
@@ -100,6 +101,10 @@ export interface Stats {
  */
 export function countsForStats(round: Round): boolean {
   if (round.players.length === 0 || round.holes.length === 0) return false;
+  // A scramble's "players" are teams, and a team score is nobody's own: a
+  // 62 played on four people's best shots would become one person's best
+  // round and drag their average ten shots low.
+  if (isScramble(round)) return false;
   if (round.status === 'finished') return true;
   return round.holes.every((h) => round.players.every((p) => round.scores[h.number]?.[p.id] != null));
 }

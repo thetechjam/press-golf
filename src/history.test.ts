@@ -7,12 +7,13 @@ import {
   describeEmpty,
   filterByKind,
   isLeagueRound,
+  isScrambleRound,
   roundYears,
   filterByYear,
   describeNoMatches,
   searchPlayers,
 } from './history';
-import { makeRound, holes18 } from './games/testFixtures';
+import { makeRound, holes18, scrambleRound } from './games/testFixtures';
 
 /** A round with the handful of fields the history screen looks at. */
 const round = (over: Partial<Round>): Round => ({
@@ -287,5 +288,49 @@ describe('league nights', () => {
     expect(describeEmpty('sam', 'in_progress', 'league')).toBe(
       'No unfinished league rounds match “sam”.'
     );
+  });
+});
+
+describe('scrambles', () => {
+  const scramble: Round = {
+    ...scrambleRound({
+      teams: [
+        { name: 'The Bombers', members: ['Jesse Ortega', 'Sam'] },
+        { name: 'Cy & Di', members: ['Cy', 'Di'] },
+      ],
+    }),
+    id: 'S',
+    course: 'Rolling Hills',
+    date: '2026-09-05',
+  };
+  const night = round({
+    id: 'L',
+    date: '2026-09-10',
+    games: [],
+    options: { ...torrey.options, league: { teams: [{ aId: 'p1', bId: 'p2' }, { aId: 'p3', bId: 'p4' }], pointsPerMatch: 1 } },
+  });
+  const mixed = [torrey, scramble, night, pebble];
+
+  it('tells a scramble from the rest by its setup', () => {
+    expect(isScrambleRound(scramble)).toBe(true);
+    expect(isScrambleRound(torrey)).toBe(false);
+    expect(isScrambleRound(night)).toBe(false);
+  });
+
+  it('filters to scrambles, and keeps them out of the regular rounds', () => {
+    expect(ids(filterByKind(mixed, 'scramble'))).toEqual(['S']);
+    expect(ids(filterByKind(mixed, 'regular'))).toEqual(['a', 'b']);
+    expect(ids(filterByKind(mixed, 'league'))).toEqual(['L']);
+    expect(ids(filterByKind(mixed, 'all'))).toEqual(['a', 'S', 'L', 'b']);
+  });
+
+  it('finds one by "scramble", by a team name, and by a member', () => {
+    expect(ids(searchRounds(mixed, 'scramble'))).toEqual(['S']);
+    expect(ids(searchRounds(mixed, 'bombers'))).toEqual(['S']);
+    expect(ids(searchRounds(mixed, 'ortega'))).toEqual(['S']);
+  });
+
+  it('names the kind in an empty result', () => {
+    expect(describeEmpty('', 'all', 'scramble')).toBe('No scramble rounds yet.');
   });
 });

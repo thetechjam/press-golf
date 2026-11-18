@@ -6,6 +6,7 @@ import { wolfOutcomes } from './wolf';
 import { vegasHoles, vegasTeams, vegasReady } from './vegas';
 import { computeQuota } from './quota';
 import { JUNK, claimsOn, junkCounts } from './junk';
+import { isScramble } from './scramble';
 
 /**
  * Round awards — the ribbing layer over a finished round.
@@ -516,6 +517,10 @@ function shutOut(round: Round, excludeId: string | undefined): Award | null {
 }
 
 export function computeAwards(round: Round): Award[] {
+  // Every award is a personal feat — a birdie, a blow-up, a sandbag — and a
+  // scramble's card is a team's, so "Jesse & Sam albatrossed the 4th" credits
+  // two people with a shot one of them hit and the other watched.
+  if (isScramble(round)) return [];
   const theAtm = atm(round);
   const candidates = [
     shotOfTheDay(round),

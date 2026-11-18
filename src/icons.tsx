@@ -75,6 +75,20 @@ export const TrophyIcon = ({ size = 18, className }: IconProps) => (
   </svg>
 );
 
+/**
+ * Three heads around one ball — a scramble: a team playing a single ball.
+ * Kept to four marks so it still reads at the 13px it is drawn at on a card.
+ */
+export const ScrambleIcon = ({ size = 18, className }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <circle cx="4.5" cy="8" r="2" />
+    <circle cx="12" cy="4.5" r="2" />
+    <circle cx="19.5" cy="8" r="2" />
+    <path d="M3 14.5a4 4 0 0 1 3.5-2.4M21 14.5a4 4 0 0 0-3.5-2.4M9.5 11a3 3 0 0 1 5 0" />
+    <circle cx="12" cy="17.5" r="3" fill="currentColor" strokeWidth={0} />
+  </svg>
+);
+
 /** Arrow rising out of a tray. */
 export const ShareIcon = ({ size = 18, className }: IconProps) => (
   <svg {...base(size)} className={className}>

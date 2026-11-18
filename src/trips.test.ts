@@ -1,8 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import type { Round } from './types';
-import { activeTrip, findTrip, listTrips, tripLedger, withTrip, ACTIVE_TRIP_DAYS } from './trips';
+import {
+  activeTrip,
+  findTrip,
+  listTrips,
+  tripCandidates,
+  tripLedger,
+  withTrip,
+  ACTIVE_TRIP_DAYS,
+} from './trips';
 import { computeSettlement } from './games/settlement';
-import { makeRound, player, holes, scoresFrom } from './games/testFixtures';
+import { makeRound, player, holes, scoresFrom, scrambleRound } from './games/testFixtures';
 import { packRound, unpackRound } from './shareLink';
 
 const MYRTLE = { id: 't1', name: "Myrtle '27" };
@@ -129,5 +137,41 @@ describe('trips', () => {
     const packed = packRound(round('a', '2027-04-01', { Al: 4, Bo: 5 }));
     const back = unpackRound(JSON.parse(JSON.stringify(packed)));
     expect(back.ok && back.round.trip).toEqual(MYRTLE);
+  });
+});
+
+describe('a scramble on a trip', () => {
+  /** Two teams, $10 low team, finished, with a team named like a player. */
+  const scramble = (id: string, date: string, over: Partial<Round> = {}): Round => {
+    const hs = holes(9);
+    const r = scrambleRound({
+      holes: hs,
+      teams: [
+        { name: 'Al', members: ['Al', 'Bo'] },
+        { name: 'Cy & Di', members: ['Cy', 'Di'] },
+      ],
+      scores: scoresFrom(hs, { t1: Array(9).fill(3), t2: Array(9).fill(4) }),
+      stake: 10,
+      status: 'finished',
+    });
+    expect(computeSettlement(r).active).toBe(true);
+    return { ...r, id, date, ...over };
+  };
+
+  it('moves no money in the trip’s ledger, as a league night does not', () => {
+    const skins = round('a', '2027-04-01', { Al: 4, Bo: 5 });
+    const ledger = tripLedger([skins, scramble('s', '2027-04-02', { trip: MYRTLE })]);
+    expect(ledger.moneyRounds).toBe(1);
+    expect(ledger.players.map((p) => [p.name, p.total])).toEqual(
+      tripLedger([skins]).players.map((p) => [p.name, p.total])
+    );
+  });
+
+  it('is never offered as a round to add to the trip', () => {
+    const skins = round('a', '2027-04-01', { Al: 4, Bo: 5 });
+    const trip = findTrip([skins], MYRTLE.id)!;
+    const loose = round('b', '2027-04-02', { Al: 4, Bo: 5 }, { trip: undefined });
+    const offered = tripCandidates([skins, loose, scramble('s', '2027-04-02')], trip);
+    expect(offered.map((r) => r.id)).toEqual(['b', 'a']);
   });
 });

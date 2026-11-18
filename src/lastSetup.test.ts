@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { lastSetup } from './lastSetup';
-import { makeRound, player } from './games/testFixtures';
+import { makeRound, player, scrambleRound } from './games/testFixtures';
 
 const two = [player('p1', 'Al'), player('p2', 'Bo')];
 
@@ -44,5 +44,19 @@ describe('lastSetup', () => {
     const r = makeRound({ players: two, games: ['vegas'] });
     expect(lastSetup([r])!.options).not.toHaveProperty('vegasFlip');
     expect(lastSetup([r])!.options).not.toHaveProperty('autoPress');
+  });
+});
+
+describe('after a scramble', () => {
+  it('starts New Round from the regular round before it', () => {
+    const scramble = scrambleRound({ stake: 20 });
+    const weekly = makeRound({ players: two, games: ['skins'], options: { stakes: { skins: 2 } } });
+    const setup = lastSetup([scramble, weekly]);
+    expect(setup?.games).toEqual(['skins']);
+    expect(setup?.options.stakes).toEqual({ skins: 2 });
+  });
+
+  it('remembers nothing when the scramble is all there is', () => {
+    expect(lastSetup([scrambleRound({ stake: 20 })])).toBeNull();
   });
 });

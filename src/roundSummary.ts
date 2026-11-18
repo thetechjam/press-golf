@@ -3,6 +3,8 @@ import { activeResults } from './games';
 import { computeLeague } from './games/league';
 import { computeSettlement, formatMoney } from './games/settlement';
 import { completedHoleCount } from './games/util';
+import { isScramble } from './games/scramble';
+import { formatToPar } from './stats';
 
 /**
  * A round's name on Home and in the history. A round with no course name
@@ -11,6 +13,9 @@ import { completedHoleCount } from './games/util';
 export const roundTitle = (r: Round): string => {
   if (r.course) return r.course;
   if (r.options.league) return 'League night';
+  // The players are teams, and "Jesse & Sam v Al & Bo" says less than the
+  // format does.
+  if (isScramble(r)) return 'Scramble';
   const names = r.players.map((p) => p.name.split(' ')[0]);
   return names.length <= 2 ? names.join(' v ') : `${names[0]} +${names.length - 1}`;
 };
@@ -62,6 +67,24 @@ export function standingLine(r: Round, final = r.status === 'finished'): Standin
     return {
       text: `${lead.name} ${final ? 'won' : 'lead'} ${fmtPts(lead.points)}–${fmtPts(trail.points)}`,
     };
+  }
+  // One team in a scramble (your own team, in an event) has nobody to lead
+  // and no money to win; "Jesse & Sam leads · 68" would be a race of one. Its
+  // standing is the number it will hand in.
+  if (isScramble(r) && r.players.length === 1) {
+    const team = r.players[0].id;
+    let gross = 0;
+    let toPar = 0;
+    let thru = 0;
+    for (const h of r.holes) {
+      const s = r.scores[h.number]?.[team];
+      if (s == null) continue;
+      gross += s;
+      toPar += s - h.par;
+      thru += 1;
+    }
+    if (thru === 0) return null;
+    return { text: final ? `${gross} (${formatToPar(toPar)})` : `${formatToPar(toPar)} thru ${thru}` };
   }
   const settlement = computeSettlement(r);
   if (settlement.active) {

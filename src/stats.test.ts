@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeStats, countsForStats, formatToPar } from './stats';
-import { makeRound, player, holes, scoresFrom } from './games/testFixtures';
+import { makeRound, player, holes, scoresFrom, scrambleRound } from './games/testFixtures';
 import type { Round } from './types';
 
 const finish = (r: Round): Round => ({ ...r, status: 'finished' });
@@ -291,5 +291,22 @@ describe('formatToPar', () => {
     expect(formatToPar(3)).toBe('+3');
     expect(formatToPar(-2)).toBe('−2');
     expect(formatToPar(2.45, 1)).toBe('+2.5');
+  });
+});
+
+describe('a scramble', () => {
+  it('is nobody’s round — a team score never reaches a player’s stats', () => {
+    const hs = holes(9);
+    const r = finish(
+      scrambleRound({
+        holes: hs,
+        teams: [{ name: 'Al', members: ['Al', 'Bo'] }],
+        scores: scoresFrom(hs, { t1: Array(9).fill(3) }),
+      })
+    );
+    expect(countsForStats(r)).toBe(false);
+    const stats = computeStats([r]);
+    expect(stats.rounds).toBe(0);
+    expect(stats.players).toEqual([]);
   });
 });

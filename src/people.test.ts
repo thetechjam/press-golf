@@ -8,10 +8,11 @@ import {
   mergeInRounds,
   nameKey,
   nearMatches,
+  peopleOn,
   resolveName,
   withAlias,
 } from './people';
-import { makeRound, player } from './games/testFixtures';
+import { makeRound, player, scrambleRound } from './games/testFixtures';
 import { getAliases, listRounds, mergePeople, saveRound } from './storage';
 import { tripLedger } from './trips';
 import type { Round } from './types';
@@ -129,5 +130,38 @@ describe('likelySame', () => {
   it('leaves alone two names that have shared a card, or been answered', () => {
     expect(likelySame([r(['Al', 'Alex'])])).toEqual([]);
     expect(likelySame([r(['Alex']), r(['Al'])], new Set([pairKey('Al', 'Alex')]))).toEqual([]);
+  });
+});
+
+describe('a scramble’s names', () => {
+  /** A team called "Al", which is not the person Al. */
+  const scramble = (): Round =>
+    scrambleRound({
+      teams: [
+        { name: 'Al', members: ['Alex', 'Sam'] },
+        { name: 'Cy & Di', members: ['Cy', 'Di'] },
+      ],
+    });
+
+  it('are the members, standing in for the team they are on', () => {
+    expect(peopleOn(scramble()).map((p) => [p.id, p.name])).toEqual([
+      ['t1', 'Alex'],
+      ['t1', 'Sam'],
+      ['t2', 'Cy'],
+      ['t2', 'Di'],
+    ]);
+    const plain = makeRound({ players: [player('a', 'Al')] });
+    expect(peopleOn(plain)).toBe(plain.players);
+  });
+
+  it('never suggest a merge from a team name', () => {
+    const regular = makeRound({ players: [player('a', 'Alex'), player('b', 'Bo')] });
+    expect(likelySame([regular, scramble()])).toEqual([]);
+  });
+
+  it('are not rewritten by a merge or an alias', () => {
+    const r = scramble();
+    expect(mergeInRounds([r], 'Al', 'Alex')[0]).toBe(r);
+    expect(applyAliases(r, { al: 'Alex' })).toBe(r);
   });
 });
