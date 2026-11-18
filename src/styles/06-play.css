@@ -132,9 +132,13 @@
   border: 1.5px solid var(--line);
   transition: transform var(--press) var(--ease-out);
 }
+/* --green-ink, not --fairway: a finished hole is the strip's whole message, and
+   --fairway measured 2.10:1 on light --bg and 2.35:1 in glare, under the 3:1 a
+   graphic that carries meaning needs. --green-ink is 5.91 / 6.64 there, and is
+   --fairway again in dark mode (7.90 on --bg), where that had the headroom. */
 .hole-dot.done::before {
-  background: var(--fairway);
-  border-color: var(--fairway);
+  background: var(--green-ink);
+  border-color: var(--green-ink);
 }
 .hole-dot.current::before {
   border-color: var(--green-ink);
@@ -721,6 +725,12 @@
   line-height: 1;
   cursor: pointer;
 }
+/* Glare's --line is dark enough to draw a border in sunlight, which makes it
+   too dark to sit under the × as a fill: ink on it would drop from 11:1 to
+   5.7:1. Half of it over the card keeps the old pale disc (~11.5:1). */
+:root.glare .press-chip button {
+  background: color-mix(in srgb, var(--line) 50%, var(--card));
+}
 
 @media (max-width: 359px) {
   .hole-num {
@@ -732,8 +742,8 @@
    with "Skip anyway" can be found from the strip. A hole not reached yet
    stays hollow and a finished one solid. */
 .hole-dot.partial::before {
-  background: linear-gradient(90deg, var(--fairway) 50%, var(--bg) 50%);
-  border-color: var(--fairway);
+  background: linear-gradient(90deg, var(--green-ink) 50%, var(--bg) 50%);
+  border-color: var(--green-ink);
 }
 /* The remove button is 22px drawn; its tap target is not. Reaches the 44px
    a thumb needs without changing what the chip looks like. */
