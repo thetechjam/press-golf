@@ -342,3 +342,33 @@ describe('saving a course loaded to play one nine', () => {
     expect(storedCourses()).toEqual([course]);
   });
 });
+
+describe('two players under one name', () => {
+  const fill = async (user: ReturnType<typeof userEvent.setup>, names: string[]) => {
+    for (const [i, field] of [...nameFields()].entries()) await user.type(field, names[i]);
+    for (const [i, field] of hcpFields().entries()) await user.type(field, String([4, 9, 6, 12][i]));
+  };
+
+  it('are stopped at Start, since the season standings would add them up as one', async () => {
+    const user = userEvent.setup();
+    const started = show();
+    await fill(user, ['Mike', 'Bo', 'Cy', ' mike ']);
+    await user.click(screen.getByRole('button', { name: /Start League Round/ }));
+
+    expect(started).toHaveLength(0);
+    expect(screen.getByRole('alert').textContent).toMatch(
+      /Two players are called Mike — add an initial to one of them/
+    );
+  });
+
+  it('counts a name merged into another as that name', async () => {
+    localStorage.setItem('press.aliases.v1', JSON.stringify({ mikey: 'Mike' }));
+    const user = userEvent.setup();
+    const started = show();
+    await fill(user, ['Mike', 'Bo', 'Cy', 'Mikey']);
+    await user.click(screen.getByRole('button', { name: /Start League Round/ }));
+
+    expect(started).toHaveLength(0);
+    expect(screen.getByRole('alert').textContent).toMatch(/Two players are called Mike/);
+  });
+});

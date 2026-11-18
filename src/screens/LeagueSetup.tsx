@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { todayIso } from '../roundDate';
 import type { Round, Player, Hole, SavedCourse, LeagueTeam } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
-import { uid, listCourses, saveCourse, deleteCourse, listRounds, COURSES_KEY } from '../storage';
+import { uid, listCourses, saveCourse, deleteCourse, listRounds, getAliases, COURSES_KEY } from '../storage';
+import { nameKey, resolveName } from '../people';
 import { notSavedReason } from '../notSaved';
 import { CourseSearch } from '../components/CourseSearch';
 import { SavedCourseList } from '../components/SavedCourseList';
@@ -194,6 +195,24 @@ export function LeagueSetup({ onCancel, onStart, onStandings }: Props) {
     );
     if (allPlayers.some((p) => !p.name.trim()))
       return setError('Name every player who is playing (A and B on each team).');
+
+    // Season standings find a player by name, so two players under one name
+    // are one record there: both nights' points land on a single "Mike".
+    // New Round's check, names merged before included; an absent slot that
+    // was named counts too, since its forfeit is recorded under that name.
+    const aliases = getAliases();
+    const seen = new Map<string, string>();
+    for (const t of teams) {
+      for (const r of ['a', 'b'] as const) {
+        const typed = resolveName(t[r].name, aliases).trim();
+        const k = nameKey(typed);
+        if (!k) continue;
+        const other = seen.get(k);
+        if (other !== undefined)
+          return setError(`Two players are called ${other} — add an initial to one of them.`);
+        seen.set(k, typed);
+      }
+    }
     // A number to score off is mandatory for a league: every match (A, B,
     // Team) is net, so a blank must not silently become scratch.
     const needsNumber = (p: Player) => !firstNight.includes(p.id);
