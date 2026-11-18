@@ -4,6 +4,7 @@ import { compareRounds, forkRound, describeArrival } from './handover';
 import { makeRound, holes18, player, scoresFrom, scrambleRound } from './games/testFixtures';
 import { mergeRounds } from './backup';
 import { packRound, unpackRound } from './shareLink';
+import { findTrip, tripLedger } from './trips';
 
 /**
  * Two phones holding the same round.
@@ -158,6 +159,36 @@ describe('forking a round', () => {
     // indistinguishable in a list.
     expect(fork.course).toBe('Torrey Pines South (from a link)');
     expect(forkRound({ ...original, course: undefined }).course).toBe('From a link');
+  });
+
+  it('takes it off its trip, so the trip does not count its money twice', () => {
+    const trip = { id: 't1', name: 'Myrtle' };
+    const hs = holes18();
+    const staked = (ids: string[]): Round => ({
+      ...makeRound({
+        players: [player(ids[0], 'Al'), player(ids[1], 'Bo')],
+        holes: hs,
+        games: ['skins'],
+        options: { stakes: { skins: 5 } },
+        scores: scoresFrom(hs, { [ids[0]]: through(18).map(() => 3), [ids[1]]: through(18) }),
+        status: 'finished',
+      }),
+      trip,
+    });
+    const mine = staked(MINE);
+    const fork = forkRound(staked(THEIRS));
+    expect(fork.trip).toBeUndefined();
+
+    const onTrip = findTrip([mine, fork], 't1')!;
+    expect(onTrip.rounds.map((r) => r.id)).toEqual([mine.id]);
+    // Al took all eighteen skins off Bo once, not twice.
+    expect(tripLedger(onTrip.rounds).players.find((p) => p.name === 'Al')!.total).toBe(90);
+  });
+
+  it('leaves a league setup alone', () => {
+    const league = { teams: [{ aId: 'p0', bId: '' }, { aId: 'p1', bId: '' }], pointsPerMatch: 2 } as NonNullable<Round['options']['league']>;
+    const fork = forkRound({ ...original, options: { ...original.options, league } });
+    expect(fork.options.league).toEqual(league);
   });
 
   it('still sorts with the round it came from', () => {

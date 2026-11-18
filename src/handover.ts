@@ -248,8 +248,14 @@ export function compareRounds(incoming: Round, mine: Round | undefined): Arrival
  * place on the same day are otherwise indistinguishable in a list.
  */
 export function forkRound(incoming: Round, now: number = Date.now()): Round {
+  // Off the trip. A trip is simply the rounds that name it, so a fork that
+  // kept `trip` put the same round's money into the trip's settle-up twice,
+  // beside the copy it was forked from. It can be put on the trip from the
+  // Trip screen if it turns out to be the real card. League setup stays: it
+  // is how the round scores, not a ledger it is counted in.
+  const { trip: _trip, ...rest } = incoming;
   return {
-    ...incoming,
+    ...rest,
     id: uid(),
     updatedAt: now,
     course: incoming.course ? `${incoming.course} (from a link)` : 'From a link',
