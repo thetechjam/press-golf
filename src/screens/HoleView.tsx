@@ -168,7 +168,9 @@ export function HoleView({
         </div>
       )}
 
-      <div className="hole-dots" ref={dotsRef} data-fade={dotsEdge} aria-label="Hole progress">
+      {/* role="group" is what makes the label count: aria-label on a bare div
+          has no role to name, and is ignored. */}
+      <div className="hole-dots" ref={dotsRef} data-fade={dotsEdge} role="group" aria-label="Hole progress">
         {round.holes.map((h, i) => (
           <button
             key={h.number}

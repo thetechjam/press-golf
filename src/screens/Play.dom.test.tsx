@@ -164,6 +164,26 @@ describe('the warning banner', () => {
   });
 });
 
+describe('the view tabs and the hole strip, to a screen reader', () => {
+  it('says which of Hole, Board and Card is open', async () => {
+    const user = userEvent.setup();
+    show(scrambleRound({ teams, holes: nine }));
+    const pressed = () =>
+      ['Hole', 'Board', 'Card'].map((name) =>
+        screen.getByRole('button', { name }).getAttribute('aria-pressed')
+      );
+    expect(pressed()).toEqual(['true', 'false', 'false']);
+    await user.click(screen.getByRole('button', { name: 'Board' }));
+    expect(pressed()).toEqual(['false', 'true', 'false']);
+  });
+
+  it('names the hole dots as a group', () => {
+    show(scrambleRound({ teams, holes: nine }));
+    const strip = screen.getByRole('group', { name: 'Hole progress' });
+    expect(within(strip).getAllByRole('button')).toHaveLength(9);
+  });
+});
+
 describe('the Board tab', () => {
   it('follows the Scramble board with the tee shots, and has no money card for one team', async () => {
     const user = userEvent.setup();
