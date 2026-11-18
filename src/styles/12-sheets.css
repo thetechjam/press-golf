@@ -576,11 +576,17 @@
   font-size: var(--fs-xl);
   margin: 0;
 }
+/* Body text in ink. Whole paragraphs in green read as link text, and a
+   reader skims them for something to tap; green is kept for the terms a
+   paragraph is about, so they still stand out of it. */
 .help-section p {
   margin: 0;
-  color: var(--under-ink);
+  color: var(--ink);
   font-size: var(--fs-md);
   line-height: 1.45;
+}
+.help-section p strong {
+  color: var(--under-ink);
 }
 .help-game {
   border-top: 1px solid var(--line);
