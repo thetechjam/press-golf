@@ -1,5 +1,6 @@
 import type { Round } from './types';
-import { nameKey } from './people';
+import { nameKey, peopleOn } from './people';
+import { isScramble } from './games/scramble';
 
 /**
  * Finding one round among many.
@@ -17,13 +18,14 @@ import { nameKey } from './people';
 export type StatusFilter = 'all' | 'in_progress' | 'finished';
 
 /**
- * League nights and every other round. A league round has no entry in
- * `games` — its format lives in `options.league` — so it can only be told
- * apart by that.
+ * League nights, scrambles and every other round. Neither format is told by
+ * `games` — a league round has none, and a scramble's is plain stroke play —
+ * so each is told apart by its setup in `options`. 'regular' is neither.
  */
-export type KindFilter = 'all' | 'league' | 'regular';
+export type KindFilter = 'all' | 'league' | 'scramble' | 'regular';
 
 export const isLeagueRound = (round: Round): boolean => !!round.options.league;
+export const isScrambleRound = (round: Round): boolean => isScramble(round);
 
 /** Lower-cased, trimmed, and with runs of space collapsed. */
 const norm = nameKey;
@@ -42,10 +44,17 @@ function haystack(round: Round): string {
     [
       round.course ?? '',
       ...round.players.map((p) => p.name),
-      ...round.games,
+      // A scramble's `games` is the engine it is scored by, not what was
+      // played: "stroke" should not find it, and "scramble" does below.
+      ...(isScrambleRound(round) ? [] : round.games),
       // A league night's `games` is empty, so without this "league" found
       // nothing — on the one kind of round people most often go looking for.
       isLeagueRound(round) ? 'league' : '',
+      // Same for a scramble, whose `games` says only stroke play — and whose
+      // players are teams, so the people on them are added by name too.
+      ...(isScrambleRound(round)
+        ? ['scramble', ...peopleOn(round).map((p) => p.name)]
+        : []),
       round.trip?.name ?? '',
     ].join(' ')
   );
@@ -75,11 +84,12 @@ export function filterByStatus(rounds: Round[], status: StatusFilter): Round[] {
   return status === 'all' ? rounds : rounds.filter((r) => r.status === status);
 }
 
-/** League nights, the rest, or both. */
+/** League nights, scrambles, the rest, or all of them. */
 export function filterByKind(rounds: Round[], kind: KindFilter): Round[] {
   if (kind === 'all') return rounds;
-  const league = kind === 'league';
-  return rounds.filter((r) => isLeagueRound(r) === league);
+  if (kind === 'league') return rounds.filter(isLeagueRound);
+  if (kind === 'scramble') return rounds.filter(isScrambleRound);
+  return rounds.filter((r) => !isLeagueRound(r) && !isScrambleRound(r));
 }
 
 export interface RoundGroup {

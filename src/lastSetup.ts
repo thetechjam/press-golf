@@ -12,7 +12,8 @@ import type { GameOptions, GameType, Round } from './types';
  *
  * Teams are not carried: they name player ids, and the next round's players
  * have new ones. The 1v1/2v2 modes are. League nights are skipped — they
- * settle on points and have a setup of their own.
+ * settle on points and have a setup of their own — and so are scrambles,
+ * whose single stroke-play game between teams is no week's usual bet.
  */
 export interface LastSetup {
   games: GameType[];
@@ -28,7 +29,9 @@ export interface LastSetup {
 
 /** Rounds are newest first, as `listRounds()` returns them. */
 export function lastSetup(rounds: Round[]): LastSetup | null {
-  const last = rounds.find((r) => !r.options.league && r.games.length > 0);
+  const last = rounds.find(
+    (r) => !r.options.league && !r.options.scramble && r.games.length > 0
+  );
   if (!last) return null;
   const o = last.options;
   const stakes: GameOptions['stakes'] = {};

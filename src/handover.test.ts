@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Round } from './types';
 import { compareRounds, forkRound, describeArrival } from './handover';
-import { makeRound, holes18, player, scoresFrom } from './games/testFixtures';
+import { makeRound, holes18, player, scoresFrom, scrambleRound } from './games/testFixtures';
 import { mergeRounds } from './backup';
 import { packRound, unpackRound } from './shareLink';
 
@@ -333,5 +333,62 @@ describe('settings that are not entries on the card', () => {
     const mine = stakes(card(MINE, through(9), through(9)), 5, 1000);
     const theirs = stakes(card(THEIRS, through(9), through(9)), 5, 2000);
     expect(compareRounds(theirs, mine)).toEqual({ kind: 'same' });
+  });
+});
+
+describe('scramble credits on a handed-over round', () => {
+  /** One copy of a scramble, under `ids`, with these credits on it. */
+  const copy = (ids: string[], shots?: Round['shots']): Round => {
+    const r = scrambleRound({
+      teams: [
+        { id: ids[0], name: 'Jesse & Sam', members: ['Jesse', 'Sam'] },
+        { id: ids[1], name: 'Cy & Di', members: ['Cy', 'Di'] },
+      ],
+      scores: { 1: { [ids[0]]: 4, [ids[1]]: 5 } },
+      minDrives: 2,
+    });
+    return shots ? { ...r, shots } : r;
+  };
+
+  it('is not the same round when only one copy says whose drive it was', () => {
+    // A 4 either way; whose drive made it is what the minimum counts.
+    const theirs = copy(THEIRS, { 1: { p0: [1] } });
+    expect(compareRounds(theirs, copy(MINE)).kind).toBe('ahead');
+    expect(compareRounds(copy(MINE), theirs).kind).toBe('behind');
+  });
+
+  it('calls two different credits for one shot a divergence', () => {
+    const arrival = compareRounds(copy(THEIRS, { 1: { p0: [1] } }), copy(MINE, { 1: { [MINE[0]]: [0] } }));
+    expect(arrival.kind).toBe('diverged');
+    if (arrival.kind === 'diverged') expect(arrival.diff.differing).toBe(1);
+  });
+
+  it('matches the credits by team position, whatever ids each phone uses', () => {
+    const arrival = compareRounds(
+      copy(THEIRS, { 1: { p1: [0, 1] } }),
+      copy(MINE, { 1: { [MINE[1]]: [0, 1] } })
+    );
+    expect(arrival.kind).toBe('same');
+  });
+
+  it('survives a link, and comes back the same round', () => {
+    const mine = copy(MINE, { 1: { [MINE[0]]: [1, -1, 0] } });
+    const result = unpackRound(packRound(mine)!);
+    if (!result.ok) throw new Error(result.error);
+    expect(compareRounds(result.round, mine).kind).toBe('same');
+  });
+
+  it('counts a changed minimum or a renamed member as a setting', () => {
+    const mine = copy(MINE);
+    const theirs = copy(THEIRS);
+    const min = { ...theirs, options: { ...theirs.options, scramble: { ...theirs.options.scramble!, minDrives: 3 } } };
+    const arrival = compareRounds(min, mine);
+    expect(arrival.kind === 'ahead' || arrival.kind === 'behind').toBe(true);
+    if (arrival.kind === 'ahead' || arrival.kind === 'behind') expect(arrival.diff.settings).toBe(1);
+  });
+
+  it('changes nothing about a round that is not a scramble', () => {
+    const plain = makeRound({ players: [player('a', 'Al'), player('b', 'Bo')], scores: { 1: { a: 4 } } });
+    expect(compareRounds(plain, { ...plain, shots: { 1: { a: [0] } } }).kind).toBe('same');
   });
 });

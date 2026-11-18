@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Scramble.** A new format with its own setup, next to League on Home: up
+  to four teams of two to four playing one ball, a shotgun starting hole, a
+  tee-shot minimum (None or 1–6 each) and, with two or more teams, a stake
+  per team that the low team takes from each of the others. Each team is one
+  row on the card, so the board, the money, Results, share links, backups and
+  hand-over carry it unchanged. On the hole, a Tee shot row under each team's
+  score says whose drive was used — tap again to clear — with the rest of the
+  shots behind *All shots*. With a minimum, each name carries its count, Next
+  asks when a scored hole has no tee shot picked, and Finish says who is still
+  owed drives. The Board and Results add a Tee shots card per team, with a
+  note once every drive left is spoken for or the minimum can no longer be
+  met. Setup says when the minimum needs more holes than the round has
+  ("Four players at 3 each needs 12 holes — this round has 9.") without
+  stopping Tee Off. Round cards, the resume card and the share images count
+  teams, not players; Rounds gains a Scramble filter; the plain-text share
+  lists each team's tee shots. Team names are kept out of Stats, trips, the
+  name suggestions and the recall chips — the people on the teams are offered
+  instead.
 - **A prompt after the first finished round** to save a backup and add Press
   to the home screen. Safari deletes a site’s data after seven days without
   a visit otherwise. "Don’t ask again", or a successful backup, stops it for
@@ -43,6 +61,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounds by the year and month in it.
 
 ### Fixed
+- **A shotgun start mid-nine no longer labels two half-nines OUT.** Off the
+  7th, the Card and the scorecard image showed 7–9 as "OUT", 10–18 as "IN"
+  and 1–6 as a second "OUT", each summing only part of a nine. A card whose
+  front nine is split across both ends now shows TOT alone; a start off the
+  1st or the 10th keeps its OUT and IN.
 - **Course search gives up after 8 seconds.** A lookup that never answered
   used to sit on “Searching…” until the page was closed. It now stops and
   says to check the connection and try again; a name already typed still works.

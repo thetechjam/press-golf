@@ -2,6 +2,7 @@ import type { Round, RoundTrip } from './types';
 import { computeSettlement, formatMoney, settleBalances, type Transaction } from './games/settlement';
 import { nameKey } from './people';
 import { daysSince } from './roundDate';
+import { isScramble } from './games/scramble';
 
 /**
  * Trips: several rounds that settle their money once, at the end.
@@ -114,7 +115,9 @@ export function tripLedger(rounds: Round[]): TripLedger {
   let moneyRounds = 0;
   // Oldest first, so the name a player was last entered under is the one shown.
   for (const r of [...rounds].sort((a, b) => -newestFirst(a, b))) {
-    if (r.options.league) continue;
+    // League nights settle on points; a scramble's money is between teams,
+    // and a team is not somebody the trip can send a bill to.
+    if (r.options.league || isScramble(r)) continue;
     const s = computeSettlement(r);
     if (!s.active) continue;
     moneyRounds += 1;
@@ -156,14 +159,15 @@ const NEARBY_DAYS = 7;
 /**
  * Rounds that could be put on this trip: ones played within a week of it
  * that are not on another trip. League nights are left out — they settle on
- * points, not money, and belong to the league's season.
+ * points, not money, and belong to the league's season — and so are
+ * scrambles, whose players are teams the trip's ledger cannot match by name.
  */
 export function tripCandidates(rounds: Round[], trip: Trip): Round[] {
   const ms = (d: string) => Date.parse(`${d}T12:00:00Z`);
   const from = ms(trip.first) - NEARBY_DAYS * 864e5;
   const to = ms(trip.last) + NEARBY_DAYS * 864e5;
   return rounds
-    .filter((r) => !r.options.league)
+    .filter((r) => !r.options.league && !isScramble(r))
     .filter((r) => r.trip?.id === trip.id || (!r.trip && ms(r.date) >= from && ms(r.date) <= to))
     .sort(newestFirst);
 }

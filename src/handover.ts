@@ -1,5 +1,6 @@
 import type { Round } from './types';
 import { uid } from './storage';
+import { shotsOnHole, teamOf } from './games/scramble';
 
 /**
  * What to do with a round that has arrived when this device already has one.
@@ -64,6 +65,20 @@ function cells(round: Round): Map<Cell, string> {
       if (position !== undefined) out.set(`x:${hole}:${position}`, 'X');
     }
   }
+  // Scramble credits are the same kind of thing as junk: nothing on the card
+  // says whose drive was used, so a copy where the group decided and a copy
+  // where it did not are different rounds. Read through `shotsOnHole` so a
+  // credit to a member the team does not have compares as "not said" on both.
+  for (const [hole, byTeam] of Object.entries(round.shots ?? {})) {
+    for (const id of Object.keys(byTeam ?? {})) {
+      const position = at.get(id);
+      // Only a team the setup names: on any other round these are stray
+      // data nobody can see, and must not make two copies differ.
+      if (position === undefined || !teamOf(round, id)) continue;
+      const list = shotsOnHole(round, Number(hole), id);
+      if (list.some((m) => m >= 0)) out.set(`c:${hole}:${position}`, list.join(','));
+    }
+  }
   return out;
 }
 
@@ -113,6 +128,15 @@ function settings(round: Round): Map<string, string> {
     if (t) out.set(`teams:${key}`, `${t.mode}:${t.teamA.map(pos).join('+')}v${t.teamB.map(pos).join('+')}`);
   }
   out.set('presses', [...(round.presses ?? [])].sort((a, b) => a - b).join(','));
+  // Who is on each team, and the tee-shot minimum, decide every drive note;
+  // set only on a scramble, so every other round compares as it always has.
+  const scramble = o.scramble;
+  if (scramble && Array.isArray(scramble.teams)) {
+    scramble.teams.forEach((t, i) =>
+      out.set(`scramble:${i}`, `${pos(t?.id)}:${(t?.members ?? []).join('|')}`)
+    );
+    out.set('scramble:min', String(scramble.minDrives ?? ''));
+  }
   for (const [hole, w] of Object.entries(round.wolf ?? {})) {
     if (!w?.choice) continue;
     const c = w.choice;

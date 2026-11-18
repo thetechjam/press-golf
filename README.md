@@ -34,6 +34,7 @@ round in under six minutes
 - **Quota** — beat your own points target, set by your handicap
 - **Nassau** — 1v1 and 2v2, with manual presses
 - **Golf League** — Thursday-night format (A/B singles + combined team match, league points)
+- **Scramble** — teams of two to four playing one ball, with whose shot it was, a tee-shot minimum and a shotgun start
 
 Net scoring with per-hole handicap strokes is supported throughout — one stroke
 per hole down the stroke index, and a second on the hardest holes when a
@@ -44,6 +45,18 @@ course's pars and stroke indexes once and reload them with a tap, or pull them
 live from course search (course data ©
 [OpenStreetMap](https://www.openstreetmap.org/copyright) contributors, ODbL
 1.0, via OpenGolfAPI).
+
+## Scramble
+
+A scramble has its own setup, beside League on Home: up to four teams of two
+to four, a starting hole for a shotgun start, and how many times each
+player's drive has to be used. Each team is one row on the card, so the score,
+the Board, the money ("$5 per team", low team takes it from each of the
+others) and sharing work as they do for any round. Under each team's score a
+tap says whose tee shot was played — and, behind *All shots*, whose ball was
+played on every shot after it. The Board and Results keep a Tee shots card per
+team: each player's drives against the minimum, and a plain note when every
+drive left is spoken for or the minimum can no longer be met.
 
 ## Settling up
 

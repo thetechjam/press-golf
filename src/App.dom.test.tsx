@@ -232,6 +232,37 @@ describe('App navigation', () => {
   });
 });
 
+describe('App — Scramble route', () => {
+  it('reaches Scramble setup from Home, and Back returns Home', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Scramble' }));
+    expect(await screen.findByRole('heading', { name: 'Scramble' })).toBeTruthy();
+    expect(history.state).toMatchObject({ view: 'scrambleSetup', depth: 1 });
+    await goBack();
+    expect(onHome()).toBe(true);
+  });
+
+  it('tees off onto Play, saved, in place of the setup screen', async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole('button', { name: 'Scramble' }));
+    await screen.findByRole('heading', { name: 'Scramble' });
+    await user.type(screen.getByRole('combobox', { name: 'Team 1, player 1' }), 'Jesse');
+    await user.type(screen.getByRole('combobox', { name: 'Team 1, player 2' }), 'Sam');
+    await user.click(screen.getByRole('button', { name: /Tee Off/ }));
+
+    expect(await screen.findByRole('button', { name: 'Finish' })).toBeTruthy();
+    const saved = JSON.parse(localStorage.getItem('press.rounds.v1') ?? '[]') as Round[];
+    expect(saved).toHaveLength(1);
+    expect(saved[0].options.scramble?.teams[0].members).toEqual(['Jesse', 'Sam']);
+    // Replaced, as New Round is: Back from the card goes Home, not to a blank setup.
+    expect(history.state).toMatchObject({ view: 'play', depth: 1 });
+    await goBack();
+    expect(onHome()).toBe(true);
+  });
+});
+
 describe('App — Stats route', () => {
   it('is offered once a round counts, and returns Home', async () => {
     seed([round({ status: 'finished', scores: Object.fromEntries(hs.map((h) => [h.number, { p1: 4, p2: 5 }])) })]);

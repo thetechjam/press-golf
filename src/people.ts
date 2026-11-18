@@ -1,4 +1,5 @@
-import type { Round } from './types';
+import type { Player, Round } from './types';
+import { isScramble } from './games/scramble';
 
 /**
  * Telling people apart across rounds.
@@ -39,9 +40,35 @@ export function resolveName(name: string, aliases: Aliases): string {
   return current;
 }
 
-/** A round with every player's name brought to its merged spelling. */
+/**
+ * The people who played a round, as players.
+ *
+ * Every round but a scramble is its `players`. A scramble's players are its
+ * teams — "Jesse & Sam" is not somebody to recall at setup or to suggest
+ * merging with "Jesse" — so its people are the team members, by name only:
+ * a member carries no handicap, and the id is the team's, which is all a
+ * caller following people by name needs. Blank names are kept, as they are
+ * in `players`, for the caller to skip.
+ */
+export function peopleOn(round: Round): Player[] {
+  if (!isScramble(round)) return round.players;
+  const teams = round.options.scramble?.teams;
+  if (!Array.isArray(teams)) return [];
+  return teams.flatMap((t) =>
+    (Array.isArray(t?.members) ? t.members : [])
+      .filter((m): m is string => typeof m === 'string')
+      .map((name) => ({ id: t.id, name }))
+  );
+}
+
+/**
+ * A round with every player's name brought to its merged spelling.
+ *
+ * A scramble is left as it is: its player names are team names, which a
+ * merge of two people's spellings has no business rewriting.
+ */
 export function applyAliases(round: Round, aliases: Aliases): Round {
-  if (!Object.keys(aliases).length) return round;
+  if (!Object.keys(aliases).length || isScramble(round)) return round;
   let changed = false;
   const keys = round.players.map((p) => nameKey(p.name));
   const players = round.players.map((p, i) => {
@@ -77,12 +104,14 @@ export function withAlias(aliases: Aliases, from: string, into: string): Aliases
 /**
  * Every saved round with `from` renamed to `into`, for the merge. A round that
  * already has both names on its card is left alone: two players in one
- * foursome are two people, whatever their names look like.
+ * foursome are two people, whatever their names look like. So is a scramble,
+ * whose names are teams': a team called "Al" is not the Al being merged.
  */
 export function mergeInRounds(rounds: Round[], from: string, into: string): Round[] {
   const f = nameKey(from);
   const i = nameKey(into);
   return rounds.map((r) => {
+    if (isScramble(r)) return r;
     const hasFrom = r.players.some((p) => nameKey(p.name) === f);
     if (!hasFrom || r.players.some((p) => nameKey(p.name) === i)) return r;
     return {
@@ -195,11 +224,17 @@ export interface LikelySame {
 /**
  * Pairs of names in these rounds that are probably one person: alike, never
  * on the same card together, and not already answered "two people".
+ *
+ * Scrambles are skipped whole. Their team names are not people, and their
+ * members are not renamed by a merge (`mergeInRounds` leaves the round
+ * alone), so a pair found only there would be asked about again after
+ * every yes.
  */
 export function likelySame(rounds: Round[], distinct: Set<string> = new Set()): LikelySame[] {
   const count = new Map<string, { name: string; n: number }>();
   const together = new Set<string>();
   for (const r of rounds) {
+    if (isScramble(r)) continue;
     const names = r.players.map((p) => p.name.trim()).filter(Boolean);
     for (const n of names) {
       const k = nameKey(n);

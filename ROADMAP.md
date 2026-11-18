@@ -101,6 +101,14 @@ what's deferred, and how to expand without a rewrite.
   nothing new to keep in step. Players are matched across rounds by name, the
   sum is kept in cents, and the same fewest-payments settle runs on it.
 
+- **Scramble** (`src/games/scramble.ts`, `src/screens/ScrambleSetup.tsx`):
+  teams of two to four playing one ball. Each team is a `Player`, so stroke
+  play ranks the teams and the money, sharing, backups and hand-over need
+  nothing new; what rides beside the card is the teams' members
+  (`options.scramble`) and whose ball was played on each shot (`shots`). A
+  tee-shot minimum, a shotgun start and a Tee shots card per team on the
+  Board and Results. Design: `docs/dev/specs/2026-11-18-press-scramble-design.md`.
+
 ## Where data lives today
 
 Everything is in **localStorage**, per browser, per device:
@@ -124,6 +132,7 @@ Keeping them in step is what accounts and sync are for, below.
 | ~~Cross-round stats / history~~ | **Shipped local-only** via the Stats screen (`stats.ts`) — scoring average, best round, skins, money, all derived from `press.rounds.v1`. *Cross-device* history still needs accounts + sync. |
 | ~~Automatic Nassau presses~~ | **Shipped** — setup toggle, with presses derived from the card by `autoPressStarts()` rather than stored, so correcting a score re-decides them. Presses cascade: a press that goes 2 down presses again. |
 | ~~Course database~~ | **Shipped** via OpenGolfAPI course search (keyless + CORS, so no backend needed; returns per-hole par and `handicap_index`). Coverage is US-strong; Favorite Courses covers gaps and offline use. |
+| Scramble, next pass | Left out of the first cut (see the design note's *Not in this pass*): team handicaps as a setup field (the Board's *Edit handicaps* already works on a team), a tee-initials row on the scorecard, scramble rounds in trips and Stats, yardages, and renaming a member through the same-person merge. |
 | Tagline refresh | Current line ("Track golf side games — the fun way.") kept for now. Parked candidates from the July 2026 brand pass (no ranking yet): "Settle it on 18." / "Nobody plays for free." / "Every hole's a bet." / "Keep your friends honest." See `BRAND.md`. |
 
 ## How to expand without a rewrite

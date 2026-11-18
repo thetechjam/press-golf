@@ -166,6 +166,46 @@ const rounds = [
     date: '2025-09-10',
     updatedAt: Date.now() - 8e6,
   }),
+  // A scramble: two teams of one ball each, a shotgun start on 4 and a
+  // tee-shot minimum, with credits on every hole — so the whose-shot rows,
+  // the Tee shots board and its warning note are all drawn and measured.
+  // Finished and older than the rest, so Home's resume card is unchanged;
+  // Play is reached from its Results, which is how a finished card reopens.
+  (() => {
+    const nine = [...holes.slice(3, 9), ...holes.slice(0, 3)];
+    const teams = [
+      { id: 'scr1', name: 'Morgan, Sam +2', members: ['Morgan', 'Sam', 'Alexandra', 'Bo'] },
+      { id: 'scr2', name: 'Cy & Di', members: ['Cy', 'Di'] },
+    ];
+    const s = {};
+    const shots = {};
+    nine.forEach((h, i) => {
+      s[h.number] = { scr1: h.par - (i % 2), scr2: h.par };
+      shots[h.number] = { scr1: [i % 4, (i + 1) % 4], scr2: [0] };
+    });
+    return round({
+      id: 'scr',
+      course: 'Rolling Hills Scramble',
+      date: '2026-05-02',
+      updatedAt: Date.now() - 9e6,
+      players: teams.map((t) => ({ id: t.id, name: t.name })),
+      holes: nine,
+      games: ['strokePlay'],
+      junk: {},
+      slope: undefined,
+      rating: undefined,
+      options: {
+        useNet: false,
+        stablefordMode: 'standard',
+        loneWolfMultiplier: 2,
+        blindWolfMultiplier: 3,
+        stakes: { strokePlay: 5 },
+        scramble: { teams: teams.map((t) => ({ id: t.id, members: t.members })), minDrives: 2 },
+      },
+      scores: s,
+      shots,
+    });
+  })(),
 ];
 
 export { holes, ids, players, rounds, courses };
@@ -236,6 +276,54 @@ export async function walkScreens({ page, BASE, step, width, settings }) {
       await home();
       await page.getByRole('button', { name: /Golf League/i }).click();
       await page.waitForTimeout(500);
+    }
+  );
+
+  await step(
+    at('Scramble setup (every row open)'),
+    async () => {
+      await home();
+      await page.getByRole('button', { name: 'Scramble', exact: true }).click();
+      await page.waitForTimeout(400);
+      await page.getByRole('button', { name: '+ Add a team' }).click();
+      for (const row of ['Course', 'Holes & pars', 'Format', 'Stake']) {
+        await page.getByText(new RegExp(`^${row}$`)).first().click();
+      }
+      await page.waitForTimeout(500);
+    }
+  );
+
+  await step(
+    at('Scramble results'),
+    async () => {
+      await home();
+      await page.getByRole('button', { name: /All \d+ rounds/ }).click();
+      await page.waitForTimeout(400);
+      await openRound('Rolling Hills Scramble');
+      await page.getByRole('heading', { name: 'Results' }).waitFor();
+      await page.waitForTimeout(500);
+    }
+  );
+
+  /* The disclosure is where the most buttons are, four names a row on a
+     team of four; closed, half of what this step is for is not on screen. */
+  await step(
+    at('Scramble — hole, all shots'),
+    async () => {
+      await page.getByRole('button', { name: 'Back to the scorecard' }).click();
+      await page.waitForTimeout(500);
+      // A finished round reopens on its Card.
+      await page.getByRole('button', { name: /^Hole$/ }).click();
+      await page.getByRole('button', { name: /All shots/ }).first().click();
+      await page.locator('.scr-row').nth(1).waitFor({ timeout: 4000 });
+    }
+  );
+
+  await step(
+    at('Scramble — board'),
+    async () => {
+      await page.getByRole('button', { name: /^Board$/ }).click();
+      await page.waitForTimeout(400);
     }
   );
 

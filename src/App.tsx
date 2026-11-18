@@ -20,12 +20,24 @@ import {
   History,
   LeagueSetup,
   LeagueStandings,
+  ScrambleSetup,
   Stats,
   TripScreen,
   preloadScreens,
 } from './lazyScreens';
 
-const VIEWS = ['home', 'setup', 'leagueSetup', 'play', 'results', 'stats', 'history', 'standings', 'trip'] as const;
+const VIEWS = [
+  'home',
+  'setup',
+  'leagueSetup',
+  'scrambleSetup',
+  'play',
+  'results',
+  'stats',
+  'history',
+  'standings',
+  'trip',
+] as const;
 type View = (typeof VIEWS)[number];
 
 const isView = (v: unknown): v is View =>
@@ -409,6 +421,10 @@ export default function App() {
             load(null);
             goTo('leagueSetup');
           }}
+          onNewScramble={() => {
+            load(null);
+            goTo('scrambleSetup');
+          }}
           onResume={(r) => {
             load(r);
             goTo('play');
@@ -479,6 +495,17 @@ export default function App() {
         <LeagueSetup
           onCancel={() => goTo('home')}
           onStandings={() => goTo('standings')}
+          onStart={(r) => {
+            load(r);
+            persistRound(r);
+            nav.replace('play');
+          }}
+        />
+      )}
+
+      {view === 'scrambleSetup' && (
+        <ScrambleSetup
+          onCancel={() => goTo('home')}
           onStart={(r) => {
             load(r);
             persistRound(r);

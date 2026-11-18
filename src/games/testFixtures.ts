@@ -5,6 +5,7 @@ import type {
   GameType,
   GameOptions,
   Scores,
+  ScrambleShots,
 } from '../types';
 import { DEFAULT_OPTIONS } from '../types';
 
@@ -106,4 +107,42 @@ export function makeRound(o: RoundOverrides = {}): Round {
     ratingHoles: o.ratingHoles,
     status: o.status ?? 'in_progress',
   };
+}
+
+export interface ScrambleOverrides {
+  /** Each team's player id, name and members. Ids default to 't1', 't2' …. */
+  teams?: { id?: string; name?: string; members: string[] }[];
+  minDrives?: number;
+  holes?: Hole[];
+  scores?: Scores;
+  shots?: ScrambleShots;
+  /** The stroke-play stake, low team takes it from each of the others. */
+  stake?: number;
+  status?: Round['status'];
+}
+
+/**
+ * A scramble round built the way setup builds one: one `Player` per team,
+ * named after it, `games: ['strokePlay']` scored gross, and the members on
+ * `options.scramble`. The default is one team of three on eighteen par 4s.
+ */
+export function scrambleRound(o: ScrambleOverrides = {}): Round {
+  const teams = (o.teams ?? [{ name: 'Jesse & Sam', members: ['Jesse', 'Sam', 'Al'] }]).map(
+    (t, i) => ({ id: t.id ?? `t${i + 1}`, name: t.name ?? `Team ${i + 1}`, members: t.members })
+  );
+  const round = makeRound({
+    players: teams.map((t) => player(t.id, t.name)),
+    holes: o.holes,
+    games: ['strokePlay'],
+    options: {
+      stakes: o.stake ? { strokePlay: o.stake } : {},
+      scramble: {
+        teams: teams.map((t) => ({ id: t.id, members: t.members })),
+        ...(o.minDrives === undefined ? {} : { minDrives: o.minDrives }),
+      },
+    },
+    scores: o.scores,
+    status: o.status,
+  });
+  return o.shots ? { ...round, shots: o.shots } : round;
 }

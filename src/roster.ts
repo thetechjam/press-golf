@@ -1,5 +1,5 @@
 import type { Round, Player } from './types';
-import { nameKey } from './people';
+import { nameKey, peopleOn } from './people';
 
 /** A remembered player, derived from saved rounds rather than stored. */
 export interface RosterEntry {
@@ -43,7 +43,7 @@ export function buildRoster(rounds: Round[]): RosterEntry[] {
   const byKey = new Map<string, RosterEntry>();
 
   for (const round of rounds) {
-    for (const p of round.players) {
+    for (const p of peopleOn(round)) {
       const name = nameOf(p.name);
       // Setup seeds every new round with two blank players, so abandoned
       // rounds are full of them. They must never reach the roster.
@@ -77,7 +77,7 @@ export function lastCrew(rounds: Round[]): RosterEntry[] {
   if (!latest) return [];
 
   const named: RosterEntry[] = [];
-  for (const p of latest.players) {
+  for (const p of peopleOn(latest)) {
     const name = nameOf(p.name);
     if (!name) continue;
     named.push(entryFor(name, p));

@@ -120,6 +120,27 @@ export function HelpSheet({ onBack }: Props) {
       </section>
 
       <section className="help-section">
+        <h3>Scramble</h3>
+        <p>
+          A separate mode from Home for a scramble: teams of two to four, each
+          playing one ball and posting one score. Every player hits, the team
+          picks the best shot, and everyone plays from there. Press keeps each
+          team's score as stroke play — low team wins, and with a stake it
+          takes that much from each of the others.
+        </p>
+        <p>
+          Under each team's score, tap whose ball was played: the tee shot
+          first, and the rest of the hole under <strong>All shots</strong>.
+          Tap a name again to clear it. If the event says every player's drive
+          has to be used a set number of times, set the{' '}
+          <strong>tee shot minimum</strong> in Format; the Board keeps count of
+          who is still owed one and says when the holes left can no longer
+          cover it. Par 3s count. A shotgun start is the Starting hole in the
+          same row.
+        </p>
+      </section>
+
+      <section className="help-section">
         <h3>Course data</h3>
         <p>
           Course search is powered by OpenGolfAPI. Course data ©{' '}

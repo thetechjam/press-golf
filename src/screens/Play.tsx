@@ -10,9 +10,12 @@ import { BoardJump } from '../components/BoardJump';
 import { HoleTicker } from '../components/MoneyTicker';
 import { HoleView } from './HoleView';
 import { activeResults } from '../games';
+import { asScrambleResult } from '../scrambleResult';
 import { isHolePartial, resumeHole } from '../games/util';
 import { visibleSwing } from '../games/money';
 import { wolfForHole } from '../games/wolf';
+import { creditShot, driveStatus, isScramble, uncreditedDrives } from '../games/scramble';
+import { ScrambleBoard, TEE_SHOTS_ID } from '../components/ScrambleBoard';
 import { colorMap } from '../player';
 import { courseHandicapFor, usesHandicaps } from '../games/handicap';
 import { getSettings } from '../storage';
@@ -165,13 +168,36 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   const noCallHere = wolfCallMissing(hole);
   const noCallHoles = round.holes.filter(wolfCallMissing).length;
 
-  const tryNext = () => (missing.length || noCallHere ? setWarn('next') : go(idx + 1));
-  const tryFinish = () =>
-    incompleteHoles > 0 || noCallHoles > 0 ? setWarn('finish') : onFinish();
+  // Scramble: a scored hole with nobody's drive picked is the one credit the
+  // minimum turns on, and it is only easy to remember on the green it was
+  // played to. Asked about only when there is a minimum to keep.
+  const scramble = isScramble(round);
+  const minDrives = scramble ? driveStatus(round, round.players[0]?.id ?? '').min : 0;
+  const noTeeHere = minDrives
+    ? round.players.filter((p) => uncreditedDrives(round, p.id).includes(hole.number))
+    : [];
+  // At the end, the question is the rule itself: whoever is still owed drives.
+  const shortTeams = scramble
+    ? round.players
+        .map((p) => ({ team: p, status: driveStatus(round, p.id) }))
+        .filter((t) => t.status.owed.length > 0)
+    : [];
 
+  const tryNext = () =>
+    missing.length || noCallHere || noTeeHere.length ? setWarn('next') : go(idx + 1);
+  const tryFinish = () =>
+    incompleteHoles > 0 || noCallHoles > 0 || shortTeams.length
+      ? setWarn('finish')
+      : onFinish();
+
+  // A scramble team's default name has a comma in it ("Jesse, Sam +2"), so a
+  // comma-separated list of teams cannot be read back into teams. "and"
+  // keeps each one whole; every other round's list is as it always was.
+  const nameList = (names: string[]) => names.join(scramble ? ' and ' : ', ');
   const nextWarning = [
-    missing.length ? `No score yet for ${missing.join(', ')}.` : '',
+    missing.length ? `No score yet for ${nameList(missing)}.` : '',
     noCallHere ? 'No Wolf call on this hole.' : '',
+    noTeeHere.length ? `No tee shot picked for ${nameList(noTeeHere.map((p) => p.name))}.` : '',
     'Move to the next hole anyway?',
   ]
     .filter(Boolean)
@@ -186,6 +212,18 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   ]
     .filter(Boolean)
     .join(' and ');
+  const finishText = [
+    finishWarning ? `${finishWarning}.` : '',
+    ...shortTeams.map(
+      ({ team, status }) =>
+        `${team.name}: tee-shot minimum not met (${status.owed
+          .map((o) => `${o.name} ${o.count}`)
+          .join(', ')}).`
+    ),
+    'Finish the round anyway?',
+  ]
+    .filter(Boolean)
+    .join(' ');
   const confirmProceed = () => {
     if (warn === 'next') go(idx + 1);
     else onFinish();
@@ -201,11 +239,30 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
     const currentHasBlank = round.players.some(
       (p) => round.scores[hole.number]?.[p.id] == null
     );
+    // A tee shot not picked on this hole is fixed here, on this hole: the
+    // scores are in, so "the first blank" would be somewhere else entirely.
+    if (!currentHasBlank && warn === 'next' && noTeeHere.length) {
+      setHighlightId(noTeeHere[0].id);
+      return;
+    }
     if (!currentHasBlank) {
       const fi = round.holes.findIndex((h) =>
         round.players.some((p) => round.scores[h.number]?.[p.id] == null)
       );
       if (fi >= 0) targetIdx = fi;
+      // Every score is in and the minimum is what is short: the likeliest fix
+      // is a drive that was never picked, so open the first hole missing one
+      // for a team that still owes.
+      else if (shortTeams.length) {
+        for (const { team } of shortTeams) {
+          const holeNumber = uncreditedDrives(round, team.id)[0];
+          if (holeNumber == null) continue;
+          targetIdx = round.holes.findIndex((h) => h.number === holeNumber);
+          setIdx(targetIdx);
+          setHighlightId(team.id);
+          return;
+        }
+      }
     }
     setIdx(targetIdx);
     const targetHole = round.holes[targetIdx];
@@ -228,9 +285,18 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
   let results: ReturnType<typeof activeResults> = [];
   let colors: ReturnType<typeof colorMap> = {};
   if (mode === 'board' && !round.options.league) {
-    results = activeResults(round);
+    results = activeResults(round).map((r) => asScrambleResult(round, r));
     colors = colorMap(round);
   }
+
+  // One team has nobody to play for money against: no stake can be set that
+  // means anything, so no card asking for one.
+  const showMoney = !round.options.league && !(scramble && round.players.length < 2);
+  const jumpTargets = [
+    ...(showMoney ? [{ id: 'board-money', label: 'Money' }] : []),
+    ...results.map((r) => ({ id: `board-${r.gameType}`, label: r.title })),
+    ...(scramble ? [{ id: TEE_SHOTS_ID, label: 'Tee shots' }] : []),
+  ];
 
   // The course handicap, not the stored stroke count: an Index player's
   // badge read "0" while they were getting strokes.
@@ -307,21 +373,17 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
           onPresses={setPresses}
           onJunk={setJunk}
           onPar={setPar}
+          onShot={(teamId, shot, member) =>
+            onChange(creditShot(round, hole.number, teamId, shot, member))
+          }
         />
       )}
 
       {mode === 'board' && (
         <>
           {/* Only worth a row once there are three cards to choose between. */}
-          {results.length >= 2 && (
-            <BoardJump
-              targets={[
-                { id: 'board-money', label: 'Money' },
-                ...results.map((r) => ({ id: `board-${r.gameType}`, label: r.title })),
-              ]}
-            />
-          )}
-          {!round.options.league && <MoneyBoard round={round} onChange={onChange} />}
+          {jumpTargets.length >= 3 && <BoardJump targets={jumpTargets} />}
+          {showMoney && <MoneyBoard round={round} onChange={onChange} />}
           <section className="boards">
             {round.options.league ? (
               <LeagueBoard
@@ -345,6 +407,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
                 />
               ))
             )}
+            {scramble && <ScrambleBoard round={round} />}
           </section>
           <button className="btn-ghost edit-hcp" onClick={() => setShowHcp(true)}>
             <PencilIcon size={16} /> Edit handicaps
@@ -367,7 +430,7 @@ export function Play({ round, onChange, onFinish, onExit }: Props) {
       <div className="screen-foot play-foot">
         {warn && (
           <div className="warn-banner" role="alert">
-            <p>{warn === 'next' ? nextWarning : `${finishWarning}. Finish the round anyway?`}</p>
+            <p>{warn === 'next' ? nextWarning : finishText}</p>
             <div className="warn-actions">
               <button className="warn-keep" onClick={keepScoring}>
                 Keep scoring

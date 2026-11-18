@@ -189,8 +189,13 @@ export function buildScorecard(round: Round): ScorecardModel {
 
   const runs = nineRuns(holes);
   // One run means the only subtotal available would repeat TOT verbatim.
+  // More than two means a shotgun start mid-nine (off the 7th: 7–9, 10–18,
+  // 1–6), where the front nine is split across both ends of the card: its
+  // two pieces would each be labelled OUT and each sum only part of it.
+  // There is no column that can stand beside a nine played in two halves,
+  // so such a card has TOT alone.
   const nines: ScorecardNine[] =
-    runs.length > 1
+    runs.length === 2
       ? runs.map((r) => ({
           label: r.label,
           afterIndex: r.to,

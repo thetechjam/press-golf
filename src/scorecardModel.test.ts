@@ -275,6 +275,20 @@ describe('buildScorecard — OUT / IN subtotals', () => {
     expect(row.nineTotals).toEqual([54, 36]);
   });
 
+  it('drops the subtotals for a start mid-nine, rather than two half-nines both called OUT', () => {
+    const order = [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 1, 2, 3, 4, 5, 6];
+    const hs = par4s(order);
+    const round = makeRound({
+      players: [player('p1', 'Al')],
+      holes: hs,
+      scores: scoresFrom(hs, { p1: order.map(() => 4) }),
+    });
+    const model = buildScorecard(round);
+    expect(model.nines).toEqual([]);
+    expect(model.rows[0].nineTotals).toEqual([]);
+    expect(model.holes.map((h) => h.number)).toEqual(order);
+  });
+
   it('keeps nineTotals aligned to model.nines for every row', () => {
     const model = buildScorecard(
       makeRound({ holes: holes18(), players: FOUR, scores: {} })

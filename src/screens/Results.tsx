@@ -5,6 +5,7 @@ import { Settlement } from '../components/Settlement';
 import { LeagueBoard } from '../components/LeagueBoard';
 import { PlayerAvatar } from '../components/PlayerAvatar';
 import { activeResults } from '../games';
+import { asScrambleResult } from '../scrambleResult';
 import { computeSettlement, formatMoney } from '../games/settlement';
 import { computeLeague } from '../games/league';
 import { colorMap } from '../player';
@@ -17,6 +18,9 @@ import { Awards } from '../components/Awards';
 import { formatRoundDate, formatRoundDateAbsolute } from '../roundDate';
 import { count } from '../plural';
 import { KeepRoundsPrompt } from '../components/KeepRoundsPrompt';
+import { ScrambleBoard } from '../components/ScrambleBoard';
+import { isScramble, scrambleSummaryLines } from '../games/scramble';
+import { formatToPar } from '../stats';
 
 interface Hero {
   players: { name: string; color: string }[];
@@ -28,6 +32,31 @@ interface Hero {
 // first decided game. League rounds skip the hero — the board tells the story.
 function winnerHero(round: Round): Hero | null {
   const colors = colorMap(round);
+
+  // One scramble team has beaten nobody: "Jesse & Sam wins" would be a race
+  // of one. What it has is the number it hands in, so that is the headline.
+  if (isScramble(round) && round.players.length === 1) {
+    const team = round.players[0];
+    let gross = 0;
+    let toPar = 0;
+    let played = 0;
+    for (const h of round.holes) {
+      const s = round.scores[h.number]?.[team.id];
+      if (s == null) continue;
+      gross += s;
+      toPar += s - h.par;
+      played += 1;
+    }
+    if (played === 0) return null;
+    return {
+      players: [{ name: team.name, color: colors[team.id] }],
+      line: `${gross} · ${formatToPar(toPar)}`,
+      sub:
+        played < round.holes.length
+          ? `${team.name} · thru ${played}`
+          : team.name,
+    };
+  }
 
   const settlement = computeSettlement(round);
   if (settlement.active) {
@@ -94,14 +123,23 @@ function buildSummary(round: Round): string {
     return lines.join('\n');
   }
 
-  const results = activeResults(round);
-  lines.push(`${round.players.map((p) => p.name).join(', ')}`);
+  const results = activeResults(round).map((r) => asScrambleResult(round, r));
+  // A scramble team's default name has a comma in it ("Jesse, Sam +2"), so
+  // its teams are set apart with a dot — commas would run two teams together.
+  lines.push(`${round.players.map((p) => p.name).join(isScramble(round) ? ' · ' : ', ')}`);
   lines.push('');
   for (const r of results) {
     lines.push(`${r.title}: ${r.status}`);
     for (const s of r.standings) {
       lines.push(`  ${s.playerId ? `${s.rank}.` : '·'} ${s.label} — ${s.detail}`);
     }
+    lines.push('');
+  }
+  // Whose drives were used is the part of a scramble the card cannot carry,
+  // and the part the group chat will argue about.
+  const shotLines = scrambleSummaryLines(round);
+  if (shotLines.length) {
+    lines.push(...shotLines);
     lines.push('');
   }
 
@@ -128,9 +166,10 @@ function buildSummary(round: Round): string {
 export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep, onTrip }: Props) {
   const [showHcp, setShowHcp] = useState(false);
   const [sharing, setSharing] = useState(false);
-  const results = activeResults(round);
+  const results = activeResults(round).map((r) => asScrambleResult(round, r));
   const hero = round.options.league ? null : winnerHero(round);
   const colors = colorMap(round);
+  const scramble = isScramble(round);
   // The course handicap, not the stored stroke count: an Index player's
   // badge read "0" while they were getting strokes.
   const hcpOf = (id: string) => {
@@ -173,7 +212,7 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep,
       <div className="results-meta">
         <div className="results-course">{round.course || 'Golf round'}</div>
         <div className="results-sub">
-          {formatRoundDate(round.date)} · {count(round.players.length, 'player')} ·{' '}
+          {formatRoundDate(round.date)} · {count(round.players.length, scramble ? 'team' : 'player')} ·{' '}
           {count(round.holes.length, 'hole')}
         </div>
       </div>
@@ -211,11 +250,14 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep,
         </section>
       ) : (
         <>
-          <Settlement
-            round={round}
-            onChange={onChange}
-            onEditHandicaps={() => setShowHcp(true)}
-          />
+          {/* One scramble team has no one to settle with. */}
+          {!(scramble && round.players.length < 2) && (
+            <Settlement
+              round={round}
+              onChange={onChange}
+              onEditHandicaps={() => setShowHcp(true)}
+            />
+          )}
           {/* On a trip, this round's payments are not the ones to make: the
               trip settles once, across every round. Said right under them. */}
           {round.trip && onTrip && !unkept && (
@@ -235,6 +277,7 @@ export function Results({ round, onChange, onHome, onBackToPlay, unkept, onKeep,
                 hcpOf={hcpOf}
               />
             ))}
+            {scramble && <ScrambleBoard round={round} />}
           </section>
         </>
       )}

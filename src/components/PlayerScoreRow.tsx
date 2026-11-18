@@ -1,5 +1,5 @@
 import { formatHandicap } from '../games/handicap';
-import { useRef, useState } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { scoreLabel, scoreNumClass } from '../scoreMark';
 import { PlayerAvatar } from './PlayerAvatar';
 import { ScoreChips } from './ScoreChips';
@@ -27,6 +27,12 @@ interface Props {
   pickedUp?: boolean;
   /** League only: toggles the pick-up. */
   onPickup?: () => void;
+  /**
+   * Anything that belongs to this row's score rather than beside it — a
+   * scramble's shot credits. Inside the row so it shares its tone bar and its
+   * highlight: a flagged row is the whole of what needs filling in.
+   */
+  children?: ReactNode;
 }
 
 
@@ -44,6 +50,7 @@ export function PlayerScoreRow({
   max,
   pickedUp = false,
   onPickup,
+  children,
 }: Props) {
   const toPar = value == null ? 0 : value - par;
   const tone =
@@ -144,6 +151,7 @@ export function PlayerScoreRow({
         pickedUp={pickedUp}
         onPickup={onPickup}
       />
+      {children}
     </div>
   );
 }

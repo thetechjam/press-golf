@@ -75,6 +75,23 @@ export const TrophyIcon = ({ size = 18, className }: IconProps) => (
   </svg>
 );
 
+/**
+ * Two players over one ball — a scramble: a team playing a single ball.
+ *
+ * Two people and not three or four: at the 13px a round card draws it, three
+ * heads and their shoulders came out as a cluster of dots. Five bold marks
+ * (two heads, two shoulders meeting in the middle, one ball) keep their gaps
+ * at 13px, and the shoulders touching is what says "team" rather than "two".
+ */
+export const ScrambleIcon = ({ size = 18, className }: IconProps) => (
+  <svg {...base(size)} className={className}>
+    <circle cx="7" cy="5" r="3" />
+    <circle cx="17" cy="5" r="3" />
+    <path d="M2 13.5a5 5 0 0 1 10 0M12 13.5a5 5 0 0 1 10 0" />
+    <circle cx="12" cy="19.5" r="3" fill="currentColor" strokeWidth={0} />
+  </svg>
+);
+
 /** Arrow rising out of a tray. */
 export const ShareIcon = ({ size = 18, className }: IconProps) => (
   <svg {...base(size)} className={className}>

@@ -8,7 +8,8 @@ import {
   restoreBackup,
   BACKUP_FORMAT,
 } from './backup';
-import { makeRound, player } from './games/testFixtures';
+import { makeRound, player, scrambleRound } from './games/testFixtures';
+import { creditShot, driveStatus } from './games/scramble';
 import type { Round, SavedCourse } from './types';
 
 // Vitest runs in node — back localStorage with a Map, as storage.test.ts does.
@@ -364,5 +365,45 @@ describe('who is who travels with the backup', () => {
     expect(r.ok).toBe(false);
     expect(JSON.parse(store.get('press.aliases.v1') as string)).toEqual({ bo: 'Bob' });
     expect(store.has('press.distinct.v1')).toBe(false);
+  });
+});
+
+describe('a scramble in a backup', () => {
+  const scramble = (): Round => {
+    const r = scrambleRound({
+      teams: [
+        { id: 'k3f9ab21', name: 'Jesse & Sam', members: ['Jesse', 'Sam', 'Al'] },
+        { id: 'm7q2xz04', name: 'Cy & Di', members: ['Cy', 'Di'] },
+      ],
+      minDrives: 2,
+      scores: { 1: { k3f9ab21: 4, m7q2xz04: 5 } },
+    });
+    return { ...creditShot(creditShot(r, 1, 'k3f9ab21', 0, 2), 1, 'm7q2xz04', 3, 1), id: 's', updatedAt: 9 };
+  };
+
+  it('keeps the teams, the minimum and the credits through export and restore', () => {
+    const b = buildBackup([scramble()], [], '1.0.0');
+    const parsed = parseBackup(text(b));
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const got = parsed.file.rounds[0];
+    expect(got.options.scramble).toEqual(scramble().options.scramble);
+    expect(got.shots).toEqual({ 1: { k3f9ab21: [2], m7q2xz04: [-1, -1, -1, 1] } });
+    expect(driveStatus(got, 'k3f9ab21')).toEqual(driveStatus(scramble(), 'k3f9ab21'));
+  });
+
+  it('reads credits of the wrong shape as none rather than trusting them', () => {
+    const bad = { ...scramble(), shots: 'nope' } as unknown as Record<string, unknown>;
+    const r = parseBackup(text({ app: 'press', format: 1, rounds: [bad], courses: [] }));
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.file.rounds[0].shots).toEqual({});
+    expect(r.droppedRounds).toBe(0);
+  });
+
+  it('leaves a round with no credits without the field', () => {
+    const parsed = parseBackup(text(buildBackup([round('a', 1)], [], '1.0.0')));
+    if (!parsed.ok) throw new Error('unreadable');
+    expect('shots' in parsed.file.rounds[0]).toBe(false);
   });
 });

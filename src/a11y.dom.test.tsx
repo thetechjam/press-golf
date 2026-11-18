@@ -5,6 +5,7 @@ import type { Round, SavedCourse } from './types';
 import { Home } from './screens/Home';
 import { Setup } from './screens/Setup';
 import { LeagueSetup } from './screens/LeagueSetup';
+import { ScrambleSetup } from './screens/ScrambleSetup';
 import { Results } from './screens/Results';
 import { History } from './screens/History';
 import { Stats } from './screens/Stats';
@@ -112,6 +113,7 @@ describe('every control says what it is', () => {
       <Home
         onNew={noop}
         onNewLeague={noop}
+        onNewScramble={noop}
         onResume={noop}
         onViewResults={noop}
         onStats={noop}
@@ -133,6 +135,15 @@ describe('every control says what it is', () => {
     // The starting-hole grid here is nine buttons whose visible text is a
     // number under a heading a screen reader reaches separately.
     render(<LeagueSetup onCancel={noop} onStart={noop} />);
+    expect(unnamed()).toEqual([]);
+    expect(vaguelyNamed()).toEqual([]);
+  });
+
+  it('on Scramble, with two teams and every row open', () => {
+    // The tee-shot minimum is "1" to "6" on screen, as the starting holes are.
+    render(<ScrambleSetup onCancel={noop} onStart={noop} />);
+    (document.querySelector('.add-row .add') as HTMLElement).click();
+    openEveryRow();
     expect(unnamed()).toEqual([]);
     expect(vaguelyNamed()).toEqual([]);
   });

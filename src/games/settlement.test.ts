@@ -6,7 +6,7 @@ import {
   unitFor,
   type Transaction,
 } from './settlement';
-import { makeRound, player, holes, holes18, scoresFrom } from './testFixtures';
+import { makeRound, player, holes, holes18, scoresFrom, scrambleRound } from './testFixtures';
 import type { GameType, Round } from '../types';
 
 /** Sum of all net balances must always be zero (money is conserved). */
@@ -877,5 +877,38 @@ describe('settleBalances — the fewest payments', () => {
     const more = settleBalances(thirteen);
     settles(thirteen, more);
     expect(more.length).toBeLessThanOrEqual(12);
+  });
+});
+
+describe('computeSettlement — scramble', () => {
+  it('names the game Scramble and prices it per team', () => {
+    const hs = holes(2);
+    const round = scrambleRound({
+      teams: [
+        { members: ['Jesse', 'Sam'] },
+        { members: ['Al', 'Bo'] },
+      ],
+      holes: hs,
+      stake: 5,
+      scores: scoresFrom(hs, { t1: [3, 4], t2: [4, 4] }),
+    });
+    const [g] = computeSettlement(round).perGame;
+    expect(g.label).toBe('Scramble');
+    expect(g.unit).toBe('team');
+    expect(unitFor(round, 'strokePlay')).toBe('team');
+  });
+
+  it('leaves stroke play as it was everywhere else', () => {
+    const hs = holes(2);
+    const round = makeRound({
+      players: [player('p1', 'Al'), player('p2', 'Bo')],
+      holes: hs,
+      games: ['strokePlay'],
+      options: { stakes: { strokePlay: 5 } },
+      scores: scoresFrom(hs, { p1: [3, 4], p2: [4, 4] }),
+    });
+    const [g] = computeSettlement(round).perGame;
+    expect(g.label).toBe('Stroke Play');
+    expect(g.unit).toBe('low round');
   });
 });

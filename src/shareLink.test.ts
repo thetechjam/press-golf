@@ -17,7 +17,8 @@ import {
   MAX_SHARE_PAR,
 } from './shareLink';
 import { decodeCourse, unpackCourse } from './shareCourse';
-import { makeRound, player, holes18, scoresFrom } from './games/testFixtures';
+import { makeRound, player, holes18, scoresFrom, scrambleRound } from './games/testFixtures';
+import { creditShot, driveStatus, teamShotStats } from './games/scramble';
 import { computeSettlement } from './games/settlement';
 import { computeLeague } from './games/league';
 import { courseHandicapFor } from './games/handicap';
@@ -705,5 +706,169 @@ describe('a browser that cannot deflate', () => {
   it('needs both halves of the pair', () => {
     vi.stubGlobal('CompressionStream', undefined);
     expect(linksSupported()).toBe(false);
+  });
+});
+
+describe('a scramble over a link', () => {
+  /**
+   * Three teams on a shotgun start from the 7th — holes 7..18 then 1..6, so
+   * the `hn` path carries them — with real-looking ids, a minimum, a stake
+   * and credits on holes either side of the turn.
+   */
+  const shotgun = (): Round => {
+    const hs = holes18();
+    const rotated = [...hs.slice(6), ...hs.slice(0, 6)];
+    const [a, b, c] = ID;
+    let r = scrambleRound({
+      holes: rotated,
+      teams: [
+        { id: a, name: 'Jesse & Sam', members: ['Jesse', 'Sam', 'Al', 'Cy'] },
+        { id: b, name: 'The Bombers', members: ['Di', 'Ed'] },
+        { id: c, name: 'Flo & Gus', members: ['Flo', 'Gus', 'Hal'] },
+      ],
+      minDrives: 3,
+      stake: 10,
+      scores: {
+        7: { [a]: 4, [b]: 5, [c]: 4 },
+        8: { [a]: 3, [b]: 4, [c]: 5 },
+        1: { [a]: 4, [b]: 4 },
+      },
+    });
+    const taps: [number, string, number, number][] = [
+      [7, a, 0, 3],
+      [7, a, 3, 1],
+      [8, a, 0, 0],
+      [8, a, 2, 2],
+      [7, b, 0, 1],
+      [8, c, 1, 2],
+      [1, a, 0, 3],
+      [1, b, 2, 0],
+    ];
+    for (const [hole, team, shot, member] of taps) r = creditShot(r, hole, team, shot, member);
+    return r;
+  };
+
+  it('arrives with the same teams, members, minimum and credits', () => {
+    const packed = packRound(shotgun())!;
+    expect(packed.hn).toBeDefined();
+    const result = unpackRound(packed);
+    if (!result.ok) throw new Error(result.error);
+    const { round } = result;
+    expect(round.holes.map((h) => h.number)).toEqual(shotgun().holes.map((h) => h.number));
+    // Scores aside (a link writes every unplayed cell as null), the same round.
+    expect(shape({ ...round, scores: {} })).toEqual(shape({ ...shotgun(), scores: {} }));
+    const by = (name: string) => round.players.find((p) => p.name === name)!.id;
+    expect(round.options.scramble?.teams.map((t) => [t.id, t.members])).toEqual([
+      [by('Jesse & Sam'), ['Jesse', 'Sam', 'Al', 'Cy']],
+      [by('The Bombers'), ['Di', 'Ed']],
+      [by('Flo & Gus'), ['Flo', 'Gus', 'Hal']],
+    ]);
+    expect(round.options.scramble?.minDrives).toBe(3);
+    expect(round.shots?.[7]?.[by('Jesse & Sam')]).toEqual([3, -1, -1, 1]);
+    expect(round.shots?.[1]?.[by('The Bombers')]).toEqual([-1, -1, 0]);
+    expect(round.scores[8][by('Jesse & Sam')]).toBe(3);
+    expect(round.scores[1][by('Flo & Gus')]).toBeNull();
+  });
+
+  it('tells the same story about the drives, and settles for the same money', () => {
+    const mine = shotgun();
+    const result = unpackRound(packRound(mine)!);
+    if (!result.ok) throw new Error(result.error);
+    mine.players.forEach((p, i) => {
+      const theirs = result.round.players[i].id;
+      expect(driveStatus(result.round, theirs)).toEqual(driveStatus(mine, p.id));
+      expect({ ...teamShotStats(result.round, theirs), teamId: '' }).toEqual({
+        ...teamShotStats(mine, p.id),
+        teamId: '',
+      });
+    });
+    const money = (r: Round) =>
+      computeSettlement(r).transactions.map((t) => `${t.from}->${t.to} ${t.amount}`);
+    expect(money(result.round)).toEqual(money(mine));
+    expect(activeResults(result.round)[0].title).toBe('Scramble');
+  });
+
+  it('leaves no original team id anywhere in the payload', () => {
+    // The guard on `mapPlayerIds`, for the two places a scramble adds.
+    const json = JSON.stringify(packRound(shotgun()));
+    for (const id of ID) expect(json).not.toContain(id);
+  });
+
+  it('packs credits as one character a shot, and costs nothing without them', () => {
+    const packed = packRound(shotgun())!;
+    expect(packed.sh?.[7]).toEqual({ 0: '3..1', 1: '1' });
+    const bare = packRound(scrambleRound())!;
+    expect('sh' in bare).toBe(false);
+    expect('sh' in packRound(fullRound())!).toBe(false);
+    expect('scramble' in packRound(fullRound())!.o).toBe(false);
+  });
+
+  describe('from a payload that cannot be trusted', () => {
+    /** The shotgun round's payload with its scramble setup replaced. */
+    const withSetup = (scramble: unknown) => {
+      const packed = packRound(shotgun())!;
+      return { ...packed, o: { ...packed.o, scramble } as typeof packed.o };
+    };
+    const open = (payload: unknown): Round => {
+      const result = unpackRound(payload);
+      if (!result.ok) throw new Error(result.error);
+      return result.round;
+    };
+    const teams = (...members: unknown[]) => members.map((m, i) => ({ id: String(i), members: m }));
+
+    it.each([
+      ['a team index nobody occupies', { teams: [{ id: '9', members: ['Al', 'Bo'] }] }],
+      ['a team of one', { teams: teams(['Al']) }],
+      ['a team of five', { teams: teams(['A', 'B', 'C', 'D', 'E']) }],
+      ['a member who is not a name', { teams: teams(['Al', 7]) }],
+      ['one team listed twice', { teams: [{ id: '0', members: ['Al', 'Bo'] }, { id: '0', members: ['Cy', 'Di'] }] }],
+      ['no teams', { teams: [] }],
+      ['five teams', { teams: teams(['a', 'b'], ['c', 'd'], ['e', 'f'], ['g', 'h'], ['i', 'j']) }],
+      ['a minimum of none', { teams: teams(['Al', 'Bo']), minDrives: 0 }],
+      ['a minimum past eighteen', { teams: teams(['Al', 'Bo']), minDrives: 19 }],
+      ['a fractional minimum', { teams: teams(['Al', 'Bo']), minDrives: 2.5 }],
+      ['a minimum in words', { teams: teams(['Al', 'Bo']), minDrives: '3' }],
+      ['teams that are not a list', { teams: 'Al & Bo' }],
+    ])('drops a setup with %s, and still opens the round', (_, scramble) => {
+      const round = open(withSetup(scramble));
+      expect(round.options.scramble).toBeUndefined();
+      // Without the setup the credits refer to nothing, so they go too.
+      expect(round.shots).toBeUndefined();
+      expect(round.players.map((p) => p.name)).toEqual(['Jesse & Sam', 'The Bombers', 'Flo & Gus']);
+      expect(round.games).toEqual(['strokePlay']);
+    });
+
+    it('keeps a sound setup with no minimum', () => {
+      const round = open(withSetup({ teams: teams(['Al', 'Bo'], ['Cy', 'Di', 'Ed']) }));
+      expect(round.options.scramble).toEqual({
+        teams: [
+          { id: 'p0', members: ['Al', 'Bo'] },
+          { id: 'p1', members: ['Cy', 'Di', 'Ed'] },
+        ],
+      });
+    });
+
+    it('reads a credit to a member the team does not have, or a stray character, as not said', () => {
+      const packed = packRound(shotgun())!;
+      // Team 1 is The Bombers: two members, so 2 and 3 are not theirs.
+      packed.sh = { 7: { 0: '3x.1', 1: '2.0' }, 8: { 1: '3' } };
+      const round = open(packed);
+      expect(round.shots).toEqual({ 7: { p0: [3, -1, -1, 1], p1: [-1, -1, 0] } });
+    });
+
+    it('drops credits for a team the setup does not have, or that are not text', () => {
+      const packed = packRound(shotgun())!;
+      packed.sh = { 7: { 9: '0', 0: [1] as unknown as string }, 8: { 2: '1' } };
+      const round = open(packed);
+      expect(round.shots).toEqual({ 8: { p2: [1] } });
+    });
+
+    it('drops credits that arrive without a setup', () => {
+      const packed = packRound(shotgun())!;
+      const { scramble: _s, ...o } = packed.o;
+      const round = open({ ...packed, o });
+      expect(round.options.scramble).toBeUndefined();
+      expect(round.shots).toBeUndefined();
+    });
   });
 });
