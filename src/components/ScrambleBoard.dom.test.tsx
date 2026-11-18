@@ -31,8 +31,16 @@ const cases: [DriveState, Round][] = [
   ['owed', scrambleRound({ teams: [{ members }], minDrives: 2 })],
   // Three people owed six each, with eighteen holes open: every drive is spoken for.
   ['tight', scrambleRound({ teams: [{ members }], minDrives: 6 })],
-  // One hole played without saying whose drive it was, and now there is no room.
-  ['short', scrambleRound({ teams: [{ members }], minDrives: 6, scores: { 1: { t1: 4 } } })],
+  // Jesse took seven drives when six would do: twelve owed and eleven holes left.
+  [
+    'short',
+    scrambleRound({
+      teams: [{ members }],
+      minDrives: 6,
+      scores: all(7, 4),
+      shots: Object.fromEntries(Array.from({ length: 7 }, (_, i) => [i + 1, { t1: [0] }])),
+    }),
+  ],
 ];
 
 afterEach(cleanup);
