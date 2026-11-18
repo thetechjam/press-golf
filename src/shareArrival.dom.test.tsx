@@ -277,6 +277,27 @@ describe('a round this device already has', () => {
     expect(stored()).toHaveLength(1);
   });
 
+  it('does not call a copy with a par fixed here "exactly as it is here"', async () => {
+    // The cards match, so this used to read as the same round — and the
+    // copy that came back from the other phone would undo the fix.
+    const fixed = asDecoded(live, 9);
+    seed({
+      ...fixed,
+      updatedAt: 3,
+      holes: fixed.holes.map((h) => (h.number === 3 ? { ...h, par: 5 } : h)),
+    });
+    await arriveWith(`#r=${await encodeRound(asDecoded(live, 9))}`);
+
+    expect(screen.queryByText(/exactly as it is here/)).toBeNull();
+    expect(
+      screen.getByText(
+        'Your copy has 1 setting — names, pars, stakes, handicaps, presses or Wolf calls — set differently from the one you were sent.'
+      )
+    ).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Open my copy' }));
+    expect(stored()[0].holes[2].par).toBe(5);
+  });
+
   it('leaves a stale copy alone when asked to, writing nothing', async () => {
     seed(asDecoded(live, 4));
     const before = localStorage.getItem('press.rounds.v1');

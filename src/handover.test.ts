@@ -278,7 +278,9 @@ describe('settings that are not entries on the card', () => {
     expect(arrival.kind).toBe('ahead');
     if (arrival.kind !== 'ahead') return;
     expect(arrival.diff).toMatchObject({ theirsOnly: 0, mineOnly: 0, differing: 0, settings: 1 });
-    expect(describeArrival(arrival)).toMatch(/1 setting — stakes, handicaps, presses or Wolf calls — set differently/);
+    expect(describeArrival(arrival)).toMatch(
+      /1 setting — names, pars, stakes, handicaps, presses or Wolf calls — set differently/
+    );
   });
 
   it('is "behind" when my copy is the one written more recently', () => {
@@ -323,6 +325,84 @@ describe('settings that are not entries on the card', () => {
       presses: [4],
       wolf: { 2: { wolfPlayerId: MINE[0], choice: { type: 'partner', partnerId: MINE[1] } } },
       options: { useNet: true, stablefordMode: 'standard', loneWolfMultiplier: 2, blindWolfMultiplier: 3, stakes: { skins: 5 }, autoPress: true, netByGame: { skins: false }, allowanceByGame: { nassau: 90 } },
+    };
+    const back = unpackRound(packRound(mine)!);
+    if (!back.ok) throw new Error(back.error);
+    expect(compareRounds(back.round, mine)).toEqual({ kind: 'same' });
+  });
+
+  it('counts a renamed player, a fixed par and a moved stroke index', () => {
+    // Each of these read as "exactly as it is here", and bringing the other
+    // copy in replaced the local round whole: a par fix undone, or a row
+    // quietly turned into somebody else.
+    const mine: Round = { ...card(MINE, through(9), through(9)), updatedAt: 1 };
+    const base = card(THEIRS, through(9), through(9));
+    const theirs: Round = {
+      ...base,
+      updatedAt: 2,
+      players: [{ id: 'p0', name: 'Alan' }, base.players[1]],
+      holes: base.holes.map((h) =>
+        h.number === 3 ? { ...h, par: h.par + 1 } : h.number === 4 ? { ...h, strokeIndex: 99 } : h
+      ),
+    };
+    const arrival = compareRounds(theirs, mine);
+    expect(arrival.kind).toBe('ahead');
+    if (arrival.kind !== 'ahead') return;
+    expect(arrival.diff).toMatchObject({ theirsOnly: 0, mineOnly: 0, differing: 0, settings: 3 });
+    expect(describeArrival(arrival)).toBe(
+      'The copy you were sent has 3 settings — names, pars, stakes, handicaps, presses or Wolf calls — set differently from yours.'
+    );
+  });
+
+  it('counts the course, a finished round, its trip and the league setup', () => {
+    const plain = card(MINE, through(9), through(9));
+    const differs = (over: Partial<Round>) =>
+      compareRounds({ ...card(THEIRS, through(9), through(9)), ...over }, plain);
+    expect(differs({ course: 'Elsewhere' }).kind).not.toBe('same');
+    expect(differs({ status: 'finished' }).kind).not.toBe('same');
+    expect(differs({ trip: { id: 't1', name: 'Myrtle' } }).kind).not.toBe('same');
+
+    const league = (pointsPerMatch: number, ended?: boolean): Round['options']['league'] => ({
+      teams: [
+        { aId: 'x', bId: 'y' },
+        { aId: 'z', bId: 'w' },
+      ],
+      pointsPerMatch,
+      ended,
+    });
+    const withLeague = (ids: string[], l: Round['options']['league']): Round => {
+      const r = card(ids, through(9), through(9));
+      return { ...r, options: { ...r.options, league: l } };
+    };
+    expect(compareRounds(withLeague(THEIRS, league(2)), withLeague(MINE, league(2))).kind).toBe('same');
+    expect(compareRounds(withLeague(THEIRS, league(3)), withLeague(MINE, league(2))).kind).not.toBe('same');
+    expect(compareRounds(withLeague(THEIRS, league(2, true)), withLeague(MINE, league(2))).kind).not.toBe('same');
+  });
+
+  it('does not count timestamps, or a blank course against a missing one', () => {
+    const mine: Round = { ...card(MINE, through(9), through(9)), course: '', createdAt: 1, updatedAt: 1 };
+    const theirs: Round = { ...card(THEIRS, through(9), through(9)), course: undefined, createdAt: 5, updatedAt: 9 };
+    expect(compareRounds(theirs, mine)).toEqual({ kind: 'same' });
+  });
+
+  it('reads a league night back from its own link as the same round', () => {
+    const r = card(MINE, through(9), through(9));
+    const mine: Round = {
+      ...r,
+      course: 'Home Club',
+      status: 'finished',
+      trip: { id: 't1', name: 'Myrtle' },
+      options: {
+        ...r.options,
+        league: {
+          teams: [
+            { aId: MINE[0], bId: '', absent: 'b', absentName: 'Cy' },
+            { aId: MINE[1], bId: '', absent: 'b' },
+          ],
+          pointsPerMatch: 2,
+          firstNight: [MINE[1]],
+        },
+      },
     };
     const back = unpackRound(packRound(mine)!);
     if (!back.ok) throw new Error(back.error);
