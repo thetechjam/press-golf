@@ -1,6 +1,6 @@
-import type { Dispatch } from 'react';
+import { useId, type Dispatch } from 'react';
 import type { SavedCourse } from '../../types';
-import type { FetchedCourse } from '../../courses/openGolfApi';
+import type { CourseTee, FetchedCourse } from '../../courses/openGolfApi';
 import { CourseSearch } from '../../components/CourseSearch';
 import { SavedCourseList } from '../../components/SavedCourseList';
 import { ParGrid } from '../../components/ParGrid';
@@ -38,6 +38,72 @@ export function CourseSection({ course, onCourse, onPick, courses, onLoad, onSen
   );
 }
 
+const GENDER_WORDS: Record<string, string> = {
+  male: 'Men',
+  men: 'Men',
+  m: 'Men',
+  female: 'Women',
+  women: 'Women',
+  ladies: 'Women',
+  f: 'Women',
+};
+
+/**
+ * A tee's name, with whose tee it is only when the name alone is ambiguous —
+ * the same colour is often rated twice, once for men and once for women, and
+ * the two ratings differ by strokes. Everywhere else the gender is noise.
+ */
+function teeName(tee: CourseTee, all: CourseTee[]): string {
+  const shared = all.filter((t) => t.name.toLowerCase() === tee.name.toLowerCase()).length > 1;
+  if (!shared || !tee.gender) return tee.name;
+  return `${tee.name} (${GENDER_WORDS[tee.gender.toLowerCase()] ?? tee.gender})`;
+}
+
+interface TeeProps {
+  tees: NonNullable<CourseState['tees']>;
+  dispatch: Dispatch<CourseAction>;
+}
+
+/**
+ * The searched course's tees, as a quicker way to the two figures below than
+ * finding them on the card. Nothing is chosen for the player: which tees they
+ * play is theirs to say, and a preselected one would quietly put a rating on
+ * the round that nobody picked.
+ */
+function TeePicker({ tees, dispatch }: TeeProps) {
+  const labelId = useId();
+  return (
+    <div className="field tee-pick">
+      <span id={labelId}>Tees</span>
+      <div className="tee-options" role="group" aria-labelledby={labelId}>
+        {tees.options.map((t) => {
+          const name = teeName(t, tees.options);
+          const yards = t.yardage ? `${t.yardage.toLocaleString('en-US')} yd` : null;
+          const on = tees.picked === t.key;
+          return (
+            <button
+              key={t.key}
+              type="button"
+              className={`seg-btn tee-btn${on ? ' active' : ''}`}
+              aria-pressed={on}
+              aria-label={`${name} tees: rating ${t.rating.toFixed(1)}, slope ${t.slope}${
+                yards ? `, ${t.yardage?.toLocaleString('en-US')} yards` : ''
+              }`}
+              onClick={() => dispatch({ type: 'tee', key: t.key })}
+            >
+              <span className="tee-figures">
+                {name} · {t.rating.toFixed(1)} / {t.slope}
+              </span>
+              {yards && <span className="tee-yards">{yards}</span>}
+            </button>
+          );
+        })}
+      </div>
+      <p className="hint-inline">Pick yours to fill in slope and rating — you can still change them.</p>
+    </div>
+  );
+}
+
 interface HolesProps {
   state: CourseState;
   derived: DerivedCourse;
@@ -65,7 +131,7 @@ export function HolesSection({
   indexWaiting,
   withRating = true,
 }: HolesProps) {
-  const { holeCount, holes, source, nine, holesSource, savedNote, slope, rating, advancedHoles } =
+  const { holeCount, holes, source, nine, holesSource, savedNote, slope, rating, advancedHoles, tees } =
     state;
   const { rated, importIssues, siProblem } = derived;
 
@@ -144,6 +210,7 @@ export function HolesSection({
       ) : null}
       {withRating && (
         <>
+          {tees && <TeePicker tees={tees} dispatch={dispatch} />}
           <div className="rating-row">
             <label className="field small">
               <span>Slope</span>

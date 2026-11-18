@@ -1110,3 +1110,122 @@ describe('deleting a saved course the phone refuses', () => {
     expect(JSON.parse(localStorage.getItem('press.courses.v1')!)).toHaveLength(1);
   });
 });
+
+/**
+ * The searched course's tees, as the way to its slope and rating.
+ *
+ * Trimmed from a real record: the four tees Delcastle's lists, on the card
+ * these tests already search for.
+ */
+describe('picking tees off a searched course', () => {
+  const TEES = [
+    { tee_key: 'blue-male', tee_name: 'Blue', gender: 'Male', course_rating: 70.8, slope: 121, par: 72, yardage: 6625 },
+    { tee_key: 'white-male', tee_name: 'White', gender: 'Male', course_rating: 69.4, slope: 118, par: 72, yardage: 6326 },
+    { tee_key: 'gold-male', tee_name: 'Gold', gender: 'Male', course_rating: 65.3, slope: 108, par: 72, yardage: 5475 },
+    { tee_key: 'red-male', tee_name: 'Red', gender: 'Male', course_rating: 70.2, slope: 116, par: 72, yardage: 5369 },
+  ];
+  const teeGroup = () => screen.queryByRole('group', { name: 'Tees' });
+  const tee = (name: string) => screen.getByRole('button', { name: new RegExp(`^${name} tees:`) });
+  const slope = () => screen.getByLabelText<HTMLInputElement>(/^Slope$/i);
+  const rating = () => screen.getByLabelText<HTMLInputElement>(/^Rating$/i);
+
+  it('offers each tee after a search pick, with none chosen', async () => {
+    stubCourseApi({ ...COURSE, par: 72, tees: TEES });
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+
+    const group = teeGroup();
+    expect(group).not.toBeNull();
+    const buttons = within(group!).getAllByRole('button');
+    expect(buttons.map((b) => b.textContent)).toEqual([
+      'Blue · 70.8 / 1216,625 yd',
+      'White · 69.4 / 1186,326 yd',
+      'Gold · 65.3 / 1085,475 yd',
+      'Red · 70.2 / 1165,369 yd',
+    ]);
+    expect(buttons.every((b) => b.getAttribute('aria-pressed') === 'false')).toBe(true);
+    expect(slope().value).toBe('');
+    expect(rating().value).toBe('');
+  });
+
+  it('fills in slope and rating from the one picked', async () => {
+    stubCourseApi({ ...COURSE, tees: TEES });
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+
+    await user.click(tee('White'));
+    expect(slope().value).toBe('118');
+    expect(rating().value).toBe('69.4');
+    expect(tee('White').getAttribute('aria-pressed')).toBe('true');
+    expect(screen.getByText(/Handicap Index converts to strokes for these 18 holes/)).toBeTruthy();
+  });
+
+  it('rates a nine off the eighteen-hole card rather than throwing the rating out', async () => {
+    stubCourseApi({ ...COURSE, tees: TEES });
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await openRow(user, 'Holes & pars');
+    await user.click(screen.getByRole('button', { name: /^9 holes$/i }));
+    await pickFromSearch(user);
+
+    await user.click(tee('White'));
+    expect(screen.getByText(/Handicap Index converts to strokes for these 9 holes/)).toBeTruthy();
+  });
+
+  it('stops showing the tee as chosen once a figure is typed over', async () => {
+    stubCourseApi({ ...COURSE, tees: TEES });
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+
+    await user.click(tee('White'));
+    await user.clear(slope());
+    await user.type(slope(), '120');
+    expect(tee('White').getAttribute('aria-pressed')).toBe('false');
+    // The other figure is left as the tee filled it in.
+    expect(rating().value).toBe('69.4');
+
+    await user.click(tee('Blue'));
+    await user.type(rating(), '1');
+    expect(tee('Blue').getAttribute('aria-pressed')).toBe('false');
+  });
+
+  it('names whose tee it is only when two share a colour', async () => {
+    stubCourseApi({
+      ...COURSE,
+      tees: [TEES[0], TEES[3], { ...TEES[3], tee_key: 'red-female', gender: 'Female', course_rating: 72.6, slope: 125 }],
+    });
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+
+    const labels = within(teeGroup()!)
+      .getAllByRole('button')
+      .map((b) => b.querySelector('.tee-figures')?.textContent);
+    expect(labels).toEqual(['Blue · 70.8 / 121', 'Red (Men) · 70.2 / 116', 'Red (Women) · 72.6 / 125']);
+  });
+
+  it('is not offered when the course record has no tees', async () => {
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    await pickFromSearch(user);
+    expect(teeGroup()).toBeNull();
+  });
+
+  it('is not offered for a saved course', async () => {
+    stubCourseApi({ ...COURSE, tees: TEES });
+    const saved: SavedCourse = { id: 's1', name: 'Hollin Lane', holes: realCard18(), slope: 118, rating: 69.4 };
+    localStorage.setItem('press.courses.v1', JSON.stringify([saved]));
+    const user = userEvent.setup();
+    render(<Setup onCancel={() => {}} onStart={() => {}} />);
+    // Searched first, so there were tees to take away.
+    await pickFromSearch(user);
+    expect(teeGroup()).not.toBeNull();
+
+    await user.click(screen.getByText('Hollin Lane'));
+    await waitFor(() => expect(teeGroup()).toBeNull());
+    expect(slope().value).toBe('118');
+  });
+});

@@ -1,5 +1,5 @@
 import type { Hole, SavedCourse } from '../../types';
-import { sliceCourseHoles, type FetchedCourse } from '../../courses/openGolfApi';
+import { sliceCourseHoles, type CourseTee, type FetchedCourse } from '../../courses/openGolfApi';
 import { scorecardIssues } from '../../courses/validate';
 import { strokeIndexProblem, type StrokeIndexProblem } from '../../games/strokeIndex';
 import { validSlope, validRating, courseHandicap } from '../../games/courseHandicap';
@@ -57,9 +57,21 @@ export interface CourseState {
    * `raw` is the unsliced response — see `scorecardIssues` for why the stroke
    * index check needs it. `expected` is the hole count that was asked for,
    * which the hole count itself no longer tells us: a short import sets the
-   * round to the number of holes that arrived.
+   * round to the number of holes that arrived. `par` is the total the record
+   * states for itself, the second opinion the holes are added up against.
    */
-  imported: { raw: Hole[]; expected: number } | null;
+  imported: { raw: Hole[]; expected: number; par?: number } | null;
+  /**
+   * The tees the last course search pick offered, so one can fill in slope
+   * and rating. `course` is the name they belong to — editing the name away
+   * from it drops them — `holes` is how many holes their ratings cover, and
+   * `picked` is the one whose figures are in the fields, until either is
+   * typed over.
+   *
+   * Screen state only: tees are not saved with a course, a share link or a
+   * backup — only the slope and rating they filled in are, as before.
+   */
+  tees: { course: string; options: CourseTee[]; holes: number; picked: string | null } | null;
   /**
    * The whole card a course was loaded from, saved or searched. Switching to
    * nine used to keep holes 1–9 with their eighteen-hole stroke indexes —
@@ -92,6 +104,8 @@ export type CourseAction =
   | { type: 'toggleAdvanced' }
   | { type: 'slope'; value: number | undefined }
   | { type: 'rating'; value: number | undefined }
+  /** One of the searched course's tees, chosen to fill in slope and rating. */
+  | { type: 'tee'; key: string }
   /** The course on screen was just saved as a favourite, from one of two buttons. */
   | { type: 'saved'; name: string; from: 'check' | 'foot' }
   | { type: 'clearNote' };
@@ -113,15 +127,42 @@ export const initialCourseState: CourseState = {
   advancedHoles: false,
   holesSource: 'manual',
   imported: null,
+  tees: null,
   source: null,
   nine: 'front',
   savedNote: null,
 };
 
+/**
+ * How many holes a tee's rating covers.
+ *
+ * A record's tee ratings are for the whole card it returned, not for the
+ * holes being played — so a nine played off an eighteen-hole card is rated
+ * the way a saved eighteen loaded for nine is: the eighteen-hole figure,
+ * marked as eighteen, and halved when strokes are worked out. Capped at
+ * eighteen because a longer card plays as its first eighteen and its ratings
+ * are for an eighteen-hole loop. A nine-hole course whose record carries the
+ * eighteen-hole figure for going round twice is read as eighteen, which is
+ * what that number is.
+ */
+function teeRatingHoles(cardHoles: number, rating: number): number {
+  const n = Math.min(cardHoles, 18);
+  return [n, 18, 9].find((h) => validRating(rating, h)) ?? n;
+}
+
+const unpicked = (tees: CourseState['tees']): CourseState['tees'] =>
+  tees && tees.picked != null ? { ...tees, picked: null } : tees;
+
 export function courseReducer(state: CourseState, action: CourseAction): CourseState {
   switch (action.type) {
     case 'course':
-      return { ...state, course: action.name };
+      return {
+        ...state,
+        course: action.name,
+        // Tees belong to the course that was picked. Once the name says
+        // something else, offering them would fill in another course's figures.
+        tees: state.tees && action.name.trim() === state.tees.course ? state.tees : null,
+      };
 
     case 'loadSaved': {
       const c = action.course;
@@ -140,6 +181,7 @@ export function courseReducer(state: CourseState, action: CourseAction): CourseS
         advancedHoles: applied.some((h) => h.strokeIndex),
         holesSource: 'saved',
         imported: null,
+        tees: null,
         slope: c.slope,
         // The rating describes the whole card; it is not carried onto a cut one.
         rating: c.holes.length > 18 ? undefined : c.rating,
@@ -168,10 +210,14 @@ export function courseReducer(state: CourseState, action: CourseAction): CourseS
         nine: 'front',
         advancedHoles: applied.some((h) => h.strokeIndex),
         holesSource: 'search',
-        imported: { raw: c.holes, expected: count },
-        // Search data carries no slope or rating, and the ones on screen were
-        // the last course's: left in place they converted every Index with the
-        // wrong course's figures and went onto the round as that course's.
+        imported: { raw: c.holes, expected: count, ...(c.par != null ? { par: c.par } : {}) },
+        tees: c.tees.length
+          ? { course: c.name.trim(), options: c.tees, holes: c.holes.length, picked: null }
+          : null,
+        // Nothing is filled in from search, even when the record has tees:
+        // which tees is the player's choice, and the figures on screen were
+        // the last course's — left in place they converted every Index with
+        // the wrong course's figures and went onto the round as that course's.
         slope: undefined,
         rating: undefined,
         ratingHoles: undefined,
@@ -262,11 +308,30 @@ export function courseReducer(state: CourseState, action: CourseAction): CourseS
       };
     }
 
+    // Typing over either figure means they are no longer that tee's, so the
+    // tee stops being shown as chosen.
     case 'slope':
-      return { ...state, slope: action.value };
+      return { ...state, slope: action.value, tees: unpicked(state.tees) };
 
     case 'rating':
-      return { ...state, rating: action.value, ratingHoles: state.holes.length };
+      return {
+        ...state,
+        rating: action.value,
+        ratingHoles: state.holes.length,
+        tees: unpicked(state.tees),
+      };
+
+    case 'tee': {
+      const tee = state.tees?.options.find((t) => t.key === action.key);
+      if (!state.tees || !tee) return state;
+      return {
+        ...state,
+        slope: tee.slope,
+        rating: tee.rating,
+        ratingHoles: teeRatingHoles(state.tees.holes, tee.rating),
+        tees: { ...state.tees, picked: tee.key },
+      };
+    }
 
     case 'saved':
       return {
@@ -303,6 +368,20 @@ export interface DerivedCourse {
   siProblem: StrokeIndexProblem | null;
 }
 
+/**
+ * The card a searched course came back as, with the user's par corrections
+ * in it — `source` carries them, the raw response does not — so that fixing
+ * the pars clears the line saying they do not add up. A card longer than
+ * eighteen is left raw: it plays as its first eighteen, and the record's par
+ * is for something else.
+ */
+function wholeCard(s: CourseState): Hole[] | undefined {
+  const raw = s.imported?.raw;
+  if (!raw || raw.length > 18) return raw;
+  if (s.source) return s.source;
+  return s.holes.length === raw.length ? s.holes : raw;
+}
+
 export function deriveCourse(s: CourseState): DerivedCourse {
   // Judged against the holes the rating covers, not the holes being played —
   // otherwise an eighteen-hole rating loaded to play nine reads as implausible
@@ -322,7 +401,10 @@ export function deriveCourse(s: CourseState): DerivedCourse {
   };
   const importIssues =
     s.holesSource === 'search' && s.imported
-      ? scorecardIssues(s.holes, s.imported.expected, s.imported.raw)
+      ? scorecardIssues(s.holes, s.imported.expected, s.imported.raw, {
+          statedPar: s.imported.par,
+          card: wholeCard(s),
+        })
       : [];
   return { ratedHoles, rated, derivedHandicap, importIssues, siProblem: strokeIndexProblem(s.holes) };
 }

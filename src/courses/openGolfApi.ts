@@ -4,6 +4,7 @@
 // Favorite Courses remains the offline fallback and covers anything not here.
 
 import type { Hole } from '../types';
+import { validSlope, validRating } from '../games/courseHandicap';
 
 const BASE = 'https://api.opengolfapi.org';
 
@@ -110,6 +111,81 @@ export interface FetchedCourse {
   holes: Hole[];
   /** True only when every hole has a stroke index — required for net handicap allocation. */
   hasStrokeIndex: boolean;
+  /**
+   * The par the course record states for itself, separate from the holes.
+   * Kept because it is a second opinion on the card: when the holes do not add
+   * up to it, one of the two is wrong — see `scorecardIssues`.
+   */
+  par?: number;
+  /** The tees the record lists, each with its own slope and rating. Empty when none are usable. */
+  tees: CourseTee[];
+}
+
+/** One set of tees off a course record: what a player picks to get slope and rating. */
+export interface CourseTee {
+  /** Stable within one course — the record's own key when it has one. */
+  key: string;
+  name: string;
+  gender?: string;
+  /** Course rating for the whole card the record describes. */
+  rating: number;
+  slope: number;
+  yardage?: number;
+}
+
+/**
+ * More tees than this is a record listing every combination of every colour,
+ * and a picker that long stops being a picker. Real cards print four to six.
+ */
+export const MAX_TEES = 8;
+
+const PLAUSIBLE_TOTAL_PAR = { min: 27, max: 90 };
+
+/** The record's own par, when it is a whole number a nine or an eighteen could add up to. */
+function statedPar(v: unknown): number | undefined {
+  return typeof v === 'number' &&
+    Number.isInteger(v) &&
+    v >= PLAUSIBLE_TOTAL_PAR.min &&
+    v <= PLAUSIBLE_TOTAL_PAR.max
+    ? v
+    : undefined;
+}
+
+const text = (v: unknown): string | undefined =>
+  typeof v === 'string' && v.trim() ? v.trim() : undefined;
+
+/**
+ * The record's tees, read defensively. This is open community data: a tee
+ * with a slope of 0, a rating typed as a string, or no name at all is dropped
+ * or patched here rather than allowed to fill in a slope and rating that turn
+ * every Index into the wrong number of strokes.
+ */
+export function parseTees(v: unknown): CourseTee[] {
+  if (!Array.isArray(v)) return [];
+  const tees: CourseTee[] = [];
+  const keys = new Set<string>();
+  for (const [i, t] of v.entries()) {
+    if (tees.length >= MAX_TEES) break;
+    if (!t || typeof t !== 'object') continue;
+    const r = t as Record<string, unknown>;
+    const slope = r.slope;
+    const rating = r.course_rating;
+    // Whole-card ratings: an eighteen's sits near 72, a nine-hole record's
+    // near 36. Anything that is neither is not a rating of this course.
+    if (!validSlope(slope) || !(validRating(rating, 18) || validRating(rating, 9))) continue;
+    const name = text(r.tee_name) ?? text(r.tee_color) ?? `Tee ${i + 1}`;
+    const gender = text(r.gender);
+    let key = text(r.tee_key) ?? `${name}-${gender ?? ''}`.toLowerCase();
+    // Two entries under one key would make picking either highlight both.
+    while (keys.has(key)) key = `${key}-${i}`;
+    keys.add(key);
+    const yardage =
+      typeof r.yardage === 'number' && Number.isFinite(r.yardage) && r.yardage > 0 && r.yardage < 10000
+        ? Math.round(r.yardage)
+        : undefined;
+    tees.push({ key, name, ...(gender ? { gender } : {}), rating, slope, ...(yardage ? { yardage } : {}) });
+  }
+  return tees;
 }
 
 /** Search courses by name. Returns lightweight hits (no scorecard yet). */
@@ -137,7 +213,7 @@ interface HoleRow {
   handicap_index?: number | null;
 }
 
-/** Fetch one course's full scorecard (par + stroke index per hole). */
+/** Fetch one course's full scorecard (par + stroke index per hole), its stated par and its tees. */
 export async function fetchCourse(id: string, signal?: AbortSignal): Promise<FetchedCourse> {
   const data = (await fetchJson(
     `${BASE}/api/v1/courses/${encodeURIComponent(id)}`,
@@ -149,6 +225,8 @@ export async function fetchCourse(id: string, signal?: AbortSignal): Promise<Fet
     scorecard?: { hole: number; par: number }[];
     course_name?: string;
     name?: string;
+    par?: unknown;
+    tees?: unknown;
   };
 
   // Prefer holes_data (has handicap_index); fall back to the par-only scorecard.
@@ -172,7 +250,15 @@ export async function fetchCourse(id: string, signal?: AbortSignal): Promise<Fet
     .sort((a, b) => a.number - b.number);
 
   const hasStrokeIndex = holes.length > 0 && holes.every((h) => typeof h.strokeIndex === 'number');
-  return { id, name: String(data.course_name ?? data.name ?? ''), holes, hasStrokeIndex };
+  const par = statedPar(data.par);
+  return {
+    id,
+    name: String(data.course_name ?? data.name ?? ''),
+    holes,
+    hasStrokeIndex,
+    ...(par != null ? { par } : {}),
+    tees: parseTees(data.tees),
+  };
 }
 
 /**

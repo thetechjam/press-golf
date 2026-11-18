@@ -923,6 +923,47 @@
   margin-top: 8px;
 }
 
+/* The searched course's tees, above the slope and rating they fill in. One
+   per row on a phone: "White · 69.4 / 118" and its yardage side by side need
+   the whole width at 360px, and two columns would wrap every label. Wider
+   screens get as many columns as fit. Not uppercased like the other .seg
+   buttons — a tee name and two figures are a reading, not a mode. */
+.tee-pick {
+  margin-bottom: 12px;
+}
+.tee-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  gap: 6px;
+}
+.tee-btn {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  padding: 10px 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.tee-figures {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.tee-yards {
+  flex-shrink: 0;
+  font-size: var(--fs-sm);
+  color: var(--muted);
+}
+.tee-btn.active .tee-yards {
+  color: inherit;
+}
+.tee-pick .hint-inline {
+  margin: 0;
+}
+
 /* ---- Scramble setup: one card per team ------------------------------------ */
 /* The heading and the remove button on one line. The heading keeps its quiet
    card-label look; the row only has to stop the 44px button from pushing it

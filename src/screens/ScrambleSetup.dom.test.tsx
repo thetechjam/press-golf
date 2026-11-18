@@ -1,10 +1,10 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ScrambleSetup } from './ScrambleSetup';
 import type { Round } from '../types';
-import { scrambleRound } from '../games/testFixtures';
+import { scrambleRound, realCard18 } from '../games/testFixtures';
 
 /**
  * Scramble setup: what a team looks like by the time it is a round.
@@ -348,5 +348,34 @@ describe('recall chips', () => {
     expect(members(1)[1].value).toBe('');
     // Once on the card, it is not offered again.
     expect(screen.queryByRole('button', { name: 'Add Sam' })).toBeNull();
+  });
+});
+
+describe('a searched course with tees', () => {
+  it('offers no tee picker, because a scramble asks for no slope or rating', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        const body = String(url).includes('/search')
+          ? { courses: [{ id: 'c1', name: 'Bramble Ridge GC', city: 'Leeds', state: 'UK', par: 72 }] }
+          : {
+              id: 'c1',
+              name: 'Bramble Ridge GC',
+              holes_data: realCard18().map((h) => ({ number: h.number, par: h.par, handicap_index: h.strokeIndex })),
+              tees: [{ tee_key: 'w', tee_name: 'White', course_rating: 69.4, slope: 118, yardage: 6326 }],
+            };
+        return { ok: true, json: async () => body } as Response;
+      })
+    );
+    const user = userEvent.setup();
+    show();
+    await openRow(user, 'Course');
+    await user.type(document.querySelector<HTMLInputElement>('.course-search input')!, 'Bramble');
+    await user.click(await screen.findByText('Bramble Ridge GC', {}, { timeout: 3000 }));
+    await waitFor(() => expect(document.querySelector('.check-note')).not.toBeNull(), { timeout: 3000 });
+
+    expect(screen.queryByRole('group', { name: 'Tees' })).toBeNull();
+    expect(screen.queryByLabelText(/^Slope$/i)).toBeNull();
+    vi.unstubAllGlobals();
   });
 });

@@ -187,6 +187,113 @@ describe('a card that is valid and still not a scorecard', () => {
   });
 });
 
+/**
+ * The card a record contradicts itself on.
+ *
+ * Modelled on a real search result (Delcastle Golf Course): holes 1–15 came
+ * back as par 5 — fourteen of them a placeholder over a real 4-5-4-4-4-3-5-4-3
+ * / 4-4-4-4-3-5-4-3-5 card — so the holes add up to 87 while the same record
+ * says par 72. Every other check here passed it without a word.
+ */
+const DELCASTLE_PARS = [5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 4, 3, 5];
+const delcastle = (): Hole[] =>
+  DELCASTLE_PARS.map((par, i) => ({ number: i + 1, par, strokeIndex: SI[i] }));
+const withPars = (pars: number[]): Hole[] =>
+  pars.map((par, i) => ({ number: i + 1, par, strokeIndex: SI[i] }));
+
+describe('a card that does not add up to the course it claims to be', () => {
+  it('names both the total and the placeholder run on the Delcastle shape', () => {
+    const raw = delcastle();
+    expect(scorecardIssues(raw, 18, raw, { statedPar: 72 })).toEqual([
+      'The hole pars add up to 87, but the course lists par 72 — check them against the card.',
+      'Holes 1 to 15 all came back as par 5 — that looks like a placeholder, not a scorecard.',
+    ]);
+  });
+
+  it('has nothing to say about a correct par-72 card', () => {
+    expect(scorecardIssues(good(18), 18, good(18), { statedPar: 72 })).toEqual([]);
+  });
+
+  it('does not compare a nine sliced from a good eighteen with the eighteen-hole par', () => {
+    // 36 on the front, 72 on the record: both right.
+    expect(scorecardIssues(good(9), 9, good(18), { statedPar: 72 })).toEqual([]);
+  });
+
+  it('still adds up the whole card when only a nine is being played', () => {
+    expect(scorecardIssues(good(9), 9, delcastle(), { statedPar: 72 })[0]).toBe(
+      'The hole pars add up to 87, but the course lists par 72 — check them against the card.'
+    );
+  });
+
+  it('runs no total check when the record states no par', () => {
+    const raw = delcastle();
+    const issues = scorecardIssues(raw, 18, raw);
+    expect(issues.join(' ')).not.toContain('add up to');
+    // The run is still there to be seen.
+    expect(issues).toContain(
+      'Holes 1 to 15 all came back as par 5 — that looks like a placeholder, not a scorecard.'
+    );
+  });
+
+  it('judges the card as corrected, so fixing the pars clears the line', () => {
+    const raw = delcastle();
+    const fixed = withPars(PARS);
+    expect(scorecardIssues(fixed, 18, raw, { statedPar: 72, card: fixed })).toEqual([]);
+  });
+
+  it('leaves a stated par alone that no card of this length could add up to', () => {
+    // A nine-hole course whose record states its nine as half an eighteen, or
+    // the reverse, is not this check's to second-guess.
+    expect(scorecardIssues(good(18), 18, good(18), { statedPar: 36 })).toEqual([]);
+  });
+
+  it('does not repeat a short import as a total that does not match', () => {
+    const issues = scorecardIssues(good(12), 18, good(12), { statedPar: 72 });
+    expect(issues).toEqual(['Only 12 of 18 holes came back — the rest have been left at par 4.']);
+  });
+
+  it('keeps quiet about two par 5s back to back', () => {
+    const pars = [4, 5, 5, 3, 4, 4, 3, 4, 4, 4, 4, 3, 5, 4, 4, 3, 4, 5];
+    expect(scorecardIssues(withPars(pars), 18, undefined, { statedPar: 72 })).toEqual([]);
+  });
+
+  it('keeps quiet about six par 4s in a row', () => {
+    const pars = [4, 4, 4, 4, 4, 4, 3, 5, 5, 4, 4, 3, 5, 4, 4, 3, 4, 3];
+    expect(pars.reduce((a, b) => a + b, 0)).toBe(71);
+    expect(scorecardIssues(withPars(pars), 18, undefined, { statedPar: 71 })).toEqual([]);
+  });
+
+  it('names a nine of par 4s inside an eighteen', () => {
+    const pars = [4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 3, 5, 4, 3, 5, 4, 3, 5];
+    expect(scorecardIssues(withPars(pars), 18)).toEqual([
+      'Holes 1 to 10 all came back as par 4 — that looks like a placeholder, not a scorecard.',
+    ]);
+  });
+
+  it('names three par 5s in a row', () => {
+    const pars = [4, 4, 3, 5, 5, 5, 3, 4, 4, 4, 4, 3, 4, 4, 4, 3, 4, 5];
+    expect(scorecardIssues(withPars(pars), 18)).toEqual([
+      'Holes 4 to 6 all came back as par 5 — that looks like a placeholder, not a scorecard.',
+    ]);
+  });
+
+  it('leaves a run of par 3s to the par-3 allowance', () => {
+    const pars = [3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4];
+    expect(scorecardIssues(withPars(pars), 18)).toEqual([]);
+  });
+
+  it('gives an all-identical eighteen its one existing line, not a second', () => {
+    const issues = scorecardIssues(placeholder(18, 5), 18, placeholder(18, 5), { statedPar: 90 });
+    expect(issues.filter((i) => i.includes('placeholder'))).toEqual([
+      'Every hole came back as par 5, which is a placeholder rather than a scorecard.',
+    ]);
+    // The same for the all-par-4 shape this file has always tested.
+    expect(
+      scorecardIssues(placeholder(18, 4), 18).filter((i) => i.includes('placeholder'))
+    ).toEqual(['Every hole came back as par 4, which is a placeholder rather than a scorecard.']);
+  });
+});
+
 describe('nextPar', () => {
   it('steps up through the usual pars and round again', () => {
     expect([3, 4, 5, 6].map(nextPar)).toEqual([4, 5, 6, 3]);
