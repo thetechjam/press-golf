@@ -26,16 +26,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lists each team's tee shots. Team names are kept out of Stats, trips, the
   name suggestions and the recall chips — the people on the teams are offered
   instead.
-- **A prompt after the first finished round** to save a backup and add Press
+- **A prompt after the first finished round** to save a backup and add Trunk
   to the home screen. Safari deletes a site’s data after seven days without
   a visit otherwise. "Don’t ask again", or a successful backup, stops it for
   good. Phones that already had a finished round are not asked, and a phone
   that cannot store the choice still starts.
 - **Erase everything**, in Settings under the backup and feedback rows. The
-  privacy page said there was no single wipe button in Press yet; now there
+  privacy page said there was no single wipe button in Trunk yet; now there
   is. Two taps, as deleting from Rounds → Select: the first says what goes —
   every round, saved course, player name, feedback waiting to send and
-  setting — and the second removes all six things Press stores and relaunches
+  setting — and the second removes all six things Trunk stores and relaunches
   the app as on first open. The browser's own clear-site-data route still
   works and the page still describes it.
 - **A privacy page**, at `/privacy.html` on the site and as `PRIVACY.md` in the
