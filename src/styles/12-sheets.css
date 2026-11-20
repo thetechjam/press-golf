@@ -461,7 +461,7 @@
   font-size: var(--fs-md);
 }
 /* A backup or restore that failed has to read differently from one that
-   worked, and Trunk has no red anywhere — the warning gold `warn-banner`
+   worked, and the app has no red for warnings — the warning gold `warn-banner`
    already uses is the app's established "this needs your attention" color.
    Mixed toward the ink because flat gold on the card is unreadable at
    0.9rem. */
