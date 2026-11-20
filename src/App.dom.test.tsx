@@ -62,7 +62,7 @@ async function goBack() {
   await new Promise((r) => setTimeout(r, 10));
 }
 
-const onHome = () => screen.queryByRole('heading', { name: 'Press' }) !== null;
+const onHome = () => screen.queryByRole('heading', { name: 'Trunk' }) !== null;
 
 /**
  * Two clicks in one tick, the way a fast double-tap reaches the handler.
@@ -234,7 +234,7 @@ describe('App navigation', () => {
 
 describe('back after a reload', () => {
   /**
-   * The entries a previous page load left behind. A reload — "Reload Press"
+   * The entries a previous page load left behind. A reload — "Reload Trunk"
    * from the error screen, or the phone discarding the tab — keeps them, and
    * start() reseeds only the one on top.
    */
@@ -537,7 +537,7 @@ describe('the prompt after the first finished round', () => {
       scores: Object.fromEntries(hs.map((h) => [h.number, { p1: 4, p2: 5 }])),
     });
 
-  it('asks to back up and to add Press to the home screen, and only once', async () => {
+  it('asks to back up and to add Trunk to the home screen, and only once', async () => {
     seed([finished()]);
     const user = userEvent.setup();
     const view = render(<App />);

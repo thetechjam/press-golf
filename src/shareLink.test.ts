@@ -238,7 +238,7 @@ describe('reading a payload that cannot be trusted', () => {
     ...over,
   });
 
-  it('refuses one written by a newer Press', () => {
+  it('refuses one written by a newer Trunk', () => {
     const result = unpackRound(payload({ v: SHARE_FORMAT + 1 }));
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain('newer version');
@@ -258,7 +258,7 @@ describe('reading a payload that cannot be trusted', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('refuses a payload that is not a Press round at all', () => {
+  it('refuses a payload that is not a Trunk round at all', () => {
     expect(unpackRound(null).ok).toBe(false);
     expect(unpackRound('hello').ok).toBe(false);
     expect(unpackRound({}).ok).toBe(false);
@@ -353,20 +353,20 @@ describe('base32', () => {
 
 describe('the link itself', () => {
   it('puts the round in the fragment, which never reaches a server', () => {
-    const url = shareUrl('https://pressgolf.netlify.app/', 'ABC234');
-    expect(url).toBe('https://pressgolf.netlify.app/#r=ABC234');
+    const url = shareUrl('https://trunk.golf/', 'ABC234');
+    expect(url).toBe('https://trunk.golf/#r=ABC234');
     expect(url.split('#')[0]).not.toContain('ABC234');
   });
 
   it('replaces a fragment already on the page rather than appending one', () => {
-    expect(shareUrl('https://pressgolf.netlify.app/#r=OLD', 'NEW')).toBe(
-      'https://pressgolf.netlify.app/#r=NEW'
+    expect(shareUrl('https://trunk.golf/#r=OLD', 'NEW')).toBe(
+      'https://trunk.golf/#r=NEW'
     );
   });
 
   it('capitalises the whole URL for the QR, which still addresses the same page', () => {
-    expect(shareUrlQR('https://pressgolf.netlify.app/', 'ABC234')).toBe(
-      'HTTPS://PRESSGOLF.NETLIFY.APP/#R=ABC234'
+    expect(shareUrlQR('https://trunk.golf/', 'ABC234')).toBe(
+      'HTTPS://TRUNK.GOLF/#R=ABC234'
     );
   });
 
@@ -388,11 +388,11 @@ describe('the link itself', () => {
   });
 
   it('writes a course link under its own key', () => {
-    expect(shareUrl('https://pressgolf.netlify.app/', 'ABC234', 'c')).toBe(
-      'https://pressgolf.netlify.app/#c=ABC234'
+    expect(shareUrl('https://trunk.golf/', 'ABC234', 'c')).toBe(
+      'https://trunk.golf/#c=ABC234'
     );
-    expect(shareUrlQR('https://pressgolf.netlify.app/', 'ABC234', 'c')).toBe(
-      'HTTPS://PRESSGOLF.NETLIFY.APP/#C=ABC234'
+    expect(shareUrlQR('https://trunk.golf/', 'ABC234', 'c')).toBe(
+      'HTTPS://TRUNK.GOLF/#C=ABC234'
     );
   });
 });
@@ -402,7 +402,9 @@ describe('how big the link gets', () => {
     // Not a style preference: a QR code's size is set by how much it carries,
     // and past roughly a thousand alphanumeric characters it stops being
     // something a phone can read off another phone's screen. This is the
-    // budget that keeps the format honest when a field is added to it.
+    // budget that keeps the format honest when a field is added to it. The
+    // old origin still serves the app and is the longer of the two, so the
+    // budget is measured against it.
     const url = shareUrlQR('https://pressgolf.netlify.app/', (await encodeRound(fullRound()))!);
     expect(url.length).toBeLessThan(900);
     expect(url).toMatch(/^[A-Z0-9:/.#=]+$/);

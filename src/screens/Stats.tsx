@@ -330,7 +330,7 @@ export function Stats({ onBack }: Props) {
                     setSaveFailed(
                       markDistinct(suggestion.from, suggestion.into)
                         ? null
-                        : `Press will ask about these names again. ${notSavedReason(DISTINCT_KEY)}`
+                        : `Trunk will ask about these names again. ${notSavedReason(DISTINCT_KEY)}`
                     );
                     setDistinct(getDistinct());
                   }}

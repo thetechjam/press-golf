@@ -55,7 +55,7 @@ export function HelpSheet({ onBack }: Props) {
           four-ball — as the Rules of Handicapping recommend.
         </p>
         <p>
-          Put a <strong>stake</strong> on a game in the Money row and Press keeps
+          Put a <strong>stake</strong> on a game in the Money row and Trunk keeps
           a running total through the round, then settles the group up in the
           fewest payments. Stakes and handicaps can be changed mid-round.
         </p>
@@ -95,7 +95,7 @@ export function HelpSheet({ onBack }: Props) {
         </p>
         <p>
           Players are matched by name from round to round. If somebody was typed
-          two ways — Al and Alex — Press asks whether they are the same person
+          two ways — Al and Alex — Trunk asks whether they are the same person
           before adding their money together.
         </p>
       </section>
@@ -124,7 +124,7 @@ export function HelpSheet({ onBack }: Props) {
         <p>
           A separate mode from Home for a scramble: teams of two to four, each
           playing one ball and posting one score. Every player hits, the team
-          picks the best shot, and everyone plays from there. Press keeps each
+          picks the best shot, and everyone plays from there. Trunk keeps each
           team's score as stroke play — low team wins, and with a stake it
           takes that much from each of the others.
         </p>

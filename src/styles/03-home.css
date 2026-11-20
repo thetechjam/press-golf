@@ -14,11 +14,11 @@
   letter-spacing: 0.06em;
   color: var(--green-ink);
   display: flex;
-  /* The P Flag mark stands in for the P: its bottom edge sits on the text
-     baseline, and the flag tip runs tight against the R. */
+  /* Lockup: [mark] TRUNK. The mark sits to the left of the full word, its
+     bottom edge on the text baseline, a quarter-em of space between. */
   align-items: baseline;
   justify-content: center;
-  gap: 3px;
+  gap: 0.25em;
 }
 .tagline {
   color: var(--muted);
