@@ -1,11 +1,11 @@
-// Regenerates qr.svg with Press's own QR encoder (src/qr.ts).
+// Regenerates qr.svg with Trunk's own QR encoder (src/qr.ts).
 //   node docs/league/make-qr.mjs
 // Node 24 runs the TypeScript source directly. Check the result scans before
-// printing — the flyer's was decoded with jsqr to https://pressgolf.netlify.app/.
+// printing — it should decode to https://trunk.golf/.
 import { writeFileSync } from 'node:fs';
 import { encodeQR, qrPath } from '../../src/qr.ts';
 
-const URL_ON_FLYER = 'https://pressgolf.netlify.app/';
+const URL_ON_FLYER = 'https://trunk.golf/';
 const code = encodeQR(URL_ON_FLYER);
 if (!code) throw new Error('Could not encode ' + URL_ON_FLYER);
 const { path, side } = qrPath(code, 4);
