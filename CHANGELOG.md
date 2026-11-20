@@ -1477,6 +1477,6 @@ side-games — one scorekeeper enters scores for the whole group on one phone.
   (top and horizontal safe-area insets).
 - Hole-navigation and progress overlap on the play screen.
 
-[Unreleased]: https://github.com/thetechjam/press-golf/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/thetechjam/press-golf/compare/v0.1.0...v0.2.0
-[0.1.0]: https://github.com/thetechjam/press-golf/releases/tag/v0.1.0
+[Unreleased]: https://github.com/thetechjam/trunk-golf/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/thetechjam/trunk-golf/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/thetechjam/trunk-golf/releases/tag/v0.1.0

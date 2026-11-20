@@ -49,6 +49,14 @@ describe('the privacy page', () => {
     for (const host of connect) expect(html).toContain(host.replace('https://', ''));
   });
 
+  it('points people at the renamed GitHub repo', () => {
+    for (const [name, text] of [['privacy.html', html], ['PRIVACY.md', md]] as const) {
+      expect(text, name).toContain('github.com/thetechjam/trunk-golf');
+      expect(text, name).not.toContain('github.com/thetechjam/press-golf');
+    }
+    expect(html).toContain('href="https://github.com/thetechjam/trunk-golf"');
+  });
+
   it('is linked from the README', () => {
     expect(readme).toMatch(/\(\.\/PRIVACY\.md\)|\(PRIVACY\.md\)|privacy\.html/);
   });
