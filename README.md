@@ -1,4 +1,4 @@
-[![CI](https://github.com/thetechjam/press-golf/actions/workflows/ci.yml/badge.svg)](https://github.com/thetechjam/press-golf/actions/workflows/ci.yml)
+[![CI](https://github.com/thetechjam/trunk-golf/actions/workflows/ci.yml/badge.svg)](https://github.com/thetechjam/trunk-golf/actions/workflows/ci.yml)
 
 # Trunk ⛳️
 

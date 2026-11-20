@@ -81,5 +81,5 @@ A round that someone else sent you by link is not saved until you tap
 
 ## Questions
 
-Open an issue at github.com/thetechjam/press-golf, or use Send feedback in
+Open an issue at github.com/thetechjam/trunk-golf, or use Send feedback in
 the app. Trunk is made by one person; you will get a reply from him.
