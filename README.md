@@ -4,9 +4,8 @@
 
 **Trunk** (formerly Press) is a mobile-first web app for tracking golf
 side-games. One scorekeeper enters scores for the whole group on a single
-phone, and Trunk does the math —
-live leaderboards and running money totals while you play, then a settle-up
-summary at the end.
+phone, and Trunk does the math — live leaderboards and running money totals
+while you play, then a settle-up summary at the end.
 
 No accounts, no sign-up, nothing to install from a store. It runs entirely in
 your browser, works offline, and keeps everything on your device — see
