@@ -4,7 +4,7 @@
  * Every round, every saved course, every setting and the unsent feedback queue
  * are strings under four keys, and until now each was written straight to
  * `localStorage`. That is correct on the web and unsafe anywhere else: inside a
- * WKWebView — which is what an App Store build of Press would be — iOS treats
+ * WKWebView — which is what an App Store build of Trunk would be — iOS treats
  * local storage as *transient* and reclaims it when the device runs short of
  * space. For an app whose entire data model lives there, that is every round
  * somebody has played, gone, with nothing on screen to say so.
@@ -41,13 +41,13 @@ export interface KvBackend {
 
 /**
  * The write block's refusal. Its own class so a screen can say the real
- * reason — Press could not read this at startup — instead of blaming a full
+ * reason — Trunk could not read this at startup — instead of blaming a full
  * phone.
  */
 export class UnreadableKeyError extends Error {
   readonly key: string;
   constructor(key: string) {
-    super(`Press could not read “${key}” at startup, so it will not overwrite it.`);
+    super(`Trunk could not read “${key}” at startup, so it will not overwrite it.`);
     this.name = 'UnreadableKeyError';
     this.key = key;
   }
@@ -116,7 +116,7 @@ export const kv: Required<Omit<KvBackend, 'forget'>> & {
  * that nobody catches is otherwise a round that looks saved and is not.
  */
 export function logStorageFailure(key: string, err: unknown): void {
-  console.error(`Press could not store “${key}”.`, err);
+  console.error(`Trunk could not store “${key}”.`, err);
 }
 
 /**

@@ -385,7 +385,7 @@
   gap: 8px;
 }
 /* The payout section reads as a bet slip: perforated tear line with
-   edge notches, monospaced amounts. Press is a wager, after all. */
+   edge notches, monospaced amounts. Trunk is a wager, after all. */
 .settlement .payments {
   position: relative;
   margin: 14px -14px 0;

@@ -1,4 +1,4 @@
-// Core data model for Press — golf side-game tracker.
+// Core data model for Trunk — golf side-game tracker.
 
 export type GameType =
   | 'strokePlay'

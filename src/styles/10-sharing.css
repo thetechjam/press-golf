@@ -1,6 +1,6 @@
 /* ---- Sending a round (QR sheet, and a round that arrived by link) ---- */
 /* The code is drawn on its own white ground rather than the card's, because a
-   QR code on a dark background is one no camera will read — and Press has a
+   QR code on a dark background is one no camera will read — and Trunk has a
    dark theme. The padding is the quiet zone's visual half; the other half is
    in the viewBox, where a scanner needs it. */
 .send-qr {

@@ -147,7 +147,7 @@ export function matchAllowanceFor(round: Round, game: GameType, fourBall: boolea
  * A plus handicap is simply the low man: they play off scratch and everyone
  * else's difference is measured from them.
  *
- * The order matters because of the rounding. Press used to cut the
+ * The order matters because of the rounding. Trunk used to cut the
  * *difference* by the allowance, which agrees with the handbook's own
  * examples but not in general: 5, 10, 12 and 20 play off 5, 9, 11 and 18,
  * hence 0, 4, 6 and 13 — the difference-first route gave 0, 5, 6 and 14, a
@@ -156,7 +156,7 @@ export function matchAllowanceFor(round: Round, game: GameType, fourBall: boolea
  * Rounding is `withAllowance`'s `Math.round`: a half rounds up, toward +∞,
  * as WHS rounds — 4.5 plays off 5, and a plus 4.5 (−4.5 here) off plus 4.
  *
- * Press before that handed each side its full handicap on its own
+ * Trunk before that handed each side its full handicap on its own
  * stroke-index holes, which gave a 10 against a 6 shots on indexes 1–10 and
  * the 6 shots on 1–6 — six halved holes that should have been played level,
  * and four shots for the 10 on the wrong holes. The allocation itself

@@ -73,7 +73,7 @@ interface Baselines {
  * each set of matches gets zero strokes for the matches. The remaining
  * players will get strokes based upon the difference of their handicap and
  * the lowest handicap in the foursome. This amount will NOT exceed (9) shots
- * within the match." Press used to play each singles match off the lower of
+ * within the match." Trunk used to play each singles match off the lower of
  * its own two players instead; with the 9-shot cap the two readings differ
  * (two B players of 12 and 16 against a low man of 2 both cap at 9 and play
  * level), and the league's reading is the one that decides the points.

@@ -76,7 +76,7 @@ export function History({ onBack, onResume, onViewResults }: Props) {
   const [picked, setPicked] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState(false);
   // A delete the phone refused. Rare — a delete only shrinks what is stored —
-  // but it used to throw out of the button, and on native, for a key Press
+  // but it used to throw out of the button, and on native, for a key Trunk
   // could not read at startup, it always does.
   const [saveFailed, setSaveFailed] = useState<string | null>(null);
   const deleted = (ok: boolean, howMany = 1) =>

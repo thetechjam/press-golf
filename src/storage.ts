@@ -26,7 +26,7 @@ export interface Settings {
   /** Remembered so a reporter types their name once. '' means not set. */
   reporterName: string;
   /**
-   * The prompt after the first finished round — back up, and add Press to the
+   * The prompt after the first finished round — back up, and add Trunk to the
    * home screen — has been dismissed. Absent in settings written before the
    * prompt existed; `skipKeepPromptIfRoundsExist` fills that in.
    */
@@ -230,7 +230,7 @@ export function mergePeople(from: string, into: string): boolean {
     // Putting back a value that was stored a moment ago only shrinks it, so
     // this should not happen; if it does, the alias stays, which renames
     // rounds as they are next saved — the merge the user asked for.
-    console.error('Press could not undo a name merge that half failed.', err);
+    console.error('Trunk could not undo a name merge that half failed.', err);
   }
   return false;
 }
