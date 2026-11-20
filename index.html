@@ -13,29 +13,29 @@
     <link rel="preload" href="/fonts/oswald-latin.woff2" as="font" type="font/woff2" crossorigin />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Press" />
+    <meta name="apple-mobile-web-app-title" content="Trunk" />
     <meta
       name="description"
       content="Track golf side games: match play, skins, Stableford, Wolf and more."
     />
-    <title>Press — Golf Side Games</title>
-    <link rel="canonical" href="https://pressgolf.netlify.app/" />
-    <!-- Link unfurls. A shared round link is how Press mostly spreads, and
+    <title>Trunk — Golf Side Games</title>
+    <link rel="canonical" href="https://trunk.golf/" />
+    <!-- Link unfurls. A shared round link is how Trunk mostly spreads, and
          without these it lands in a group chat as a bare URL. The card is
          public/og.png, drawn by scripts/og-image.mjs (npm run og:image). -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Press" />
-    <meta property="og:url" content="https://pressgolf.netlify.app/" />
-    <meta property="og:title" content="Press — Golf Side Games" />
-    <meta property="og:description" content="Press is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Press does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
-    <meta property="og:image" content="https://pressgolf.netlify.app/og.png" />
+    <meta property="og:site_name" content="Trunk" />
+    <meta property="og:url" content="https://trunk.golf/" />
+    <meta property="og:title" content="Trunk — Golf Side Games" />
+    <meta property="og:description" content="Trunk is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Trunk does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
+    <meta property="og:image" content="https://trunk.golf/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Press — golf side games. Settle it on 18." />
+    <meta property="og:image:alt" content="Trunk — golf side games. Settle it at the trunk." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Press — Golf Side Games" />
-    <meta name="twitter:description" content="Press is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Press does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
-    <meta name="twitter:image" content="https://pressgolf.netlify.app/og.png" />
+    <meta name="twitter:title" content="Trunk — Golf Side Games" />
+    <meta name="twitter:description" content="Trunk is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Trunk does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
+    <meta name="twitter:image" content="https://trunk.golf/og.png" />
     <style>
       /* Splash shown until React mounts (avoids a white flash on load).
          It is a SIBLING of #root, not a child: as a child, createRoot().render()
@@ -56,17 +56,32 @@
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         z-index: 9999;
       }
+      /* The wordmark is Oswald, as on Home. The CSS bundle that declares it has
+         not loaded yet, so it is declared here too; the file is the one
+         preloaded above, so the two declarations share one fetch. */
+      @font-face {
+        font-family: 'Oswald';
+        font-style: normal;
+        font-weight: 500 600;
+        font-display: swap;
+        src: url('/fonts/oswald-latin.woff2') format('woff2');
+      }
       #splash .mark {
+        font-family: 'Oswald', 'Arial Narrow', sans-serif;
         font-size: 3rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
         display: flex;
-        /* Mark bottom sits on the text baseline so it reads as the P. */
+        /* The [mark] TRUNK lockup: mark bottom on the text baseline, mark
+           height about cap height plus 15%. */
         align-items: baseline;
-        gap: 5px;
+        gap: 0.25em;
       }
       #splash .mark svg {
-        width: 39px;
+        /* trunk-mark.svg's viewBox is 744×754; Oswald's cap height at 3rem is
+           about 39px, and the mark stands about 15% taller. */
+        width: 44px;
         height: 45px;
       }
       #splash .sub {
@@ -95,19 +110,21 @@
   <body>
     <div id="root"></div>
     <div id="splash">
-      <div class="mark" role="img" aria-label="Press">
-        <!-- P Flag mark stands in for the P (splash already is the felt). -->
-        <svg viewBox="100 64 336 384" aria-hidden="true">
-          <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z" fill="#e7b53c" />
-          <rect x="118" y="84" width="36" height="344" rx="18" fill="#f4f7f2" />
-          <circle cx="268" cy="178" r="58" fill="#f4f7f2" />
-          <circle cx="268" cy="178" r="49" fill="none" stroke="#14694e" stroke-width="16" stroke-dasharray="18 20.5" stroke-dashoffset="9" transform="rotate(-90 268 178)" />
+      <div class="mark">
+        <!-- The Trunk mark (trunk-mark.svg): body and ball follow the cream
+             text colour, flag and taillights are fixed. -->
+        <svg viewBox="140 130 744 754" aria-hidden="true">
+          <path fill="currentColor" fill-rule="evenodd" d="M296 162Q512 141 728 162C793 169 832 203 845 246Q855 279 821 276L739 400L792 516C849 523 870 604 870 722Q870 798 811 802V844Q811 870 784 870H718Q690 870 690 842V802H334V842Q334 870 306 870H240Q213 870 213 844V802C170 800 154 774 154 722C154 604 175 523 232 516L285 400L203 276Q169 279 179 246C192 203 231 169 296 162ZM243 246Q232 252 240 264L300 354Q302 358 311 354C431 315 593 315 713 354Q722 358 724 354L784 264Q792 252 781 246C688 207 336 207 243 246ZM329 391L275 520Q288 531 285 560V679Q285 721 326 721H698Q739 721 739 679V560Q736 531 749 520L695 391C583 354 441 354 329 391Z" />
+          <path fill="#e7b53c" d="M443 658V417A20 20 0 1 1 474 408C544 395 562 458 644 452Q661 451 650 466C580 536 551 485 469 535V658C501 661 523 669 523 680C523 692 489 702 448 702S373 692 373 680C373 669 403 660 443 658Z" />
+          <circle cx="587" cy="639" r="54" fill="currentColor" />
+          <path fill="#d2483b" d="M201 568H241Q256 568 256 583V669Q256 683 242 683H180Q164 683 167 667Q171 619 183 583Q188 568 201 568Z" />
+          <path fill="#d2483b" d="M783 568H823Q836 568 841 583Q853 619 857 667Q860 683 844 683H782Q768 683 768 669V583Q768 568 783 568Z" />
         </svg>
-        <span aria-hidden="true">ress</span>
+        <span>Trunk</span>
       </div>
       <div class="sub">Golf side games</div>
       <noscript>
-        Press needs JavaScript: it runs entirely in your browser, with no account and no
+        Trunk needs JavaScript: it runs entirely in your browser, with no account and no
         server. Turn JavaScript on to score a round.
       </noscript>
     </div>

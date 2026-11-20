@@ -63,7 +63,7 @@ export default defineConfig({
       // showed the previous build on first launch, every time, with no signal.
       //
       // 'prompt' holds the new worker in `waiting` until the user accepts.
-      // Press is a scorekeeper used mid-round with no signal; a silent reload
+      // Trunk is a scorekeeper used mid-round with no signal; a silent reload
       // while someone is entering a score on the 14th is worse than the
       // staleness it fixes. App.tsx starts at view 'home' with round null and
       // has no restore-on-mount, so any reload bounces the user to Home, and
@@ -82,8 +82,8 @@ export default defineConfig({
       },
       includeAssets: ['app-icon.svg', 'favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Press — Golf Side Games',
-        short_name: 'Press',
+        name: 'Trunk — Golf Side Games',
+        short_name: 'Trunk',
         description: 'Track golf side games: match play, skins, Stableford, Wolf and more.',
         theme_color: '#14694e',
         background_color: '#0b3d2e',
@@ -100,17 +100,32 @@ export default defineConfig({
             type: 'image/svg+xml',
             purpose: 'any',
           },
+          // Full-square art for 'any'; the maskable pair is full-bleed felt
+          // with the mark inside the central safe circle, so a launcher can
+          // crop it to any shape. One file cannot be both.
           {
             src: 'icon-192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'any',
           },
           {
             src: 'icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'any',
+          },
+          {
+            src: 'icon-maskable-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+          {
+            src: 'icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },

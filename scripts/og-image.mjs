@@ -1,14 +1,16 @@
 /**
- * Renders public/og.png — the 1200×630 card that a shared pressgolf link
+ * Renders public/og.png — the 1200×630 card that a shared trunk.golf link
  * unfurls into in iMessage, WhatsApp, Slack and the rest.
  *
  *   npm run og:image
  *
- * The card is drawn here as SVG from the brand constants (BRAND.md): the felt
- * gradient, the P Flag mark lifted from index.html's splash, the wordmark
- * lockup where the mark stands in for the P, and the tagline. Crawlers do not
- * render SVG, so the PNG is what ships — committed, because generating it at
- * deploy time would need a browser in the Netlify build.
+ * The committed og.png is the delivered brand card (BRAND.md). This script is
+ * the fallback that draws a plain Trunk card from the brand constants: the
+ * felt gradient, the Trunk mark (the same paths as trunk-mark.svg and the
+ * index.html splash), the [mark] TRUNK lockup and the tagline. Running it
+ * replaces the delivered card, so only run it when that is what you want.
+ * Crawlers do not render SVG, so the PNG is what ships — committed, because
+ * generating it at deploy time would need a browser in the Netlify build.
  *
  * Rasterised by a headless Chromium rather than an SVG library, for one
  * reason: the wordmark is Oswald, the app's own self-hosted woff2, and a
@@ -34,27 +36,19 @@ const GREEN_900 = '#0b3d2e';
 const GREEN_700 = '#14694e';
 const CREAM = '#f4f7f2';
 const GOLD = '#e7b53c';
-const GOLD_DEEP = '#c69a2b';
+const RED = '#d2483b';
 
-// The P Flag mark, exactly as the splash draws it (viewBox 100 64 336 384 in
-// index.html), placed and scaled by the group transform below. 0.68 puts its
-// pole at 261px tall, which the wordmark's cap height is sized to match.
+// The Trunk mark, exactly as trunk-mark.svg and the splash draw it (viewBox
+// 140 130 744 754), with the currentColor body set in cream. 0.265 makes it
+// 200px tall, sitting on the wordmark baseline at y = 160 + 754·0.265 ≈ 360,
+// and about 15% taller than the wordmark's cap height, as in the lockup.
 const MARK = `
-  <g transform="translate(112 132) scale(0.68) translate(-100 -64)">
-    <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z" fill="${GOLD}" />
-    <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z"
-          fill="none" stroke="${GOLD_DEEP}" stroke-width="7" stroke-linejoin="round" />
-    <rect x="118" y="84" width="36" height="344" rx="18" fill="${CREAM}" />
-    <circle cx="268" cy="178" r="58" fill="${CREAM}" />
-    <circle cx="268" cy="178" r="49" fill="none" stroke="${GREEN_700}" stroke-width="16"
-            stroke-dasharray="18 20.5" stroke-dashoffset="9" transform="rotate(-90 268 178)" />
-    <g fill="#ccd8cf">
-      <circle cx="268" cy="145" r="5.5" />
-      <circle cx="257" cy="161" r="5.5" /><circle cx="279" cy="161" r="5.5" />
-      <circle cx="246" cy="178" r="5.5" /><circle cx="268" cy="178" r="5.5" /><circle cx="290" cy="178" r="5.5" />
-      <circle cx="257" cy="195" r="5.5" /><circle cx="279" cy="195" r="5.5" />
-      <circle cx="268" cy="211" r="5.5" />
-    </g>
+  <g transform="translate(112 160) scale(0.265) translate(-140 -130)">
+    <path fill="${CREAM}" fill-rule="evenodd" d="M296 162Q512 141 728 162C793 169 832 203 845 246Q855 279 821 276L739 400L792 516C849 523 870 604 870 722Q870 798 811 802V844Q811 870 784 870H718Q690 870 690 842V802H334V842Q334 870 306 870H240Q213 870 213 844V802C170 800 154 774 154 722C154 604 175 523 232 516L285 400L203 276Q169 279 179 246C192 203 231 169 296 162ZM243 246Q232 252 240 264L300 354Q302 358 311 354C431 315 593 315 713 354Q722 358 724 354L784 264Q792 252 781 246C688 207 336 207 243 246ZM329 391L275 520Q288 531 285 560V679Q285 721 326 721H698Q739 721 739 679V560Q736 531 749 520L695 391C583 354 441 354 329 391Z" />
+    <path fill="${GOLD}" d="M443 658V417A20 20 0 1 1 474 408C544 395 562 458 644 452Q661 451 650 466C580 536 551 485 469 535V658C501 661 523 669 523 680C523 692 489 702 448 702S373 692 373 680C373 669 403 660 443 658Z" />
+    <circle cx="587" cy="639" r="54" fill="${CREAM}" />
+    <path fill="${RED}" d="M201 568H241Q256 568 256 583V669Q256 683 242 683H180Q164 683 167 667Q171 619 183 583Q188 568 201 568Z" />
+    <path fill="${RED}" d="M783 568H823Q836 568 841 583Q853 619 857 667Q860 683 844 683H782Q768 683 768 669V583Q768 568 783 568Z" />
   </g>`;
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
@@ -70,12 +64,12 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   </defs>
   <rect width="${W}" height="${H}" fill="url(#felt)" />
   ${MARK}
-  <!-- The wordmark: the mark is the P, so only RESS is set, baseline on the
-       pole's foot (y = 132 + 344·0.68 ≈ 393) and tight against the flag. -->
-  <text x="350" y="393" font-size="330" font-weight="600" fill="${CREAM}" letter-spacing="-4">RESS</text>
-  <text x="124" y="500" font-size="78" font-weight="500" fill="${GOLD}">Settle it on 18.</text>
+  <!-- The wordmark: [mark] TRUNK, set in full beside the mark with a 0.25em
+       gap, baseline level with the mark's bottom edge. -->
+  <text x="360" y="360" font-size="190" font-weight="600" fill="${CREAM}" letter-spacing="11">TRUNK</text>
+  <text x="124" y="470" font-size="78" font-weight="500" fill="${GOLD}">Settle it at the trunk.</text>
   <text x="124" y="564" font-size="30" font-weight="500" fill="${CREAM}" opacity="0.78" letter-spacing="1">
-    GOLF SIDE GAMES · NO ACCOUNT · WORKS OFFLINE · PRESSGOLF.NETLIFY.APP
+    GOLF SIDE GAMES · NO ACCOUNT · WORKS OFFLINE · TRUNK.GOLF
   </text>
 </svg>
 `;
