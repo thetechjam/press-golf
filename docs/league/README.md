@@ -6,8 +6,8 @@ in September 2026, after the season ended; the league starts again in mid-April
 
 | File | What it is |
 |---|---|
-| `press-league-flyer.pdf` | Print-ready US Letter flyer (pro shop / league night). **Stale:** still the Press flyer with the old QR — re-export from `flyer.html` before printing |
-| `press-league-flyer.png` | The same flyer as an image, for texts and email. **Stale**, as above |
+| `trunk-league-flyer.pdf` | Print-ready US Letter flyer (pro shop / league night) |
+| `trunk-league-flyer.png` | The same flyer as an image, for texts and email |
 | `flyer.html` | Source of the flyer — edit this, then re-export |
 | `qr.svg` | QR code for https://trunk.golf/, made with `src/qr.ts` |
 | `make-qr.mjs` | Regenerates `qr.svg` (`node docs/league/make-qr.mjs`) |
@@ -32,8 +32,18 @@ in September 2026, after the season ended; the league starts again in mid-April
 Open `flyer.html` in Chrome from this folder (it loads the font and logo from
 `public/`), then Print → Save as PDF, paper size Letter, margins None,
 background graphics on. For the PNG, screenshot the page at 2x.
-Save over the existing `press-league-flyer.pdf` / `.png` (the filenames stay
-as they are). The exported copies in this folder predate the rename to Trunk
-and still show the Press mark and the old pressgolf.netlify.app QR; that QR
-keeps working while the old address serves the app, but re-export before the
-next print run.
+Save over the existing `trunk-league-flyer.pdf` / `.png` (the filenames stay
+as they are). The current exports were made in November 2026, after the
+rename: Trunk mark, trunk.golf, and a QR that decodes to https://trunk.golf/.
+They replace the old `press-league-flyer` exports, whose QR pointed at
+pressgolf.netlify.app.
+
+Headless Chromium gives the same result from the command line, run in this
+folder:
+
+```bash
+chromium --headless --no-pdf-header-footer --print-to-pdf=trunk-league-flyer.pdf "file://$PWD/flyer.html"
+chromium --headless --hide-scrollbars --force-device-scale-factor=2 --window-size=816,1056 --screenshot=trunk-league-flyer.png "file://$PWD/flyer.html"
+```
+
+Check the QR in both before printing (`zbarimg trunk-league-flyer.png`).
