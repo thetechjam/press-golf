@@ -74,7 +74,7 @@ describe('one team', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Share results' }));
     await waitFor(() => expect(written).toHaveLength(1));
     expect(written[0]).toContain('Tee shots: Jesse 2, Sam 1, Al 0');
-    expect(written[0]).toContain('via Press');
+    expect(written[0]).toContain('via Trunk · trunk.golf');
   });
 });
 
