@@ -1,7 +1,7 @@
 # Email to the league director
 
 Draft for introducing Trunk to the league before the season. Attach
-`press-league-flyer.pdf`. Names are left as placeholders because this repo is
+`trunk-league-flyer.pdf`. Names are left as placeholders because this repo is
 public.
 
 ---
