@@ -11,7 +11,7 @@ import { refuseStorageKey } from '../testQuota';
 
 /**
  * Settings and feedback writes the phone refuses. Each used to throw out of
- * its control; on native, a Settings toggle on a settings key Press could not
+ * its control; on native, a Settings toggle on a settings key Trunk could not
  * read at startup ended on the crash screen.
  */
 

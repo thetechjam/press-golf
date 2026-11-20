@@ -211,7 +211,7 @@ describe('drawing it', () => {
   });
 });
 
-describe('a real Press round', () => {
+describe('a real Trunk round', () => {
   it('fits in a code you can scan off a phone screen', async () => {
     const hs = holes18();
     const ids = ['k3f9ab21', 'm7q2xz04', 'b8t5cc19', 'z1n6dd77'];

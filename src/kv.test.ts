@@ -11,7 +11,7 @@ const round = (id: string, course: string) => ({ ...makeRound(), id, course });
  *
  * On the web that is `localStorage` and nothing here changes what happens. The
  * reason the seam exists is iOS: inside a WKWebView, local storage is transient
- * and the system reclaims it, so an App Store build of Press would lose every
+ * and the system reclaims it, so an App Store build of Trunk would lose every
  * round somebody had played. `snapshotBackend` is the shape that survives —
  * and it is tested here, against a fake asynchronous store, rather than
  * discovered on a device.
