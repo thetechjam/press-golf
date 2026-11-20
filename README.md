@@ -12,8 +12,6 @@ your browser, works offline, and keeps everything on your device — see
 [PRIVACY.md](./PRIVACY.md) for exactly what leaves it and when.
 
 **▶️ Live app: [trunk.golf](https://trunk.golf)**
-**📺 Walkthrough: [youtu.be/YDgTmnR_1eo](https://youtu.be/YDgTmnR_1eo)** — a full
-round in under six minutes
 
 <p align="center">
   <img src="docs/screenshots/setup.png" width="180" alt="New Round: four players with handicaps, a saved course loaded, Nassau, Skins and Junk picked" />

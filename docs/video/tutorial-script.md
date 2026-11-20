@@ -1,5 +1,9 @@
 # Press — "How to use it" · YouTube tutorial script
 
+> **2026-11-20: the video was deleted from YouTube.** https://youtu.be/YDgTmnR_1eo
+> no longer exists; the app and README no longer link it. A new walkthrough is
+> pending. Everything below is the historical record of the deleted upload.
+
 > **2026-11-19: the app is now Trunk (formerly Press), at https://trunk.golf.**
 > This file is left as the record of the video that was published, which says
 > "This is Press" and shows pressgolf.netlify.app (still serving the app). It

@@ -51,7 +51,7 @@
 #     /__forms.html) and the course-search API;
 #   - img-src adds data: and blob: for the share-card canvas and backup
 #     downloads; the QR code is inline SVG, not an image load;
-#   - links out (YouTube, Buy Me a Coffee, OpenStreetMap) are navigations,
+#   - links out (Buy Me a Coffee, OpenStreetMap) are navigations,
 #     which CSP does not govern.
 [[headers]]
   for = "/*"
