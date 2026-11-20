@@ -242,6 +242,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same fault stroke play and Quota were cured of. They now rank after the
   players with a card, as there.
 
+### Removed
+- **The walkthrough video link.** The tutorial video was deleted from
+  YouTube, so How to Play no longer opens with a *Watch the walkthrough* row
+  and the README no longer links it; the privacy page stops listing it among
+  the links out. It comes back when a new walkthrough exists.
+
 ## [0.2.0] - 2026-10-11
 
 Everything since the first cut in July, in one release. **Golf League** grows

@@ -55,10 +55,9 @@ Nothing leaves your device unless you do one of these things:
 - **Backups.** Back up from Settings writes a plain JSON file containing every
   round, saved course and merged-name record on the device. It is not
   encrypted. You keep it; restoring one merges it back.
-- **Links to other sites.** The tutorial (YouTube), the tip jar (Buy Me a
-  Coffee) and the OpenStreetMap credit are ordinary links that open those
-  sites, which have their own privacy policies. Nothing is sent to them until
-  you tap.
+- **Links to other sites.** The tip jar (Buy Me a Coffee) and the
+  OpenStreetMap credit are ordinary links that open those sites, which have
+  their own privacy policies. Nothing is sent to them until you tap.
 
 Trunk is served by Netlify. Like any website, loading or updating the app
 sends ordinary requests for its files, which the host sees as it would for
