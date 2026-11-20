@@ -132,7 +132,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   starts off the trip.
 - **Renaming a trip, or taking a round off it, then pressing Back** was
   undone by the next edit on that round.
-- **Back after Press reloads** no longer lands on an empty screen, and after
+- **Back after Trunk reloads** no longer lands on an empty screen, and after
   "Take it on" and Finish one Back press goes Home.
 - **Saving a course while playing nine of it replaced the saved 18.** The
   whole card is kept, with your par and stroke-index changes and its rating;
@@ -182,7 +182,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   caught a rejected write, but the app passed it no handler, so the failure
   was dropped; it is now logged. A key the phone’s store cannot read at
   startup is no longer overwritten by the next save, which used to replace
-  every saved round with one. If Press fails before it can show anything,
+  every saved round with one. If Trunk fails before it can show anything,
   it shows an error screen with a reload button instead of a blank page.
   "Erase everything" still removes such a key, and every key after it, and
   says so if anything could not be removed. A restore that fails on such a
@@ -200,12 +200,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   under two names. Deleting rounds or a saved course, merging two names,
   "two people", a Settings toggle, and queueing or clearing feedback no
   longer throw out of the button either; each says it was not kept. When
-  the cause is a key Press could not read at startup rather than a full
-  phone, the message says that and to reopen Press.
+  the cause is a key Trunk could not read at startup rather than a full
+  phone, the message says that and to reopen Trunk.
 - **Three loose ends after #111.** On a phone, "Erase everything" now waits
   for each delete to land before relaunching, so a delete the store refuses
-  later shows "Press couldn’t erase everything" there as it already did on
-  the web, and a key Press could not read stays protected until it is really
+  later shows "Trunk couldn’t erase everything" there as it already did on
+  the web, and a key Trunk could not read stays protected until it is really
   gone. While those deletes are still running, the sheet cannot be closed —
   not with the X, Escape or a tap outside it — so a refusal that arrives
   late still has somewhere to be shown. A Settings change the phone refused is no longer undone by the next
