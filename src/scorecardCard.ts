@@ -308,7 +308,7 @@ export async function renderScorecardCard(round: Round): Promise<Blob> {
   ctx.fillStyle = GOLD;
   setLS(ctx, 7);
   ctx.textAlign = 'center';
-  ctx.fillText('SCORED WITH PRESS', W / 2, y);
+  ctx.fillText('SCORED WITH TRUNK · TRUNK.GOLF', W / 2, y);
   setLS(ctx, 0);
   ctx.textAlign = 'left';
   y += PAD - 20;
