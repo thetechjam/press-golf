@@ -631,3 +631,50 @@ describe('Hole tab vertical budget', () => {
     expect(rule('.hole-head')).toMatch(/display\s*:\s*flex/);
   });
 });
+
+/**
+ * In landscape the Hole tab's strips (Wolf, Nassau, Junk) sit side by side,
+ * and the rule that does it is written inside `@media (orientation:
+ * landscape)` over a portrait rule that stacks the same box as a column. A
+ * flex row that inherits `flex-direction: column` fails without a word: the
+ * basis every child is given then applies to its height, the strips come out
+ * one per row, and an open panel sizes to its content instead of the row. It
+ * shipped that way for one build before anyone measured it.
+ */
+describe('landscape hole body', () => {
+  const bare = css.replace(/\/\*[\s\S]*?\*\//g, (m) => ' '.repeat(m.length));
+  // The landscape block is found by the hole-view grid it opens with, not by
+  // its media query: the stylesheet has more than one landscape query, and
+  // the first is not this one.
+  const landscape = bare.slice(bare.indexOf("'nav dots'"));
+  // The block declares `.hole-body` twice (its grid area, then its own
+  // layout), so every declaration for the selector is read, not the first.
+  const rule = (selector: string) =>
+    [
+      ...landscape.matchAll(
+        new RegExp(`${selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{([^}]*)\\}`, 'g')
+      ),
+    ]
+      .map((m) => m[1])
+      .join('\n');
+
+  it('is a wrapping row, said in so many words', () => {
+    const body = rule('.hole-body');
+    expect(body).toMatch(/display\s*:\s*flex/);
+    expect(body).toMatch(/flex-direction\s*:\s*row/);
+    expect(body).toMatch(/flex-wrap\s*:\s*wrap/);
+  });
+
+  it('pairs collapsed strips and gives a lone one the row', () => {
+    // Two at 40% fit beside each other; one left alone grows to the full
+    // width rather than sitting at half with a gap beside it.
+    const child = rule('.hole-body > *');
+    expect(child).toMatch(/flex\s*:\s*1 1 40%/);
+  });
+
+  it('gives an open panel and the steppers the whole row', () => {
+    const full = /\.hole-body > \.junk:not\(\.collapsed\)\s*\{([^}]*)\}/.exec(landscape)?.[1] ?? '';
+    expect(full).toMatch(/flex-basis\s*:\s*100%/);
+    expect(landscape).toMatch(/\.hole-body > \.steppers,[^{]*\.hole-body > \.wolf:not\(\.collapsed\),[^{]*\.hole-body > \.nassau:not\(\.collapsed\)/);
+  });
+});

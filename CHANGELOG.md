@@ -113,6 +113,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rounds by the year and month in it.
 
 ### Fixed
+- **A phone turned sideways lays out the Hole tab's strips properly.** The
+  Wolf, Nassau and Junk strips sit two to a row there, in a two-column grid
+  that had no answer for an odd number of them — one game left its strip at
+  half width beside a gap — or for one that opens: claiming junk grew its
+  half of the row into a panel and left a hole beside it. The row is now
+  a wrapping one, so a strip left alone takes the row and an open panel takes
+  a row of its own.
+- **A date in Stats stays on one line.** "Best: +9 over 9 at Thursday Night
+  League · Thu, Jul 30" broke after the comma at phone width, leaving "Thu,"
+  on one line and "Jul 30" on the next.
 - **A finished match with a blank hole paid nobody.** After "Finish anyway",
   a blank hole was skipped but still counted as to play, so a match read "1 UP
   · 1 to play" and every Match Play and Nassau bet on it paid $0. On a
