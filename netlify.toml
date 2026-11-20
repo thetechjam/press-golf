@@ -5,6 +5,34 @@
   command = "npm run build"
   publish = "dist"
 
+# Old domain: send trunkgolf.com and www.trunkgolf.com to trunk.golf, keeping
+# the path. These must sit above the SPA fallback below — Netlify uses the
+# first rule that matches. The http:// rules take plain-HTTP visitors straight
+# to trunk.golf in one hop instead of bouncing through https://trunkgolf.com.
+[[redirects]]
+  from = "https://trunkgolf.com/*"
+  to = "https://trunk.golf/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "https://www.trunkgolf.com/*"
+  to = "https://trunk.golf/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://trunkgolf.com/*"
+  to = "https://trunk.golf/:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "http://www.trunkgolf.com/*"
+  to = "https://trunk.golf/:splat"
+  status = 301
+  force = true
+
 # Single-page app: serve index.html for any path so the app always loads.
 [[redirects]]
   from = "/*"

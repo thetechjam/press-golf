@@ -51,6 +51,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and stakes inside.
 - `.mise.toml` and `.tool-versions`, so mise and asdf pick up Node 24 the way
   nvm already did.
+- **trunkgolf.com redirects to trunk.golf.** `netlify.toml` sends
+  `trunkgolf.com` and `www.trunkgolf.com`, over http or https, to the same
+  path on `https://trunk.golf` with a permanent (301) redirect.
 
 ### Changed
 - **Results leads with the money.** Who pays whom now sits straight under the
