@@ -54,7 +54,7 @@ export async function startApp(
     // about.
     if (!isNative()) void requestPersistentStorage();
   } catch (err) {
-    console.error('Press could not start.', err);
+    console.error('Trunk could not start.', err);
     root.render(<StartupError error={err} />);
     return root;
   }

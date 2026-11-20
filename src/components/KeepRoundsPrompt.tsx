@@ -21,21 +21,21 @@ function rememberDismissed(): void {
   saveSettings({ firstFinishPromptDismissed: true });
 }
 
-/** The body copy, which depends on where Press is running. */
+/** The body copy, which depends on where Trunk is running. */
 function promptCopy(): string {
   if (isNative()) {
     return 'Your rounds are kept on this phone. Save a backup too — it is the copy that survives a new phone.';
   }
   if (isInstalled()) {
-    return 'Press is on your home screen, so your browser keeps these rounds. Save a backup too — it is the copy that survives a new phone.';
+    return 'Trunk is on your home screen, so your browser keeps these rounds. Save a backup too — it is the copy that survives a new phone.';
   }
-  return 'Some browsers, Safari among them, delete a site’s data after seven days without a visit. Add Press to your home screen and it keeps your rounds — and save a backup, so a copy lives outside this browser.';
+  return 'Some browsers, Safari among them, delete a site’s data after seven days without a visit. Add Trunk to your home screen and it keeps your rounds — and save a backup, so a copy lives outside this browser.';
 }
 
 /**
  * Safari deletes a site's data after seven days without a visit unless the
  * app is on the home screen. This is the one ask, after a round is actually
- * worth keeping: save a backup, and add Press to the home screen.
+ * worth keeping: save a backup, and add Trunk to the home screen.
  *
  * The install button is the browser's own when it offers one; the sentence
  * is the same hint Home already carries, which is what iOS gets instead.

@@ -161,7 +161,7 @@ export default function App() {
   /**
    * A screen whose round or trip is not in memory goes Home.
    *
-   * History entries outlive the page. After a reload — "Reload Press" from
+   * History entries outlive the page. After a reload — "Reload Trunk" from
    * the error screen, or the phone discarding the tab — start() reseeds only
    * the current entry, and the ones beneath it still say Results, Play or
    * Trip while the round and trip they showed are gone. Back then landed on
@@ -200,8 +200,8 @@ export default function App() {
    * A round arriving in the address bar.
    *
    * Handled on mount and again on `hashchange`, because those are two
-   * genuinely different arrivals. Following a link with Press closed loads the
-   * page; following one with Press already open on the same origin changes
+   * genuinely different arrivals. Following a link with Trunk closed loads the
+   * page; following one with Trunk already open on the same origin changes
    * only the fragment, which is a same-document navigation — no reload, no
    * remount, and without the listener, tapping a mate's link while looking at
    * the app does nothing at all.
@@ -452,7 +452,7 @@ export default function App() {
             <>
               <p className="arriving-note">{incoming.message}</p>
               <button className="btn-primary big" onClick={() => setIncoming(null)}>
-                Go to Press
+                Go to Trunk
               </button>
             </>
           )}
@@ -601,22 +601,22 @@ export default function App() {
  * A write storage refused. Shown wherever a round or course is still on screen.
  *
  * Two reasons, and the advice differs. Usually storage is full. In the native
- * shell the key may instead be one Press could not read at startup, which it
+ * shell the key may instead be one Trunk could not read at startup, which it
  * refuses to write over — deleting rounds would not help that, reopening does.
  */
 function NotSavedBanner({ what = 'round' }: { what?: 'round' | 'course' }) {
   if (kv.isUnreadable(what === 'course' ? COURSES_KEY : ROUNDS_KEY)) {
     return what === 'course' ? (
       <div className="unsaved" role="alert">
-        <strong>Not saved.</strong> Press couldn’t read your saved courses when it opened, so it
-        won’t write over them and this course could not be kept. Close Press completely, open it
+        <strong>Not saved.</strong> Trunk couldn’t read your saved courses when it opened, so it
+        won’t write over them and this course could not be kept. Close Trunk completely, open it
         again, and open the link again.
       </div>
     ) : (
       <div className="unsaved" role="alert">
-        <strong>Not saved.</strong> Press couldn’t read your saved rounds when it opened, so it
+        <strong>Not saved.</strong> Trunk couldn’t read your saved rounds when it opened, so it
         won’t write over them and scores entered now are not being kept. Note the scores, then
-        close Press completely and open it again.
+        close Trunk completely and open it again.
       </div>
     );
   }
@@ -632,7 +632,7 @@ function NotSavedBanner({ what = 'round' }: { what?: 'round' | 'course' }) {
   return (
     <div className="unsaved" role="alert">
       <strong>Not saved.</strong> This phone’s storage is full, so scores entered now will be
-      lost if Press is closed. Back up from Settings, then delete old rounds from Rounds to
+      lost if Trunk is closed. Back up from Settings, then delete old rounds from Rounds to
       make room.
     </div>
   );

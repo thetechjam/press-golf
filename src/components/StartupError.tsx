@@ -24,16 +24,16 @@ export function StartupError({
   return (
     <div className="app">
       <div className="screen arriving">
-        <h1 tabIndex={-1}>Press couldn’t start</h1>
+        <h1 tabIndex={-1}>Trunk couldn’t start</h1>
         <p className="arriving-note">
-          Press hit a problem while starting. Nothing has been changed or deleted. Reloading
+          Trunk hit a problem while starting. Nothing has been changed or deleted. Reloading
           usually fixes it.
         </p>
         <p className="arriving-note">
           <code className="error-text">{message}</code>
         </p>
         <button type="button" className="btn-primary big" onClick={onReload}>
-          Reload Press
+          Reload Trunk
         </button>
       </div>
     </div>
