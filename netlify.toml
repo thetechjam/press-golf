@@ -1,4 +1,4 @@
-# Netlify build configuration for Press.
+# Netlify build configuration for Trunk.
 # Netlify reads this automatically on import — no manual settings needed.
 
 [build]
