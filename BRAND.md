@@ -58,7 +58,7 @@ manifest `background_color`, share cards).
 
 | Cut | Where | Rules |
 |---|---|---|
-| Full | `public/app-icon.svg` | 512×512 viewBox, squircle `rx="112"` on felt `#023d33` (faint radial lift), dimensional cream mark. Manifest `any` SVG icon. |
+| Full | `public/app-icon.svg` | 512×512 viewBox, squircle `rx="112"` on felt `#023d33` (faint radial lift), dimensional cream mark. Not a manifest icon (the install icons are the take-A PNGs); kept for docs and the league flyer. |
 | Favicon | `public/favicon.svg` | Same tile, mark drawn slightly larger with a tighter shadow so it holds up at 16–32px. |
 | In-app | `TrunkMark` in `src/icons.tsx` and the `index.html` splash, both showing `public/mark-3d.png` | The photographic take-A cut-out, transparent, no tile (143×144). Cream reads on light, dark and glare. `TrunkMark` props `size` (height), `className`; always `aria-hidden` with empty `alt`. |
 
@@ -69,21 +69,20 @@ The PNG icons and `mark-3d.png` are cut from the take-A raster. If the mark
 changes, keep in sync: `public/mark-3d.png` (used by `TrunkMark` and the
 splash), `public/app-icon.svg`, `public/favicon.svg`, the PNGs below and
 `docs/brand/icon-1024.png` plus `docs/brand/capacitor/`.
-The delivered `public/og.png` still shows the earlier flat mark — it was left
-unchanged on purpose in the take-A pass and is not in sync with the
-dimensional mark. `scripts/og-image.mjs` also still carries the flat path in
-cream for its fallback card; it is only run if `og.png` is ever regenerated.
+`public/og.png` is rendered from `docs/brand/source/mark-3d-full.png` (the
+656×661 transparent take-A cut-out) by `scripts/og-image.mjs`; regenerate it
+with `npm run og:image` when the mark changes.
 
 ### Files
 
 | File | Use |
 |---|---|
-| `public/app-icon.svg` | Full cut on the felt squircle. Manifest `any` icon, `sizes: any`. |
+| `public/app-icon.svg` | Full cut on the felt squircle. Docs and `docs/league/flyer.html` only — deliberately not in the manifest, so browsers install the take-A PNGs rather than the vector. |
 | `public/favicon.svg` | Favicon cut. Browser tab, `public/privacy.html`. |
-| `public/icon-192.png`, `public/icon-512.png` | Manifest icons, `purpose: any`. Take-A cut-out on the full-bleed felt gradient; opaque, full square, no rounded corners. |
+| `public/icon-192.png`, `public/icon-512.png` | The manifest's only `purpose: any` icons (the install icon). Take-A cut-out on the full-bleed felt gradient; opaque, full square, no rounded corners. |
 | `public/icon-maskable-192.png`, `public/icon-maskable-512.png` | Manifest icons, `purpose: maskable`. Full-bleed felt, Flat `#023d33`, mark at about 66% width so its farthest pixel stays inside the central 80% circle (the boxy car cannot sit at 70% — the wheels poke out). |
 | `public/apple-touch-icon.png` | 180×180 opaque full square on the felt gradient (iOS rounds it; it ignores SVG touch icons). |
-| `public/og.png` | 1200×630 link-preview card: the earlier flat cream mark (not updated to take A, on purpose), `TRUNK` and "Settle it at the trunk." on felt, with an illustrated open trunk in a clubhouse lot at the right. `scripts/og-image.mjs` draws a plainer fallback card (lockup, tagline, footer) if it ever needs regenerating. |
+| `public/og.png` | 1200×630 link-preview card: the take-A lockup (3D mark ~210px tall beside the embossed cream `TRUNK`, Oswald 600, dark-felt emboss), "Settle it at the trunk." in gold and a quiet `GOLF SIDE GAMES · TRUNK.GOLF` footer, centred on the splash's `160deg` felt gradient with wide margins for crops. Rendered by `scripts/og-image.mjs` (`npm run og:image`). |
 | `public/mark-3d.png` | 143×144 (~27 KB) transparent dimensional mark, no tile. Home header (via `TrunkMark`) and splash. |
 | `src/icons.tsx` → `TrunkMark` | In-app mark: an `<img>` of `mark-3d.png`. |
 | `index.html` splash | `<img src="/mark-3d.png">` (preloaded in the `<head>`) plus the cream word, on the felt gradient; shows before any script runs. |

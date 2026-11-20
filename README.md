@@ -135,10 +135,9 @@ The accessible-name half of the same check runs in CI without a browser, in
 ### The link-preview card
 
 `public/og.png` is what a shared trunk.golf link unfurls into. The committed
-card is the delivered brand art (see `BRAND.md`), and it is committed because
-crawlers need a PNG. `scripts/og-image.mjs` draws a plainer fallback card from
-the brand constants and the app's own Oswald. Running it **replaces** the
-delivered card, so only do that when you mean to ship the fallback:
+card is the take-A lockup on felt (see `BRAND.md`), and it is committed because
+crawlers need a PNG. `scripts/og-image.mjs` renders it from the high-res mark
+in `docs/brand/source/mark-3d-full.png` and the app's own Oswald:
 
 ```bash
 npm run og:image   # uses Playwright if installed, else a Chromium/Chrome on PATH
