@@ -34,22 +34,38 @@ A car seen from behind with the trunk lid raised, a **gold pin flag** standing
 up out of the trunk and a **ball** beside it, between two red taillights. The
 gold flag is the one element carried over from the old Press identity.
 
-Mark colours: body and ball are cream (or `currentColor` in-app), the flag is
-always money gold `#e7b53c`, the taillights are always red `#d2483b`.
+The shipped mark is the **dimensional cut** (take A, "soft 3D"): a cream body
+with a soft top-light gradient and a shaded underside to the raised lid, the
+cavity darkened, a metallic gold flag, a lit ball, glossy taillights and a soft
+drop shadow. The earlier flat glyph was rejected as too flat; it survives only
+in the source files and the OG fallback script.
+
+Mark colours: body and ball are cream `#f4f7f2` (shaded, never recoloured to
+follow the theme), the flag is money gold `#e7b53c` (gradient `#f6e19a` →
+`#c49218`), the taillights are red `#d2483b` (gradient `#f06a5c` → `#9e2b22`).
+
+Icon felt is **`#023d33`**, sampled from the approved take-A art. Every icon
+tile — the PNGs and the two SVG tiles — uses it so they match. It is not a
+token: `--green-900` `#0b3d2e` stays the ink and UI deep green (splash,
+manifest `background_color`, share cards).
 
 ### Three cuts
 
 | Cut | Where | Rules |
 |---|---|---|
-| Full | `public/app-icon.svg` | 512×512 viewBox, squircle `rx="112"` on flat deep felt `#0b3d2e`, cream mark. Manifest `any` SVG icon. |
-| Favicon | `public/favicon.svg` | Same tile, mark drawn slightly larger so it holds up at 16–32px. |
-| In-app | `TrunkMark` in `src/icons.tsx`; inline copy in the `index.html` splash and `scripts/og-image.mjs` | Transparent, no tile. Body and ball are `currentColor` so the mark follows light, dark and glare; flag `#e7b53c` and taillights `#d2483b` are fixed. Props `size`, `className`; `aria-hidden`. |
+| Full | `public/app-icon.svg` | 512×512 viewBox, squircle `rx="112"` on felt `#023d33` (faint radial lift), dimensional cream mark. Manifest `any` SVG icon. |
+| Favicon | `public/favicon.svg` | Same tile, mark drawn slightly larger with a tighter shadow so it holds up at 16–32px. |
+| In-app | `TrunkMark` in `src/icons.tsx` and the `index.html` splash, both showing `public/mark-3d.png` | The photographic take-A cut-out, transparent, no tile (508×512). Cream reads on light, dark and glare. `TrunkMark` props `size` (height), `className`; always `aria-hidden` with empty `alt`. |
 
-All three use the same path data from the delivered vector
-(`docs/brand/source/trunk-mark.svg`, viewBox `140 130 744 754`). The path data
-lives in five files: `src/icons.tsx`, `index.html`, `scripts/og-image.mjs`,
-`public/app-icon.svg` and `public/favicon.svg`. If the mark changes, update all
-five together, then the PNGs below.
+The two SVG tiles are true vectors built from
+`docs/brand/source/mark-dimensional-cream.svg` (viewBox `140 130 744 754`; the
+flat path data plus gradients and a shadow, with `ai-` / `fi-` prefixed IDs).
+The PNG icons and `mark-3d.png` are cut from the take-A raster. If the mark
+changes, keep in sync: `public/mark-3d.png` (used by `TrunkMark` and the
+splash), `public/app-icon.svg`, `public/favicon.svg`, the PNGs below and
+`docs/brand/icon-1024.png` plus `docs/brand/capacitor/`.
+`scripts/og-image.mjs` still carries the flat path in cream for its fallback
+card; it is only run if `og.png` is ever regenerated.
 
 ### Files
 
@@ -61,11 +77,14 @@ five together, then the PNGs below.
 | `public/icon-maskable-192.png`, `public/icon-maskable-512.png` | Manifest icons, `purpose: maskable`. Full-bleed felt, all art inside the central 80% circle (mark at about 70%). |
 | `public/apple-touch-icon.png` | 180×180 opaque full square (iOS rounds it; it ignores SVG touch icons). |
 | `public/og.png` | 1200×630 link-preview card: cream mark, `TRUNK` and "Settle it at the trunk." on felt, with an illustrated open trunk in a clubhouse lot at the right. `scripts/og-image.mjs` draws a plainer fallback card (lockup, tagline, footer) if it ever needs regenerating. |
-| `src/icons.tsx` → `TrunkMark` | In-app mark, no tile. |
-| `index.html` splash | Inline in-app mark plus the word, on the felt gradient. |
+| `public/mark-3d.png` | 508×512 transparent dimensional mark, no tile. Home header (via `TrunkMark`) and splash. |
+| `src/icons.tsx` → `TrunkMark` | In-app mark: an `<img>` of `mark-3d.png`. |
+| `index.html` splash | `<img src="/mark-3d.png">` plus the cream word, on the felt gradient; shows before any script runs. |
 
+All icon PNGs are opaque RGB on `#023d33` with square corners (the take-A
+art's baked iOS corners were flood-filled with felt); the OS does the rounding.
 PNG sizes are asserted in `src/siteMeta.test.ts`. Regenerate them at exact
-pixel sizes from the SVG art if the mark changes.
+pixel sizes if the mark changes.
 
 ### Wordmark lockup
 
@@ -78,6 +97,13 @@ stands in for a letter.
 - The word is real text, so the accessible name is just "Trunk" — no
   `aria-label` or hidden fragments.
 - Used on the Home header and the splash. Share cards carry the word only.
+- Home (treatment A): mark at 42px with a soft green drop shadow; the word in
+  `--green-ink` with an embossed `text-shadow` (white bevel above, faint
+  green edge and soft fall below). Dark mode inverts the emboss to a faint
+  highlight and black depth; glare uses the light treatment. The effects sit
+  on `.logo-mark` / `.logo-type`, never on `.logo`, so nothing clips the mark.
+- Splash: mark at 48px, cream word with a soft shadow only — no green emboss
+  on the dark felt.
 
 ## Color
 
@@ -87,10 +113,10 @@ Unchanged from Press. Defined as CSS custom properties in
 
 | Token | Hex | Role |
 |---|---|---|
-| `--green-900` | `#0b3d2e` | Deep felt — icon tiles, splash, share-card and OG ground, manifest background |
+| `--green-900` | `#0b3d2e` | Deep felt — ink, splash, share-card and OG ground, manifest background. Icon tiles use the take-A felt `#023d33` instead (see the mark). |
 | `--green-700` | `#14694e` | Brand green — theme colour, splash gradient top |
 | `--fairway` | `#2fbf86` | Bright green — dark-mode accent and focus |
-| `--cream` | `#f4f7f2` | Ball white — mark body on felt, light text |
+| `--cream` | `#f4f7f2` | Ball white — mark body, light text |
 | `--gold` | `#e7b53c` | Money gold — the flag, trim, share-card wordmark and sign-off |
 | `--over` | `#d2483b` | Over par; also the mark's taillights (fixed in every cut) |
 
@@ -115,7 +141,9 @@ body text. No other faces, no remote fonts.
   card.
 - Clear space of half the mark's width on all sides. Minimum size 16px for the
   favicon cut, 24px for the in-app cut.
-- Don't recolour the flag or taillights, rotate, outline or add effects. Don't
+- Don't recolour the flag or taillights, rotate or outline the mark, and don't
+  flatten it back to a single-colour glyph or add effects beyond its own
+  shading and soft shadow. Don't
   set the wordmark in any face but Oswald.
 - Don't pair the mark with the old "ress" fragment or any P-shaped flag.
 - Don't add The Tech JAM branding; Trunk is its own thing.
