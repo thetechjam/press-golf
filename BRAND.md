@@ -45,9 +45,11 @@ always money gold `#e7b53c`, the taillights are always red `#d2483b`.
 | Favicon | `public/favicon.svg` | Same tile, mark drawn slightly larger so it holds up at 16–32px. |
 | In-app | `TrunkMark` in `src/icons.tsx`; inline copy in the `index.html` splash and `scripts/og-image.mjs` | Transparent, no tile. Body and ball are `currentColor` so the mark follows light, dark and glare; flag `#e7b53c` and taillights `#d2483b` are fixed. Props `size`, `className`; `aria-hidden`. |
 
-All three use the same path data from the delivered vector (`trunk-mark.svg`,
-viewBox `140 130 744 754`). If the mark changes, update all three copies
-together, then the PNGs below.
+All three use the same path data from the delivered vector
+(`docs/brand/source/trunk-mark.svg`, viewBox `140 130 744 754`). The path data
+lives in five files: `src/icons.tsx`, `index.html`, `scripts/og-image.mjs`,
+`public/app-icon.svg` and `public/favicon.svg`. If the mark changes, update all
+five together, then the PNGs below.
 
 ### Files
 

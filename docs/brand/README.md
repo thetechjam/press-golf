@@ -11,6 +11,7 @@ brand guide; this folder keeps the source art. Nothing here is served or bundled
 | `source/trunk-mark-cream.svg` | Same mark with a cream `#f4f7f2` body, for felt surfaces. |
 | `source/trunk-mark-on-light.svg` | Same mark with a deep green `#0b3d2e` body, for light surfaces. |
 | `source/icon-full.svg`, `source/icon-maskable.svg` | Full-square and maskable (mark at 70%) sources for the PNG icons in `public/`. |
+| `source/cap-foreground.svg` | Source for `capacitor/icon-foreground.png`. |
 | `icon-1024.png` | 1024 px master for stores and marketing. |
 | `capacitor/` | Inputs for `@capacitor/assets` if a native shell is created (`icon-only`, `icon-foreground` in the 66% safe zone, `icon-background`, 2732 px splashes). Not used by the web build. |
 | `mockups/` | AI mockups of Home, scoring and settle-up used as visual direction. Not a spec; the app's layouts did not change. |
@@ -18,4 +19,7 @@ brand guide; this folder keeps the source art. Nothing here is served or bundled
 
 The shipped files in `public/` (`app-icon.svg`, `favicon.svg`, `icon-192.png`,
 `icon-512.png`, `icon-maskable-192.png`, `icon-maskable-512.png`,
-`apple-touch-icon.png`, `og.png`) are generated from these sources.
+`apple-touch-icon.png`) are generated from these sources. `og.png` is the
+delivered raster card; there is no vector source.
+
+`capacitor/splash-dark.png` is intentionally identical to `capacitor/splash.png`: the ground is dark felt either way.
