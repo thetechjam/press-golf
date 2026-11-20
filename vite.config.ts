@@ -100,17 +100,32 @@ export default defineConfig({
             type: 'image/svg+xml',
             purpose: 'any',
           },
+          // Full-square art for 'any'; the maskable pair is full-bleed felt
+          // with the mark inside the central safe circle, so a launcher can
+          // crop it to any shape. One file cannot be both.
           {
             src: 'icon-192.png',
             sizes: '192x192',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'any',
           },
           {
             src: 'icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'any',
+          },
+          {
+            src: 'icon-maskable-192.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'maskable',
+          },
+          {
+            src: 'icon-maskable-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },
