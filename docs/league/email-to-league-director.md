@@ -1,6 +1,6 @@
 # Email to the league director
 
-Draft for introducing Press to the league before the season. Attach
+Draft for introducing Trunk to the league before the season. Attach
 `press-league-flyer.pdf`. Names are left as placeholders because this repo is
 public.
 
@@ -10,7 +10,7 @@ public.
 
 Hi [League director],
 
-I've been building a free golf scoring app called Press, and I've set up a
+I've been building a free golf scoring app called Trunk, and I've set up a
 league mode that follows our [2025] rule sheet. I wanted to run it by you
 before sharing it with anyone.
 
@@ -34,7 +34,7 @@ Would you be OK with me mentioning it at a league night, or putting a small
 flyer in the pro shop? I've attached one. And if you spot anything that doesn't
 match how you run the league, I'd genuinely like to know so I can fix it.
 
-You can try it at pressgolf.netlify.app. Tap "Golf League".
+You can try it at trunk.golf. Tap "Golf League".
 
 Thanks,
 [Your name]

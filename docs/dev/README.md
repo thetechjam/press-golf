@@ -11,3 +11,7 @@ person. They are kept as the record of *why* those features have the shape
 they have; they are not kept up to date, and where a plan and the code
 disagree, the code and `CHANGELOG.md` are right. Nothing here is needed to
 build or contribute — see `CONTRIBUTING.md` for that.
+
+The app was called Press until the November 2026 rename to Trunk, so these
+records (and their filenames) still say Press. The golf "press" bet they
+describe is a separate thing and kept its name.
