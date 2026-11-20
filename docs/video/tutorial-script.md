@@ -1,5 +1,12 @@
 # Press — "How to use it" · YouTube tutorial script
 
+> **2026-11-19: the app is now Trunk (formerly Press), at https://trunk.golf.**
+> This file is left as the record of the video that was published, which says
+> "This is Press" and shows pressgolf.netlify.app (still serving the app). It
+> is not updated for the rename; a re-recorded video gets its own pass. For the
+> live upload, edit the title, description and pinned comment in Studio to say
+> "Trunk (formerly Press)" and trunk.golf.
+
 The shooting script for the channel walkthrough. Every scene id here matches a
 scene in `scripts/capture-tutorial.mjs`, and every screen described is the real
 app driven in a real browser — nothing in this video is a mock-up, because a

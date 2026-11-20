@@ -1,5 +1,12 @@
 # Publishing the tutorial to YouTube
 
+> **2026-11-19: the app is now Trunk (formerly Press), at https://trunk.golf.**
+> This file is left as the record of the video that was published, which says
+> "This is Press" and shows pressgolf.netlify.app (still serving the app). It
+> is not updated for the rename; a re-recorded video gets its own pass. For the
+> live upload, edit the title, description and pinned comment in Studio to say
+> "Trunk (formerly Press)" and trunk.golf.
+
 > **Published https://youtu.be/YDgTmnR_1eo** on 2026-09-22. What follows is the record of what went
 > into that upload, and the procedure to repeat for the next one. To change
 > something on the video that is already live, edit it in Studio — the fields
