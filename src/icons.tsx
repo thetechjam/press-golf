@@ -23,39 +23,25 @@ const base = (size: number) => ({
 });
 
 /**
- * The Trunk brand mark ("Open Trunk"): a car seen from behind with the trunk
- * lid raised and a gold pin flag standing in it. Path data is the delivered
- * trunk-mark.svg, kept identical to the splash in index.html and the OG card
- * script. Body and ball follow currentColor so the mark tracks theme and
- * glare modes; the flag stays brand gold and the taillights stay red.
+ * The Trunk brand mark ("Open Trunk"), dimensional cut: the soft 3D cream car
+ * with its trunk lid raised, a gold pin flag and a ball inside, red
+ * taillights. This is the approved take-A art (public/mark-3d.png, cut out
+ * from docs/brand — see BRAND.md), the same image the index.html splash
+ * shows. It is a raster, so it does not follow currentColor: the cream body
+ * reads on light, dark and glare grounds alike. `size` is the height; the
+ * art is 508×512. Always decorative — the word beside it carries the name.
  */
 export const TrunkMark = ({ size = 18, className }: IconProps) => (
-  <svg
-    width={(size * 744) / 754}
+  <img
+    src={`${import.meta.env.BASE_URL}mark-3d.png`}
+    width={Math.round((size * 508) / 512)}
     height={size}
-    viewBox="140 130 744 754"
-    className={className}
+    alt=""
     aria-hidden
-  >
-    <path
-      fill="currentColor"
-      fillRule="evenodd"
-      d="M296 162Q512 141 728 162C793 169 832 203 845 246Q855 279 821 276L739 400L792 516C849 523 870 604 870 722Q870 798 811 802V844Q811 870 784 870H718Q690 870 690 842V802H334V842Q334 870 306 870H240Q213 870 213 844V802C170 800 154 774 154 722C154 604 175 523 232 516L285 400L203 276Q169 279 179 246C192 203 231 169 296 162ZM243 246Q232 252 240 264L300 354Q302 358 311 354C431 315 593 315 713 354Q722 358 724 354L784 264Q792 252 781 246C688 207 336 207 243 246ZM329 391L275 520Q288 531 285 560V679Q285 721 326 721H698Q739 721 739 679V560Q736 531 749 520L695 391C583 354 441 354 329 391Z"
-    />
-    <path
-      fill="#e7b53c"
-      d="M443 658V417A20 20 0 1 1 474 408C544 395 562 458 644 452Q661 451 650 466C580 536 551 485 469 535V658C501 661 523 669 523 680C523 692 489 702 448 702S373 692 373 680C373 669 403 660 443 658Z"
-    />
-    <circle cx="587" cy="639" r="54" fill="currentColor" />
-    <path
-      fill="#d2483b"
-      d="M201 568H241Q256 568 256 583V669Q256 683 242 683H180Q164 683 167 667Q171 619 183 583Q188 568 201 568Z"
-    />
-    <path
-      fill="#d2483b"
-      d="M783 568H823Q836 568 841 583Q853 619 857 667Q860 683 844 683H782Q768 683 768 669V583Q768 568 783 568Z"
-    />
-  </svg>
+    decoding="async"
+    draggable={false}
+    className={className}
+  />
 );
 
 /** Golf flag on its pole. */

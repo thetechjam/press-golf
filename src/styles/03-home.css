@@ -20,6 +20,31 @@
   justify-content: center;
   gap: 0.25em;
 }
+/* Treatment A: the dimensional mark lifts off the page and the word is
+   embossed — a white bevel above, a faint green edge and a soft fall below.
+   Kept on the two children rather than .logo so no effect (background-clip
+   on the word, say) can ever clip the mark. Light and glare share it. */
+.logo-mark {
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(11, 61, 46, 0.22));
+}
+.logo-type {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.75),
+    0 2px 0 rgba(11, 61, 46, 0.08),
+    0 8px 16px rgba(11, 61, 46, 0.12);
+}
+/* On the dark ground a white bevel reads as a glitch, so the emboss inverts:
+   only a faint highlight, the depth all in black. */
+:root.dark .logo-mark {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+:root.dark .logo-type {
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12),
+    0 2px 0 rgba(0, 0, 0, 0.25),
+    0 8px 16px rgba(0, 0, 0, 0.35);
+}
 .tagline {
   color: var(--muted);
   margin: 4px 0 0;

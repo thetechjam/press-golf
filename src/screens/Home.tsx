@@ -81,8 +81,8 @@ export function Home({
             accessible name is simply "Trunk". tabIndex so App can move focus
             here on navigation. */}
         <h1 className="logo" tabIndex={-1}>
-          <TrunkMark size={34} />
-          Trunk
+          <TrunkMark size={42} className="logo-mark" />
+          <span className="logo-type">Trunk</span>
         </h1>
         <p className="tagline">Settle it at the trunk.</p>
       </header>
