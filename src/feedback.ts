@@ -87,7 +87,7 @@ export function listQueue(): QueuedFeedback[] {
 
 /**
  * False when the phone refused the write. Never throws: a full phone, or on
- * native a queue key Press could not read at startup, used to throw out of
+ * native a queue key Trunk could not read at startup, used to throw out of
  * the Send button and out of the background flush.
  */
 function writeQueue(q: QueuedFeedback[]): boolean {

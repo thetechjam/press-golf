@@ -6,7 +6,7 @@ interface Props {
 /**
  * The QR code, drawn as one SVG path on its own light ground.
  *
- * The white rectangle is drawn rather than inherited: Press has a dark theme,
+ * The white rectangle is drawn rather than inherited: Trunk has a dark theme,
  * and a QR code on a dark background is one no camera will read.
  */
 export function ShareQr({ path, side }: Props) {

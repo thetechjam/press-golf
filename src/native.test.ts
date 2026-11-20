@@ -7,7 +7,7 @@ import { listRounds, saveRound, getSettings, saveSettings } from './storage';
 import { makeRound } from './games/testFixtures';
 
 /**
- * Pointing Press at storage that survives on a phone.
+ * Pointing Trunk at storage that survives on a phone.
  *
  * All of it runs against a fake bridge, because the real one only exists
  * inside the native shell. What that can prove is everything except the Swift:

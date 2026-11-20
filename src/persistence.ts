@@ -1,7 +1,7 @@
 /**
  * Asking the browser not to throw the rounds away.
  *
- * Everything Press saves lives in this origin's storage, and a browser is
+ * Everything Trunk saves lives in this origin's storage, and a browser is
  * allowed to evict that under pressure — Safari goes further and clears a
  * site's data after seven days without a visit unless the app is installed
  * to the home screen. `navigator.storage.persist()` asks for the storage to
