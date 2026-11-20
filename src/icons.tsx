@@ -29,12 +29,12 @@ const base = (size: number) => ({
  * from docs/brand — see BRAND.md), the same image the index.html splash
  * shows. It is a raster, so it does not follow currentColor: the cream body
  * reads on light, dark and glare grounds alike. `size` is the height; the
- * art is 508×512. Always decorative — the word beside it carries the name.
+ * art is 143×144. Always decorative — the word beside it carries the name.
  */
 export const TrunkMark = ({ size = 18, className }: IconProps) => (
   <img
     src={`${import.meta.env.BASE_URL}mark-3d.png`}
-    width={Math.round((size * 508) / 512)}
+    width={Math.round((size * 143) / 144)}
     height={size}
     alt=""
     aria-hidden

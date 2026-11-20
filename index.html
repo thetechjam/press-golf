@@ -5,6 +5,9 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- iOS ignores SVG touch icons; it needs a real 180px PNG. -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- The splash mark is a plain <img> below the inline styles; preload it
+         so it is fetched on the first-paint path rather than after parsing. -->
+    <link rel="preload" as="image" href="/mark-3d.png" />
     <!-- No maximum-scale: it blocks pinch-zoom on Android (iOS has ignored it
          since iOS 10), which is a WCAG 1.4.4 failure, and nothing in the layout
          needs zoom suppressed to hold together. -->
@@ -80,7 +83,7 @@
         gap: 0.25em;
       }
       #splash .mark img {
-        /* mark-3d.png is 508×512. Oswald's cap height at 3rem is about 39px;
+        /* mark-3d.png is 143×144. Oswald's cap height at 3rem is about 39px;
            the 3D mark carries a little shadow and padding inside its frame,
            so it is drawn at 48px to stand about 15% taller than the caps. */
         width: 47px;

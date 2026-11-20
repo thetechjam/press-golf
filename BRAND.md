@@ -44,9 +44,14 @@ Mark colours: body and ball are cream `#f4f7f2` (shaded, never recoloured to
 follow the theme), the flag is money gold `#e7b53c` (gradient `#f6e19a` →
 `#c49218`), the taillights are red `#d2483b` (gradient `#f06a5c` → `#9e2b22`).
 
-Icon felt is **`#023d33`**, sampled from the approved take-A art. Every icon
-tile — the PNGs and the two SVG tiles — uses it so they match. It is not a
-token: `--green-900` `#0b3d2e` stays the ink and UI deep green (splash,
+Icon felt is **`#023d33`**, sampled from the approved take-A art. The two SVG
+tiles, the maskable PNGs and the Capacitor `icon-background` are flat
+`#023d33`. The "any" PNGs (`icon-192`, `icon-512`, `apple-touch-icon`) and
+`docs/brand/icon-1024.png` / `capacitor/icon-only.png` instead sit on a
+full-bleed felt gradient sampled from take A — the same family, slightly
+lighter at the top and darker at the bottom (corners about `rgb(8,71,58)`
+top-left and `rgb(0,52,43)` bottom-left), with a soft contact shadow under the
+car and no baked rounded tile. It is not a token: `--green-900` `#0b3d2e` stays the ink and UI deep green (splash,
 manifest `background_color`, share cards).
 
 ### Three cuts
@@ -55,7 +60,7 @@ manifest `background_color`, share cards).
 |---|---|---|
 | Full | `public/app-icon.svg` | 512×512 viewBox, squircle `rx="112"` on felt `#023d33` (faint radial lift), dimensional cream mark. Manifest `any` SVG icon. |
 | Favicon | `public/favicon.svg` | Same tile, mark drawn slightly larger with a tighter shadow so it holds up at 16–32px. |
-| In-app | `TrunkMark` in `src/icons.tsx` and the `index.html` splash, both showing `public/mark-3d.png` | The photographic take-A cut-out, transparent, no tile (508×512). Cream reads on light, dark and glare. `TrunkMark` props `size` (height), `className`; always `aria-hidden` with empty `alt`. |
+| In-app | `TrunkMark` in `src/icons.tsx` and the `index.html` splash, both showing `public/mark-3d.png` | The photographic take-A cut-out, transparent, no tile (143×144). Cream reads on light, dark and glare. `TrunkMark` props `size` (height), `className`; always `aria-hidden` with empty `alt`. |
 
 The two SVG tiles are true vectors built from
 `docs/brand/source/mark-dimensional-cream.svg` (viewBox `140 130 744 754`; the
@@ -64,8 +69,10 @@ The PNG icons and `mark-3d.png` are cut from the take-A raster. If the mark
 changes, keep in sync: `public/mark-3d.png` (used by `TrunkMark` and the
 splash), `public/app-icon.svg`, `public/favicon.svg`, the PNGs below and
 `docs/brand/icon-1024.png` plus `docs/brand/capacitor/`.
-`scripts/og-image.mjs` still carries the flat path in cream for its fallback
-card; it is only run if `og.png` is ever regenerated.
+The delivered `public/og.png` still shows the earlier flat mark — it was left
+unchanged on purpose in the take-A pass and is not in sync with the
+dimensional mark. `scripts/og-image.mjs` also still carries the flat path in
+cream for its fallback card; it is only run if `og.png` is ever regenerated.
 
 ### Files
 
@@ -73,16 +80,17 @@ card; it is only run if `og.png` is ever regenerated.
 |---|---|
 | `public/app-icon.svg` | Full cut on the felt squircle. Manifest `any` icon, `sizes: any`. |
 | `public/favicon.svg` | Favicon cut. Browser tab, `public/privacy.html`. |
-| `public/icon-192.png`, `public/icon-512.png` | Manifest icons, `purpose: any`. Opaque, full square, no rounded corners. |
-| `public/icon-maskable-192.png`, `public/icon-maskable-512.png` | Manifest icons, `purpose: maskable`. Full-bleed felt, all art inside the central 80% circle (mark at about 70%). |
-| `public/apple-touch-icon.png` | 180×180 opaque full square (iOS rounds it; it ignores SVG touch icons). |
-| `public/og.png` | 1200×630 link-preview card: cream mark, `TRUNK` and "Settle it at the trunk." on felt, with an illustrated open trunk in a clubhouse lot at the right. `scripts/og-image.mjs` draws a plainer fallback card (lockup, tagline, footer) if it ever needs regenerating. |
-| `public/mark-3d.png` | 508×512 transparent dimensional mark, no tile. Home header (via `TrunkMark`) and splash. |
+| `public/icon-192.png`, `public/icon-512.png` | Manifest icons, `purpose: any`. Take-A cut-out on the full-bleed felt gradient; opaque, full square, no rounded corners. |
+| `public/icon-maskable-192.png`, `public/icon-maskable-512.png` | Manifest icons, `purpose: maskable`. Full-bleed felt, Flat `#023d33`, mark at about 66% width so its farthest pixel stays inside the central 80% circle (the boxy car cannot sit at 70% — the wheels poke out). |
+| `public/apple-touch-icon.png` | 180×180 opaque full square on the felt gradient (iOS rounds it; it ignores SVG touch icons). |
+| `public/og.png` | 1200×630 link-preview card: the earlier flat cream mark (not updated to take A, on purpose), `TRUNK` and "Settle it at the trunk." on felt, with an illustrated open trunk in a clubhouse lot at the right. `scripts/og-image.mjs` draws a plainer fallback card (lockup, tagline, footer) if it ever needs regenerating. |
+| `public/mark-3d.png` | 143×144 (~27 KB) transparent dimensional mark, no tile. Home header (via `TrunkMark`) and splash. |
 | `src/icons.tsx` → `TrunkMark` | In-app mark: an `<img>` of `mark-3d.png`. |
-| `index.html` splash | `<img src="/mark-3d.png">` plus the cream word, on the felt gradient; shows before any script runs. |
+| `index.html` splash | `<img src="/mark-3d.png">` (preloaded in the `<head>`) plus the cream word, on the felt gradient; shows before any script runs. |
 
-All icon PNGs are opaque RGB on `#023d33` with square corners (the take-A
-art's baked iOS corners were flood-filled with felt); the OS does the rounding.
+All icon PNGs are opaque RGB with square corners — the "any" set on the felt
+gradient, the maskable set on flat `#023d33` — built from the transparent
+take-A cut-out, with no baked rounded tile; the OS does the rounding.
 PNG sizes are asserted in `src/siteMeta.test.ts`. Regenerate them at exact
 pixel sizes if the mark changes.
 
