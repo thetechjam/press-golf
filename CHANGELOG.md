@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to Press are documented here.
+All notable changes to Trunk (formerly Press) are documented here.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -56,6 +56,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   path on `https://trunk.golf` with a permanent (301) redirect.
 
 ### Changed
+- **Press is now Trunk.** The app has a new name, a new mark (an open car
+  trunk with a gold pin flag) and a new tagline, "Settle it at the trunk.",
+  and lives at https://trunk.golf. The page title, home-screen name, icons,
+  splash, Home header, share-card sign-off (`SCORED WITH TRUNK · TRUNK.GOLF`),
+  text-share sign-offs and backup and shared-image filenames (`trunk-…`) all
+  say Trunk; the golf "press" bet keeps its name. Nothing you have saved is
+  touched: storage keys are unchanged, so saved rounds, courses and settings
+  stay where they are, older `press-backup-….json` files still restore, and
+  share links already sent still open. pressgolf.netlify.app keeps serving the
+  app, and data stays with the site address it was saved on.
 - **Results leads with the money.** Who pays whom now sits straight under the
   winner, above the awards, so the settle-up is on screen without scrolling.
   The results image does the same — the winner and the settlement under the
