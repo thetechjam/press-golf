@@ -86,7 +86,7 @@ describe('a course that arrives by link', () => {
     await userEvent.click(screen.getByRole('button', { name: 'No thanks' }));
 
     expect(saved()).toEqual([]);
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
   });
 
   it('says what looks wrong with the card, on the way in', async () => {
@@ -183,9 +183,9 @@ describe('a course the phone cannot store', () => {
     try {
       await userEvent.click(screen.getByRole('button', { name: 'Save this course' }));
       expect(screen.getByRole('alert').textContent).toMatch(/Not saved/);
-      await userEvent.click(screen.getByRole('button', { name: /No thanks|Go to Press/ }));
+      await userEvent.click(screen.getByRole('button', { name: /No thanks|Go to Trunk/ }));
       // Back in the app, where nothing is unsaved: the course was let go.
-      expect(await screen.findByRole('heading', { name: 'Press' })).toBeTruthy();
+      expect(await screen.findByRole('heading', { name: 'Trunk' })).toBeTruthy();
       expect(screen.queryByRole('alert')).toBeNull();
     } finally {
       restore();

@@ -5,6 +5,9 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <!-- iOS ignores SVG touch icons; it needs a real 180px PNG. -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- The splash mark is a plain <img> below the inline styles; preload it
+         so it is fetched on the first-paint path rather than after parsing. -->
+    <link rel="preload" as="image" href="/mark-3d.png" />
     <!-- No maximum-scale: it blocks pinch-zoom on Android (iOS has ignored it
          since iOS 10), which is a WCAG 1.4.4 failure, and nothing in the layout
          needs zoom suppressed to hold together. -->
@@ -13,29 +16,30 @@
     <link rel="preload" href="/fonts/oswald-latin.woff2" as="font" type="font/woff2" crossorigin />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Press" />
+    <meta name="apple-mobile-web-app-title" content="Trunk" />
     <meta
       name="description"
       content="Track golf side games: match play, skins, Stableford, Wolf and more."
     />
-    <title>Press — Golf Side Games</title>
-    <link rel="canonical" href="https://pressgolf.netlify.app/" />
-    <!-- Link unfurls. A shared round link is how Press mostly spreads, and
+    <title>Trunk — Golf Side Games</title>
+    <link rel="canonical" href="https://trunk.golf/" />
+    <!-- Link unfurls. A shared round link is how Trunk mostly spreads, and
          without these it lands in a group chat as a bare URL. The card is
-         public/og.png, drawn by scripts/og-image.mjs (npm run og:image). -->
+         public/og.png, the take-A lockup on felt, rendered by
+         scripts/og-image.mjs (npm run og:image). -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="Press" />
-    <meta property="og:url" content="https://pressgolf.netlify.app/" />
-    <meta property="og:title" content="Press — Golf Side Games" />
-    <meta property="og:description" content="Press is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Press does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
-    <meta property="og:image" content="https://pressgolf.netlify.app/og.png" />
+    <meta property="og:site_name" content="Trunk" />
+    <meta property="og:url" content="https://trunk.golf/" />
+    <meta property="og:title" content="Trunk — Golf Side Games" />
+    <meta property="og:description" content="Trunk is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Trunk does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
+    <meta property="og:image" content="https://trunk.golf/og.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="Press — golf side games. Settle it on 18." />
+    <meta property="og:image:alt" content="Trunk — golf side games. Settle it at the trunk." />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="Press — Golf Side Games" />
-    <meta name="twitter:description" content="Press is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Press does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
-    <meta name="twitter:image" content="https://pressgolf.netlify.app/og.png" />
+    <meta name="twitter:title" content="Trunk — Golf Side Games" />
+    <meta name="twitter:description" content="Trunk is a mobile-first web app for tracking golf side-games. One scorekeeper enters scores for the whole group on a single phone, and Trunk does the math — live leaderboards and running money totals while you play, then a settle-up summary at the end." />
+    <meta name="twitter:image" content="https://trunk.golf/og.png" />
     <style>
       /* Splash shown until React mounts (avoids a white flash on load).
          It is a SIBLING of #root, not a child: as a child, createRoot().render()
@@ -56,18 +60,41 @@
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         z-index: 9999;
       }
-      #splash .mark {
-        font-size: 3rem;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        display: flex;
-        /* Mark bottom sits on the text baseline so it reads as the P. */
-        align-items: baseline;
-        gap: 5px;
+      /* The wordmark is Oswald, as on Home. The CSS bundle that declares it has
+         not loaded yet, so it is declared here too; the file is the one
+         preloaded above, so the two declarations share one fetch. */
+      @font-face {
+        font-family: 'Oswald';
+        font-style: normal;
+        font-weight: 500 600;
+        font-display: swap;
+        src: url('/fonts/oswald-latin.woff2') format('woff2');
       }
-      #splash .mark svg {
-        width: 39px;
-        height: 45px;
+      #splash .mark {
+        font-family: 'Oswald', 'Arial Narrow', sans-serif;
+        font-size: 3rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        display: flex;
+        /* The [mark] TRUNK lockup: mark bottom on the text baseline, mark
+           height about cap height plus 15%. */
+        align-items: baseline;
+        gap: 0.25em;
+      }
+      #splash .mark img {
+        /* mark-3d.png is 143×144. Oswald's cap height at 3rem is about 39px;
+           the 3D mark carries a little shadow and padding inside its frame,
+           so it is drawn at 48px to stand about 15% taller than the caps. */
+        width: 47px;
+        height: 48px;
+        flex-shrink: 0;
+        filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.35));
+      }
+      #splash .mark span {
+        /* Cream word on the felt: a soft shadow only, not Home's green-ink
+           emboss, which is for light grounds. */
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       }
       #splash .sub {
         font-size: 0.9rem;
@@ -95,19 +122,16 @@
   <body>
     <div id="root"></div>
     <div id="splash">
-      <div class="mark" role="img" aria-label="Press">
-        <!-- P Flag mark stands in for the P (splash already is the felt). -->
-        <svg viewBox="100 64 336 384" aria-hidden="true">
-          <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z" fill="#e7b53c" />
-          <rect x="118" y="84" width="36" height="344" rx="18" fill="#f4f7f2" />
-          <circle cx="268" cy="178" r="58" fill="#f4f7f2" />
-          <circle cx="268" cy="178" r="49" fill="none" stroke="#14694e" stroke-width="16" stroke-dasharray="18 20.5" stroke-dashoffset="9" transform="rotate(-90 268 178)" />
-        </svg>
-        <span aria-hidden="true">ress</span>
+      <div class="mark">
+        <!-- The Trunk mark, dimensional cut (public/mark-3d.png, the same
+             image as TrunkMark on Home). A plain <img> so it shows before
+             any script runs. Decorative: the word beside it is the name. -->
+        <img src="/mark-3d.png" width="47" height="48" alt="" aria-hidden="true" />
+        <span>Trunk</span>
       </div>
       <div class="sub">Golf side games</div>
       <noscript>
-        Press needs JavaScript: it runs entirely in your browser, with no account and no
+        Trunk needs JavaScript: it runs entirely in your browser, with no account and no
         server. Turn JavaScript on to score a round.
       </noscript>
     </div>

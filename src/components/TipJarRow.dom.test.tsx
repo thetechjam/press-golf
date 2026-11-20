@@ -5,7 +5,7 @@ import { SettingsSheet } from './SettingsSheet';
 import { TIP_JAR_HANDLE } from '../tipJar';
 
 /**
- * The one row in Press that asks for something.
+ * The one row in Trunk that asks for something.
  *
  * It is a link out of the app, which makes it the only row here that can be
  * wrong in ways the app cannot see — a dead handle, an opener the new tab can
@@ -33,7 +33,7 @@ const tipRow = () =>
 const tipRowText = () => screen.queryByText(/buy me a coffee/i);
 
 describe('the tip jar row', () => {
-  it('links to the handle Press is actually collecting on', () => {
+  it('links to the handle Trunk is actually collecting on', () => {
     render(<SettingsSheet onClose={() => {}} screen="home" />);
     expect(tipRow()!.getAttribute('href')).toBe(`https://buymeacoffee.com/${TIP_JAR_HANDLE}`);
   });

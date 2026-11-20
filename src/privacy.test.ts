@@ -28,8 +28,8 @@ const CLAIMS = [
 
 describe('the privacy page', () => {
   it('exists as a real file the SPA redirect will not swallow', () => {
-    expect(html).toContain('<title>Press — Privacy</title>');
-    expect(html).toContain('<link rel="canonical" href="https://pressgolf.netlify.app/privacy.html" />');
+    expect(html).toContain('<title>Trunk — Privacy</title>');
+    expect(html).toContain('<link rel="canonical" href="https://trunk.golf/privacy.html" />');
   });
 
   it('makes the same claims in the page and in PRIVACY.md', () => {

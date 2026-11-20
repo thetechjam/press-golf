@@ -8,7 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 /**
- * True when Press is already out of a browser tab: the native shell, or added
+ * True when Trunk is already out of a browser tab: the native shell, or added
  * to the home screen. Safari's seven-day eviction does not apply there, which
  * is why the install hint stands down.
  */
@@ -57,7 +57,7 @@ export function InstallPrompt() {
 
   return (
     <button className="install-btn" onClick={install}>
-      <DownloadIcon size={17} /> Install Press as an app
+      <DownloadIcon size={17} /> Install Trunk as an app
     </button>
   );
 }

@@ -85,7 +85,7 @@ describe('the results image', () => {
     const pays = at('BO PAYS AL');
     const board = at('SKINS');
     const awards = at('AWARDS');
-    const signOff = at('SCORED WITH PRESS');
+    const signOff = at('SCORED WITH TRUNK · TRUNK.GOLF');
     expect(header).toBeLessThan(winner);
     expect(winner).toBeLessThan(settlement);
     expect(settlement).toBeLessThan(pays);

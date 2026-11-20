@@ -85,7 +85,7 @@ describe('Erase everything', () => {
 });
 
 describe('Erase everything when a key will not go', () => {
-  it('erases a key Press could not read at startup, and every key after it', async () => {
+  it('erases a key Trunk could not read at startup, and every key after it', async () => {
     const disk = new Map<string, string>(PERSISTED_KEYS.map((k) => [k, '"x"']));
     const blocked = PERSISTED_KEYS[0];
     const previous = setBackend(

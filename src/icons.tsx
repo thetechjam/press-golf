@@ -23,36 +23,25 @@ const base = (size: number) => ({
 });
 
 /**
- * The Press brand mark ("P Flag"): the pin flag forms the P, with the
- * poker-chip golf ball in the flag. Flag stays brand gold; pole and chip
- * ring follow currentColor so the mark tracks theme and glare modes.
+ * The Trunk brand mark ("Open Trunk"), dimensional cut: the soft 3D cream car
+ * with its trunk lid raised, a gold pin flag and a ball inside, red
+ * taillights. This is the approved take-A art (public/mark-3d.png, cut out
+ * from docs/brand — see BRAND.md), the same image the index.html splash
+ * shows. It is a raster, so it does not follow currentColor: the cream body
+ * reads on light, dark and glare grounds alike. `size` is the height; the
+ * art is 143×144. Always decorative — the word beside it carries the name.
  */
-export const PressMark = ({ size = 18, className }: IconProps) => (
-  <svg
-    width={size * 0.875}
+export const TrunkMark = ({ size = 18, className }: IconProps) => (
+  <img
+    src={`${import.meta.env.BASE_URL}mark-3d.png`}
+    width={Math.round((size * 143) / 144)}
     height={size}
-    viewBox="100 64 336 384"
-    fill="none"
-    className={className}
+    alt=""
     aria-hidden
-  >
-    <path
-      d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z"
-      fill="#e7b53c"
-    />
-    <rect x="118" y="84" width="36" height="344" rx="18" fill="currentColor" />
-    <circle cx="268" cy="178" r="58" fill="#f4f7f2" />
-    <circle
-      cx="268"
-      cy="178"
-      r="49"
-      stroke="currentColor"
-      strokeWidth="16"
-      strokeDasharray="18 20.5"
-      strokeDashoffset="9"
-      transform="rotate(-90 268 178)"
-    />
-  </svg>
+    decoding="async"
+    draggable={false}
+    className={className}
+  />
 );
 
 /** Golf flag on its pole. */

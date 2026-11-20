@@ -45,9 +45,9 @@ body:
     id: link
     attributes:
       label: Round link (optional)
-      placeholder: https://pressgolf.netlify.app/#r=...
+      placeholder: https://trunk.golf/#r=...
   - type: textarea
     id: diag
     attributes:
       label: Anything else
-      description: The Layout line, the Storage line, a screenshot, the text from a "Press hit a snag" screen.
+      description: The Layout line, the Storage line, a screenshot, the text from a "Trunk hit a snag" screen.

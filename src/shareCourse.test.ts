@@ -75,6 +75,7 @@ describe('a course in a link', () => {
   });
 
   it('fits in a QR code far smaller than a round’s', async () => {
+    // The old origin still serves the app and makes the longer link.
     const url = shareUrlQR('https://pressgolf.netlify.app/', await encodeCourse(torrey), 'c');
     const code = encodeQR(url)!;
     // A round is version 13. This is the code you hold up on the first tee.
@@ -85,7 +86,7 @@ describe('a course in a link', () => {
 describe('reading a course link that cannot be trusted', () => {
   const packed = () => packCourse(torrey) as Record<string, unknown>;
 
-  it('refuses one written by a newer Press', () => {
+  it('refuses one written by a newer Trunk', () => {
     const result = unpackCourse({ ...packed(), v: COURSE_FORMAT + 1 });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain('newer version');
@@ -126,7 +127,7 @@ describe('reading a course link that cannot be trusted', () => {
   });
 
   it('ignores an id smuggled into the payload', () => {
-    // Press never sends one. A payload carrying one would, if trusted, let a
+    // Trunk never sends one. A payload carrying one would, if trusted, let a
     // stranger's record overwrite a saved course of yours by id — behind the
     // name match that is meant to be the only way the two ever meet.
     const result = unpackCourse({ ...packed(), id: 'local001' });

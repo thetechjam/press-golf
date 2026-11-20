@@ -157,13 +157,13 @@ describe('a round that arrives by link', () => {
     expect(screen.getByText(/damaged or incomplete/)).toBeTruthy();
     expect(stored()).toEqual([]);
 
-    await userEvent.click(screen.getByRole('button', { name: 'Go to Press' }));
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Go to Trunk' }));
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
   });
 
   it('ignores a fragment that is not a shared round', async () => {
     await arriveWith('#play');
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
   });
 });
 
@@ -205,7 +205,7 @@ describe('a round that is still being played', () => {
     expect(window.history.state).toMatchObject({ view: 'results', depth: 1 });
 
     window.history.back();
-    await waitFor(() => expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy());
   });
 
   it('keeps it the moment a hole is scored on the card, without "Take it on"', async () => {
@@ -348,13 +348,13 @@ describe('a round this device already has', () => {
   });
 });
 
-describe('a link tapped while Press is already open', () => {
+describe('a link tapped while Trunk is already open', () => {
   it('opens the round instead of doing nothing', async () => {
-    // Following a link with Press closed loads the page. Following one with
-    // Press already open on the same origin changes only the fragment — a
+    // Following a link with Trunk closed loads the page. Following one with
+    // Trunk already open on the same origin changes only the fragment — a
     // same-document navigation, with no reload and no remount.
     render(<App />);
-    expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy();
 
     window.location.hash = `#r=${await encodeRound(sent)}`;
     window.dispatchEvent(new HashChangeEvent('hashchange'));

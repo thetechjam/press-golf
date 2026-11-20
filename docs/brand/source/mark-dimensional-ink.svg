@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="140 130 744 754" width="744" height="754">
+  <defs>
+    <linearGradient id="body" x1="512" y1="130" x2="512" y2="884" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1d8a68"/>
+      <stop offset="45%" stop-color="#14694e"/>
+      <stop offset="100%" stop-color="#0e4f3a"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="443" y1="400" x2="644" y2="700" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f6e19a"/>
+      <stop offset="45%" stop-color="#e7b53c"/>
+      <stop offset="100%" stop-color="#c49218"/>
+    </linearGradient>
+    <radialGradient id="ball" cx="570" cy="620" r="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2aa37c"/>
+      <stop offset="100%" stop-color="#0e4f3a"/>
+    </radialGradient>
+    <linearGradient id="tail" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f06a5c"/>
+      <stop offset="45%" stop-color="#d2483b"/>
+      <stop offset="100%" stop-color="#9e2b22"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-15%" y="-8%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#0b3d2e" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+  <g filter="url(#soft-shadow)">
+    <path fill="url(#body)" fill-rule="evenodd" d="M296 162Q512 141 728 162C793 169 832 203 845 246Q855 279 821 276L739 400L792 516C849 523 870 604 870 722Q870 798 811 802V844Q811 870 784 870H718Q690 870 690 842V802H334V842Q334 870 306 870H240Q213 870 213 844V802C170 800 154 774 154 722C154 604 175 523 232 516L285 400L203 276Q169 279 179 246C192 203 231 169 296 162ZM243 246Q232 252 240 264L300 354Q302 358 311 354C431 315 593 315 713 354Q722 358 724 354L784 264Q792 252 781 246C688 207 336 207 243 246ZM329 391L275 520Q288 531 285 560V679Q285 721 326 721H698Q739 721 739 679V560Q736 531 749 520L695 391C583 354 441 354 329 391Z"/>
+    <path fill="url(#gold)" d="M443 658V417A20 20 0 1 1 474 408C544 395 562 458 644 452Q661 451 650 466C580 536 551 485 469 535V658C501 661 523 669 523 680C523 692 489 702 448 702S373 692 373 680C373 669 403 660 443 658Z"/>
+    <circle cx="587" cy="639" r="54" fill="url(#ball)"/>
+    <path fill="url(#tail)" d="M201 568H241Q256 568 256 583V669Q256 683 242 683H180Q164 683 167 667Q171 619 183 583Q188 568 201 568Z"/>
+    <path fill="url(#tail)" d="M783 568H823Q836 568 841 583Q853 619 857 667Q860 683 844 683H782Q768 683 768 669V583Q768 568 783 568Z"/>
+  </g>
+</svg>

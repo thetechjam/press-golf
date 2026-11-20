@@ -12,9 +12,9 @@ import { mergePeopleData, type PeopleData } from './people';
 import { GAMES } from './games';
 
 /**
- * Backup and restore for everything Press keeps on the device.
+ * Backup and restore for everything Trunk keeps on the device.
  *
- * Press stores rounds and favorite courses in localStorage and nowhere else —
+ * Trunk stores rounds and favorite courses in localStorage and nowhere else —
  * no account, no server, no copy anywhere but the one browser that wrote them.
  * That is the whole point of the design, and it is also its one unrecoverable
  * failure: clearing site data, switching phones, or reinstalling takes every
@@ -94,7 +94,7 @@ export async function offerBackup(now: Date = new Date()): Promise<BackupOffer> 
   const url = URL.createObjectURL(blob);
   try {
     if (navigator.canShare?.({ files: [asFile] })) {
-      await navigator.share({ files: [asFile], title: 'Press backup' });
+      await navigator.share({ files: [asFile], title: 'Trunk backup' });
     } else {
       const a = document.createElement('a');
       a.href = url;
@@ -129,10 +129,10 @@ function readPeople(v: unknown): PeopleData | undefined {
   return { aliases, distinct };
 }
 
-/** `press-backup-2026-09-11.json` — sorts chronologically in a downloads folder. */
+/** `trunk-backup-2026-09-11.json` — sorts chronologically in a downloads folder. */
 export function backupFilename(now: Date = new Date()): string {
   const pad = (n: number) => String(n).padStart(2, '0');
-  return `press-backup-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.json`;
+  return `trunk-backup-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.json`;
 }
 
 const isObject = (v: unknown): v is Record<string, unknown> =>
@@ -143,7 +143,7 @@ const isObject = (v: unknown): v is Record<string, unknown> =>
  * can never leave this list behind — and so a round naming a game this build
  * has no engine for is dropped instead of reaching `gameMeta(...).compute` and
  * throwing on the Home screen. That is the right call even though it loses a
- * round: a backup from a newer Press can name a game that does not exist yet.
+ * round: a backup from a newer Trunk can name a game that does not exist yet.
  */
 const GAME_TYPES: readonly string[] = GAMES.map((g) => g.id);
 
@@ -153,7 +153,7 @@ const GAME_TYPES: readonly string[] = GAMES.map((g) => g.id);
  *
  * Deliberately not a full structural validation. A backup is written by this
  * same app, so the realistic failure is not a subtly wrong field but a file
- * that is truncated, hand-edited, or not a Press backup at all — and those all
+ * that is truncated, hand-edited, or not a Trunk backup at all — and those all
  * fail these checks. Validating every optional field instead would reject
  * rounds written by a future version that added one, which is the opposite of
  * what a backup format should do.
@@ -232,14 +232,14 @@ export function parseBackup(text: string): ParseResult {
   }
 
   if (!isObject(raw) || raw.app !== 'press') {
-    return { ok: false, error: "That doesn't look like a Press backup." };
+    return { ok: false, error: "That doesn't look like a Trunk backup." };
   }
 
   const format = typeof raw.format === 'number' ? raw.format : 0;
   if (format > BACKUP_FORMAT) {
     return {
       ok: false,
-      error: 'That backup was written by a newer version of Press. Update the app and try again.',
+      error: 'That backup was written by a newer version of Trunk. Update the app and try again.',
     };
   }
 
@@ -349,13 +349,13 @@ export type RestoreResult =
 /**
  * Why a restore failed, in words that match the cause. Every failure used to
  * read "There wasn't room", which on native is wrong when the real cause is
- * a key Press could not read at startup — deleting rounds would not help.
+ * a key Trunk could not read at startup — deleting rounds would not help.
  */
 export function restoreFailureMessage(err: unknown): string {
   const cause = err instanceof RestoreUndoError ? err.cause : err;
   const why =
     writeFailureReason(cause) === 'unreadable'
-      ? "Press couldn't read some of your saved data when it opened, so it won't write over it. Close Press completely, open it again and try again."
+      ? "Trunk couldn't read some of your saved data when it opened, so it won't write over it. Close Trunk completely, open it again and try again."
       : "There wasn't room to save the restored rounds. Delete a few old rounds and try again.";
   if (!(err instanceof RestoreUndoError)) return why;
   // Rare: the undo itself was refused. Say so rather than promise nothing changed.

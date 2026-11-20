@@ -92,7 +92,7 @@ export function ShareSheet({ round, summary, onClose }: Props) {
     const wasCopied = await sendLink(
       url,
       'Golf round',
-      `${round.course || 'Golf round'} — open in Press`
+      `${round.course || 'Golf round'} — open in Trunk`
     );
     setCopied(wasCopied);
     if (wasCopied) setTimeout(() => setCopied(false), 2000);
@@ -105,14 +105,14 @@ export function ShareSheet({ round, summary, onClose }: Props) {
         hint="The scoreboard, as an image"
         busy={busy === 'results'}
         primary
-        onShare={() => void shareImage(() => renderShareCard(round), 'press-results.png', 'results')}
+        onShare={() => void shareImage(() => renderShareCard(round), 'trunk-results.png', 'results')}
       />
       <PictureButton
         label="Scorecard"
         hint="Every hole, as an image"
         busy={busy === 'scorecard'}
         onShare={() =>
-          void shareImage(() => renderScorecardCard(round), 'press-scorecard.png', 'scorecard')
+          void shareImage(() => renderScorecardCard(round), 'trunk-scorecard.png', 'scorecard')
         }
       />
 
@@ -128,7 +128,7 @@ export function ShareSheet({ round, summary, onClose }: Props) {
       )}
       {state.kind === 'unsupported' && (
         <p className="send-note">
-          This browser can’t make Press links — update it (Safari 16.4 or later) or use
+          This browser can’t make Trunk links — update it (Safari 16.4 or later) or use
           Backup in Settings to move the round instead.
         </p>
       )}
@@ -139,7 +139,7 @@ export function ShareSheet({ round, summary, onClose }: Props) {
           <p className="send-note">
             {state.tooBig
               ? 'This round is too big for a QR code, but the link still carries it.'
-              : 'Point another phone’s camera at this to open the round in Press.'}
+              : 'Point another phone’s camera at this to open the round in Trunk.'}
           </p>
           <button className="btn-secondary big" onClick={() => void send(state.url)}>
             {copied ? 'Copied to clipboard' : 'Send the link'}

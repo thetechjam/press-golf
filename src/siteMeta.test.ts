@@ -11,7 +11,7 @@ import { resolve } from 'node:path';
 
 const root = resolve(__dirname, '..');
 const html = readFileSync(resolve(root, 'index.html'), 'utf8');
-const SITE = 'https://pressgolf.netlify.app/';
+const SITE = 'https://trunk.golf/';
 
 const meta = (attr: 'property' | 'name', key: string): string | null => {
   const m = new RegExp(`<meta\\s+${attr}="${key}"\\s+content="([^"]*)"`).exec(html);
@@ -20,9 +20,14 @@ const meta = (attr: 'property' | 'name', key: string): string | null => {
 
 describe('index.html for crawlers and link unfurls', () => {
   it('names the page the same way everywhere', () => {
-    expect(html).toContain('<title>Press — Golf Side Games</title>');
-    expect(meta('property', 'og:title')).toBe('Press — Golf Side Games');
-    expect(meta('name', 'twitter:title')).toBe('Press — Golf Side Games');
+    expect(html).toContain('<title>Trunk — Golf Side Games</title>');
+    expect(meta('property', 'og:title')).toBe('Trunk — Golf Side Games');
+    expect(meta('name', 'twitter:title')).toBe('Trunk — Golf Side Games');
+  });
+
+  it('gives the short name to the site and the home-screen icon', () => {
+    expect(meta('property', 'og:site_name')).toBe('Trunk');
+    expect(meta('name', 'apple-mobile-web-app-title')).toBe('Trunk');
   });
 
   it('points everything at the one canonical URL', () => {
@@ -33,7 +38,7 @@ describe('index.html for crawlers and link unfurls', () => {
 
   it('carries a description in both vocabularies, and a plain one', () => {
     const og = meta('property', 'og:description');
-    expect(og).toMatch(/^Press is a mobile-first web app/);
+    expect(og).toMatch(/^Trunk is a mobile-first web app/);
     expect(meta('name', 'twitter:description')).toBe(og);
     expect(meta('name', 'description')).toBeTruthy();
   });
@@ -42,7 +47,7 @@ describe('index.html for crawlers and link unfurls', () => {
     expect(meta('property', 'og:image')).toBe(`${SITE}og.png`);
     expect(meta('property', 'og:image:width')).toBe('1200');
     expect(meta('property', 'og:image:height')).toBe('630');
-    expect(meta('property', 'og:image:alt')).toBeTruthy();
+    expect(meta('property', 'og:image:alt')).toBe('Trunk — golf side games. Settle it at the trunk.');
     expect(meta('name', 'twitter:card')).toBe('summary_large_image');
     expect(meta('name', 'twitter:image')).toBe(`${SITE}og.png`);
   });
@@ -52,13 +57,64 @@ describe('index.html for crawlers and link unfurls', () => {
   });
 });
 
+/** Width and height from a PNG's IHDR chunk, after checking the signature. */
+const pngSize = (name: string): [number, number] => {
+  const png = readFileSync(resolve(root, 'public', name));
+  // PNG signature, then the IHDR chunk holds width and height at 16 and 20.
+  expect(png.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  return [png.readUInt32BE(16), png.readUInt32BE(20)];
+};
+
 describe('public/og.png', () => {
   it('is the 1200×630 the tags promise', () => {
-    const png = readFileSync(resolve(root, 'public', 'og.png'));
-    // PNG signature, then the IHDR chunk holds width and height at 16 and 20.
-    expect(png.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
-    expect(png.readUInt32BE(16)).toBe(1200);
-    expect(png.readUInt32BE(20)).toBe(630);
+    expect(pngSize('og.png')).toEqual([1200, 630]);
+  });
+});
+
+describe('the icon PNGs', () => {
+  // The manifest (vite.config.ts) and index.html declare these sizes; a
+  // browser that gets a different one scales it or skips the icon.
+  it.each([
+    ['icon-192.png', 192],
+    ['icon-512.png', 512],
+    ['icon-maskable-192.png', 192],
+    ['icon-maskable-512.png', 512],
+    ['apple-touch-icon.png', 180],
+  ])('%s is %i square', (name, size) => {
+    expect(pngSize(name)).toEqual([size, size]);
+  });
+});
+
+describe('the manifest icons in vite.config.ts', () => {
+  // The install icon is the photographic take-A art. app-icon.svg once led
+  // this list as `purpose: 'any'`, and some browsers installed the vector
+  // instead of the PNGs.
+  const config = readFileSync(resolve(root, 'vite.config.ts'), 'utf8');
+  const block = /\bicons:\s*\[([\s\S]*?)\n\s*\],/.exec(config)?.[1] ?? '';
+  const icons = [...block.matchAll(/\{([^{}]*)\}/g)].map(([, body]) => ({
+    src: /src:\s*'([^']+)'/.exec(body)?.[1],
+    sizes: /sizes:\s*'([^']+)'/.exec(body)?.[1],
+    purpose: /purpose:\s*'([^']+)'/.exec(body)?.[1],
+  }));
+
+  it('lists the take-A PNGs as the any icons', () => {
+    expect(icons.filter((i) => i.purpose === 'any')).toEqual([
+      { src: 'icon-192.png', sizes: '192x192', purpose: 'any' },
+      { src: 'icon-512.png', sizes: '512x512', purpose: 'any' },
+    ]);
+  });
+
+  it('keeps the maskable pair', () => {
+    expect(icons.filter((i) => i.purpose === 'maskable').map((i) => i.src)).toEqual([
+      'icon-maskable-192.png',
+      'icon-maskable-512.png',
+    ]);
+  });
+
+  it('does not offer the SVG tile as an install icon', () => {
+    expect(icons.length).toBe(4);
+    expect(block).not.toContain('app-icon.svg');
+    expect(icons.every((i) => i.src?.endsWith('.png'))).toBe(true);
   });
 });
 

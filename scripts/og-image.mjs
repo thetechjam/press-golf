@@ -1,22 +1,24 @@
 /**
- * Renders public/og.png — the 1200×630 card that a shared pressgolf link
+ * Renders public/og.png — the 1200×630 card that a shared trunk.golf link
  * unfurls into in iMessage, WhatsApp, Slack and the rest.
  *
  *   npm run og:image
  *
- * The card is drawn here as SVG from the brand constants (BRAND.md): the felt
- * gradient, the P Flag mark lifted from index.html's splash, the wordmark
- * lockup where the mark stands in for the P, and the tagline. Crawlers do not
- * render SVG, so the PNG is what ships — committed, because generating it at
+ * The card is the take-A lockup (BRAND.md): the photographic 3D mark beside
+ * the embossed TRUNK wordmark, "Settle it at the trunk." in gold and a quiet
+ * footer, centred on the felt gradient the splash uses. The mark is a
+ * photograph, so the card is a small HTML page rather than an SVG: it shows
+ * docs/brand/source/mark-3d-full.png (the 656×661 transparent take-A cut-out —
+ * public/mark-3d.png is the 143px one the app ships, too small for a 210px
+ * mark) and sets the type in the app's own self-hosted Oswald. Crawlers need
+ * a PNG, so the PNG is what ships — committed, because generating it at
  * deploy time would need a browser in the Netlify build.
  *
- * Rasterised by a headless Chromium rather than an SVG library, for one
- * reason: the wordmark is Oswald, the app's own self-hosted woff2, and a
- * browser is the only renderer here that honours @font-face. Playwright is
- * used when it is installed (it is deliberately not a dependency — see the
- * README's audit section), otherwise a Chromium or Chrome on PATH, or the one
- * named by $CHROME. Regenerate whenever the mark, the colours or the tagline
- * change, and commit the result.
+ * Rasterised by a headless Chromium, the only renderer here that honours
+ * @font-face and CSS filters. Playwright is used when it is installed (it is
+ * deliberately not a dependency — see the README's audit section), otherwise
+ * a Chromium or Chrome on PATH, or the one named by $CHROME. Regenerate
+ * whenever the mark, the colours or the tagline change, and commit the result.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
@@ -28,63 +30,82 @@ const W = 1200;
 const H = 630;
 const OUT = path.join(root, 'public', 'og.png');
 const FONT = pathToFileURL(path.join(root, 'public', 'fonts', 'oswald-latin.woff2')).href;
+const MARK = pathToFileURL(path.join(root, 'docs', 'brand', 'source', 'mark-3d-full.png')).href;
 
 // BRAND.md
 const GREEN_900 = '#0b3d2e';
 const GREEN_700 = '#14694e';
 const CREAM = '#f4f7f2';
 const GOLD = '#e7b53c';
-const GOLD_DEEP = '#c69a2b';
 
-// The P Flag mark, exactly as the splash draws it (viewBox 100 64 336 384 in
-// index.html), placed and scaled by the group transform below. 0.68 puts its
-// pole at 261px tall, which the wordmark's cap height is sized to match.
-const MARK = `
-  <g transform="translate(112 132) scale(0.68) translate(-100 -64)">
-    <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z" fill="${GOLD}" />
-    <path d="M154 84 C270 90 352 116 404 162 Q420 178 404 194 C352 240 270 266 154 272 Z"
-          fill="none" stroke="${GOLD_DEEP}" stroke-width="7" stroke-linejoin="round" />
-    <rect x="118" y="84" width="36" height="344" rx="18" fill="${CREAM}" />
-    <circle cx="268" cy="178" r="58" fill="${CREAM}" />
-    <circle cx="268" cy="178" r="49" fill="none" stroke="${GREEN_700}" stroke-width="16"
-            stroke-dasharray="18 20.5" stroke-dashoffset="9" transform="rotate(-90 268 178)" />
-    <g fill="#ccd8cf">
-      <circle cx="268" cy="145" r="5.5" />
-      <circle cx="257" cy="161" r="5.5" /><circle cx="279" cy="161" r="5.5" />
-      <circle cx="246" cy="178" r="5.5" /><circle cx="268" cy="178" r="5.5" /><circle cx="290" cy="178" r="5.5" />
-      <circle cx="257" cy="195" r="5.5" /><circle cx="279" cy="195" r="5.5" />
-      <circle cx="268" cy="211" r="5.5" />
-    </g>
-  </g>`;
-
-const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-  <style>
-    @font-face { font-family: Oswald; src: url('${FONT}') format('woff2'); font-weight: 200 700; }
-    text { font-family: Oswald, 'Arial Narrow', sans-serif; }
-  </style>
-  <defs>
-    <linearGradient id="felt" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${GREEN_700}" />
-      <stop offset="1" stop-color="${GREEN_900}" />
-    </linearGradient>
-  </defs>
-  <rect width="${W}" height="${H}" fill="url(#felt)" />
-  ${MARK}
-  <!-- The wordmark: the mark is the P, so only RESS is set, baseline on the
-       pole's foot (y = 132 + 344·0.68 ≈ 393) and tight against the flag. -->
-  <text x="350" y="393" font-size="330" font-weight="600" fill="${CREAM}" letter-spacing="-4">RESS</text>
-  <text x="124" y="500" font-size="78" font-weight="500" fill="${GOLD}">Settle it on 18.</text>
-  <text x="124" y="564" font-size="30" font-weight="500" fill="${CREAM}" opacity="0.78" letter-spacing="1">
-    GOLF SIDE GAMES · NO ACCOUNT · WORKS OFFLINE · PRESSGOLF.NETLIFY.APP
-  </text>
-</svg>
+// The Home/splash lockup at card size: mark about 210px tall, a 0.25em gap,
+// baselines level. The wordmark's emboss is the dark-felt one (a faint light
+// top edge, a hard dark step, a soft cast shadow), not the light-mode bevel.
+// Everything sits centred with wide margins, so square and 1.91:1 crops in
+// the various chat apps keep the whole lockup.
+const html = `<!doctype html>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: Oswald;
+    src: url('${FONT}') format('woff2');
+    font-weight: 200 700;
+  }
+  html, body { margin: 0; width: ${W}px; height: ${H}px; overflow: hidden; }
+  body {
+    background: linear-gradient(160deg, ${GREEN_700}, ${GREEN_900});
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-family: Oswald, 'Arial Narrow', sans-serif;
+    color: ${CREAM};
+  }
+  .lockup { display: flex; align-items: baseline; gap: 0.25em; font-size: 200px; }
+  .lockup img {
+    height: 210px;
+    width: auto;
+    filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.35));
+  }
+  .word {
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1;
+    text-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.18),
+      0 2px 0 rgba(0, 0, 0, 0.28),
+      0 14px 28px rgba(0, 0, 0, 0.35);
+  }
+  .tag {
+    margin-top: 18px;
+    font-size: 44px;
+    font-weight: 500;
+    color: ${GOLD};
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+  }
+  .foot {
+    margin-top: 36px;
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    opacity: 0.72;
+  }
+</style>
+<div class="lockup">
+  <img src="${MARK}" alt="">
+  <span class="word">Trunk</span>
+</div>
+<div class="tag">Settle it at the trunk.</div>
+<div class="foot">GOLF SIDE GAMES · TRUNK.GOLF</div>
 `;
 
 const tmp = path.join(root, 'node_modules', '.tmp');
 mkdirSync(tmp, { recursive: true });
-const svgPath = path.join(tmp, 'og.svg');
-writeFileSync(svgPath, svg);
-const url = pathToFileURL(svgPath).href;
+const htmlPath = path.join(tmp, 'og.html');
+writeFileSync(htmlPath, html);
+const url = pathToFileURL(htmlPath).href;
 
 let how = null;
 
@@ -95,6 +116,7 @@ try {
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
   await page.goto(url);
   await page.evaluate(() => document.fonts.ready);
+  await page.evaluate(() => Promise.all([...document.images].map((i) => i.decode())));
   await page.screenshot({ path: OUT, type: 'png' });
   await browser.close();
   how = 'playwright';
@@ -123,6 +145,8 @@ if (!how) {
           '--disable-gpu',
           '--hide-scrollbars',
           `--window-size=${W},${H}`,
+          // Lets the font and the mark finish loading before the capture.
+          '--virtual-time-budget=5000',
           `--screenshot=${OUT}`,
           url,
         ],

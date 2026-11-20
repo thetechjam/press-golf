@@ -86,7 +86,7 @@ export function UpdatePrompt({ suppressed = false }: Props) {
     <div className="update-live" role="status">
       {needRefresh && !suppressed && (
         <div className="update-banner">
-          <span className="update-msg">A new version of Press is ready.</span>
+          <span className="update-msg">A new version of Trunk is ready.</span>
           <button
             type="button"
             className="update-btn"

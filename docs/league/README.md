@@ -1,14 +1,15 @@
 # League rollout kit
 
-Material for introducing Press to the Thursday league. Parked in September 2026,
-after the season ended; the league starts again in mid-April 2027.
+Material for introducing Trunk (formerly Press) to the Thursday league. Parked
+in September 2026, after the season ended; the league starts again in mid-April
+2027.
 
 | File | What it is |
 |---|---|
-| `press-league-flyer.pdf` | Print-ready US Letter flyer (pro shop / league night) |
-| `press-league-flyer.png` | The same flyer as an image, for texts and email |
+| `press-league-flyer.pdf` | Print-ready US Letter flyer (pro shop / league night). **Stale:** still the Press flyer with the old QR — re-export from `flyer.html` before printing |
+| `press-league-flyer.png` | The same flyer as an image, for texts and email. **Stale**, as above |
 | `flyer.html` | Source of the flyer — edit this, then re-export |
-| `qr.svg` | QR code for https://pressgolf.netlify.app/, made with `src/qr.ts` |
+| `qr.svg` | QR code for https://trunk.golf/, made with `src/qr.ts` |
 | `make-qr.mjs` | Regenerates `qr.svg` (`node docs/league/make-qr.mjs`) |
 | `email-to-league-director.md` | Draft email introducing the app to the league director |
 
@@ -31,3 +32,8 @@ after the season ended; the league starts again in mid-April 2027.
 Open `flyer.html` in Chrome from this folder (it loads the font and logo from
 `public/`), then Print → Save as PDF, paper size Letter, margins None,
 background graphics on. For the PNG, screenshot the page at 2x.
+Save over the existing `press-league-flyer.pdf` / `.png` (the filenames stay
+as they are). The exported copies in this folder predate the rename to Trunk
+and still show the Press mark and the old pressgolf.netlify.app QR; that QR
+keeps working while the old address serves the app, but re-export before the
+next print run.

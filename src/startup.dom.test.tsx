@@ -41,7 +41,7 @@ describe('startApp', () => {
       await act(async () => {
         root = await startApp(container, async () => false);
       });
-      await waitFor(() => expect(screen.getByRole('heading', { name: 'Press' })).toBeTruthy());
+      await waitFor(() => expect(screen.getByRole('heading', { name: 'Trunk' })).toBeTruthy());
       expect(screen.queryByRole('heading', { name: /couldn’t start/ })).toBeNull();
     } finally {
       spy.mockRestore();
@@ -55,10 +55,10 @@ describe('startApp', () => {
         Promise.reject(new Error('Preferences bridge unavailable'))
       );
     });
-    expect(screen.getByRole('heading', { name: 'Press couldn’t start' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Trunk couldn’t start' })).toBeTruthy();
     expect(screen.getByText('Preferences bridge unavailable')).toBeTruthy();
     // The app itself is not rendered over storage it could not open.
-    expect(screen.queryByRole('heading', { name: 'Press' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Trunk' })).toBeNull();
   });
 });
 
@@ -67,7 +67,7 @@ describe('StartupError', () => {
     const reload = vi.fn();
     const user = userEvent.setup();
     render(<StartupError error={new Error('nope')} onReload={reload} />);
-    await user.click(screen.getByRole('button', { name: 'Reload Press' }));
+    await user.click(screen.getByRole('button', { name: 'Reload Trunk' }));
     expect(reload).toHaveBeenCalledOnce();
   });
   it('does not blame storage for a failure that may be something else', () => {
