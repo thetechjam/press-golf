@@ -85,6 +85,39 @@ describe('the icon PNGs', () => {
   });
 });
 
+describe('the manifest icons in vite.config.ts', () => {
+  // The install icon is the photographic take-A art. app-icon.svg once led
+  // this list as `purpose: 'any'`, and some browsers installed the vector
+  // instead of the PNGs.
+  const config = readFileSync(resolve(root, 'vite.config.ts'), 'utf8');
+  const block = /\bicons:\s*\[([\s\S]*?)\n\s*\],/.exec(config)?.[1] ?? '';
+  const icons = [...block.matchAll(/\{([^{}]*)\}/g)].map(([, body]) => ({
+    src: /src:\s*'([^']+)'/.exec(body)?.[1],
+    sizes: /sizes:\s*'([^']+)'/.exec(body)?.[1],
+    purpose: /purpose:\s*'([^']+)'/.exec(body)?.[1],
+  }));
+
+  it('lists the take-A PNGs as the any icons', () => {
+    expect(icons.filter((i) => i.purpose === 'any')).toEqual([
+      { src: 'icon-192.png', sizes: '192x192', purpose: 'any' },
+      { src: 'icon-512.png', sizes: '512x512', purpose: 'any' },
+    ]);
+  });
+
+  it('keeps the maskable pair', () => {
+    expect(icons.filter((i) => i.purpose === 'maskable').map((i) => i.src)).toEqual([
+      'icon-maskable-192.png',
+      'icon-maskable-512.png',
+    ]);
+  });
+
+  it('does not offer the SVG tile as an install icon', () => {
+    expect(icons.length).toBe(4);
+    expect(block).not.toContain('app-icon.svg');
+    expect(icons.every((i) => i.src?.endsWith('.png'))).toBe(true);
+  });
+});
+
 describe('public/robots.txt', () => {
   it('lets everything in except the forms stub', () => {
     const robots = readFileSync(resolve(root, 'public', 'robots.txt'), 'utf8');

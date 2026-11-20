@@ -93,13 +93,11 @@ export default defineConfig({
         // media query in index.css.
         orientation: 'any',
         start_url: '/',
+        // PNGs only. app-icon.svg used to lead this list as a `sizes: any`
+        // icon, and some browsers installed that vector (or a flattening of
+        // it) instead of the photographic take-A art. It stays in public/ for
+        // the docs and the flyer, but it is not an install icon.
         icons: [
-          {
-            src: 'app-icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any',
-          },
           // Full-square art for 'any'; the maskable pair is full-bleed felt
           // with the mark inside the central safe circle, so a launcher can
           // crop it to any shape. One file cannot be both.
