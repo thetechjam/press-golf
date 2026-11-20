@@ -25,6 +25,11 @@ describe('index.html for crawlers and link unfurls', () => {
     expect(meta('name', 'twitter:title')).toBe('Trunk — Golf Side Games');
   });
 
+  it('gives the short name to the site and the home-screen icon', () => {
+    expect(meta('property', 'og:site_name')).toBe('Trunk');
+    expect(meta('name', 'apple-mobile-web-app-title')).toBe('Trunk');
+  });
+
   it('points everything at the one canonical URL', () => {
     expect(html).toContain(`<link rel="canonical" href="${SITE}" />`);
     expect(meta('property', 'og:url')).toBe(SITE);
@@ -42,7 +47,7 @@ describe('index.html for crawlers and link unfurls', () => {
     expect(meta('property', 'og:image')).toBe(`${SITE}og.png`);
     expect(meta('property', 'og:image:width')).toBe('1200');
     expect(meta('property', 'og:image:height')).toBe('630');
-    expect(meta('property', 'og:image:alt')).toBeTruthy();
+    expect(meta('property', 'og:image:alt')).toBe('Trunk — golf side games. Settle it at the trunk.');
     expect(meta('name', 'twitter:card')).toBe('summary_large_image');
     expect(meta('name', 'twitter:image')).toBe(`${SITE}og.png`);
   });

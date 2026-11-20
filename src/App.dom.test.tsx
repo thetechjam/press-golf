@@ -103,6 +103,11 @@ describe('App navigation', () => {
     expect(onHome()).toBe(true);
   });
 
+  it('carries the tagline under the wordmark on Home', () => {
+    render(<App />);
+    expect(screen.getByText('Settle it at the trunk.')).toBeTruthy();
+  });
+
   it('pushes an entry on the way in, and the back gesture returns Home', async () => {
     const user = userEvent.setup();
     render(<App />);
