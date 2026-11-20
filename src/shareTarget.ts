@@ -3,6 +3,7 @@ import type { Round, SavedCourse } from './types';
 import { COURSE_KEY, SHARE_KEY, encodeRound, linksSupported, shareUrl, shareUrlQR } from './shareLink';
 import { encodeCourse } from './shareCourse';
 import { encodeQR, qrPath } from './qr';
+import { shareBase } from './oldHost';
 
 /**
  * Building the link and the code for whatever is being handed over.
@@ -42,8 +43,11 @@ export function useShareLink(round?: Round, course?: SavedCourse): ShareState {
       if (!alive) return;
       if (!payload) return setState({ kind: 'failed' });
 
-      const url = shareUrl(window.location.href, payload, key);
-      const code = encodeQR(shareUrlQR(window.location.href, payload, key));
+      // The page this was made on, except that a link made on the old
+      // address points at trunk.golf — see `shareBase`.
+      const base = shareBase(window.location.href);
+      const url = shareUrl(base, payload, key);
+      const code = encodeQR(shareUrlQR(base, payload, key));
       if (!code) return setState({ kind: 'ready', url, tooBig: true });
       const { path, side } = qrPath(code);
       setState({ kind: 'ready', url, path, side, tooBig: false });

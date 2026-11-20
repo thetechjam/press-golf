@@ -24,6 +24,11 @@ const CLAIMS = [
   'plain JSON',
   'Clear waiting reports',
   'Erase everything',
+  // Served at the old address too, where "this site (trunk.golf)" alone is
+  // wrong; it says the old address is going and how the rounds come across.
+  'pressgolf.netlify.app if that is where you opened Trunk',
+  'older address is being retired',
+  'restore it at trunk.golf',
 ];
 
 describe('the privacy page', () => {

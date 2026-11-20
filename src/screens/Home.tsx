@@ -11,6 +11,7 @@ import { liveRound } from '../roundSummary';
 import { FlagIcon, TrunkMark, TrophyIcon, GearIcon, ChartIcon, ScrambleIcon } from '../icons';
 import { SettingsSheet } from '../components/SettingsSheet';
 import { KeepRoundsPrompt } from '../components/KeepRoundsPrompt';
+import { MovedNotice } from '../components/MovedNotice';
 import { countsForStats } from '../stats';
 
 /**
@@ -86,6 +87,9 @@ export function Home({
         </h1>
         <p className="tagline">Settle it at the trunk.</p>
       </header>
+
+      {/* Only on the old pressgolf.netlify.app address; nothing anywhere else. */}
+      <MovedNotice />
 
       {live && <ResumeCard round={live} onResume={() => onResume(live)} />}
 

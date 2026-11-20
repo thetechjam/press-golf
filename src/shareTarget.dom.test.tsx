@@ -25,6 +25,24 @@ describe('useShareLink', () => {
     if (result.current.kind === 'ready') expect(result.current.url).toContain('#r=');
   });
 
+  it('points a link and code made on the old address at trunk.golf', async () => {
+    vi.stubGlobal('location', { href: 'https://pressgolf.netlify.app/', hostname: 'pressgolf.netlify.app' });
+    const { result } = renderHook(() => useShareLink(round));
+    await waitFor(() => expect(result.current.kind).toBe('ready'));
+    if (result.current.kind !== 'ready') return;
+    expect(result.current.url).toMatch(/^https:\/\/trunk\.golf\/#r=/);
+    expect(result.current.url).not.toContain('pressgolf');
+  });
+
+  it('leaves links made anywhere else on the page they were made on', async () => {
+    vi.stubGlobal('location', { href: 'https://deploy-preview-9--trunkgolf.netlify.app/', hostname: 'deploy-preview-9--trunkgolf.netlify.app' });
+    const { result } = renderHook(() => useShareLink(round));
+    await waitFor(() => expect(result.current.kind).toBe('ready'));
+    if (result.current.kind === 'ready') {
+      expect(result.current.url).toMatch(/^https:\/\/deploy-preview-9--trunkgolf\.netlify\.app\/#r=/);
+    }
+  });
+
   it('says so when this browser cannot make links, instead of building forever', async () => {
     vi.stubGlobal('CompressionStream', undefined);
     const { result } = renderHook(() => useShareLink(round));

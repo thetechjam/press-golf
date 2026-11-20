@@ -51,6 +51,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and stakes inside.
 - `.mise.toml` and `.tool-versions`, so mise and asdf pick up Node 24 the way
   nvm already did.
+- **The old pressgolf.netlify.app address says Trunk has moved.** A card on
+  Home, shown only at that address, says Trunk now lives at trunk.golf, that
+  rounds saved there stay in that browser at that address, and how to bring
+  them along: Save a backup (the same backup as Settings), open trunk.golf, and
+  restore it from Settings. "Not now" hides it until Trunk is next opened
+  there. With nothing saved, it just links to trunk.golf. Share links and QR
+  codes made at the old address now point at trunk.golf, and the privacy page
+  says the old address is being retired. The old address still has no
+  redirect and nothing saved there is moved or deleted; trunk.golf, local
+  copies, deploy previews and the native shell are unchanged.
 - **trunkgolf.com redirects to trunk.golf.** `netlify.toml` sends
   `trunkgolf.com` and `www.trunkgolf.com`, over http or https, to the same
   path on `https://trunk.golf` with a permanent (301) redirect.
