@@ -13,6 +13,8 @@ your browser, works offline, and keeps everything on your device — see
 
 **▶️ Live app: [trunk.golf](https://trunk.golf)**
 
+**🎬 Promo: [youtu.be/bUL6qcGF6XI](https://youtu.be/bUL6qcGF6XI)** — Trunk in 80 seconds
+
 <p align="center">
   <img src="docs/screenshots/setup.png" width="180" alt="New Round: four players with handicaps, a saved course loaded, Nassau, Skins and Junk picked" />
   <img src="docs/screenshots/hole.png" width="180" alt="The Hole tab mid-round: one row per player with score chips, and the money ticker showing who is up" />
